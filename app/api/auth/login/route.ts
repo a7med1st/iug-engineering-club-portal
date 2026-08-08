@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
+import { createSession } from "@/lib/auth";
+export async function POST(req:Request){try{const body=await req.json();const email=String(body.email||"").trim().toLowerCase();const password=String(body.password||"");const portal=body.portal==="member"?"member":"student";const user=await prisma.user.findUnique({where:{email}});if(!user||!(await bcrypt.compare(password,user.passwordHash)))return NextResponse.json({error:"البريد الإلكتروني أو كلمة المرور غير صحيحة."},{status:401});if(portal==="student"&&user.role!=="STUDENT")return NextResponse.json({error:"هذا الحساب ليس حساب طالب. استخدم بوابة الأعضاء."},{status:403});if(portal==="member"&&user.role==="STUDENT")return NextResponse.json({error:"حساب الطالب لا يمكنه الدخول من بوابة الأعضاء."},{status:403});await createSession({sub:user.id,email:user.email,name:user.name,role:user.role});return NextResponse.json({ok:true,redirect:user.role==="ADMIN"?"/admin":user.role==="MEMBER"?"/member":"/"});}catch{return NextResponse.json({error:"حدث خطأ غير متوقع."},{status:500})}}

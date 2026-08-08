@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  MEMBER
+  ADMIN
+}
+
+enum ActivityStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         Role        @default(STUDENT)
+  position     String?
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Department {
+  id          String          @id @default(cuid())
+  nameAr      String
+  nameEn      String
+  slug        String          @unique
+  coverImage  String
+  sortOrder   Int             @default(0)
+  users       User[]
+  activities  Activity[]
+  guide       DepartmentGuide?
+  structureItems ClubStructureItem[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Activity {
+  id           String         @id @default(cuid())
+  title        String
+  description  String
+  location     String
+  startsAt     DateTime
+  capacity     Int
+  formUrl      String
+  status       ActivityStatus @default(PUBLISHED)
+  departmentId String?
+  department   Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model DepartmentGuide {
+  id             String     @id @default(cuid())
+  departmentId   String     @unique
+  department     Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  overview       String     @default("")
+  fitFor         String     @default("")
+  careersIncome  String     @default("")
+  skillsCourses  String     @default("")
+  comparisons    String     @default("")
+  faq            String     @default("")
+  updatedAt      DateTime   @updatedAt
+}
+
+model ClubStructureItem {
+  id           String      @id @default(cuid())
+  name         String
+  title        String
+  level        Int         @default(1)
+  sortOrder    Int         @default(0)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
