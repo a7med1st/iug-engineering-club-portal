@@ -13,3 +13,6 @@ npm-debug.log*
 Thumbs.db
 
 .vercel
+.env*
+!.env.example
+*.tsbuildinfo

@@ -28,21 +28,34 @@ async function main() {
     });
   }
 
-  const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@engineeringclub.local";
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "ChangeMe123!";
-  const passwordHash = await bcrypt.hash(adminPassword, 12);
-  await prisma.user.upsert({
-    where: { email: adminEmail.toLowerCase() },
-    update: { role: Role.ADMIN, name: "مدير النادي الهندسي" },
-    create: { name: "مدير النادي الهندسي", email: adminEmail.toLowerCase(), passwordHash, role: Role.ADMIN },
-  });
+  const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+
+  if (Boolean(adminEmail) !== Boolean(adminPassword)) {
+    throw new Error("SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD must be provided together.");
+  }
+
+  if (adminEmail && adminPassword) {
+    if (adminPassword.length < 12) {
+      throw new Error("SEED_ADMIN_PASSWORD must contain at least 12 characters.");
+    }
+
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
+    await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: { role: Role.ADMIN, name: "مدير النادي الهندسي", passwordHash },
+      create: { name: "مدير النادي الهندسي", email: adminEmail, passwordHash, role: Role.ADMIN },
+    });
+  } else {
+    console.log("Admin seed skipped: set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD to create one.");
+  }
 
   const count = await prisma.activity.count();
   if (count === 0) {
     const computer = await prisma.department.findUnique({ where: { slug: "computer-engineering" } });
-    await prisma.activity.createMany({
-      data: [
-        {
+    await prisma.$transaction(async (tx) => {
+      await tx.activity.create({
+        data: {
           title: "جلسة مهارات سوق العمل الهندسي",
           description: "جلسة شبابية تفاعلية حول تجهيز السيرة الذاتية وبناء المسار المهني لطلبة الهندسة.",
           location: "الجامعة الإسلامية بغزة – مبنى فلسطين",
@@ -50,9 +63,10 @@ async function main() {
           capacity: 120,
           formUrl: "https://forms.google.com/",
           status: ActivityStatus.PUBLISHED,
-          departmentId: null,
         },
-        {
+      });
+      await tx.activity.create({
+        data: {
           title: "Embedded Systems Lab Day",
           description: "تجربة عملية سريعة على المتحكمات الدقيقة والحساسات وبروتوكولات الاتصال.",
           location: "مختبرات كلية الهندسة",
@@ -60,9 +74,17 @@ async function main() {
           capacity: 60,
           formUrl: "https://forms.google.com/",
           status: ActivityStatus.PUBLISHED,
-          departmentId: computer?.id,
+          departments: computer
+            ? {
+                create: {
+                  department: { connect: { id: computer.id } },
+                },
+              }
+            : undefined,
         },
-        {
+      });
+      await tx.activity.create({
+        data: {
           title: "اليوم الهندسي المفتوح",
           description: "نشاط سابق للتعريف بمشاريع الطلبة ومسارات التخصصات الهندسية.",
           location: "ساحة كلية الهندسة",
@@ -70,13 +92,12 @@ async function main() {
           capacity: 250,
           formUrl: "https://forms.google.com/",
           status: ActivityStatus.ARCHIVED,
-          departmentId: null,
-        }
-      ]
+        },
+      });
     });
   }
 
-  console.log(`Seed complete. Admin login: ${adminEmail}`);
+  console.log("Seed complete.");
 }
 
 main().finally(() => prisma.$disconnect());

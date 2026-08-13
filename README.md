@@ -44,6 +44,6 @@ npm.cmd run dev
 
 ## ملاحظات قبل الإنتاج
 - استخدم `SESSION_SECRET` قويًا وعشوائيًا.
-- غيّر كلمة مرور الأدمن الافتراضية فورًا.
+- لا توجد بيانات أدمن افتراضية داخل الكود؛ اضبط `SEED_ADMIN_EMAIL` و`SEED_ADMIN_PASSWORD` قبل تشغيل الـseed إذا أردت إنشاء حساب أدمن.
 - استبدل روابط Google Forms التجريبية بروابط التسجيل الحقيقية.
 - يفضل إضافة rate limiting وCSRF protection وemail verification قبل الإطلاق العام.

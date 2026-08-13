@@ -1,16 +1,38 @@
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
+
 import { getSession } from "@/lib/auth";
+import MainNav from "@/components/MainNav";
+import MobileNavigation from "@/components/MobileNavigation";
+
+const navigationLinks = [
+  { href: "/", label: "الرئيسية" },
+  { href: "/activities", label: "الأنشطة" },
+  { href: "/departments", label: "الأقسام" },
+  { href: "/delegates", label: "المناديب" },
+  { href: "/about", label: "من نحن" },
+];
 
 export default async function Header() {
   const session = await getSession();
+
+  const portal =
+    session?.role === "ADMIN"
+      ? { href: "/admin", label: "لوحة الإدارة" }
+      : session?.role === "MEMBER"
+        ? { href: "/member", label: "بوابة العضو" }
+        : null;
 
   return (
     <header className="site-header">
       <div className="shell header-inner">
 
-        <Link className="brand" href="/">
-          <div className="brand-logo-box">
+        <Link
+          className="brand"
+          href="/"
+          aria-label="العودة إلى الصفحة الرئيسية"
+        >
+          <span className="brand-logo-box">
             <Image
               src="/images/club-logo.png"
               alt="شعار النادي الهندسي"
@@ -19,32 +41,19 @@ export default async function Header() {
               className="brand-logo"
               priority
             />
-          </div>
+          </span>
 
           <span className="brand-text">
-            <strong>النادي الهندسي</strong>
-            <small>Engineering Club · IUG</small>
+            <strong>النادي الهندسي للطلاب</strong>
           </span>
         </Link>
 
-        <nav className="main-nav" aria-label="التنقل الرئيسي">
-          <Link href="/">الرئيسية</Link>
-          <Link href="/activities">الأنشطة</Link>
-          <Link href="/departments">الأقسام</Link>
-          <Link href="/delegates">المناديب</Link>
-          <Link href="/about">من نحن</Link>
-        </nav>
+        <MainNav />
 
-        <div className="header-actions">
-          {session?.role === "ADMIN" && (
-            <Link className="ghost-btn" href="/admin">
-              لوحة الإدارة
-            </Link>
-          )}
-
-          {session?.role === "MEMBER" && (
-            <Link className="ghost-btn" href="/member">
-              لوحة العضو
+        <div className="header-actions desktop-header-actions">
+          {portal && (
+            <Link className="ghost-btn" href={portal.href}>
+              {portal.label}
             </Link>
           )}
 
@@ -66,6 +75,12 @@ export default async function Header() {
             </Link>
           )}
         </div>
+
+        <MobileNavigation
+          links={navigationLinks}
+          portal={portal}
+          authenticated={Boolean(session)}
+        />
 
       </div>
     </header>

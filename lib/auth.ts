@@ -2,9 +2,16 @@ import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { redirect } from "next/navigation";
 import type { Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 const COOKIE = "ec_session";
-const secret = new TextEncoder().encode(process.env.SESSION_SECRET || "dev-only-change-me-please-1234567890");
+const sessionSecret = process.env.SESSION_SECRET;
+
+if (!sessionSecret || sessionSecret.length < 32) {
+  throw new Error("SESSION_SECRET must be configured with at least 32 characters.");
+}
+
+const secret = new TextEncoder().encode(sessionSecret);
 
 export type SessionPayload = { sub: string; email: string; name: string; role: Role };
 
@@ -44,11 +51,25 @@ export async function getSession(): Promise<SessionPayload | null> {
 export async function requireAdmin() {
   const session = await getSession();
   if (!session || session.role !== "ADMIN") redirect("/login?portal=member");
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.sub },
+    select: { role: true },
+  });
+  if (user?.role !== "ADMIN") redirect("/login?portal=member");
+
   return session;
 }
 
 export async function requireMember() {
   const session = await getSession();
   if (!session || (session.role !== "MEMBER" && session.role !== "ADMIN")) redirect("/login?portal=member");
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.sub },
+    select: { role: true },
+  });
+  if (!user || (user.role !== "MEMBER" && user.role !== "ADMIN")) redirect("/login?portal=member");
+
   return session;
 }

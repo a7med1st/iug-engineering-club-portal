@@ -33,46 +33,55 @@ model User {
 }
 
 model Department {
-  id          String          @id @default(cuid())
-  nameAr      String
-  nameEn      String
-  slug        String          @unique
-  coverImage  String
-  sortOrder   Int             @default(0)
-  users       User[]
-  activities  Activity[]
-  guide       DepartmentGuide?
+  id             String               @id @default(cuid())
+  nameAr         String
+  nameEn         String
+  slug           String               @unique
+  coverImage     String
+  sortOrder      Int                  @default(0)
+  users          User[]
+  activities     ActivityDepartment[]
+  guide          DepartmentGuide?
   structureItems ClubStructureItem[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model Activity {
-  id           String         @id @default(cuid())
-  title        String
-  description  String
-  location     String
-  startsAt     DateTime
-  capacity     Int
-  formUrl      String
-  status       ActivityStatus @default(PUBLISHED)
-  departmentId String?
-  department   Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id          String               @id @default(cuid())
+  title       String
+  description String
+  location    String
+  startsAt    DateTime
+  capacity    Int
+  formUrl     String
+  status      ActivityStatus       @default(PUBLISHED)
+  departments ActivityDepartment[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+model ActivityDepartment {
+  activityId   String
+  departmentId String
+  activity     Activity   @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@id([activityId, departmentId])
+  @@index([departmentId])
 }
 
 model DepartmentGuide {
-  id             String     @id @default(cuid())
-  departmentId   String     @unique
-  department     Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  overview       String     @default("")
-  fitFor         String     @default("")
-  careersIncome  String     @default("")
-  skillsCourses  String     @default("")
-  comparisons    String     @default("")
-  faq            String     @default("")
-  updatedAt      DateTime   @updatedAt
+  id            String     @id @default(cuid())
+  departmentId  String     @unique
+  department    Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  overview      String     @default("")
+  fitFor        String     @default("")
+  careersIncome String     @default("")
+  skillsCourses String     @default("")
+  comparisons   String     @default("")
+  faq           String     @default("")
+  updatedAt     DateTime   @updatedAt
 }
 
 model ClubStructureItem {
