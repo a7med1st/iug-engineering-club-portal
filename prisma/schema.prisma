@@ -7,11 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/**
- * =========================================================
- * ENUMS
- * =========================================================
- */
+// =========================================================
+// ENUMS
+// =========================================================
 
 enum Role {
   STUDENT
@@ -86,11 +84,30 @@ enum ContactRequestStatus {
   REJECTED
 }
 
-/**
- * =========================================================
- * USER
- * =========================================================
- */
+// =========================================================
+// ACTIVITY FORM BUILDER
+// =========================================================
+
+enum ActivityFormQuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  EMAIL
+  PHONE
+  NUMBER
+  SELECT
+  RADIO
+  CHECKBOX
+}
+
+enum ActivitySubmissionStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+// =========================================================
+// USER
+// =========================================================
 
 model User {
   id           String  @id @default(cuid())
@@ -103,15 +120,15 @@ model User {
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
+  activityFormSubmissions ActivityFormSubmission[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-/**
- * =========================================================
- * DEPARTMENT
- * =========================================================
- */
+// =========================================================
+// DEPARTMENT
+// =========================================================
 
 model Department {
   id         String @id @default(cuid())
@@ -133,11 +150,9 @@ model Department {
   updatedAt DateTime @updatedAt
 }
 
-/**
- * =========================================================
- * ACTIVITY
- * =========================================================
- */
+// =========================================================
+// ACTIVITY
+// =========================================================
 
 model Activity {
   id          String   @id @default(cuid())
@@ -146,10 +161,17 @@ model Activity {
   location    String
   startsAt    DateTime
   capacity    Int
-  formUrl     String
 
-  status      ActivityStatus       @default(PUBLISHED)
+  // للأنشطة القديمة التي كانت تستخدم Google Forms
+  // الأنشطة الجديدة لن تحتاجه
+  formUrl String?
+
+  status ActivityStatus @default(PUBLISHED)
+
   departments ActivityDepartment[]
+
+  // نموذج التسجيل الداخلي
+  registrationForm ActivityRegistrationForm?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -166,11 +188,138 @@ model ActivityDepartment {
   @@index([departmentId])
 }
 
-/**
- * =========================================================
- * DEPARTMENT GUIDE
- * =========================================================
- */
+// =========================================================
+// ACTIVITY REGISTRATION FORM
+// =========================================================
+
+model ActivityRegistrationForm {
+  id String @id @default(cuid())
+
+  activityId String   @unique
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  title       String @default("نموذج التسجيل")
+  description String @default("")
+
+  // الأدمن يستطيع فتح وإغلاق التسجيل
+  isOpen Boolean @default(true)
+
+  questions   ActivityFormQuestion[]
+  submissions ActivityFormSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =========================================================
+// ACTIVITY FORM QUESTION
+// =========================================================
+
+model ActivityFormQuestion {
+  id String @id @default(cuid())
+
+  formId String
+  form   ActivityRegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  // نص السؤال
+  label String
+
+  // SHORT_TEXT / RADIO / CHECKBOX ...
+  type ActivityFormQuestionType
+
+  required Boolean @default(false)
+
+  placeholder String?
+  helpText    String?
+
+  // تستخدم مع:
+  // SELECT
+  // RADIO
+  // CHECKBOX
+  //
+  // مثال:
+  // ["المستوى الأول", "المستوى الثاني"]
+  options Json?
+
+  sortOrder Int @default(0)
+
+  answers ActivityFormAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([formId, sortOrder])
+}
+
+// =========================================================
+// ACTIVITY FORM SUBMISSION
+// =========================================================
+
+model ActivityFormSubmission {
+  id String @id @default(cuid())
+
+  formId String
+  form   ActivityRegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  // المستخدم المسجل
+  // Optional حتى نحافظ على التسجيل لو حُذف حساب الطالب مستقبلًا
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Snapshot لبيانات الطالب وقت التسجيل
+  studentName       String
+  studentEmail      String
+  studentDepartment String?
+
+  status ActivitySubmissionStatus @default(SUBMITTED)
+
+  answers ActivityFormAnswer[]
+
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // الطالب لا يسجل مرتين بنفس النشاط/الفورم
+  @@unique([formId, userId])
+  @@index([formId, submittedAt])
+  @@index([userId])
+}
+
+// =========================================================
+// ACTIVITY FORM ANSWER
+// =========================================================
+
+model ActivityFormAnswer {
+  id String @id @default(cuid())
+
+  submissionId String
+  questionId   String
+
+  submission ActivityFormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  question ActivityFormQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  // أمثلة:
+  //
+  // Text:
+  // "أحمد محمد"
+  //
+  // Radio:
+  // "نعم"
+  //
+  // Checkbox:
+  // ["AI", "Web", "Embedded"]
+  value Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([submissionId, questionId])
+  @@index([questionId])
+}
+
+// =========================================================
+// DEPARTMENT GUIDE
+// =========================================================
 
 model DepartmentGuide {
   id           String @id @default(cuid())
@@ -188,11 +337,9 @@ model DepartmentGuide {
   updatedAt DateTime @updatedAt
 }
 
-/**
- * =========================================================
- * CLUB STRUCTURE
- * =========================================================
- */
+// =========================================================
+// CLUB STRUCTURE
+// =========================================================
 
 model ClubStructureItem {
   id    String @id @default(cuid())
@@ -209,11 +356,9 @@ model ClubStructureItem {
   updatedAt DateTime @updatedAt
 }
 
-/**
- * =========================================================
- * COMPLAINT
- * =========================================================
- */
+// =========================================================
+// COMPLAINT
+// =========================================================
 
 model Complaint {
   id String @id @default(cuid())
@@ -239,11 +384,9 @@ model Complaint {
   @@index([departmentId, createdAt])
 }
 
-/**
- * =========================================================
- * SUGGESTION
- * =========================================================
- */
+// =========================================================
+// SUGGESTION
+// =========================================================
 
 model Suggestion {
   id String @id @default(cuid())
@@ -274,11 +417,9 @@ model Suggestion {
   @@index([departmentId, createdAt])
 }
 
-/**
- * =========================================================
- * COLLABORATION REQUEST
- * =========================================================
- */
+// =========================================================
+// COLLABORATION REQUEST
+// =========================================================
 
 model CollaborationRequest {
   id String @id @default(cuid())

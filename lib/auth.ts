@@ -73,3 +73,36 @@ export async function requireMember() {
 
   return session;
 }
+export async function requireStudent() {
+  const session = await getSession();
+
+  if (!session || session.role !== "STUDENT") {
+    redirect("/login?portal=student");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: session.sub,
+    },
+    select: {
+      id: true,
+      role: true,
+      name: true,
+      email: true,
+      department: {
+        select: {
+          nameAr: true,
+        },
+      },
+    },
+  });
+
+  if (!user || user.role !== "STUDENT") {
+    redirect("/login?portal=student");
+  }
+
+  return {
+    session,
+    user,
+  };
+}

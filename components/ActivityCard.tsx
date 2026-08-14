@@ -61,9 +61,7 @@ export default function ActivityCard({
       {!past && (
         <a
           className="primary-btn activity-register"
-          href={activity.formUrl}
-          target="_blank"
-          rel="noreferrer"
+          href={`/activities/${activity.id}/register`}
         >
           التسجيل <ArrowUpLeft size={18} />
         </a>
