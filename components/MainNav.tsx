@@ -8,6 +8,7 @@ const links = [
   { href: "/activities", label: "الأنشطة" },
   { href: "/departments", label: "الأقسام" },
   { href: "/delegates", label: "المناديب" },
+  { href: "/contact", label: "بوابة التواصل" },
   { href: "/about", label: "من نحن" },
 ];
 
@@ -15,7 +16,10 @@ export default function MainNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="main-nav" aria-label="التنقل الرئيسي">
+    <nav
+      className="main-nav"
+      aria-label="التنقل الرئيسي"
+    >
       {links.map((link) => {
         const active =
           link.href === "/"

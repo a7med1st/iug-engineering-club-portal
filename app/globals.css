@@ -670,11 +670,9 @@ p {
     position: absolute;
     inset: 0;
 
-    background: linear-gradient(
-        90deg,
-        rgba(3, 14, 28, .65),
-        rgba(3, 14, 28, .18)
-    );
+    background: linear-gradient(90deg,
+            rgba(3, 14, 28, .65),
+            rgba(3, 14, 28, .18));
 
     z-index: -1;
 
@@ -2299,4 +2297,1376 @@ p {
         scroll-behavior: auto !important;
         transition-duration: .01ms !important
     }
+}
+
+/* ==========================================================
+   CONTACT PORTAL
+========================================================== */
+
+.contact-page {
+    position: relative;
+    overflow: hidden;
+}
+
+.contact-page::before {
+    content: "";
+    position: absolute;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    background: rgba(53, 212, 255, 0.08);
+    top: 30px;
+    right: -250px;
+    pointer-events: none;
+}
+
+.contact-portal {
+    position: relative;
+    z-index: 1;
+}
+
+/* ==========================================================
+   TOP CARDS
+========================================================== */
+
+.contact-channel-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.contact-channel {
+    position: relative;
+    appearance: none;
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 24px;
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    text-align: right;
+    cursor: pointer;
+    overflow: hidden;
+    color: var(--ink);
+    box-shadow: 0 8px 30px rgba(5, 24, 45, 0.06);
+    transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.contact-channel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 4px;
+}
+
+.contact-channel-complaint::before {
+    background: linear-gradient(90deg,
+            var(--navy),
+            var(--blue));
+}
+
+.contact-channel-suggestion::before {
+    background: linear-gradient(90deg,
+            var(--blue),
+            var(--cyan));
+}
+
+.contact-channel-collaboration::before {
+    background: linear-gradient(90deg,
+            var(--blue),
+            var(--orange));
+}
+
+.contact-channel:hover {
+    transform: translateY(-5px);
+    border-color: rgba(22, 136, 255, 0.35);
+    box-shadow: 0 18px 45px rgba(5, 24, 45, 0.11);
+}
+
+.contact-channel.active {
+    border-color: rgba(22, 136, 255, 0.5);
+    box-shadow: 0 15px 45px rgba(22, 136, 255, 0.13);
+}
+
+.contact-channel-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+}
+
+.contact-channel-complaint .contact-channel-icon {
+    color: #0b68c7;
+    background: #eaf4ff;
+}
+
+.contact-channel-suggestion .contact-channel-icon {
+    color: #087d9b;
+    background: #e7fbff;
+}
+
+.contact-channel-collaboration .contact-channel-icon {
+    color: #d56a19;
+    background: #fff2e7;
+}
+
+.contact-channel-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.contact-channel-copy strong {
+    font-family: "Alexandria", sans-serif;
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.contact-channel-copy small {
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.65;
+}
+
+/* ==========================================================
+   FORM CONTAINER
+========================================================== */
+
+.contact-form-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    padding: 34px;
+    box-shadow: 0 18px 60px rgba(5, 24, 45, 0.08);
+}
+
+.contact-form-heading {
+    padding-bottom: 23px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 26px;
+}
+
+.contact-form-heading h2 {
+    font-size: 1.45rem;
+    margin: 0 0 7px;
+}
+
+.contact-form-heading p {
+    color: var(--muted);
+    font-size: 0.94rem;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* ==========================================================
+   FORM
+========================================================== */
+
+.contact-form {
+    display: grid;
+    gap: 24px;
+}
+
+.contact-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.contact-field {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.contact-field-full {
+    grid-column: 1 / -1;
+}
+
+.contact-field>label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "Alexandria", sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #223750;
+}
+
+.contact-required {
+    color: #e34b4b;
+    font-size: 0.9rem;
+}
+
+.contact-optional {
+    color: #8493a5;
+    font-size: 0.75rem;
+    font-weight: 400;
+}
+
+.contact-helper {
+    color: #8493a5;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    margin-top: -3px;
+}
+
+.contact-field input,
+.contact-field select,
+.contact-field textarea {
+    width: 100%;
+    border: 1px solid #ccd8e5;
+    background: #fbfcfe;
+    border-radius: 14px;
+    outline: none;
+    color: var(--ink);
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.contact-field input,
+.contact-field select {
+    min-height: 50px;
+}
+
+.contact-field textarea {
+    min-height: 145px;
+    resize: vertical;
+    line-height: 1.65;
+}
+
+.contact-field input:focus,
+.contact-field select:focus,
+.contact-field textarea:focus {
+    border-color: var(--blue);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(22, 136, 255, 0.1);
+}
+
+/* ==========================================================
+   RADIO OPTIONS
+========================================================== */
+
+.contact-choice-grid {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.contact-choice {
+    cursor: pointer;
+}
+
+.contact-choice input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.contact-choice span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 105px;
+    padding: 10px 20px;
+    border: 1px solid #ccd8e5;
+    border-radius: 13px;
+    background: #fbfcfe;
+    font-family: "Alexandria", sans-serif;
+    font-size: 0.78rem;
+    transition: 0.2s ease;
+}
+
+.contact-choice:hover span {
+    border-color: var(--blue);
+}
+
+.contact-choice input:checked+span {
+    color: #086dcf;
+    border-color: var(--blue);
+    background: #eaf5ff;
+    box-shadow: 0 0 0 3px rgba(22, 136, 255, 0.08);
+}
+
+/* ==========================================================
+   FILE UPLOAD
+========================================================== */
+
+.contact-file-upload {
+    min-height: 135px;
+    border: 1.5px dashed #b8c9dc;
+    background: #f8fbff;
+    border-radius: 18px;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: center;
+    gap: 6px !important;
+    cursor: pointer;
+    color: #41637f !important;
+    transition: 0.2s ease;
+    padding: 20px;
+    text-align: center;
+}
+
+.contact-file-upload:hover {
+    border-color: var(--blue);
+    background: #f1f8ff;
+}
+
+.contact-file-upload svg {
+    color: var(--blue);
+}
+
+.contact-file-upload strong {
+    font-size: 0.88rem;
+    overflow-wrap: anywhere;
+}
+
+.contact-file-upload small {
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.contact-file-upload input {
+    display: none;
+}
+
+/* ==========================================================
+   SUCCESS / ERROR
+========================================================== */
+
+.contact-message {
+    padding: 13px 16px;
+    border-radius: 14px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+}
+
+.contact-message.success {
+    background: #ecfaf2;
+    color: #176a3b;
+    border: 1px solid #bae8ce;
+}
+
+.contact-message.error {
+    background: #fff1f1;
+    color: #a42c2c;
+    border: 1px solid #f4c5c5;
+}
+
+/* ==========================================================
+   SUBMIT BUTTON
+========================================================== */
+
+.contact-submit {
+    justify-self: start;
+    min-width: 185px;
+    min-height: 50px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.contact-submit:disabled {
+    opacity: 0.65;
+    cursor: wait;
+    transform: none;
+}
+
+/* ==========================================================
+   BOT HONEYPOT
+========================================================== */
+
+.contact-honeypot {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 980px) {
+    .contact-channel-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .contact-form-card {
+        padding: 22px 16px;
+        border-radius: 20px;
+    }
+
+    .contact-form-grid {
+        grid-template-columns: 1fr;
+        gap: 17px;
+    }
+
+    .contact-field-full {
+        grid-column: auto;
+    }
+
+    .contact-channel {
+        padding: 19px;
+        border-radius: 19px;
+    }
+
+    .contact-channel-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+    }
+
+    .contact-form-heading h2 {
+        font-size: 1.25rem;
+    }
+
+    .contact-submit {
+        width: 100%;
+        justify-self: stretch;
+    }
+
+    .contact-choice-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .contact-choice span {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .contact-channel,
+    .contact-field input,
+    .contact-field select,
+    .contact-field textarea,
+    .contact-choice span {
+        transition: none;
+    }
+
+    .contact-channel:hover {
+        transform: none;
+    }
+}
+
+/* ==========================================================
+   CONTACT ADMIN
+========================================================== */
+
+.admin-contact-page {
+    padding-top: 36px;
+    padding-bottom: 60px;
+}
+
+.admin-contact-header {
+    margin-bottom: 26px;
+}
+
+.admin-contact-header h1 {
+    margin: 6px 0;
+}
+
+.admin-contact-header p {
+    color: var(--muted);
+    margin: 0;
+}
+
+.contact-admin-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.contact-admin-stat {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    box-shadow: 0 8px 25px rgba(5, 24, 45, 0.05);
+}
+
+.contact-admin-stat span {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.contact-admin-stat strong {
+    font-family: "Sora", sans-serif;
+    font-size: 1.7rem;
+    color: var(--blue);
+}
+
+.contact-admin-section {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 24px;
+    margin-bottom: 22px;
+}
+
+.contact-admin-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.contact-admin-heading h2 {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.contact-admin-heading span {
+    color: var(--muted);
+    font-size: 0.84rem;
+}
+
+.contact-admin-list {
+    display: grid;
+    gap: 12px;
+}
+
+.contact-admin-item {
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.contact-admin-item summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.contact-admin-item summary::-webkit-details-marker {
+    display: none;
+}
+
+.contact-admin-item summary>div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.contact-admin-item summary strong {
+    font-family: "Alexandria", sans-serif;
+    font-size: 0.84rem;
+}
+
+.contact-admin-item summary small {
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.contact-admin-details {
+    border-top: 1px solid var(--line);
+    padding: 18px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+}
+
+.contact-admin-info {
+    background: #f7f9fc;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.contact-admin-info strong {
+    display: block;
+    font-family: "Alexandria", sans-serif;
+    color: var(--muted);
+    font-size: 0.7rem;
+    margin-bottom: 4px;
+}
+
+.contact-admin-info span {
+    overflow-wrap: anywhere;
+    font-size: 0.88rem;
+}
+
+.contact-admin-description {
+    grid-column: 1 / -1;
+    padding: 15px;
+    background: #f7f9fc;
+    border-radius: 12px;
+}
+
+.contact-admin-description strong {
+    font-family: "Alexandria", sans-serif;
+    font-size: 0.8rem;
+}
+
+.contact-admin-description p {
+    margin: 7px 0 0;
+    white-space: pre-wrap;
+    line-height: 1.7;
+}
+
+.contact-status {
+    display: inline-flex;
+    padding: 5px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    font-family: "Alexandria", sans-serif;
+    font-size: 0.67rem;
+}
+
+.status-new {
+    background: #e9f5ff;
+    color: #0870d4;
+}
+
+.status-in_review {
+    background: #fff5df;
+    color: #a26600;
+}
+
+.status-resolved,
+.status-accepted {
+    background: #eaf9ef;
+    color: #17713c;
+}
+
+.status-contacted {
+    background: #edf2ff;
+    color: #425ec2;
+}
+
+.status-rejected {
+    background: #fff0f0;
+    color: #b43a3a;
+}
+
+.contact-status-form {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.contact-status-form select {
+    min-height: 42px;
+    border: 1px solid #ccd8e5;
+    border-radius: 11px;
+    padding: 7px 11px;
+    background: #fff;
+    color: var(--ink);
+}
+
+.contact-admin-empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--muted);
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+@media (max-width: 780px) {
+    .contact-admin-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-admin-details {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-admin-description,
+    .contact-status-form {
+        grid-column: auto;
+    }
+
+    .contact-status-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .contact-admin-section {
+        padding: 16px;
+    }
+}
+
+/* ==========================================================
+   OFFICIAL CONTACT PRINT
+========================================================== */
+
+.official-print-page {
+    padding: 35px;
+    background: #eef3f8;
+    min-height: 100vh;
+}
+
+.print-actions {
+    max-width: 850px;
+    margin: 0 auto 18px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.official-print-sheet {
+    width: 100%;
+    max-width: 850px;
+    margin: auto;
+    background: #fff;
+    padding: 45px;
+    border-radius: 20px;
+    box-shadow: 0 15px 50px rgba(5, 24, 45, 0.1);
+}
+
+.official-print-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--navy);
+}
+
+.official-print-header h1 {
+    margin: 0 0 5px;
+    font-size: 1.35rem;
+}
+
+.official-print-header p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.official-print-title {
+    margin: 30px 0;
+}
+
+.official-print-title span {
+    color: var(--blue);
+    font-family: "Alexandria", sans-serif;
+    font-size: 0.75rem;
+}
+
+.official-print-title h2 {
+    margin: 5px 0 0;
+    font-size: 1.5rem;
+}
+
+.official-print-data {
+    display: grid;
+    gap: 14px;
+}
+
+.official-print-row {
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    padding: 15px;
+}
+
+.official-print-row strong {
+    display: block;
+    font-family: "Alexandria", sans-serif;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.official-print-row p {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.official-print-footer {
+    margin-top: 35px;
+    padding-top: 15px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 0.75rem;
+}
+
+/* ==========================================================
+   PRINT - OFFICIAL CONTACT REQUEST
+========================================================== */
+
+@media print {
+
+    @page {
+        size: A4 portrait;
+        margin: 8mm;
+    }
+
+    html,
+    body {
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* إخفاء عناصر الموقع */
+    .site-header,
+    .site-footer,
+    footer,
+    .admin-side,
+    .admin-mobile-nav,
+    .admin-mobile-drawer,
+    .admin-mobile-backdrop,
+    .print-actions {
+        display: none !important;
+    }
+
+    .official-print-page {
+        width: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+
+        background: #fff !important;
+    }
+
+    .official-print-sheet {
+        width: 100% !important;
+        max-width: none !important;
+
+        margin: 0 !important;
+        padding: 8mm 10mm !important;
+
+        background: #fff !important;
+
+        border-radius: 0 !important;
+        box-shadow: none !important;
+
+        page-break-before: avoid;
+    }
+
+    /* ============================
+     HEADER
+  ============================ */
+
+    .official-print-header {
+        display: flex !important;
+
+        align-items: center;
+        gap: 12px;
+
+        padding-bottom: 10px;
+
+        border-bottom: 2px solid #06182c;
+
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .official-print-header h1 {
+        font-size: 16px !important;
+
+        margin: 0 0 3px !important;
+    }
+
+    .official-print-header p {
+        font-size: 10px !important;
+
+        margin: 0 !important;
+    }
+
+    /* ============================
+     TITLE
+  ============================ */
+
+    .official-print-title {
+        margin: 16px 0 12px !important;
+
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .official-print-title span {
+        font-size: 9px !important;
+    }
+
+    .official-print-title h2 {
+        font-size: 18px !important;
+
+        margin: 3px 0 0 !important;
+    }
+
+    /* ======================================================
+     مهم جدًا:
+     إلغاء Grid وقت الطباعة حتى لا ينتقل كله لصفحة ثانية
+  ====================================================== */
+
+    .official-print-data {
+        display: block !important;
+
+        width: 100% !important;
+    }
+
+    /* ============================
+     DATA ROWS
+  ============================ */
+
+    .official-print-row {
+        display: block !important;
+
+        width: 100% !important;
+
+        margin-bottom: 7px !important;
+        padding: 8px 10px !important;
+
+        border: 1px solid #dbe3ed !important;
+        border-radius: 8px !important;
+
+        background: #fff !important;
+
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .official-print-row strong {
+        display: block;
+
+        font-size: 9px !important;
+
+        margin-bottom: 3px !important;
+    }
+
+    .official-print-row p {
+        margin: 0 !important;
+
+        font-size: 11px !important;
+        line-height: 1.45 !important;
+
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    /* ============================
+     FOOTER
+  ============================ */
+
+    .official-print-footer {
+        display: flex !important;
+
+        justify-content: space-between;
+
+        margin-top: 14px !important;
+        padding-top: 8px !important;
+
+        border-top: 1px solid #dbe3ed;
+
+        font-size: 8px !important;
+
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}
+
+.contact-admin-heading>div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.contact-export-btn,
+.contact-admin-actions .ghost-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.contact-admin-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 650px) {
+    .contact-admin-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .contact-export-btn {
+        width: 100%;
+    }
+}
+
+/* ==========================================================
+   OFFICIAL LETTERHEAD FIX
+========================================================== */
+
+.official-print-header {
+    display: block !important;
+
+    width: 100%;
+
+    margin: 0 0 24px;
+
+    padding: 0 !important;
+
+    border: 0 !important;
+
+    overflow: visible;
+}
+
+.official-letterhead {
+    display: block;
+
+    width: 100% !important;
+    height: auto !important;
+
+    max-width: 100%;
+
+    object-fit: contain;
+
+    margin: 0 auto;
+}
+
+
+/* ==========================================================
+   PRINT
+========================================================== */
+
+@media print {
+
+    @page {
+        size: A4 portrait;
+        margin: 8mm;
+    }
+
+    html,
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+
+        background: #fff !important;
+    }
+
+    .site-header,
+    .site-footer,
+    .admin-side,
+    .admin-mobile-nav,
+    .admin-mobile-drawer,
+    .admin-mobile-backdrop,
+    .print-actions {
+        display: none !important;
+    }
+
+    .official-print-page {
+        width: 100% !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        background: #fff !important;
+    }
+
+    .official-print-sheet {
+        width: 100% !important;
+        max-width: none !important;
+
+        margin: 0 !important;
+
+        padding:
+            4mm 8mm 8mm !important;
+
+        background: #fff !important;
+
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+
+    /* =============================================
+     OFFICIAL LETTERHEAD
+  ============================================= */
+
+  .official-print-header {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 0 8mm !important;
+    padding: 0 !important;
+    border: 0 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+
+    .official-letterhead {
+        display: block !important;
+
+        width: 100% !important;
+        height: auto !important;
+
+        max-width: 100% !important;
+
+        object-fit: contain !important;
+
+        margin: 0 !important;
+    }
+
+
+    /* =============================================
+     TITLE
+  ============================================= */
+
+    .official-print-title {
+        margin:
+            0 0 5mm !important;
+
+        break-inside: avoid;
+    }
+
+    .official-print-title span {
+        font-size:
+            9px !important;
+    }
+
+    .official-print-title h2 {
+        margin:
+            2px 0 0 !important;
+
+        font-size:
+            18px !important;
+    }
+
+
+    /* =============================================
+     DATA
+  ============================================= */
+
+    .official-print-data {
+        display:
+            block !important;
+    }
+
+    .official-print-row {
+        width:
+            100% !important;
+
+        margin-bottom:
+            2.5mm !important;
+
+        padding:
+            3mm !important;
+
+        border:
+            1px solid #dbe3ed !important;
+
+        border-radius:
+            6px !important;
+
+        break-inside:
+            avoid !important;
+
+        page-break-inside:
+            avoid !important;
+    }
+
+    .official-print-row strong {
+        display: block;
+
+        margin-bottom:
+            2mm;
+
+        font-size:
+            9px !important;
+    }
+
+    .official-print-row p {
+        margin:
+            0 !important;
+
+        font-size:
+            11px !important;
+
+        line-height:
+            1.5 !important;
+
+        white-space:
+            pre-wrap;
+
+        overflow-wrap:
+            anywhere;
+
+        word-break:
+            break-word;
+    }
+
+
+    /* =============================================
+     FOOTER
+  ============================================= */
+
+    .official-print-footer {
+        display: flex !important;
+
+        justify-content:
+            space-between;
+
+        margin-top:
+            5mm !important;
+
+        padding-top:
+            3mm !important;
+
+        border-top:
+            1px solid #dbe3ed;
+
+        font-size:
+            8px !important;
+
+        break-inside:
+            avoid;
+    }
+}
+
+/* =============================================
+   PRINT BODY INSIDE LETTERHEAD FRAME
+============================================= */
+
+.official-print-sheet {
+    overflow: hidden;
+}
+
+.official-print-body {
+    width: 82%;
+    margin: 0 auto;
+    padding-top: 6px;
+}
+
+.official-print-title,
+.official-print-data,
+.official-print-footer {
+    width: 100%;
+}
+
+.official-print-title {
+    text-align: right;
+}
+
+.official-print-row {
+    box-sizing: border-box;
+}
+
+.official-print-row p,
+.official-print-row strong {
+    box-sizing: border-box;
+}
+
+@media print {
+    .official-print-sheet {
+        overflow: hidden !important;
+    }
+
+    .official-print-body {
+        width: 82% !important;
+        margin: 0 auto !important;
+        padding-top: 3mm !important;
+    }
+
+    .official-print-title,
+    .official-print-data,
+    .official-print-footer {
+        width: 100% !important;
+    }
+
+    .official-print-row {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .official-print-row p {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+}
+
+/* ==========================================================
+   FINAL PRINT LETTERHEAD FIX
+========================================================== */
+
+@media print {
+
+  .official-print-header {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 0 7mm !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  .official-print-header .official-letterhead {
+    display: block !important;
+
+    width: 100% !important;
+    height: auto !important;
+
+    max-width: 100% !important;
+    min-width: 100% !important;
+
+    object-fit: contain !important;
+
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+
+  .official-print-sheet {
+    width: 100% !important;
+    max-width: none !important;
+
+    margin: 0 !important;
+    padding: 5mm 8mm 8mm !important;
+
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* المحتوى فقط يبقى داخل حدود الترويسة */
+  .official-print-body {
+    width: 82% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
 }

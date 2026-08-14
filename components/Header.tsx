@@ -10,6 +10,10 @@ const navigationLinks = [
   { href: "/activities", label: "الأنشطة" },
   { href: "/departments", label: "الأقسام" },
   { href: "/delegates", label: "المناديب" },
+
+  // الصفحة السادسة الجديدة
+  { href: "/contact", label: "بوابة التواصل" },
+
   { href: "/about", label: "من نحن" },
 ];
 
@@ -18,14 +22,24 @@ export default async function Header() {
 
   const portal =
     session?.role === "ADMIN"
-      ? { href: "/admin", label: "لوحة الإدارة" }
+      ? {
+          href: "/admin",
+          label: "لوحة الإدارة",
+        }
       : session?.role === "MEMBER"
-        ? { href: "/member", label: "بوابة العضو" }
+        ? {
+            href: "/member",
+            label: "بوابة العضو",
+          }
         : null;
 
   return (
     <header className="site-header">
       <div className="shell header-inner">
+
+        {/* =========================================
+            BRAND
+        ========================================= */}
 
         <Link
           className="brand"
@@ -44,21 +58,41 @@ export default async function Header() {
           </span>
 
           <span className="brand-text">
-            <strong>النادي الهندسي للطلاب</strong>
+            <strong>
+              النادي الهندسي للطلاب
+            </strong>
           </span>
         </Link>
 
+
+        {/* =========================================
+            DESKTOP NAVIGATION
+        ========================================= */}
+
         <MainNav />
 
+
+        {/* =========================================
+            DESKTOP ACTIONS
+        ========================================= */}
+
         <div className="header-actions desktop-header-actions">
+
           {portal && (
-            <Link className="ghost-btn" href={portal.href}>
+            <Link
+              className="ghost-btn"
+              href={portal.href}
+            >
               {portal.label}
             </Link>
           )}
 
+
           {session ? (
-            <form action="/api/auth/logout" method="post">
+            <form
+              action="/api/auth/logout"
+              method="post"
+            >
               <button
                 className="primary-btn small"
                 type="submit"
@@ -74,7 +108,13 @@ export default async function Header() {
               تسجيل الدخول
             </Link>
           )}
+
         </div>
+
+
+        {/* =========================================
+            MOBILE NAVIGATION
+        ========================================= */}
 
         <MobileNavigation
           links={navigationLinks}

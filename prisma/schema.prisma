@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/**
+ * =========================================================
+ * ENUMS
+ * =========================================================
+ */
+
 enum Role {
   STUDENT
   MEMBER
@@ -19,79 +25,287 @@ enum ActivityStatus {
   ARCHIVED
 }
 
-model User {
-  id           String      @id @default(cuid())
-  name         String
-  email        String      @unique
-  passwordHash String
-  role         Role        @default(STUDENT)
-  position     String?
-  departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+enum StudyLevel {
+  FIRST
+  SECOND
+  THIRD
+  FOURTH
+  FIFTH
+  GRADUATE
 }
 
+enum ComplaintType {
+  COMPLAINT
+  ORGANIZATIONAL_PROBLEM
+  IMPROVEMENT_SUGGESTION
+  INQUIRY
+  OTHER
+}
+
+enum PreferredActivityType {
+  TRAINING_COURSE
+  WORKSHOP
+  TECH_LECTURE
+  COMPETITION
+  DISCUSSION_SESSION
+  PRACTICAL_TRAINING
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum EntityType {
+  TRAINER
+  COMPANY
+  EDUCATIONAL_INSTITUTION
+  CHARITY
+  TECH_COMMUNITY
+  INDIVIDUAL
+  OTHER
+}
+
+enum CooperationType {
+  TRAINING_COURSE
+  WORKSHOP
+  LECTURE
+  EVENT_SPONSORSHIP
+  STRATEGIC_PARTNERSHIP
+  COMMUNITY_INITIATIVE
+  OTHER
+}
+
+enum ContactRequestStatus {
+  NEW
+  IN_REVIEW
+  RESOLVED
+  CONTACTED
+  ACCEPTED
+  REJECTED
+}
+
+/**
+ * =========================================================
+ * USER
+ * =========================================================
+ */
+
+model User {
+  id           String  @id @default(cuid())
+  name         String
+  email        String  @unique
+  passwordHash String
+  role         Role    @default(STUDENT)
+  position     String?
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * =========================================================
+ * DEPARTMENT
+ * =========================================================
+ */
+
 model Department {
-  id             String               @id @default(cuid())
-  nameAr         String
-  nameEn         String
-  slug           String               @unique
-  coverImage     String
-  sortOrder      Int                  @default(0)
+  id         String @id @default(cuid())
+  nameAr     String
+  nameEn     String
+  slug       String @unique
+  coverImage String
+  sortOrder  Int    @default(0)
+
   users          User[]
   activities     ActivityDepartment[]
   guide          DepartmentGuide?
   structureItems ClubStructureItem[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+
+  complaints  Complaint[]
+  suggestions Suggestion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
+/**
+ * =========================================================
+ * ACTIVITY
+ * =========================================================
+ */
+
 model Activity {
-  id          String               @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String
   location    String
   startsAt    DateTime
   capacity    Int
   formUrl     String
+
   status      ActivityStatus       @default(PUBLISHED)
   departments ActivityDepartment[]
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ActivityDepartment {
   activityId   String
   departmentId String
-  activity     Activity   @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  activity   Activity   @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 
   @@id([activityId, departmentId])
   @@index([departmentId])
 }
 
+/**
+ * =========================================================
+ * DEPARTMENT GUIDE
+ * =========================================================
+ */
+
 model DepartmentGuide {
-  id            String     @id @default(cuid())
-  departmentId  String     @unique
-  department    Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  overview      String     @default("")
-  fitFor        String     @default("")
-  careersIncome String     @default("")
-  skillsCourses String     @default("")
-  comparisons   String     @default("")
-  faq           String     @default("")
-  updatedAt     DateTime   @updatedAt
+  id           String @id @default(cuid())
+  departmentId String @unique
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  overview      String @default("")
+  fitFor        String @default("")
+  careersIncome String @default("")
+  skillsCourses String @default("")
+  comparisons   String @default("")
+  faq           String @default("")
+
+  updatedAt DateTime @updatedAt
 }
 
+/**
+ * =========================================================
+ * CLUB STRUCTURE
+ * =========================================================
+ */
+
 model ClubStructureItem {
-  id           String      @id @default(cuid())
-  name         String
-  title        String
-  level        Int         @default(1)
-  sortOrder    Int         @default(0)
+  id    String @id @default(cuid())
+  name  String
+  title String
+
+  level     Int @default(1)
+  sortOrder Int @default(0)
+
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * =========================================================
+ * COMPLAINT
+ * =========================================================
+ */
+
+model Complaint {
+  id String @id @default(cuid())
+
+  studentName String?
+  contact     String?
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  studyLevel StudyLevel
+
+  type       ComplaintType
+  details    String
+  wantsReply Boolean
+
+  status ContactRequestStatus @default(NEW)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([departmentId, createdAt])
+}
+
+/**
+ * =========================================================
+ * SUGGESTION
+ * =========================================================
+ */
+
+model Suggestion {
+  id String @id @default(cuid())
+
+  studentName String
+  whatsapp    String
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  studyLevel StudyLevel
+
+  topics String?
+
+  activityType  PreferredActivityType
+  activityLevel ExperienceLevel
+
+  projectIdea String
+
+  experienceLevel ExperienceLevel
+
+  status ContactRequestStatus @default(NEW)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([departmentId, createdAt])
+}
+
+/**
+ * =========================================================
+ * COLLABORATION REQUEST
+ * =========================================================
+ */
+
+model CollaborationRequest {
+  id String @id @default(cuid())
+
+  entityName String
+  entityType EntityType
+
+  contactPerson String
+  phone         String
+  email         String
+  socialUrl     String
+
+  cooperationType CooperationType
+  description     String
+  field           String
+
+  attachmentStoredName   String?
+  attachmentOriginalName String?
+  attachmentMime         String?
+  attachmentSize         Int?
+
+  additionalNotes String?
+
+  status ContactRequestStatus @default(NEW)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
 }
