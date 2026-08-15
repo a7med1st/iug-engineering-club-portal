@@ -44,14 +44,22 @@ const adminLinks = [
 
 function AdminLinks({
   pathname,
+  allowedHrefs,
   onNavigate,
 }: {
   pathname: string;
+  allowedHrefs: string[];
   onNavigate?: () => void;
 }) {
   return (
     <nav aria-label="صفحات لوحة الإدارة">
-      {adminLinks.map(({ href, label, icon: Icon }) => {
+      {adminLinks
+        .filter(({ href }) =>
+          allowedHrefs.includes(
+            href,
+          ),
+        )
+        .map(({ href, label, icon: Icon }) => {
         const active =
           pathname === href ||
           pathname.startsWith(`${href}/`);
@@ -78,7 +86,13 @@ function AdminLinks({
   );
 }
 
-export default function AdminNavigation() {
+export default function AdminNavigation({
+  allowedHrefs,
+  title = "لوحة الإدارة",
+}: {
+  allowedHrefs: string[];
+  title?: string;
+}) {
   const pathname = usePathname();
 
   const [open, setOpen] = useState(false);
@@ -181,17 +195,20 @@ export default function AdminNavigation() {
     <>
       {/* Desktop sidebar */}
       <aside className="admin-side">
-        <h2>لوحة الإدارة</h2>
+        <h2>{title}</h2>
 
         <AdminLinks
           pathname={pathname}
+          allowedHrefs={
+            allowedHrefs
+          }
         />
       </aside>
 
       {/* Mobile top bar */}
       <div className="admin-mobile-nav">
         <strong>
-          لوحة الإدارة
+          {title}
         </strong>
 
         <button
@@ -269,6 +286,9 @@ export default function AdminNavigation() {
 
         <AdminLinks
           pathname={pathname}
+          allowedHrefs={
+            allowedHrefs
+          }
           onNavigate={() =>
             closeDrawer(true)
           }

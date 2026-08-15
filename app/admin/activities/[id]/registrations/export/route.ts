@@ -3,7 +3,7 @@ import ExcelJS from "exceljs";
 
 import {
   PERMISSIONS,
-  requirePermission,
+  requireActivityPermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -73,11 +73,12 @@ export async function GET(
   _request: Request,
   { params }: RouteContext,
 ) {
-  await requirePermission(
-    PERMISSIONS.REGISTRATION_EXPORT,
-  );
-
   const { id } = await params;
+
+  await requireActivityPermission(
+    PERMISSIONS.REGISTRATION_EXPORT,
+    id,
+  );
 
   const activity =
     await prisma.activity.findUnique({

@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import AdminFeedback from "@/components/admin/AdminFeedback";
 import {
     PERMISSIONS,
-    requirePermission,
+    hasPermission,
+    requireActivityPermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -87,11 +88,55 @@ export default async function ActivityRegistrationsPage({
     params,
     searchParams,
 }: Props) {
-    await requirePermission(
-        PERMISSIONS.REGISTRATION_REVIEW,
-    );
-
     const { id } = await params;
+
+    const { user } =
+        await requireActivityPermission(
+            PERMISSIONS.REGISTRATION_REVIEW,
+            id,
+        );
+
+    const canArchive =
+        hasPermission(
+            user.role,
+            PERMISSIONS.ACTIVITY_ARCHIVE,
+            user.memberPermissions,
+        );
+
+    const canChangeSettings =
+        hasPermission(
+            user.role,
+            PERMISSIONS.REGISTRATION_SETTINGS,
+            user.memberPermissions,
+        );
+
+    const canManualAttendance =
+        hasPermission(
+            user.role,
+            PERMISSIONS.ATTENDANCE_MANUAL,
+            user.memberPermissions,
+        );
+
+    const canExport =
+        hasPermission(
+            user.role,
+            PERMISSIONS.REGISTRATION_EXPORT,
+            user.memberPermissions,
+        );
+
+    const canAdminScanner =
+        hasPermission(
+            user.role,
+            PERMISSIONS.REGISTRATION_MANAGE,
+            user.memberPermissions,
+        );
+
+    const canMemberScanner =
+        hasPermission(
+            user.role,
+            PERMISSIONS.ATTENDANCE_SCAN,
+            user.memberPermissions,
+        );
 
     const filters = await searchParams;
 
@@ -388,24 +433,33 @@ export default async function ActivityRegistrationsPage({
                         attendanceStyles.headerActions
                     }
                 >
-                    {!isArchived && (
+                    {!isArchived &&
+                        (canAdminScanner ||
+                            canMemberScanner) && (
+                            <Link
+                                href={
+                                    canAdminScanner
+                                        ? `/admin/activities/${activity.id}/check-in`
+                                        : `/member/check-in/${activity.id}`
+                                }
+                                className="primary-btn"
+                            >
+                                <QrCode size={18} />
+                                تسجيل الحضور
+                            </Link>
+                        )}
+
+                    {canExport && (
                         <Link
-                            href={`/admin/activities/${activity.id}/check-in`}
-                            className="primary-btn"
+                            href={`/admin/activities/${activity.id}/registrations/export`}
+                            className="ghost-btn activity-registration-export"
                         >
-                            <QrCode size={18} />
-                            تسجيل الحضور
+                            <Download size={17} />
+                            تصدير Excel
                         </Link>
                     )}
 
-                    <Link
-                        href={`/admin/activities/${activity.id}/registrations/export`}
-                        className="ghost-btn activity-registration-export"
-                    >
-                        <Download size={17} />
-                        تصدير Excel
-                    </Link>
-
+                    {canArchive && (
                     <form
                         action={
                             updateActivityArchiveState
@@ -450,6 +504,7 @@ export default async function ActivityRegistrationsPage({
                                 : "أرشفة النشاط"}
                         </button>
                     </form>
+                    )}
                 </div>
 
             </div>
@@ -642,6 +697,7 @@ export default async function ActivityRegistrationsPage({
     REGISTRATION SETTINGS
 =================================================== */}
 
+{canChangeSettings && (
 <div className="admin-card activity-registration-settings">
 
     <div className="activity-registration-settings-head">
@@ -828,6 +884,7 @@ export default async function ActivityRegistrationsPage({
     </form>
 
 </div>
+)}
 
 
             {/* ===================================================
@@ -1222,7 +1279,8 @@ export default async function ActivityRegistrationsPage({
 
                                     <div className="activity-registration-review-actions">
 
-                                        {!isArchived &&
+                                        {canManualAttendance &&
+                                            !isArchived &&
                                             submission.status === "APPROVED" && (
                                             <form
                                                 action={

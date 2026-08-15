@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requireAttendanceStaff } from "@/lib/attendance-staff";
+import {
+  PERMISSIONS,
+  requireActivityPermission,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export type MemberCheckInResult = {
@@ -33,8 +36,19 @@ export async function checkInMemberQr(
   activityId: string,
   rawCode: string,
 ): Promise<MemberCheckInResult> {
+  if (!activityId) {
+    return {
+      status: "INVALID_QR",
+      message:
+        "النشاط غير صالح.",
+    };
+  }
+
   const { user } =
-    await requireAttendanceStaff();
+    await requireActivityPermission(
+      PERMISSIONS.ATTENDANCE_SCAN,
+      activityId,
+    );
 
   const code =
     rawCode.trim();

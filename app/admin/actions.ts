@@ -7,6 +7,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
   PERMISSIONS,
+  canAccessActivityDepartments,
+  canAccessDepartment,
   isDepartmentScopedPermission,
   normalizeMemberPermissions,
   requirePermission,
@@ -657,9 +659,10 @@ export async function updateMemberAccess(
 export async function createActivity(
   formData: FormData,
 ) {
-  await requirePermission(
-    PERMISSIONS.ACTIVITY_MANAGE,
-  );
+  const { user } =
+    await requirePermission(
+      PERMISSIONS.ACTIVITY_MANAGE,
+    );
 
   return runAdminAction(
     "/admin/activities",
@@ -905,6 +908,23 @@ export async function createActivity(
           ? []
           : explicitDepartmentIds;
 
+      if (
+        user.role === "MEMBER"
+      ) {
+        if (
+          !user.departmentId ||
+          selectAll ||
+          departmentIds.length !==
+            1 ||
+          departmentIds[0] !==
+            user.departmentId
+        ) {
+          throw new AdminActionError(
+            "يمكنك إنشاء نشاط لقسمك فقط.",
+          );
+        }
+      }
+
       /* =============================================
          CREATE EVERYTHING
       ============================================= */
@@ -1034,9 +1054,10 @@ export async function createActivity(
 export async function deleteActivity(
   formData: FormData,
 ) {
-  await requirePermission(
-    PERMISSIONS.ACTIVITY_MANAGE,
-  );
+  const { user } =
+    await requirePermission(
+      PERMISSIONS.ACTIVITY_MANAGE,
+    );
 
   return runAdminAction(
     "/admin/activities",
@@ -1051,6 +1072,37 @@ export async function deleteActivity(
         "id",
         "معرّف النشاط",
       );
+
+      const activity =
+        await prisma.activity.findUnique({
+          where: {
+            id,
+          },
+
+          select: {
+            departments: {
+              select: {
+                departmentId:
+                  true,
+              },
+            },
+          },
+        });
+
+      if (
+        !activity ||
+        !canAccessActivityDepartments(
+          user,
+          activity.departments.map(
+            (item) =>
+              item.departmentId,
+          ),
+        )
+      ) {
+        throw new AdminActionError(
+          "ليس لديك صلاحية لحذف هذا النشاط.",
+        );
+      }
 
       await prisma.activity.delete({
         where: {
@@ -1076,9 +1128,10 @@ export async function deleteActivity(
 export async function saveGuide(
   formData: FormData,
 ) {
-  await requirePermission(
-    PERMISSIONS.GUIDE_MANAGE,
-  );
+  const { user } =
+    await requirePermission(
+      PERMISSIONS.GUIDE_MANAGE,
+    );
 
   return runAdminAction(
     "/admin/guides",
@@ -1094,6 +1147,17 @@ export async function saveGuide(
           "departmentId",
           "القسم",
         );
+
+      if (
+        !canAccessDepartment(
+          user,
+          departmentId,
+        )
+      ) {
+        throw new AdminActionError(
+          "يمكنك تعديل دليل قسمك فقط.",
+        );
+      }
 
       const department =
         await prisma.department.findUnique(
@@ -1188,9 +1252,10 @@ export async function saveGuide(
 export async function addStructureItem(
   formData: FormData,
 ) {
-  await requirePermission(
-    PERMISSIONS.STRUCTURE_MANAGE,
-  );
+  const { user } =
+    await requirePermission(
+      PERMISSIONS.STRUCTURE_MANAGE,
+    );
 
   return runAdminAction(
     "/admin/structure",
@@ -1230,6 +1295,21 @@ export async function addStructureItem(
       await ensureDepartmentExists(
         departmentId,
       );
+
+      if (
+        user.role === "MEMBER" &&
+        (
+          !departmentId ||
+          !canAccessDepartment(
+            user,
+            departmentId,
+          )
+        )
+      ) {
+        throw new AdminActionError(
+          "يمكنك إضافة عناصر إلى هيكلية قسمك فقط.",
+        );
+      }
 
       await prisma.clubStructureItem.create(
         {

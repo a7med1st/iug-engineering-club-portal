@@ -226,6 +226,17 @@ export const ADMIN_AREA_PERMISSIONS =
     PERMISSIONS.CONTACT_MANAGE,
   ] as const;
 
+export const ACTIVITY_ADMIN_PERMISSIONS =
+  [
+    PERMISSIONS.ACTIVITY_MANAGE,
+    PERMISSIONS.ACTIVITY_ARCHIVE,
+    PERMISSIONS.REGISTRATION_REVIEW,
+    PERMISSIONS.REGISTRATION_SETTINGS,
+    PERMISSIONS.ATTENDANCE_MANUAL,
+    PERMISSIONS.REGISTRATION_EXPORT,
+    PERMISSIONS.REGISTRATION_MANAGE,
+  ] as const;
+
 export function isPermission(
   value: string,
 ): value is Permission {
@@ -465,6 +476,100 @@ export async function requirePermission(
   return {
     session,
     user,
+  };
+}
+
+/*
+ * Permission + department scope for one department.
+ */
+export async function requireDepartmentPermission(
+  permission: Permission,
+  departmentId: string,
+) {
+  const auth =
+    await requirePermission(
+      permission,
+    );
+
+  if (
+    !canAccessDepartment(
+      auth.user,
+      departmentId,
+    )
+  ) {
+    redirect(
+      dashboardForRole(
+        auth.user.role,
+      ),
+    );
+  }
+
+  return auth;
+}
+
+/*
+ * Permission + department scope for an activity.
+ *
+ * MEMBER may access only an activity linked exclusively
+ * to the member's own department. General and
+ * multi-department activities remain ADMIN-only.
+ */
+export async function requireActivityPermission(
+  permission: Permission,
+  activityId: string,
+) {
+  const auth =
+    await requirePermission(
+      permission,
+    );
+
+  const activity =
+    await prisma.activity.findUnique({
+      where: {
+        id: activityId,
+      },
+
+      select: {
+        id: true,
+
+        departments: {
+          select: {
+            departmentId: true,
+          },
+        },
+      },
+    });
+
+  if (!activity) {
+    redirect(
+      dashboardForRole(
+        auth.user.role,
+      ),
+    );
+  }
+
+  const departmentIds =
+    activity.departments.map(
+      (item) =>
+        item.departmentId,
+    );
+
+  if (
+    !canAccessActivityDepartments(
+      auth.user,
+      departmentIds,
+    )
+  ) {
+    redirect(
+      dashboardForRole(
+        auth.user.role,
+      ),
+    );
+  }
+
+  return {
+    ...auth,
+    activity,
   };
 }
 

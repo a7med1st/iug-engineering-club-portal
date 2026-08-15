@@ -9,6 +9,9 @@ import {
 } from "lucide-react";
 
 import { requireAttendanceStaff } from "@/lib/attendance-staff";
+import {
+  canAccessActivityDepartments,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 import styles from "./member-checkin.module.css";
@@ -32,7 +35,7 @@ export default async function MemberCheckInActivitiesPage() {
   const { user } =
     await requireAttendanceStaff();
 
-  const activities =
+  const rawActivities =
     await prisma.activity.findMany({
       where: {
         status: "PUBLISHED",
@@ -49,6 +52,12 @@ export default async function MemberCheckInActivitiesPage() {
         location: true,
         startsAt: true,
 
+        departments: {
+          select: {
+            departmentId: true,
+          },
+        },
+
         registrationForm: {
           select: {
             id: true,
@@ -60,6 +69,18 @@ export default async function MemberCheckInActivitiesPage() {
         startsAt: "asc",
       },
     });
+
+  const activities =
+    rawActivities.filter(
+      (activity) =>
+        canAccessActivityDepartments(
+          user,
+          activity.departments.map(
+            (item) =>
+              item.departmentId,
+          ),
+        ),
+    );
 
   const rows =
     await Promise.all(

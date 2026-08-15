@@ -12,7 +12,7 @@ import ActivityCheckInScanner from "@/components/admin/ActivityCheckInScanner";
 
 import {
   PERMISSIONS,
-  requirePermission,
+  requireActivityPermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -42,12 +42,13 @@ function formatDate(
 export default async function ActivityCheckInPage({
   params,
 }: Props) {
-  await requirePermission(
-    PERMISSIONS.REGISTRATION_MANAGE,
-  );
-
   const { id } =
     await params;
+
+  await requireActivityPermission(
+    PERMISSIONS.REGISTRATION_MANAGE,
+    id,
+  );
 
   const activity =
     await prisma.activity.findUnique({

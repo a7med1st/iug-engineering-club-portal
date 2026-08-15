@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 
 import {
   PERMISSIONS,
-  requirePermission,
+  requireActivityPermission,
 } from "@/lib/permissions";
 
 import { prisma } from "@/lib/prisma";
@@ -55,10 +55,6 @@ function revalidateRegistrationPages(
 export async function updateRegistrationStatus(
   formData: FormData,
 ) {
-  await requirePermission(
-    PERMISSIONS.REGISTRATION_REVIEW,
-  );
-
   const activityId = String(
     formData.get("activityId") ?? "",
   ).trim();
@@ -83,6 +79,11 @@ export async function updateRegistrationStatus(
 
   const status =
     requestedStatus as SubmissionStatus;
+
+  await requireActivityPermission(
+    PERMISSIONS.REGISTRATION_REVIEW,
+    activityId,
+  );
 
   const maxAttempts = 3;
 
@@ -247,11 +248,6 @@ export async function updateRegistrationStatus(
 export async function updateRegistrationAttendance(
   formData: FormData,
 ) {
-  const { user } =
-    await requirePermission(
-      PERMISSIONS.ATTENDANCE_MANUAL,
-    );
-
   const activityId = String(
     formData.get("activityId") ?? "",
   ).trim();
@@ -276,6 +272,12 @@ export async function updateRegistrationAttendance(
 
   const attendanceAction =
     requestedAction as AttendanceAction;
+
+  const { user } =
+    await requireActivityPermission(
+      PERMISSIONS.ATTENDANCE_MANUAL,
+      activityId,
+    );
 
   const basePath =
     `/admin/activities/${activityId}/registrations`;
@@ -411,10 +413,6 @@ export async function updateRegistrationAttendance(
 export async function updateActivityArchiveState(
   formData: FormData,
 ) {
-  await requirePermission(
-    PERMISSIONS.ACTIVITY_ARCHIVE,
-  );
-
   const activityId = String(
     formData.get("activityId") ?? "",
   ).trim();
@@ -432,6 +430,11 @@ export async function updateActivityArchiveState(
   ) {
     return;
   }
+
+  await requireActivityPermission(
+    PERMISSIONS.ACTIVITY_ARCHIVE,
+    activityId,
+  );
 
   const basePath =
     `/admin/activities/${activityId}/registrations`;
@@ -525,10 +528,6 @@ export async function updateActivityArchiveState(
 export async function updateRegistrationSettings(
   formData: FormData,
 ) {
-  await requirePermission(
-    PERMISSIONS.REGISTRATION_SETTINGS,
-  );
-
   const activityId = String(
     formData.get("activityId") ?? "",
   ).trim();
@@ -546,6 +545,11 @@ export async function updateRegistrationSettings(
   if (!activityId) {
     return;
   }
+
+  await requireActivityPermission(
+    PERMISSIONS.REGISTRATION_SETTINGS,
+    activityId,
+  );
 
   if (
     !Number.isInteger(capacity) ||

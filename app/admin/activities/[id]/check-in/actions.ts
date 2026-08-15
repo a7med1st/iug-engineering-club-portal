@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import {
   PERMISSIONS,
-  requirePermission,
+  requireActivityPermission,
 } from "@/lib/permissions";
 
 import { prisma } from "@/lib/prisma";
@@ -37,9 +37,18 @@ export async function checkInByQrCode(
   activityId: string,
   rawCode: string,
 ): Promise<CheckInResult> {
+  if (!activityId) {
+    return {
+      status: "INVALID_QR",
+      message:
+        "النشاط غير صالح.",
+    };
+  }
+
   const { user } =
-    await requirePermission(
+    await requireActivityPermission(
       PERMISSIONS.REGISTRATION_MANAGE,
+      activityId,
     );
 
   const code = rawCode.trim();

@@ -1,13 +1,20 @@
 import Link from "next/link";
 
 import {
+  BookOpenText,
+  CalendarDays,
+  MessageSquareText,
+  Network,
   QrCode,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
 
 import {
+  ACTIVITY_ADMIN_PERMISSIONS,
   PERMISSIONS,
+  hasAnyPermission,
+  hasPermission,
   requirePermission,
 } from "@/lib/permissions";
 
@@ -16,6 +23,103 @@ export default async function Member() {
     await requirePermission(
       PERMISSIONS.MEMBER_DASHBOARD,
     );
+
+  const canManageActivities =
+    hasAnyPermission(
+      user.role,
+      ACTIVITY_ADMIN_PERMISSIONS,
+      user.memberPermissions,
+    );
+
+  const canScanAttendance =
+    hasPermission(
+      user.role,
+      PERMISSIONS.ATTENDANCE_SCAN,
+      user.memberPermissions,
+    );
+
+  const canManageGuides =
+    hasPermission(
+      user.role,
+      PERMISSIONS.GUIDE_MANAGE,
+      user.memberPermissions,
+    );
+
+  const canManageStructure =
+    hasPermission(
+      user.role,
+      PERMISSIONS.STRUCTURE_MANAGE,
+      user.memberPermissions,
+    );
+
+  const canManageContact =
+    hasPermission(
+      user.role,
+      PERMISSIONS.CONTACT_MANAGE,
+      user.memberPermissions,
+    );
+
+  const managementLinks = [
+    ...(canManageActivities
+      ? [
+          {
+            href:
+              "/admin/activities",
+            title:
+              "إدارة أنشطة القسم",
+            text:
+              "إدارة الأنشطة والتسجيلات ضمن القسم المرتبط بحسابك.",
+            icon:
+              CalendarDays,
+          },
+        ]
+      : []),
+
+    ...(canManageGuides
+      ? [
+          {
+            href:
+              "/admin/guides",
+            title:
+              "دليل القسم",
+            text:
+              "تعديل دليل قسمك فقط.",
+            icon:
+              BookOpenText,
+          },
+        ]
+      : []),
+
+    ...(canManageStructure
+      ? [
+          {
+            href:
+              "/admin/structure",
+            title:
+              "هيكلية القسم",
+            text:
+              "إدارة عناصر الهيكلية التابعة لقسمك.",
+            icon:
+              Network,
+          },
+        ]
+      : []),
+
+    ...(canManageContact
+      ? [
+          {
+            href:
+              "/admin/contact",
+            title:
+              "إدارة التواصل",
+            text:
+              "متابعة الشكاوى والاقتراحات وطلبات التعاون.",
+            icon:
+              MessageSquareText,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <section className="section">
@@ -37,9 +141,11 @@ export default async function Member() {
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
+                alignItems:
+                  "center",
                 gap: "10px",
-                marginBottom: "14px",
+                marginBottom:
+                  "14px",
               }}
             >
               <span
@@ -47,23 +153,32 @@ export default async function Member() {
                   width: "42px",
                   height: "42px",
                   display: "grid",
-                  placeItems: "center",
-                  borderRadius: "12px",
+                  placeItems:
+                    "center",
+                  borderRadius:
+                    "12px",
                   background:
                     "rgba(22, 136, 255, 0.08)",
-                  color: "var(--blue)",
+                  color:
+                    "var(--blue)",
                 }}
               >
-                <UserRound size={21} />
+                <UserRound
+                  size={21}
+                />
               </span>
 
               <div>
                 <span
                   style={{
-                    display: "block",
-                    color: "var(--muted)",
-                    fontSize: ".75rem",
-                    fontWeight: 700,
+                    display:
+                      "block",
+                    color:
+                      "var(--muted)",
+                    fontSize:
+                      ".75rem",
+                    fontWeight:
+                      700,
                   }}
                 >
                   حساب العضو
@@ -85,7 +200,8 @@ export default async function Member() {
             </p>
 
             <p>
-              {user.department?.nameAr ||
+              {user.department
+                ?.nameAr ||
                 "غير مرتبط بقسم"}
             </p>
           </div>
@@ -94,9 +210,11 @@ export default async function Member() {
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
+                alignItems:
+                  "center",
                 gap: "10px",
-                marginBottom: "12px",
+                marginBottom:
+                  "12px",
               }}
             >
               <span
@@ -104,14 +222,19 @@ export default async function Member() {
                   width: "42px",
                   height: "42px",
                   display: "grid",
-                  placeItems: "center",
-                  borderRadius: "12px",
+                  placeItems:
+                    "center",
+                  borderRadius:
+                    "12px",
                   background:
                     "rgba(21, 115, 71, 0.08)",
-                  color: "#157347",
+                  color:
+                    "#157347",
                 }}
               >
-                <ShieldCheck size={21} />
+                <ShieldCheck
+                  size={21}
+                />
               </span>
 
               <h2
@@ -124,101 +247,238 @@ export default async function Member() {
             </div>
 
             <p>
-              هذا الحساب مخصص لأعضاء
-              النادي وتم إنشاؤه بواسطة
-              الإدارة.
+              الأدوات الظاهرة لك
+              تعتمد على الصلاحيات
+              التي منحتها الإدارة
+              لحسابك.
             </p>
 
             <p>
-              يمكنك تسجيل حضور الطلاب
-              بالـQR، بينما تبقى أدوات
-              الإدارة الكاملة متاحة فقط
-              للحسابات التي تملك الصلاحيات
-              الإدارية المناسبة.
+              الصلاحيات المرتبطة
+              بقسم تعمل فقط داخل{" "}
+              <strong>
+                {user.department
+                  ?.nameAr ||
+                  "القسم المحدد لحسابك"}
+              </strong>
+              .
             </p>
           </div>
 
-          <div
-            className="about-panel"
-            style={{
-              gridColumn: "1 / -1",
-            }}
-          >
+          {managementLinks.map(
+            ({
+              href,
+              title,
+              text,
+              icon: Icon,
+            }) => (
+              <div
+                className="about-panel"
+                key={href}
+              >
+                <div
+                  style={{
+                    display:
+                      "flex",
+                    alignItems:
+                      "center",
+                    justifyContent:
+                      "space-between",
+                    gap: "18px",
+                    flexWrap:
+                      "wrap",
+                  }}
+                >
+                  <div
+                    style={{
+                      display:
+                        "flex",
+                      alignItems:
+                        "center",
+                      gap: "12px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width:
+                          "46px",
+                        height:
+                          "46px",
+                        display:
+                          "grid",
+                        placeItems:
+                          "center",
+                        borderRadius:
+                          "13px",
+                        background:
+                          "rgba(22, 136, 255, 0.08)",
+                        color:
+                          "var(--blue)",
+                      }}
+                    >
+                      <Icon
+                        size={22}
+                      />
+                    </span>
+
+                    <div>
+                      <h2
+                        style={{
+                          margin:
+                            "0 0 5px",
+                        }}
+                      >
+                        {title}
+                      </h2>
+
+                      <p
+                        style={{
+                          margin: 0,
+                        }}
+                      >
+                        {text}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Link
+                    href={href}
+                    className="ghost-btn"
+                  >
+                    فتح
+                  </Link>
+                </div>
+              </div>
+            ),
+          )}
+
+          {canScanAttendance && (
             <div
+              className="about-panel"
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent:
-                  "space-between",
-                gap: "20px",
-                flexWrap: "wrap",
+                gridColumn:
+                  "1 / -1",
               }}
             >
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
+                  display:
+                    "flex",
+                  alignItems:
+                    "center",
+                  justifyContent:
+                    "space-between",
+                  gap: "20px",
+                  flexWrap:
+                    "wrap",
                 }}
               >
-                <span
+                <div
                   style={{
-                    width: "48px",
-                    height: "48px",
-                    display: "grid",
-                    placeItems: "center",
-                    flexShrink: 0,
-                    borderRadius: "14px",
-                    background:
-                      "rgba(22, 136, 255, 0.08)",
-                    color: "var(--blue)",
+                    display:
+                      "flex",
+                    alignItems:
+                      "center",
+                    gap: "12px",
                   }}
                 >
-                  <QrCode size={24} />
-                </span>
-
-                <div>
-                  <h2
+                  <span
                     style={{
-                      margin:
-                        "0 0 5px",
+                      width:
+                        "48px",
+                      height:
+                        "48px",
+                      display:
+                        "grid",
+                      placeItems:
+                        "center",
+                      flexShrink: 0,
+                      borderRadius:
+                        "14px",
+                      background:
+                        "rgba(22, 136, 255, 0.08)",
+                      color:
+                        "var(--blue)",
                     }}
                   >
-                    تسجيل حضور الطلاب
-                  </h2>
+                    <QrCode
+                      size={24}
+                    />
+                  </span>
 
-                  <p
-                    style={{
-                      margin: 0,
-                    }}
-                  >
-                    اختر النشاط ثم امسح
-                    رمز QR الموجود في بطاقة
-                    قبول الطالب لتسجيل
-                    حضوره.
-                  </p>
+                  <div>
+                    <h2
+                      style={{
+                        margin:
+                          "0 0 5px",
+                      }}
+                    >
+                      تسجيل حضور
+                      الطلاب
+                    </h2>
+
+                    <p
+                      style={{
+                        margin: 0,
+                      }}
+                    >
+                      ستظهر لك أنشطة
+                      قسمك المسموح
+                      بتسجيل الحضور
+                      لها فقط.
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <Link
-                href="/member/check-in"
-                className="primary-btn"
+                <Link
+                  href="/member/check-in"
+                  className="primary-btn"
+                  style={{
+                    display:
+                      "inline-flex",
+                    alignItems:
+                      "center",
+                    justifyContent:
+                      "center",
+                    gap: "8px",
+                    minHeight:
+                      "44px",
+                    textDecoration:
+                      "none",
+                  }}
+                >
+                  <QrCode
+                    size={18}
+                  />
+
+                  فتح تسجيل الحضور
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {!managementLinks.length &&
+            !canScanAttendance && (
+              <div
+                className="about-panel"
                 style={{
-                  display:
-                    "inline-flex",
-                  alignItems: "center",
-                  justifyContent:
-                    "center",
-                  gap: "8px",
-                  minHeight: "44px",
-                  textDecoration: "none",
+                  gridColumn:
+                    "1 / -1",
                 }}
               >
-                <QrCode size={18} />
-                فتح تسجيل الحضور
-              </Link>
-            </div>
-          </div>
+                <h2>
+                  لا توجد صلاحيات
+                  إضافية حاليًا
+                </h2>
+
+                <p>
+                  يمكن للإدارة تحديد
+                  صلاحيات هذا الحساب
+                  من صفحة إدارة
+                  الأعضاء.
+                </p>
+              </div>
+            )}
         </div>
       </div>
     </section>

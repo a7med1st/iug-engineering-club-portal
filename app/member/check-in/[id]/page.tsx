@@ -11,7 +11,10 @@ import {
 
 import MemberCheckInScanner from "@/components/member/MemberCheckInScanner";
 
-import { requireAttendanceStaff } from "@/lib/attendance-staff";
+import {
+  PERMISSIONS,
+  requireActivityPermission,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 import styles from "../member-checkin.module.css";
@@ -40,10 +43,13 @@ function formatDate(
 export default async function MemberActivityCheckInPage({
   params,
 }: Props) {
-  await requireAttendanceStaff();
-
   const { id } =
     await params;
+
+  await requireActivityPermission(
+    PERMISSIONS.ATTENDANCE_SCAN,
+    id,
+  );
 
   const activity =
     await prisma.activity.findFirst({

@@ -1,82 +1,243 @@
+import AdminFeedback from "@/components/admin/AdminFeedback";
+
 import {
   PERMISSIONS,
   requirePermission,
 } from "@/lib/permissions";
 
 import { prisma } from "@/lib/prisma";
-import AdminFeedback from "@/components/admin/AdminFeedback";
-import { addStructureItem } from "../actions";
 
-export const dynamic = "force-dynamic";
+import {
+  addStructureItem,
+} from "../actions";
+
+export const dynamic =
+  "force-dynamic";
 
 export default async function StructureAdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; success?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    success?: string;
+  }>;
 }) {
-  await requirePermission(
-    PERMISSIONS.STRUCTURE_MANAGE,
-  );
+  const { user } =
+    await requirePermission(
+      PERMISSIONS.STRUCTURE_MANAGE,
+    );
 
-  const feedback = await searchParams;
-  const [departments, items] = await Promise.all([
-    prisma.department.findMany({ orderBy: { sortOrder: "asc" } }),
-    prisma.clubStructureItem.findMany({
-      include: { department: true },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  const feedback =
+    await searchParams;
+
+  const isAdmin =
+    user.role === "ADMIN";
+
+  const [
+    departments,
+    items,
+  ] =
+    await Promise.all([
+      prisma.department.findMany({
+        where:
+          isAdmin
+            ? undefined
+            : {
+                id:
+                  user.departmentId ??
+                  "__NO_DEPARTMENT__",
+              },
+
+        orderBy: {
+          sortOrder: "asc",
+        },
+      }),
+
+      prisma.clubStructureItem.findMany({
+        where:
+          isAdmin
+            ? undefined
+            : {
+                departmentId:
+                  user.departmentId ??
+                  "__NO_DEPARTMENT__",
+              },
+
+        include: {
+          department: true,
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+    ]);
 
   return (
     <section className="admin-page">
       <div className="admin-page-head">
         <div>
-          <h1>إضافة عنصر إلى الهيكلية</h1>
-          <p className="muted">أضف الاسم والمنصب والقسم فقط لتحديث الهيكلية العامة للنادي.</p>
+          <h1>
+            إضافة عنصر إلى الهيكلية
+          </h1>
+
+          <p className="muted">
+            {isAdmin
+              ? "أضف الاسم والمنصب والقسم لتحديث الهيكلية العامة للنادي."
+              : `يمكنك إدارة عناصر هيكلية ${
+                  user.department
+                    ?.nameAr ??
+                  "قسمك"
+                } فقط.`}
+          </p>
         </div>
       </div>
 
-      <AdminFeedback error={feedback.error} success={feedback.success} />
+      <AdminFeedback
+        error={feedback.error}
+        success={feedback.success}
+      />
 
       <div className="admin-content-grid">
         <div className="admin-card">
-          <h2>بيانات عنصر الهيكلية</h2>
-          <form action={addStructureItem} className="stack-form">
+          <h2>
+            بيانات عنصر الهيكلية
+          </h2>
+
+          <form
+            action={
+              addStructureItem
+            }
+            className="stack-form"
+          >
             <label>
               اسم الشخص
-              <input name="name" required />
+              <input
+                name="name"
+                required
+              />
             </label>
+
             <label>
               المنصب
-              <input name="title" required placeholder="رئيس النادي / مندوب القسم" />
+              <input
+                name="title"
+                required
+                placeholder="رئيس النادي / مندوب القسم"
+              />
             </label>
-            <label>
-              القسم
-              <select name="departmentId" defaultValue="">
-                <option value="">بدون قسم</option>
-                {departments.map((department) => (
-                  <option value={department.id} key={department.id}>{department.nameAr}</option>
-                ))}
-              </select>
-            </label>
-            <button className="primary-btn" type="submit">إضافة إلى الهيكلية</button>
+
+            {isAdmin ? (
+              <label>
+                القسم
+
+                <select
+                  name="departmentId"
+                  defaultValue=""
+                >
+                  <option value="">
+                    بدون قسم
+                  </option>
+
+                  {departments.map(
+                    (department) => (
+                      <option
+                        value={
+                          department.id
+                        }
+                        key={
+                          department.id
+                        }
+                      >
+                        {
+                          department.nameAr
+                        }
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+            ) : (
+              <>
+                <div>
+                  <strong>
+                    القسم
+                  </strong>
+
+                  <p className="muted">
+                    {user.department
+                      ?.nameAr ??
+                      "غير محدد"}
+                  </p>
+                </div>
+
+                {user.departmentId && (
+                  <input
+                    type="hidden"
+                    name="departmentId"
+                    value={
+                      user.departmentId
+                    }
+                  />
+                )}
+              </>
+            )}
+
+            <button
+              className="primary-btn"
+              type="submit"
+              disabled={
+                !isAdmin &&
+                !user.departmentId
+              }
+            >
+              إضافة إلى الهيكلية
+            </button>
           </form>
         </div>
 
         <div className="admin-card admin-list-card">
-          <h2>عناصر الهيكلية الحالية</h2>
+          <h2>
+            عناصر الهيكلية الحالية
+          </h2>
+
           <div className="data-list">
-            {items.length ? items.map((item) => (
-              <article className="data-row" key={item.id}>
-                <div>
-                  <strong>{item.name}</strong>
-                  <div className="data-row-meta">
-                    <span>{item.title}</span>
-                    <span>{item.department?.nameAr ?? "بدون قسم"}</span>
-                  </div>
-                </div>
-              </article>
-            )) : <p className="empty-state">لم تتم إضافة عناصر إلى الهيكلية بعد.</p>}
+            {items.length ? (
+              items.map(
+                (item) => (
+                  <article
+                    className="data-row"
+                    key={
+                      item.id
+                    }
+                  >
+                    <div>
+                      <strong>
+                        {item.name}
+                      </strong>
+
+                      <div className="data-row-meta">
+                        <span>
+                          {
+                            item.title
+                          }
+                        </span>
+
+                        <span>
+                          {item.department
+                            ?.nameAr ??
+                            "بدون قسم"}
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                ),
+              )
+            ) : (
+              <p className="empty-state">
+                لا توجد عناصر ضمن نطاق صلاحياتك.
+              </p>
+            )}
           </div>
         </div>
       </div>
