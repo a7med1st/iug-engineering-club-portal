@@ -7,6 +7,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
   PERMISSIONS,
+  isDepartmentScopedPermission,
+  normalizeMemberPermissions,
   requirePermission,
 } from "@/lib/permissions";
 
@@ -373,6 +375,39 @@ async function runAdminAction(
   );
 }
 
+function readMemberPermissions(
+  formData: FormData,
+) {
+  return normalizeMemberPermissions(
+    formData
+      .getAll("permissions")
+      .map((value) =>
+        String(value).trim(),
+      ),
+  );
+}
+
+function ensureMemberDepartmentForPermissions(
+  departmentId: string | null,
+  permissions: ReturnType<
+    typeof readMemberPermissions
+  >,
+) {
+  const needsDepartment =
+    permissions.some(
+      isDepartmentScopedPermission,
+    );
+
+  if (
+    needsDepartment &&
+    !departmentId
+  ) {
+    throw new AdminActionError(
+      "الصلاحيات المرتبطة بالقسم تحتاج إلى تحديد قسم للعضو.",
+    );
+  }
+}
+
 /* =========================================================
    CREATE MEMBER
 ========================================================= */
@@ -419,6 +454,11 @@ export async function createMember(
           "departmentId",
         );
 
+      const memberPermissions =
+        readMemberPermissions(
+          formData,
+        );
+
       const requestedRole =
         String(
           formData.get("role") ??
@@ -462,6 +502,11 @@ export async function createMember(
         departmentId,
       );
 
+      ensureMemberDepartmentForPermissions(
+        departmentId,
+        memberPermissions,
+      );
+
       const existingUser =
         await prisma.user.findUnique({
           where: {
@@ -493,11 +538,113 @@ export async function createMember(
           role: "MEMBER",
           position,
           departmentId,
+          memberPermissions,
         },
       });
 
       revalidatePath(
         "/admin/members",
+      );
+    },
+  );
+}
+
+/* =========================================================
+   UPDATE MEMBER ACCESS
+========================================================= */
+
+export async function updateMemberAccess(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.MEMBER_MANAGE,
+  );
+
+  return runAdminAction(
+    "/admin/members",
+
+    "تم تحديث قسم العضو وصلاحياته بنجاح.",
+
+    "تعذر تحديث صلاحيات العضو.",
+
+    async () => {
+      const memberId =
+        requiredText(
+          formData,
+          "memberId",
+          "معرّف العضو",
+        );
+
+      const position =
+        String(
+          formData.get(
+            "position",
+          ) ?? "",
+        ).trim() || null;
+
+      const departmentId =
+        optionalId(
+          formData,
+          "departmentId",
+        );
+
+      const memberPermissions =
+        readMemberPermissions(
+          formData,
+        );
+
+      await ensureDepartmentExists(
+        departmentId,
+      );
+
+      ensureMemberDepartmentForPermissions(
+        departmentId,
+        memberPermissions,
+      );
+
+      const member =
+        await prisma.user.findUnique({
+          where: {
+            id: memberId,
+          },
+
+          select: {
+            id: true,
+            role: true,
+          },
+        });
+
+      if (
+        !member ||
+        member.role !== "MEMBER"
+      ) {
+        throw new AdminActionError(
+          "حساب العضو غير موجود.",
+        );
+      }
+
+      await prisma.user.update({
+        where: {
+          id: memberId,
+        },
+
+        data: {
+          position,
+          departmentId,
+          memberPermissions,
+        },
+      });
+
+      revalidatePath(
+        "/admin/members",
+      );
+
+      revalidatePath(
+        "/member",
+      );
+
+      revalidatePath(
+        "/member/check-in",
       );
     },
   );

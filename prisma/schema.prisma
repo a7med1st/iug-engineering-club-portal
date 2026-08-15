@@ -116,6 +116,7 @@ model User {
   passwordHash String
   role         Role    @default(STUDENT)
   position     String?
+  memberPermissions String[] @default([])
 
   // =====================================================
   // STUDENT PROFILE
@@ -297,8 +298,6 @@ model ActivityFormSubmission {
 
   answers ActivityFormAnswer[]
 
-  // مؤقتًا Optional حتى نتمكن من تطبيق الـ migration على التسجيلات القديمة.
-  // بعد تعبئة Tokens للسجلات الموجودة سنعيده إلى String بدون ?.
   checkInToken  String    @unique @default(uuid())
   checkedInAt   DateTime?
   checkedInById String?

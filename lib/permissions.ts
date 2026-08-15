@@ -4,6 +4,20 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+/*
+ * =========================================================
+ * CENTRAL PERMISSIONS
+ * =========================================================
+ *
+ * - STUDENT permissions are role-based.
+ * - ADMIN always has every permission.
+ * - MEMBER has MEMBER_DASHBOARD by default, and the rest
+ *   comes from user.memberPermissions in the database.
+ *
+ * Department-scoped permissions are checked separately in
+ * the module/action that owns the resource.
+ */
+
 export const PERMISSIONS = {
   /* =========================
      STUDENT
@@ -28,15 +42,11 @@ export const PERMISSIONS = {
   MEMBER_DASHBOARD:
     "MEMBER_DASHBOARD",
 
-  /*
-   * MEMBER + ADMIN
-   * مسح QR فقط.
-   */
   ATTENDANCE_SCAN:
     "ATTENDANCE_SCAN",
 
   /* =========================
-     ADMIN - ACTIVITIES
+     MANAGEMENT
   ========================= */
 
   ADMIN_DASHBOARD:
@@ -48,42 +58,20 @@ export const PERMISSIONS = {
   ACTIVITY_ARCHIVE:
     "ACTIVITY_ARCHIVE",
 
-  /* =========================
-     ADMIN - REGISTRATIONS
-  ========================= */
-
-  /*
-   * قبول / رفض / إعادة للمراجعة.
-   */
   REGISTRATION_REVIEW:
     "REGISTRATION_REVIEW",
 
-  /*
-   * تعديل السعة وفتح/إغلاق التسجيل.
-   */
   REGISTRATION_SETTINGS:
     "REGISTRATION_SETTINGS",
 
-  /*
-   * تسجيل أو إلغاء الحضور يدويًا.
-   * لا نعطيها للـ MEMBER.
-   */
   ATTENDANCE_MANUAL:
     "ATTENDANCE_MANUAL",
 
   REGISTRATION_EXPORT:
     "REGISTRATION_EXPORT",
 
-  /*
-   * نحتفظ بها كصلاحية عامة
-   * لو احتجناها في صفحة إدارية شاملة.
-   */
   REGISTRATION_MANAGE:
     "REGISTRATION_MANAGE",
-
-  /* =========================
-     ADMIN - OTHER MODULES
-  ========================= */
 
   MEMBER_MANAGE:
     "MEMBER_MANAGE",
@@ -101,66 +89,219 @@ export const PERMISSIONS = {
 export type Permission =
   (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
-const ROLE_PERMISSIONS: Record<
-  Role,
-  readonly Permission[]
-> = {
-  STUDENT: [
-    PERMISSIONS.STUDENT_DASHBOARD,
-    PERMISSIONS.STUDENT_PROFILE_EDIT,
-    PERMISSIONS.ACTIVITY_REGISTER,
-    PERMISSIONS.ACTIVITY_CANCEL_OWN_REGISTRATION,
-  ],
+/*
+ * Permissions that ADMIN is allowed to grant to a MEMBER.
+ *
+ * MEMBER_MANAGE and ADMIN_DASHBOARD are intentionally NOT
+ * assignable to members.
+ *
+ * REGISTRATION_MANAGE is also kept admin-only because the
+ * member QR flow already uses ATTENDANCE_SCAN.
+ */
+export const MEMBER_PERMISSION_OPTIONS = [
+  {
+    permission:
+      PERMISSIONS.ACTIVITY_MANAGE,
+    label:
+      "إدارة أنشطة القسم",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.ACTIVITY_ARCHIVE,
+    label:
+      "أرشفة واستعادة أنشطة القسم",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.REGISTRATION_REVIEW,
+    label:
+      "مراجعة طلبات التسجيل",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.REGISTRATION_SETTINGS,
+    label:
+      "إعدادات التسجيل والسعة",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.ATTENDANCE_MANUAL,
+    label:
+      "تسجيل وإلغاء الحضور يدويًا",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.REGISTRATION_EXPORT,
+    label:
+      "تصدير تسجيلات القسم",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.ATTENDANCE_SCAN,
+    label:
+      "مسح QR لتسجيل الحضور",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.GUIDE_MANAGE,
+    label:
+      "تعديل دليل القسم",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.STRUCTURE_MANAGE,
+    label:
+      "إدارة عناصر هيكلية القسم",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.CONTACT_MANAGE,
+    label:
+      "إدارة التواصل والشكاوى والاقتراحات",
+    scope: "GLOBAL",
+  },
+] as const satisfies readonly {
+  permission: Permission;
+  label: string;
+  scope:
+    | "DEPARTMENT"
+    | "GLOBAL";
+}[];
 
-  MEMBER: [
-    PERMISSIONS.MEMBER_DASHBOARD,
-    PERMISSIONS.ATTENDANCE_SCAN,
-  ],
+export const MEMBER_ASSIGNABLE_PERMISSIONS =
+  MEMBER_PERMISSION_OPTIONS.map(
+    (item) =>
+      item.permission,
+  );
 
-  ADMIN: [
-    PERMISSIONS.ADMIN_DASHBOARD,
+const MEMBER_ASSIGNABLE_SET =
+  new Set<Permission>(
+    MEMBER_ASSIGNABLE_PERMISSIONS,
+  );
 
-    /*
-     * الأدمن يستطيع أيضًا استخدام
-     * بوابة العضو والـQR Scanner.
-     */
-    PERMISSIONS.MEMBER_DASHBOARD,
-    PERMISSIONS.ATTENDANCE_SCAN,
-
+const DEPARTMENT_SCOPED_SET =
+  new Set<Permission>([
     PERMISSIONS.ACTIVITY_MANAGE,
     PERMISSIONS.ACTIVITY_ARCHIVE,
-
     PERMISSIONS.REGISTRATION_REVIEW,
     PERMISSIONS.REGISTRATION_SETTINGS,
     PERMISSIONS.ATTENDANCE_MANUAL,
     PERMISSIONS.REGISTRATION_EXPORT,
     PERMISSIONS.REGISTRATION_MANAGE,
+    PERMISSIONS.ATTENDANCE_SCAN,
+    PERMISSIONS.GUIDE_MANAGE,
+    PERMISSIONS.STRUCTURE_MANAGE,
+  ]);
 
+const STUDENT_PERMISSIONS =
+  new Set<Permission>([
+    PERMISSIONS.STUDENT_DASHBOARD,
+    PERMISSIONS.STUDENT_PROFILE_EDIT,
+    PERMISSIONS.ACTIVITY_REGISTER,
+    PERMISSIONS.ACTIVITY_CANCEL_OWN_REGISTRATION,
+  ]);
+
+export const ADMIN_AREA_PERMISSIONS =
+  [
+    PERMISSIONS.ADMIN_DASHBOARD,
+    PERMISSIONS.ACTIVITY_MANAGE,
+    PERMISSIONS.ACTIVITY_ARCHIVE,
+    PERMISSIONS.REGISTRATION_REVIEW,
+    PERMISSIONS.REGISTRATION_SETTINGS,
+    PERMISSIONS.ATTENDANCE_MANUAL,
+    PERMISSIONS.REGISTRATION_EXPORT,
+    PERMISSIONS.REGISTRATION_MANAGE,
     PERMISSIONS.MEMBER_MANAGE,
     PERMISSIONS.STRUCTURE_MANAGE,
     PERMISSIONS.GUIDE_MANAGE,
     PERMISSIONS.CONTACT_MANAGE,
-  ],
-};
+  ] as const;
+
+export function isPermission(
+  value: string,
+): value is Permission {
+  return Object.values(
+    PERMISSIONS,
+  ).includes(
+    value as Permission,
+  );
+}
+
+export function normalizeMemberPermissions(
+  values: readonly string[],
+): Permission[] {
+  return [
+    ...new Set(
+      values.filter(
+        (
+          value,
+        ): value is Permission =>
+          isPermission(value) &&
+          MEMBER_ASSIGNABLE_SET.has(
+            value,
+          ),
+      ),
+    ),
+  ];
+}
+
+export function isDepartmentScopedPermission(
+  permission: Permission,
+) {
+  return DEPARTMENT_SCOPED_SET.has(
+    permission,
+  );
+}
 
 export function hasPermission(
   role: Role,
   permission: Permission,
+  memberPermissions: readonly string[] =
+    [],
 ) {
-  return ROLE_PERMISSIONS[
-    role
-  ].includes(permission);
+  if (role === "ADMIN") {
+    return true;
+  }
+
+  if (role === "STUDENT") {
+    return STUDENT_PERMISSIONS.has(
+      permission,
+    );
+  }
+
+  if (
+    permission ===
+    PERMISSIONS.MEMBER_DASHBOARD
+  ) {
+    return true;
+  }
+
+  return normalizeMemberPermissions(
+    memberPermissions,
+  ).includes(permission);
 }
 
 export function hasAnyPermission(
   role: Role,
   permissions: readonly Permission[],
+  memberPermissions: readonly string[] =
+    [],
 ) {
   return permissions.some(
     (permission) =>
       hasPermission(
         role,
         permission,
+        memberPermissions,
       ),
   );
 }
@@ -168,13 +309,73 @@ export function hasAnyPermission(
 export function hasAllPermissions(
   role: Role,
   permissions: readonly Permission[],
+  memberPermissions: readonly string[] =
+    [],
 ) {
   return permissions.every(
     (permission) =>
       hasPermission(
         role,
         permission,
+        memberPermissions,
       ),
+  );
+}
+
+export type PermissionUser = {
+  id: string;
+  role: Role;
+  departmentId: string | null;
+  memberPermissions: string[];
+};
+
+/*
+ * ADMIN: any department.
+ * MEMBER: only the department stored on the account.
+ */
+export function canAccessDepartment(
+  user: Pick<
+    PermissionUser,
+    "role" | "departmentId"
+  >,
+  departmentId: string,
+) {
+  if (user.role === "ADMIN") {
+    return true;
+  }
+
+  return (
+    user.role === "MEMBER" &&
+    Boolean(user.departmentId) &&
+    user.departmentId ===
+      departmentId
+  );
+}
+
+/*
+ * Department representatives may manage only an activity
+ * that belongs exclusively to their own department.
+ *
+ * General activities or multi-department activities remain
+ * ADMIN-only because editing them affects other departments.
+ */
+export function canAccessActivityDepartments(
+  user: Pick<
+    PermissionUser,
+    "role" | "departmentId"
+  >,
+  departmentIds: readonly string[],
+) {
+  if (user.role === "ADMIN") {
+    return true;
+  }
+
+  return (
+    user.role === "MEMBER" &&
+    Boolean(user.departmentId) &&
+    departmentIds.length === 1 &&
+    departmentIds[0] ===
+      user.departmentId
   );
 }
 
@@ -192,16 +393,7 @@ function dashboardForRole(
   return "/student";
 }
 
-/*
- * هذا هو الـGuard الأساسي.
- *
- * لا نعتمد على role الموجود داخل الـcookie وحده.
- * نقرأ المستخدم الحالي من قاعدة البيانات في كل عملية
- * حساسة، وبالتالي تغيير دوره من الإدارة ينعكس مباشرة.
- */
-export async function requirePermission(
-  permission: Permission,
-) {
+async function getCurrentPermissionUser() {
   const session =
     await getSession();
 
@@ -222,6 +414,7 @@ export async function requirePermission(
         role: true,
         position: true,
         departmentId: true,
+        memberPermissions: true,
 
         department: {
           select: {
@@ -237,10 +430,29 @@ export async function requirePermission(
     redirect("/login");
   }
 
+  return {
+    session,
+    user,
+  };
+}
+
+/*
+ * Main guard for pages and Server Actions.
+ */
+export async function requirePermission(
+  permission: Permission,
+) {
+  const {
+    session,
+    user,
+  } =
+    await getCurrentPermissionUser();
+
   if (
     !hasPermission(
       user.role,
       permission,
+      user.memberPermissions,
     )
   ) {
     redirect(
@@ -259,45 +471,17 @@ export async function requirePermission(
 export async function requireAnyPermission(
   permissions: readonly Permission[],
 ) {
-  const session =
-    await getSession();
-
-  if (!session) {
-    redirect("/login");
-  }
-
-  const user =
-    await prisma.user.findUnique({
-      where: {
-        id: session.sub,
-      },
-
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        position: true,
-        departmentId: true,
-
-        department: {
-          select: {
-            id: true,
-            nameAr: true,
-            nameEn: true,
-          },
-        },
-      },
-    });
-
-  if (!user) {
-    redirect("/login");
-  }
+  const {
+    session,
+    user,
+  } =
+    await getCurrentPermissionUser();
 
   if (
     !hasAnyPermission(
       user.role,
       permissions,
+      user.memberPermissions,
     )
   ) {
     redirect(

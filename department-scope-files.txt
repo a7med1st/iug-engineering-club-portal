@@ -1,0 +1,6637 @@
+
+============================================================
+FILE: lib\permissions.ts
+============================================================
+
+import type { Role } from "@prisma/client";
+import { redirect } from "next/navigation";
+
+import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+/*
+ * =========================================================
+ * CENTRAL PERMISSIONS
+ * =========================================================
+ *
+ * - STUDENT permissions are role-based.
+ * - ADMIN always has every permission.
+ * - MEMBER has MEMBER_DASHBOARD by default, and the rest
+ *   comes from user.memberPermissions in the database.
+ *
+ * Department-scoped permissions are checked separately in
+ * the module/action that owns the resource.
+ */
+
+export const PERMISSIONS = {
+  /* =========================
+     STUDENT
+  ========================= */
+
+  STUDENT_DASHBOARD:
+    "STUDENT_DASHBOARD",
+
+  STUDENT_PROFILE_EDIT:
+    "STUDENT_PROFILE_EDIT",
+
+  ACTIVITY_REGISTER:
+    "ACTIVITY_REGISTER",
+
+  ACTIVITY_CANCEL_OWN_REGISTRATION:
+    "ACTIVITY_CANCEL_OWN_REGISTRATION",
+
+  /* =========================
+     MEMBER
+  ========================= */
+
+  MEMBER_DASHBOARD:
+    "MEMBER_DASHBOARD",
+
+  ATTENDANCE_SCAN:
+    "ATTENDANCE_SCAN",
+
+  /* =========================
+     MANAGEMENT
+  ========================= */
+
+  ADMIN_DASHBOARD:
+    "ADMIN_DASHBOARD",
+
+  ACTIVITY_MANAGE:
+    "ACTIVITY_MANAGE",
+
+  ACTIVITY_ARCHIVE:
+    "ACTIVITY_ARCHIVE",
+
+  REGISTRATION_REVIEW:
+    "REGISTRATION_REVIEW",
+
+  REGISTRATION_SETTINGS:
+    "REGISTRATION_SETTINGS",
+
+  ATTENDANCE_MANUAL:
+    "ATTENDANCE_MANUAL",
+
+  REGISTRATION_EXPORT:
+    "REGISTRATION_EXPORT",
+
+  REGISTRATION_MANAGE:
+    "REGISTRATION_MANAGE",
+
+  MEMBER_MANAGE:
+    "MEMBER_MANAGE",
+
+  STRUCTURE_MANAGE:
+    "STRUCTURE_MANAGE",
+
+  GUIDE_MANAGE:
+    "GUIDE_MANAGE",
+
+  CONTACT_MANAGE:
+    "CONTACT_MANAGE",
+} as const;
+
+export type Permission =
+  (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+/*
+ * Permissions that ADMIN is allowed to grant to a MEMBER.
+ *
+ * MEMBER_MANAGE and ADMIN_DASHBOARD are intentionally NOT
+ * assignable to members.
+ *
+ * REGISTRATION_MANAGE is also kept admin-only because the
+ * member QR flow already uses ATTENDANCE_SCAN.
+ */
+export const MEMBER_PERMISSION_OPTIONS = [
+  {
+    permission:
+      PERMISSIONS.ACTIVITY_MANAGE,
+    label:
+      "إدارة أنشطة القسم",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.ACTIVITY_ARCHIVE,
+    label:
+      "أرشفة واستعادة أنشطة القسم",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.REGISTRATION_REVIEW,
+    label:
+      "مراجعة طلبات التسجيل",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.REGISTRATION_SETTINGS,
+    label:
+      "إعدادات التسجيل والسعة",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.ATTENDANCE_MANUAL,
+    label:
+      "تسجيل وإلغاء الحضور يدويًا",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.REGISTRATION_EXPORT,
+    label:
+      "تصدير تسجيلات القسم",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.ATTENDANCE_SCAN,
+    label:
+      "مسح QR لتسجيل الحضور",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.GUIDE_MANAGE,
+    label:
+      "تعديل دليل القسم",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.STRUCTURE_MANAGE,
+    label:
+      "إدارة عناصر هيكلية القسم",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
+      PERMISSIONS.CONTACT_MANAGE,
+    label:
+      "إدارة التواصل والشكاوى والاقتراحات",
+    scope: "GLOBAL",
+  },
+] as const satisfies readonly {
+  permission: Permission;
+  label: string;
+  scope:
+    | "DEPARTMENT"
+    | "GLOBAL";
+}[];
+
+export const MEMBER_ASSIGNABLE_PERMISSIONS =
+  MEMBER_PERMISSION_OPTIONS.map(
+    (item) =>
+      item.permission,
+  );
+
+const MEMBER_ASSIGNABLE_SET =
+  new Set<Permission>(
+    MEMBER_ASSIGNABLE_PERMISSIONS,
+  );
+
+const DEPARTMENT_SCOPED_SET =
+  new Set<Permission>([
+    PERMISSIONS.ACTIVITY_MANAGE,
+    PERMISSIONS.ACTIVITY_ARCHIVE,
+    PERMISSIONS.REGISTRATION_REVIEW,
+    PERMISSIONS.REGISTRATION_SETTINGS,
+    PERMISSIONS.ATTENDANCE_MANUAL,
+    PERMISSIONS.REGISTRATION_EXPORT,
+    PERMISSIONS.REGISTRATION_MANAGE,
+    PERMISSIONS.ATTENDANCE_SCAN,
+    PERMISSIONS.GUIDE_MANAGE,
+    PERMISSIONS.STRUCTURE_MANAGE,
+  ]);
+
+const STUDENT_PERMISSIONS =
+  new Set<Permission>([
+    PERMISSIONS.STUDENT_DASHBOARD,
+    PERMISSIONS.STUDENT_PROFILE_EDIT,
+    PERMISSIONS.ACTIVITY_REGISTER,
+    PERMISSIONS.ACTIVITY_CANCEL_OWN_REGISTRATION,
+  ]);
+
+export const ADMIN_AREA_PERMISSIONS =
+  [
+    PERMISSIONS.ADMIN_DASHBOARD,
+    PERMISSIONS.ACTIVITY_MANAGE,
+    PERMISSIONS.ACTIVITY_ARCHIVE,
+    PERMISSIONS.REGISTRATION_REVIEW,
+    PERMISSIONS.REGISTRATION_SETTINGS,
+    PERMISSIONS.ATTENDANCE_MANUAL,
+    PERMISSIONS.REGISTRATION_EXPORT,
+    PERMISSIONS.REGISTRATION_MANAGE,
+    PERMISSIONS.MEMBER_MANAGE,
+    PERMISSIONS.STRUCTURE_MANAGE,
+    PERMISSIONS.GUIDE_MANAGE,
+    PERMISSIONS.CONTACT_MANAGE,
+  ] as const;
+
+export function isPermission(
+  value: string,
+): value is Permission {
+  return Object.values(
+    PERMISSIONS,
+  ).includes(
+    value as Permission,
+  );
+}
+
+export function normalizeMemberPermissions(
+  values: readonly string[],
+): Permission[] {
+  return [
+    ...new Set(
+      values.filter(
+        (
+          value,
+        ): value is Permission =>
+          isPermission(value) &&
+          MEMBER_ASSIGNABLE_SET.has(
+            value,
+          ),
+      ),
+    ),
+  ];
+}
+
+export function isDepartmentScopedPermission(
+  permission: Permission,
+) {
+  return DEPARTMENT_SCOPED_SET.has(
+    permission,
+  );
+}
+
+export function hasPermission(
+  role: Role,
+  permission: Permission,
+  memberPermissions: readonly string[] =
+    [],
+) {
+  if (role === "ADMIN") {
+    return true;
+  }
+
+  if (role === "STUDENT") {
+    return STUDENT_PERMISSIONS.has(
+      permission,
+    );
+  }
+
+  if (
+    permission ===
+    PERMISSIONS.MEMBER_DASHBOARD
+  ) {
+    return true;
+  }
+
+  return normalizeMemberPermissions(
+    memberPermissions,
+  ).includes(permission);
+}
+
+export function hasAnyPermission(
+  role: Role,
+  permissions: readonly Permission[],
+  memberPermissions: readonly string[] =
+    [],
+) {
+  return permissions.some(
+    (permission) =>
+      hasPermission(
+        role,
+        permission,
+        memberPermissions,
+      ),
+  );
+}
+
+export function hasAllPermissions(
+  role: Role,
+  permissions: readonly Permission[],
+  memberPermissions: readonly string[] =
+    [],
+) {
+  return permissions.every(
+    (permission) =>
+      hasPermission(
+        role,
+        permission,
+        memberPermissions,
+      ),
+  );
+}
+
+export type PermissionUser = {
+  id: string;
+  role: Role;
+  departmentId: string | null;
+  memberPermissions: string[];
+};
+
+/*
+ * ADMIN: any department.
+ * MEMBER: only the department stored on the account.
+ */
+export function canAccessDepartment(
+  user: Pick<
+    PermissionUser,
+    "role" | "departmentId"
+  >,
+  departmentId: string,
+) {
+  if (user.role === "ADMIN") {
+    return true;
+  }
+
+  return (
+    user.role === "MEMBER" &&
+    Boolean(user.departmentId) &&
+    user.departmentId ===
+      departmentId
+  );
+}
+
+/*
+ * Department representatives may manage only an activity
+ * that belongs exclusively to their own department.
+ *
+ * General activities or multi-department activities remain
+ * ADMIN-only because editing them affects other departments.
+ */
+export function canAccessActivityDepartments(
+  user: Pick<
+    PermissionUser,
+    "role" | "departmentId"
+  >,
+  departmentIds: readonly string[],
+) {
+  if (user.role === "ADMIN") {
+    return true;
+  }
+
+  return (
+    user.role === "MEMBER" &&
+    Boolean(user.departmentId) &&
+    departmentIds.length === 1 &&
+    departmentIds[0] ===
+      user.departmentId
+  );
+}
+
+function dashboardForRole(
+  role: Role,
+) {
+  if (role === "ADMIN") {
+    return "/admin";
+  }
+
+  if (role === "MEMBER") {
+    return "/member";
+  }
+
+  return "/student";
+}
+
+async function getCurrentPermissionUser() {
+  const session =
+    await getSession();
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  const user =
+    await prisma.user.findUnique({
+      where: {
+        id: session.sub,
+      },
+
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        position: true,
+        departmentId: true,
+        memberPermissions: true,
+
+        department: {
+          select: {
+            id: true,
+            nameAr: true,
+            nameEn: true,
+          },
+        },
+      },
+    });
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  return {
+    session,
+    user,
+  };
+}
+
+/*
+ * Main guard for pages and Server Actions.
+ */
+export async function requirePermission(
+  permission: Permission,
+) {
+  const {
+    session,
+    user,
+  } =
+    await getCurrentPermissionUser();
+
+  if (
+    !hasPermission(
+      user.role,
+      permission,
+      user.memberPermissions,
+    )
+  ) {
+    redirect(
+      dashboardForRole(
+        user.role,
+      ),
+    );
+  }
+
+  return {
+    session,
+    user,
+  };
+}
+
+export async function requireAnyPermission(
+  permissions: readonly Permission[],
+) {
+  const {
+    session,
+    user,
+  } =
+    await getCurrentPermissionUser();
+
+  if (
+    !hasAnyPermission(
+      user.role,
+      permissions,
+      user.memberPermissions,
+    )
+  ) {
+    redirect(
+      dashboardForRole(
+        user.role,
+      ),
+    );
+  }
+
+  return {
+    session,
+    user,
+  };
+}
+
+============================================================
+FILE: app\admin\layout.tsx
+============================================================
+
+import type { ReactNode } from "react";
+import AdminNavigation from "@/components/admin/AdminNavigation";
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  await requirePermission(
+    PERMISSIONS.ADMIN_DASHBOARD,
+  );
+
+  return (
+    <div className="admin-wrap">
+      <AdminNavigation />
+      <div className="admin-main">{children}</div>
+    </div>
+  );
+}
+
+============================================================
+FILE: components\admin\AdminNavigation.tsx
+============================================================
+
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+
+import {
+  BookOpenText,
+  CalendarPlus,
+  Menu,
+  MessageSquareText,
+  Network,
+  Users,
+  X,
+} from "lucide-react";
+
+const adminLinks = [
+  {
+    href: "/admin/activities",
+    label: "إضافة نشاط",
+    icon: CalendarPlus,
+  },
+  {
+    href: "/admin/members",
+    label: "حسابات الأعضاء",
+    icon: Users,
+  },
+  {
+    href: "/admin/structure",
+    label: "الهيكلية العامة",
+    icon: Network,
+  },
+  {
+    href: "/admin/guides",
+    label: "أدلة الأقسام",
+    icon: BookOpenText,
+  },
+  {
+    href: "/admin/contact",
+    label: "إدارة التواصل",
+    icon: MessageSquareText,
+  },
+];
+
+function AdminLinks({
+  pathname,
+  onNavigate,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  return (
+    <nav aria-label="صفحات لوحة الإدارة">
+      {adminLinks.map(({ href, label, icon: Icon }) => {
+        const active =
+          pathname === href ||
+          pathname.startsWith(`${href}/`);
+
+        return (
+          <Link
+            className={`admin-nav-link${active ? " active" : ""}`}
+            href={href}
+            key={href}
+            aria-current={active ? "page" : undefined}
+            onClick={onNavigate}
+          >
+            <Icon
+              aria-hidden="true"
+              size={18}
+              strokeWidth={1.8}
+            />
+
+            <span>{label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+export default function AdminNavigation() {
+  const pathname = usePathname();
+
+  const [open, setOpen] = useState(false);
+
+  const toggleRef =
+    useRef<HTMLButtonElement>(null);
+
+  const drawerRef =
+    useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow =
+      "hidden";
+
+    const focusable = Array.from(
+      drawerRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ) ?? []
+    );
+
+    focusable[0]?.focus();
+
+    const handleKeyDown = (
+      event: KeyboardEvent
+    ) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+
+        window.requestAnimationFrame(
+          () =>
+            toggleRef.current?.focus()
+        );
+
+        return;
+      }
+
+      if (
+        event.key !== "Tab" ||
+        !focusable.length
+      ) {
+        return;
+      }
+
+      const first = focusable[0];
+      const last =
+        focusable[
+          focusable.length - 1
+        ];
+
+      if (
+        event.shiftKey &&
+        document.activeElement === first
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        document.activeElement === last
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      document.body.style.overflow =
+        previousOverflow;
+
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+  }, [open]);
+
+  function closeDrawer(
+    restoreFocus = false
+  ) {
+    setOpen(false);
+
+    if (restoreFocus) {
+      window.requestAnimationFrame(
+        () =>
+          toggleRef.current?.focus()
+      );
+    }
+  }
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="admin-side">
+        <h2>لوحة الإدارة</h2>
+
+        <AdminLinks
+          pathname={pathname}
+        />
+      </aside>
+
+      {/* Mobile top bar */}
+      <div className="admin-mobile-nav">
+        <strong>
+          لوحة الإدارة
+        </strong>
+
+        <button
+          ref={toggleRef}
+          className="admin-mobile-toggle"
+          type="button"
+          aria-label={
+            open
+              ? "إغلاق قائمة الإدارة"
+              : "فتح قائمة الإدارة"
+          }
+          aria-expanded={open}
+          aria-controls="admin-mobile-drawer"
+          onClick={() =>
+            open
+              ? closeDrawer(true)
+              : setOpen(true)
+          }
+        >
+          {open ? (
+            <X aria-hidden="true" />
+          ) : (
+            <Menu aria-hidden="true" />
+          )}
+        </button>
+      </div>
+
+      {/* Mobile backdrop */}
+      {open && (
+        <button
+          className="admin-mobile-backdrop"
+          type="button"
+          aria-label="إغلاق قائمة الإدارة"
+          onClick={() =>
+            closeDrawer(true)
+          }
+        />
+      )}
+
+      {/* Mobile drawer */}
+      <aside
+        ref={drawerRef}
+        id="admin-mobile-drawer"
+        className="admin-mobile-drawer"
+        data-state={
+          open ? "open" : "closed"
+        }
+        role="dialog"
+        aria-modal={
+          open ? "true" : undefined
+        }
+        aria-label="صفحات لوحة الإدارة"
+        aria-hidden={!open}
+      >
+        <div className="admin-mobile-drawer-head">
+
+          <strong>
+            صفحات الإدارة
+          </strong>
+
+          <button
+            type="button"
+            aria-label="إغلاق القائمة"
+            onClick={() =>
+              closeDrawer(true)
+            }
+          >
+            <X
+              aria-hidden="true"
+              size={22}
+            />
+          </button>
+
+        </div>
+
+        <AdminLinks
+          pathname={pathname}
+          onNavigate={() =>
+            closeDrawer(true)
+          }
+        />
+      </aside>
+    </>
+  );
+}
+
+============================================================
+FILE: app\admin\activities\page.tsx
+============================================================
+
+import ActivityFormBuilder from "@/components/admin/ActivityFormBuilder";
+import AdminFeedback from "@/components/admin/AdminFeedback";
+import DeleteActivityForm from "@/components/admin/DeleteActivityForm";
+import DepartmentChecklist from "@/components/admin/DepartmentChecklist";
+import Link from "next/link";
+
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
+import { prisma } from "@/lib/prisma";
+
+import { createActivity } from "../actions";
+
+export const dynamic = "force-dynamic";
+
+const statusLabels = {
+  DRAFT: "مسودة",
+  PUBLISHED: "منشور",
+  ARCHIVED: "مؤرشف",
+} as const;
+
+export default async function ActivitiesAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    error?: string;
+    success?: string;
+  }>;
+}) {
+  await requirePermission(
+    PERMISSIONS.ACTIVITY_MANAGE,
+  );
+
+  const feedback = await searchParams;
+
+  const [departments, activities] =
+    await Promise.all([
+      prisma.department.findMany({
+        orderBy: {
+          sortOrder: "asc",
+        },
+      }),
+
+      prisma.activity.findMany({
+        include: {
+          departments: {
+            include: {
+              department: true,
+            },
+          },
+
+          registrationForm: {
+            include: {
+              _count: {
+                select: {
+                  questions: true,
+                  submissions: true,
+                },
+              },
+            },
+          },
+        },
+
+        orderBy: {
+          startsAt: "desc",
+        },
+      }),
+    ]);
+
+  return (
+    <section className="admin-page">
+
+      {/* =====================================================
+          PAGE HEADER
+      ===================================================== */}
+
+      <div className="admin-page-head">
+
+        <div>
+          <h1>
+            إضافة نشاط
+          </h1>
+
+          <p className="muted">
+            أنشئ النشاط وحدد الأقسام
+            المستهدفة، ثم صمّم نموذج
+            التسجيل الخاص بالنشاط من
+            داخل الموقع.
+          </p>
+        </div>
+
+      </div>
+
+
+      {/* =====================================================
+          FEEDBACK
+      ===================================================== */}
+
+      <AdminFeedback
+        error={feedback.error}
+        success={feedback.success}
+      />
+
+
+      {/* =====================================================
+          CONTENT
+      ===================================================== */}
+
+      <div className="admin-content-grid">
+
+        {/* ===================================================
+            CREATE ACTIVITY
+        =================================================== */}
+
+        <div className="admin-card">
+
+          <h2>
+            بيانات النشاط
+          </h2>
+
+
+          <form
+            action={createActivity}
+            className="stack-form"
+          >
+
+            {/* ===============================================
+                BASIC INFORMATION
+            =============================================== */}
+
+            <label>
+              اسم النشاط
+
+              <input
+                name="title"
+                required
+                placeholder="مثال: ورشة تطوير تطبيقات الويب"
+              />
+            </label>
+
+
+            <label>
+              وصف مختصر للنشاط
+
+              <textarea
+                name="description"
+                required
+                rows={5}
+                placeholder="اكتب وصفًا مختصرًا وواضحًا للنشاط"
+              />
+            </label>
+
+
+            <div className="form-grid">
+
+              <label>
+                تاريخ ووقت النشاط
+
+                <input
+                  type="datetime-local"
+                  name="startsAt"
+                  required
+                />
+              </label>
+
+
+              <label>
+                مكان النشاط
+
+                <input
+                  name="location"
+                  required
+                  placeholder="مثال: مبنى طيبة - القاعة 201"
+                />
+              </label>
+
+
+              <label>
+                السعة الطلابية
+
+                <input
+                  type="number"
+                  min="1"
+                  name="capacity"
+                  required
+                  placeholder="مثال: 50"
+                />
+              </label>
+
+
+              <label>
+                حالة النشاط
+
+                <select
+                  name="status"
+                  defaultValue="PUBLISHED"
+                >
+                  <option value="DRAFT">
+                    مسودة
+                  </option>
+
+                  <option value="PUBLISHED">
+                    منشور
+                  </option>
+
+                  <option value="ARCHIVED">
+                    مؤرشف
+                  </option>
+                </select>
+              </label>
+
+            </div>
+
+
+            {/* ===============================================
+                DEPARTMENTS
+            =============================================== */}
+
+            <DepartmentChecklist
+              departments={departments.map(
+                ({
+                  id,
+                  nameAr,
+                }) => ({
+                  id,
+                  nameAr,
+                })
+              )}
+            />
+
+
+            {/* ===============================================
+                INTERNAL REGISTRATION FORM BUILDER
+            =============================================== */}
+
+            <ActivityFormBuilder />
+
+
+            {/* ===============================================
+                SAVE BUTTON
+            =============================================== */}
+
+            <button
+              className="primary-btn"
+              type="submit"
+            >
+              حفظ النشاط ونموذج التسجيل
+            </button>
+
+          </form>
+
+        </div>
+
+
+        {/* ===================================================
+            CURRENT ACTIVITIES
+        =================================================== */}
+
+        <div className="admin-card admin-list-card">
+
+          <h2>
+            الأنشطة الحالية
+          </h2>
+
+
+          <div className="data-list">
+
+            {activities.length ? (
+              activities.map(
+                (activity) => {
+                  const departmentNames =
+                    activity.departments.map(
+                      (link) =>
+                        link.department
+                          .nameAr
+                    );
+
+                  const isGeneral =
+                    departmentNames.length ===
+                    0 ||
+                    departmentNames.length ===
+                    departments.length;
+
+                  const form =
+                    activity.registrationForm;
+
+                  return (
+                    <article
+                      className="data-row activity-admin-row"
+                      key={activity.id}
+                    >
+
+                      <div>
+
+                        <strong>
+                          {activity.title}
+                        </strong>
+
+
+                        <div className="data-row-meta">
+
+                          <span>
+                            {isGeneral
+                              ? "عام · جميع الأقسام"
+                              : departmentNames.join(
+                                "، "
+                              )}
+                          </span>
+
+
+                          <span>
+                            {new Intl.DateTimeFormat(
+                              "ar-PS",
+                              {
+                                dateStyle:
+                                  "medium",
+
+                                timeStyle:
+                                  "short",
+                              }
+                            ).format(
+                              activity.startsAt
+                            )}
+                          </span>
+
+
+                          <span>
+                            {
+                              statusLabels[
+                              activity
+                                .status
+                              ]
+                            }
+                          </span>
+
+                        </div>
+
+
+                        {/* ===================================
+                            INTERNAL FORM INFO
+                        =================================== */}
+
+                        <div className="activity-admin-form-meta">
+
+                          {form ? (
+                            <>
+                              <span>
+                                نموذج داخلي
+                              </span>
+
+                              <span>
+                                {
+                                  form._count
+                                    .questions
+                                }{" "}
+                                سؤال
+                              </span>
+
+                              <span>
+                                {
+                                  form._count
+                                    .submissions
+                                }{" "}
+                                تسجيل
+                              </span>
+
+                              <span>
+                                {form.isOpen
+                                  ? "التسجيل مفتوح"
+                                  : "التسجيل مغلق"}
+                              </span>
+                            </>
+                          ) : (
+                            <span>
+                              لا يوجد نموذج
+                              تسجيل داخلي
+                            </span>
+                          )}
+
+                        </div>
+
+                      </div>
+
+
+                      <div className="activity-admin-row-actions">
+
+                        {activity.registrationForm && (
+                          <Link
+                            href={`/admin/activities/${activity.id}/registrations`}
+                            className="ghost-btn"
+                          >
+                            إدارة المسجلين
+                          </Link>
+                        )}
+
+                        <DeleteActivityForm
+                          id={activity.id}
+                          title={activity.title}
+                        />
+
+                      </div>
+
+                    </article>
+                  );
+                }
+              )
+            ) : (
+              <p className="empty-state">
+                لا توجد أنشطة مضافة بعد.
+              </p>
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+  );
+}
+
+============================================================
+FILE: app\admin\actions.ts
+============================================================
+
+"use server";
+
+import bcrypt from "bcryptjs";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+import { prisma } from "@/lib/prisma";
+import {
+  PERMISSIONS,
+  isDepartmentScopedPermission,
+  normalizeMemberPermissions,
+  requirePermission,
+} from "@/lib/permissions";
+
+/* =========================================================
+   ACTIVITY CONSTANTS
+========================================================= */
+
+const activityStatuses = [
+  "DRAFT",
+  "PUBLISHED",
+  "ARCHIVED",
+] as const;
+
+type ActivityStatusInput =
+  (typeof activityStatuses)[number];
+
+const activityQuestionTypes = [
+  "SHORT_TEXT",
+  "LONG_TEXT",
+  "EMAIL",
+  "PHONE",
+  "NUMBER",
+  "SELECT",
+  "RADIO",
+  "CHECKBOX",
+] as const;
+
+type ActivityQuestionTypeInput =
+  (typeof activityQuestionTypes)[number];
+
+type RegistrationQuestionInput = {
+  label: string;
+  type: ActivityQuestionTypeInput;
+  required: boolean;
+  placeholder: string;
+  helpText: string;
+  options: string[];
+  sortOrder: number;
+};
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+class AdminActionError extends Error {}
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function requiredText(
+  formData: FormData,
+  field: string,
+  label: string,
+) {
+  const value = String(
+    formData.get(field) ?? "",
+  ).trim();
+
+  if (!value) {
+    throw new AdminActionError(
+      `${label} مطلوب.`,
+    );
+  }
+
+  return value;
+}
+
+function optionalId(
+  formData: FormData,
+  field: string,
+) {
+  return (
+    String(
+      formData.get(field) ?? "",
+    ).trim() || null
+  );
+}
+
+async function ensureDepartmentExists(
+  departmentId: string | null,
+) {
+  if (!departmentId) return;
+
+  const department =
+    await prisma.department.findUnique({
+      where: {
+        id: departmentId,
+      },
+
+      select: {
+        id: true,
+      },
+    });
+
+  if (!department) {
+    throw new AdminActionError(
+      "القسم المحدد غير موجود.",
+    );
+  }
+}
+
+/* =========================================================
+   REGISTRATION QUESTIONS PARSER
+========================================================= */
+
+function parseRegistrationQuestions(
+  formData: FormData,
+): RegistrationQuestionInput[] {
+  const raw = String(
+    formData.get(
+      "registrationQuestions",
+    ) ?? "[]",
+  ).trim();
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw || "[]");
+  } catch {
+    throw new AdminActionError(
+      "تعذر قراءة أسئلة نموذج التسجيل.",
+    );
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new AdminActionError(
+      "بيانات أسئلة التسجيل غير صالحة.",
+    );
+  }
+
+  if (parsed.length > 50) {
+    throw new AdminActionError(
+      "لا يمكن إضافة أكثر من 50 سؤالًا للنشاط.",
+    );
+  }
+
+  return parsed.map(
+    (item, index) => {
+      if (
+        !item ||
+        typeof item !== "object"
+      ) {
+        throw new AdminActionError(
+          `السؤال رقم ${
+            index + 1
+          } غير صالح.`,
+        );
+      }
+
+      const question =
+        item as Record<
+          string,
+          unknown
+        >;
+
+      const label = String(
+        question.label ?? "",
+      ).trim();
+
+      const type = String(
+        question.type ?? "",
+      ).trim();
+
+      const placeholder = String(
+        question.placeholder ?? "",
+      ).trim();
+
+      const helpText = String(
+        question.helpText ?? "",
+      ).trim();
+
+      const required =
+        question.required === true;
+
+      /* -----------------------------------------
+         LABEL
+      ----------------------------------------- */
+
+      if (!label) {
+        throw new AdminActionError(
+          `اكتب نص السؤال رقم ${
+            index + 1
+          }.`,
+        );
+      }
+
+      if (label.length > 250) {
+        throw new AdminActionError(
+          `نص السؤال رقم ${
+            index + 1
+          } طويل جدًا.`,
+        );
+      }
+
+      /* -----------------------------------------
+         TYPE
+      ----------------------------------------- */
+
+      if (
+        !activityQuestionTypes.includes(
+          type as ActivityQuestionTypeInput,
+        )
+      ) {
+        throw new AdminActionError(
+          `نوع السؤال رقم ${
+            index + 1
+          } غير صالح.`,
+        );
+      }
+
+      const typedType =
+        type as ActivityQuestionTypeInput;
+
+      /* -----------------------------------------
+         PLACEHOLDER
+      ----------------------------------------- */
+
+      if (placeholder.length > 250) {
+        throw new AdminActionError(
+          `النص الإرشادي للسؤال رقم ${
+            index + 1
+          } طويل جدًا.`,
+        );
+      }
+
+      /* -----------------------------------------
+         HELP TEXT
+      ----------------------------------------- */
+
+      if (helpText.length > 500) {
+        throw new AdminActionError(
+          `الملاحظة التوضيحية للسؤال رقم ${
+            index + 1
+          } طويلة جدًا.`,
+        );
+      }
+
+      /* -----------------------------------------
+         OPTIONS
+      ----------------------------------------- */
+
+      let options: string[] = [];
+
+      if (
+        Array.isArray(
+          question.options,
+        )
+      ) {
+        options = question.options
+          .map((option) =>
+            String(option).trim(),
+          )
+          .filter(Boolean);
+      }
+
+      const usesOptions =
+        typedType === "SELECT" ||
+        typedType === "RADIO" ||
+        typedType === "CHECKBOX";
+
+      if (usesOptions) {
+        if (options.length < 2) {
+          throw new AdminActionError(
+            `السؤال رقم ${
+              index + 1
+            } يحتاج إلى خيارين على الأقل.`,
+          );
+        }
+
+        if (options.length > 30) {
+          throw new AdminActionError(
+            `السؤال رقم ${
+              index + 1
+            } يحتوي على خيارات كثيرة جدًا.`,
+          );
+        }
+
+        if (
+          options.some(
+            (option) =>
+              option.length > 200,
+          )
+        ) {
+          throw new AdminActionError(
+            `يوجد خيار طويل جدًا في السؤال رقم ${
+              index + 1
+            }.`,
+          );
+        }
+
+        const uniqueOptions =
+          new Set(
+            options.map((option) =>
+              option.toLocaleLowerCase(),
+            ),
+          );
+
+        if (
+          uniqueOptions.size !==
+          options.length
+        ) {
+          throw new AdminActionError(
+            `يوجد خيار مكرر في السؤال رقم ${
+              index + 1
+            }.`,
+          );
+        }
+      } else {
+        /*
+          الأنواع النصية لا تحتاج Options
+        */
+        options = [];
+      }
+
+      return {
+        label,
+        type: typedType,
+        required,
+        placeholder,
+        helpText,
+        options,
+
+        /*
+          لا نثق في sortOrder القادم من
+          المتصفح، بل نعتمد ترتيب المصفوفة.
+        */
+        sortOrder: index,
+      };
+    },
+  );
+}
+
+/* =========================================================
+   RUN ADMIN ACTION
+========================================================= */
+
+async function runAdminAction(
+  path: string,
+  successMessage: string,
+  fallbackError: string,
+  action: () => Promise<void>,
+): Promise<never> {
+  try {
+    await action();
+  } catch (error) {
+    const message =
+      error instanceof
+      AdminActionError
+        ? error.message
+        : fallbackError;
+
+    redirect(
+      `${path}?error=${encodeURIComponent(
+        message,
+      )}`,
+    );
+  }
+
+  redirect(
+    `${path}?success=${encodeURIComponent(
+      successMessage,
+    )}`,
+  );
+}
+
+function readMemberPermissions(
+  formData: FormData,
+) {
+  return normalizeMemberPermissions(
+    formData
+      .getAll("permissions")
+      .map((value) =>
+        String(value).trim(),
+      ),
+  );
+}
+
+function ensureMemberDepartmentForPermissions(
+  departmentId: string | null,
+  permissions: ReturnType<
+    typeof readMemberPermissions
+  >,
+) {
+  const needsDepartment =
+    permissions.some(
+      isDepartmentScopedPermission,
+    );
+
+  if (
+    needsDepartment &&
+    !departmentId
+  ) {
+    throw new AdminActionError(
+      "الصلاحيات المرتبطة بالقسم تحتاج إلى تحديد قسم للعضو.",
+    );
+  }
+}
+
+/* =========================================================
+   CREATE MEMBER
+========================================================= */
+
+export async function createMember(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.MEMBER_MANAGE,
+  );
+
+  return runAdminAction(
+    "/admin/members",
+    "تم إنشاء حساب العضو بنجاح.",
+    "تعذر إنشاء حساب العضو. تحقق من البيانات وحاول مجددًا.",
+
+    async () => {
+      const name = requiredText(
+        formData,
+        "name",
+        "الاسم",
+      );
+
+      const email = requiredText(
+        formData,
+        "email",
+        "البريد الإلكتروني",
+      ).toLowerCase();
+
+      const password = String(
+        formData.get("password") ?? "",
+      );
+
+      const position =
+        String(
+          formData.get(
+            "position",
+          ) ?? "",
+        ).trim() || null;
+
+      const departmentId =
+        optionalId(
+          formData,
+          "departmentId",
+        );
+
+      const memberPermissions =
+        readMemberPermissions(
+          formData,
+        );
+
+      const requestedRole =
+        String(
+          formData.get("role") ??
+            "MEMBER",
+        );
+
+      if (
+        name.length < 2 ||
+        name.length > 120
+      ) {
+        throw new AdminActionError(
+          "يجب أن يكون الاسم بين حرفين و120 حرفًا.",
+        );
+      }
+
+      if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+          email,
+        )
+      ) {
+        throw new AdminActionError(
+          "أدخل بريدًا إلكترونيًا صالحًا.",
+        );
+      }
+
+      if (password.length < 8) {
+        throw new AdminActionError(
+          "يجب ألا تقل كلمة المرور عن 8 أحرف.",
+        );
+      }
+
+      if (
+        requestedRole !== "MEMBER"
+      ) {
+        throw new AdminActionError(
+          "هذه الصفحة مخصصة لإنشاء حسابات الأعضاء فقط.",
+        );
+      }
+
+      await ensureDepartmentExists(
+        departmentId,
+      );
+
+      ensureMemberDepartmentForPermissions(
+        departmentId,
+        memberPermissions,
+      );
+
+      const existingUser =
+        await prisma.user.findUnique({
+          where: {
+            email,
+          },
+
+          select: {
+            id: true,
+          },
+        });
+
+      if (existingUser) {
+        throw new AdminActionError(
+          "هذا البريد الإلكتروني مستخدم بالفعل.",
+        );
+      }
+
+      const passwordHash =
+        await bcrypt.hash(
+          password,
+          12,
+        );
+
+      await prisma.user.create({
+        data: {
+          name,
+          email,
+          passwordHash,
+          role: "MEMBER",
+          position,
+          departmentId,
+          memberPermissions,
+        },
+      });
+
+      revalidatePath(
+        "/admin/members",
+      );
+    },
+  );
+}
+
+/* =========================================================
+   UPDATE MEMBER ACCESS
+========================================================= */
+
+export async function updateMemberAccess(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.MEMBER_MANAGE,
+  );
+
+  return runAdminAction(
+    "/admin/members",
+
+    "تم تحديث قسم العضو وصلاحياته بنجاح.",
+
+    "تعذر تحديث صلاحيات العضو.",
+
+    async () => {
+      const memberId =
+        requiredText(
+          formData,
+          "memberId",
+          "معرّف العضو",
+        );
+
+      const position =
+        String(
+          formData.get(
+            "position",
+          ) ?? "",
+        ).trim() || null;
+
+      const departmentId =
+        optionalId(
+          formData,
+          "departmentId",
+        );
+
+      const memberPermissions =
+        readMemberPermissions(
+          formData,
+        );
+
+      await ensureDepartmentExists(
+        departmentId,
+      );
+
+      ensureMemberDepartmentForPermissions(
+        departmentId,
+        memberPermissions,
+      );
+
+      const member =
+        await prisma.user.findUnique({
+          where: {
+            id: memberId,
+          },
+
+          select: {
+            id: true,
+            role: true,
+          },
+        });
+
+      if (
+        !member ||
+        member.role !== "MEMBER"
+      ) {
+        throw new AdminActionError(
+          "حساب العضو غير موجود.",
+        );
+      }
+
+      await prisma.user.update({
+        where: {
+          id: memberId,
+        },
+
+        data: {
+          position,
+          departmentId,
+          memberPermissions,
+        },
+      });
+
+      revalidatePath(
+        "/admin/members",
+      );
+
+      revalidatePath(
+        "/member",
+      );
+
+      revalidatePath(
+        "/member/check-in",
+      );
+    },
+  );
+}
+
+/* =========================================================
+   CREATE ACTIVITY
+========================================================= */
+
+export async function createActivity(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.ACTIVITY_MANAGE,
+  );
+
+  return runAdminAction(
+    "/admin/activities",
+
+    "تم حفظ النشاط ونموذج التسجيل بنجاح.",
+
+    "تعذر حفظ النشاط. تحقق من البيانات وحاول مجددًا.",
+
+    async () => {
+      /* =============================================
+         ACTIVITY DATA
+      ============================================= */
+
+      const title = requiredText(
+        formData,
+        "title",
+        "اسم النشاط",
+      );
+
+      const description =
+        requiredText(
+          formData,
+          "description",
+          "وصف النشاط",
+        );
+
+      const location = requiredText(
+        formData,
+        "location",
+        "مكان النشاط",
+      );
+
+      const startsAt = new Date(
+        requiredText(
+          formData,
+          "startsAt",
+          "تاريخ ووقت النشاط",
+        ),
+      );
+
+      const capacity = Number(
+        formData.get("capacity"),
+      );
+
+      const statusValue = String(
+        formData.get("status") ??
+          "PUBLISHED",
+      ).trim();
+
+      /* =============================================
+         REGISTRATION FORM
+      ============================================= */
+
+      const registrationFormTitle =
+        String(
+          formData.get(
+            "registrationFormTitle",
+          ) ?? "",
+        ).trim() ||
+        "نموذج التسجيل";
+
+      const registrationFormDescription =
+        String(
+          formData.get(
+            "registrationFormDescription",
+          ) ?? "",
+        ).trim();
+
+      const registrationFormIsOpen =
+        formData.get(
+          "registrationFormIsOpen",
+        ) === "on";
+
+      const registrationQuestions =
+        parseRegistrationQuestions(
+          formData,
+        );
+
+      /* =============================================
+         DEPARTMENTS
+      ============================================= */
+
+      const requestedDepartmentIds =
+        [
+          ...new Set(
+            formData
+              .getAll(
+                "departmentIds",
+              )
+              .map((value) =>
+                String(
+                  value,
+                ).trim(),
+              )
+              .filter(Boolean),
+          ),
+        ];
+
+      /* =============================================
+         VALIDATE ACTIVITY
+      ============================================= */
+
+      if (title.length > 160) {
+        throw new AdminActionError(
+          "اسم النشاط طويل جدًا.",
+        );
+      }
+
+      if (
+        description.length >
+        10_000
+      ) {
+        throw new AdminActionError(
+          "وصف النشاط طويل جدًا.",
+        );
+      }
+
+      if (
+        location.length > 250
+      ) {
+        throw new AdminActionError(
+          "اسم مكان النشاط طويل جدًا.",
+        );
+      }
+
+      if (
+        Number.isNaN(
+          startsAt.getTime(),
+        )
+      ) {
+        throw new AdminActionError(
+          "تاريخ النشاط غير صالح.",
+        );
+      }
+
+      if (
+        !Number.isInteger(capacity) ||
+        capacity < 1 ||
+        capacity > 100_000
+      ) {
+        throw new AdminActionError(
+          "السعة الطلابية يجب أن تكون رقمًا صحيحًا موجبًا.",
+        );
+      }
+
+      if (
+        !activityStatuses.includes(
+          statusValue as ActivityStatusInput,
+        )
+      ) {
+        throw new AdminActionError(
+          "حالة النشاط غير صالحة.",
+        );
+      }
+
+      /* =============================================
+         VALIDATE FORM
+      ============================================= */
+
+      if (
+        registrationFormTitle.length >
+        160
+      ) {
+        throw new AdminActionError(
+          "عنوان نموذج التسجيل طويل جدًا.",
+        );
+      }
+
+      if (
+        registrationFormDescription.length >
+        3000
+      ) {
+        throw new AdminActionError(
+          "وصف نموذج التسجيل طويل جدًا.",
+        );
+      }
+
+      /* =============================================
+         VALIDATE DEPARTMENTS
+      ============================================= */
+
+      if (
+        requestedDepartmentIds.length ===
+        0
+      ) {
+        throw new AdminActionError(
+          "اختر قسمًا واحدًا على الأقل أو اختر جميع الأقسام.",
+        );
+      }
+
+      const selectAll =
+        requestedDepartmentIds.includes(
+          "all",
+        );
+
+      const explicitDepartmentIds =
+        requestedDepartmentIds.filter(
+          (departmentId) =>
+            departmentId !== "all",
+        );
+
+      const availableDepartments =
+        await prisma.department.findMany(
+          {
+            select: {
+              id: true,
+            },
+          },
+        );
+
+      const availableDepartmentIds =
+        new Set(
+          availableDepartments.map(
+            ({ id }) => id,
+          ),
+        );
+
+      if (
+        availableDepartments.length ===
+          0 ||
+        explicitDepartmentIds.some(
+          (departmentId) =>
+            !availableDepartmentIds.has(
+              departmentId,
+            ),
+        )
+      ) {
+        throw new AdminActionError(
+          "يتضمن اختيار الأقسام قسمًا غير موجود.",
+        );
+      }
+
+      /*
+        النشاط العام لا يحتاج صفوف
+        ActivityDepartment.
+
+        بذلك يبقى عامًا حتى إذا تمت
+        إضافة أقسام جديدة مستقبلًا.
+      */
+
+      const departmentIds =
+        selectAll
+          ? []
+          : explicitDepartmentIds;
+
+      /* =============================================
+         CREATE EVERYTHING
+      ============================================= */
+
+      await prisma.activity.create({
+        data: {
+          title,
+          description,
+          location,
+          startsAt,
+          capacity,
+
+          /*
+            Google Forms لم يعد مستخدمًا
+            في الأنشطة الجديدة.
+          */
+          formUrl: null,
+
+          status:
+            statusValue as ActivityStatusInput,
+
+          /* -----------------------------------------
+             DEPARTMENTS
+          ----------------------------------------- */
+
+          departments:
+            departmentIds.length > 0
+              ? {
+                  create:
+                    departmentIds.map(
+                      (
+                        departmentId,
+                      ) => ({
+                        department: {
+                          connect: {
+                            id: departmentId,
+                          },
+                        },
+                      }),
+                    ),
+                }
+              : undefined,
+
+          /* -----------------------------------------
+             INTERNAL REGISTRATION FORM
+          ----------------------------------------- */
+
+          registrationForm: {
+            create: {
+              title:
+                registrationFormTitle,
+
+              description:
+                registrationFormDescription,
+
+              isOpen:
+                registrationFormIsOpen,
+
+              /* -------------------------------------
+                 QUESTIONS
+              ------------------------------------- */
+
+              questions:
+                registrationQuestions.length >
+                0
+                  ? {
+                      create:
+                        registrationQuestions.map(
+                          (
+                            question,
+                          ) => ({
+                            label:
+                              question.label,
+
+                            type:
+                              question.type,
+
+                            required:
+                              question.required,
+
+                            placeholder:
+                              question.placeholder ||
+                              null,
+
+                            helpText:
+                              question.helpText ||
+                              null,
+
+                            options:
+                              question
+                                .options
+                                .length >
+                              0
+                                ? question.options
+                                : undefined,
+
+                            sortOrder:
+                              question.sortOrder,
+                          }),
+                        ),
+                    }
+                  : undefined,
+            },
+          },
+        },
+      });
+
+      /* =============================================
+         REVALIDATE
+      ============================================= */
+
+      revalidatePath("/");
+      revalidatePath(
+        "/admin/activities",
+      );
+      revalidatePath(
+        "/activities",
+      );
+    },
+  );
+}
+
+/* =========================================================
+   DELETE ACTIVITY
+========================================================= */
+
+export async function deleteActivity(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.ACTIVITY_MANAGE,
+  );
+
+  return runAdminAction(
+    "/admin/activities",
+
+    "تم حذف النشاط.",
+
+    "تعذر حذف النشاط.",
+
+    async () => {
+      const id = requiredText(
+        formData,
+        "id",
+        "معرّف النشاط",
+      );
+
+      await prisma.activity.delete({
+        where: {
+          id,
+        },
+      });
+
+      revalidatePath("/");
+      revalidatePath(
+        "/admin/activities",
+      );
+      revalidatePath(
+        "/activities",
+      );
+    },
+  );
+}
+
+/* =========================================================
+   SAVE GUIDE
+========================================================= */
+
+export async function saveGuide(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.GUIDE_MANAGE,
+  );
+
+  return runAdminAction(
+    "/admin/guides",
+
+    "تم حفظ دليل القسم.",
+
+    "تعذر حفظ دليل القسم.",
+
+    async () => {
+      const departmentId =
+        requiredText(
+          formData,
+          "departmentId",
+          "القسم",
+        );
+
+      const department =
+        await prisma.department.findUnique(
+          {
+            where: {
+              id: departmentId,
+            },
+
+            select: {
+              slug: true,
+            },
+          },
+        );
+
+      if (!department) {
+        throw new AdminActionError(
+          "القسم المحدد غير موجود.",
+        );
+      }
+
+      const content = {
+        overview: String(
+          formData.get(
+            "overview",
+          ) ?? "",
+        ).trim(),
+
+        fitFor: String(
+          formData.get(
+            "fitFor",
+          ) ?? "",
+        ).trim(),
+
+        careersIncome: String(
+          formData.get(
+            "careersIncome",
+          ) ?? "",
+        ).trim(),
+
+        skillsCourses: String(
+          formData.get(
+            "skillsCourses",
+          ) ?? "",
+        ).trim(),
+
+        comparisons: String(
+          formData.get(
+            "comparisons",
+          ) ?? "",
+        ).trim(),
+
+        faq: String(
+          formData.get("faq") ??
+            "",
+        ).trim(),
+      };
+
+      await prisma.departmentGuide.upsert(
+        {
+          where: {
+            departmentId,
+          },
+
+          create: {
+            departmentId,
+            ...content,
+          },
+
+          update: content,
+        },
+      );
+
+      revalidatePath(
+        "/admin/guides",
+      );
+
+      revalidatePath(
+        "/departments",
+      );
+
+      revalidatePath(
+        `/departments/${department.slug}`,
+      );
+    },
+  );
+}
+
+/* =========================================================
+   ADD STRUCTURE ITEM
+========================================================= */
+
+export async function addStructureItem(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.STRUCTURE_MANAGE,
+  );
+
+  return runAdminAction(
+    "/admin/structure",
+
+    "تمت إضافة العنصر إلى الهيكلية.",
+
+    "تعذر إضافة العنصر إلى الهيكلية.",
+
+    async () => {
+      const name = requiredText(
+        formData,
+        "name",
+        "اسم الشخص",
+      );
+
+      const title = requiredText(
+        formData,
+        "title",
+        "المنصب",
+      );
+
+      const departmentId =
+        optionalId(
+          formData,
+          "departmentId",
+        );
+
+      if (
+        name.length > 120 ||
+        title.length > 160
+      ) {
+        throw new AdminActionError(
+          "الاسم أو المنصب طويل جدًا.",
+        );
+      }
+
+      await ensureDepartmentExists(
+        departmentId,
+      );
+
+      await prisma.clubStructureItem.create(
+        {
+          data: {
+            name,
+            title,
+            departmentId,
+          },
+        },
+      );
+
+      revalidatePath(
+        "/admin/structure",
+      );
+
+      revalidatePath(
+        "/delegates",
+      );
+    },
+  );
+}
+
+============================================================
+FILE: app\admin\activities\[id]\registrations\page.tsx
+============================================================
+
+import type { Prisma } from "@prisma/client";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import AdminFeedback from "@/components/admin/AdminFeedback";
+import {
+    PERMISSIONS,
+    requirePermission,
+} from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
+
+import {
+    updateActivityArchiveState,
+    updateRegistrationAttendance,
+    updateRegistrationSettings,
+    updateRegistrationStatus,
+} from "./actions";
+import {
+    Archive,
+    BarChart3,
+    CalendarDays,
+    Download,
+    MapPin,
+    QrCode,
+    RotateCcw,
+} from "lucide-react";
+import attendanceStyles from "./attendance.module.css";
+export const dynamic = "force-dynamic";
+
+type Props = {
+    params: Promise<{
+        id: string;
+    }>;
+
+    searchParams: Promise<{
+        q?: string;
+        status?: string;
+        attendance?: string;
+        error?: string;
+        success?: string;
+    }>;
+};
+
+const statusLabels = {
+    SUBMITTED: "قيد المراجعة",
+    APPROVED: "مقبول",
+    REJECTED: "مرفوض",
+} as const;
+
+const allowedFilters = [
+    "ALL",
+    "SUBMITTED",
+    "APPROVED",
+    "REJECTED",
+] as const;
+
+const allowedAttendanceFilters = [
+    "ALL",
+    "PRESENT",
+    "ABSENT",
+] as const;
+
+function formatAnswer(
+    value: Prisma.JsonValue,
+) {
+    if (Array.isArray(value)) {
+        return value
+            .map((item) => String(item))
+            .join("، ");
+    }
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "—";
+    }
+
+    if (typeof value === "object") {
+        return JSON.stringify(value);
+    }
+
+    return String(value);
+}
+
+export default async function ActivityRegistrationsPage({
+    params,
+    searchParams,
+}: Props) {
+    await requirePermission(
+        PERMISSIONS.REGISTRATION_REVIEW,
+    );
+
+    const { id } = await params;
+
+    const filters = await searchParams;
+
+    const query =
+        filters.q?.trim() ?? "";
+
+    const requestedStatus =
+        filters.status?.trim() ??
+        "ALL";
+
+    const status = allowedFilters.includes(
+        requestedStatus as
+        (typeof allowedFilters)[number],
+    )
+        ? requestedStatus
+        : "ALL";
+
+    const requestedAttendance =
+        filters.attendance?.trim() ??
+        "ALL";
+
+    const attendance =
+        allowedAttendanceFilters.includes(
+            requestedAttendance as
+            (typeof allowedAttendanceFilters)[number],
+        )
+            ? requestedAttendance
+            : "ALL";
+
+    const activity =
+        await prisma.activity.findUnique({
+            where: {
+                id,
+            },
+
+            include: {
+                registrationForm: {
+                    include: {
+                        questions: {
+                            orderBy: {
+                                sortOrder: "asc",
+                            },
+                        },
+
+                        submissions: {
+                            where: {
+                                ...(status !== "ALL"
+                                    ? {
+                                        status: status as
+                                            | "SUBMITTED"
+                                            | "APPROVED"
+                                            | "REJECTED",
+                                    }
+                                    : {}),
+
+                                ...(attendance === "PRESENT"
+                                    ? {
+                                        status: "APPROVED",
+                                        checkedInAt: {
+                                            not: null,
+                                        },
+                                    }
+                                    : attendance === "ABSENT"
+                                        ? {
+                                            status: "APPROVED",
+                                            checkedInAt: null,
+                                        }
+                                        : {}),
+
+                                ...(query
+                                    ? {
+                                        OR: [
+                                            {
+                                                studentName: {
+                                                    contains:
+                                                        query,
+                                                    mode: "insensitive",
+                                                },
+                                            },
+
+                                            {
+                                                studentEmail: {
+                                                    contains:
+                                                        query,
+                                                    mode: "insensitive",
+                                                },
+                                            },
+
+                                            {
+                                                studentDepartment:
+                                                {
+                                                    contains:
+                                                        query,
+                                                    mode: "insensitive",
+                                                },
+                                            },
+                                        ],
+                                    }
+                                    : {}),
+                            },
+
+                            include: {
+                                answers: {
+                                    include: {
+                                        question: true,
+                                    },
+                                },
+                            },
+
+                            orderBy: {
+                                submittedAt: "desc",
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+    if (!activity) {
+        notFound();
+    }
+
+    const form =
+        activity.registrationForm;
+
+    if (!form) {
+        return (
+            <section className="admin-page">
+
+                <div className="admin-page-head">
+
+                    <div>
+                        <h1>
+                            إدارة المسجلين
+                        </h1>
+
+                        <p className="muted">
+                            {activity.title}
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div className="admin-card">
+
+                    <div className="activity-registration-admin-empty">
+
+                        <h2>
+                            لا يوجد نموذج تسجيل
+                        </h2>
+
+                        <p>
+                            هذا النشاط لا يحتوي على
+                            نموذج تسجيل داخلي.
+                        </p>
+
+                        <Link
+                            href="/admin/activities"
+                            className="ghost-btn"
+                        >
+                            العودة إلى الأنشطة
+                        </Link>
+
+                    </div>
+
+                </div>
+
+            </section>
+        );
+    }
+
+    /*
+     * نحتاج إحصائيات جميع التسجيلات
+     * بدون التأثر بالبحث والفلترة.
+     */
+    const statusCounts =
+        await prisma.activityFormSubmission.groupBy({
+            by: ["status"],
+
+            where: {
+                formId: form.id,
+            },
+
+            _count: {
+                _all: true,
+            },
+        });
+
+    const totalCount =
+        statusCounts.reduce(
+            (
+                sum,
+                item,
+            ) =>
+                sum +
+                item._count._all,
+            0,
+        );
+
+    const submittedCount =
+        statusCounts.find(
+            (item) =>
+                item.status ===
+                "SUBMITTED",
+        )?._count._all ?? 0;
+
+    const approvedCount =
+        statusCounts.find(
+            (item) =>
+                item.status ===
+                "APPROVED",
+        )?._count._all ?? 0;
+
+    const rejectedCount =
+        statusCounts.find(
+            (item) =>
+                item.status ===
+                "REJECTED",
+        )?._count._all ?? 0;
+
+    const checkedInCount =
+        await prisma.activityFormSubmission.count({
+            where: {
+                formId: form.id,
+                status: "APPROVED",
+                checkedInAt: {
+                    not: null,
+                },
+            },
+        });
+
+    const absentApprovedCount =
+        Math.max(
+            approvedCount -
+            checkedInCount,
+            0,
+        );
+
+    const occupiedSeats =
+        submittedCount +
+        approvedCount;
+
+    const remaining =
+        Math.max(
+            activity.capacity -
+            occupiedSeats,
+            0,
+        );
+
+    const attendanceRate =
+        approvedCount > 0
+            ? Math.round(
+                (checkedInCount /
+                    approvedCount) *
+                    100,
+            )
+            : 0;
+
+    const isArchived =
+        activity.status ===
+        "ARCHIVED";
+
+    return (
+        <section className="admin-page activity-registrations-admin">
+
+            {/* ===================================================
+          HEADER
+      =================================================== */}
+
+            <div className="admin-page-head">
+
+                <div>
+
+                    <Link
+                        href="/admin/activities"
+                        className="activity-admin-back"
+                    >
+                        ← العودة إلى الأنشطة
+                    </Link>
+
+                    <h1>
+                        إدارة المسجلين
+                    </h1>
+
+                    <p className="muted">
+                        {activity.title}
+                    </p>
+
+                </div>
+
+                <div
+                    className={
+                        attendanceStyles.headerActions
+                    }
+                >
+                    {!isArchived && (
+                        <Link
+                            href={`/admin/activities/${activity.id}/check-in`}
+                            className="primary-btn"
+                        >
+                            <QrCode size={18} />
+                            تسجيل الحضور
+                        </Link>
+                    )}
+
+                    <Link
+                        href={`/admin/activities/${activity.id}/registrations/export`}
+                        className="ghost-btn activity-registration-export"
+                    >
+                        <Download size={17} />
+                        تصدير Excel
+                    </Link>
+
+                    <form
+                        action={
+                            updateActivityArchiveState
+                        }
+                    >
+                        <input
+                            type="hidden"
+                            name="activityId"
+                            value={activity.id}
+                        />
+
+                        <input
+                            type="hidden"
+                            name="activityState"
+                            value={
+                                isArchived
+                                    ? "PUBLISHED"
+                                    : "ARCHIVED"
+                            }
+                        />
+
+                        <button
+                            type="submit"
+                            className={
+                                isArchived
+                                    ? attendanceStyles.restoreActivityButton
+                                    : attendanceStyles.archiveActivityButton
+                            }
+                        >
+                            {isArchived ? (
+                                <RotateCcw
+                                    size={17}
+                                />
+                            ) : (
+                                <Archive
+                                    size={17}
+                                />
+                            )}
+
+                            {isArchived
+                                ? "إعادة النشاط"
+                                : "أرشفة النشاط"}
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+
+            <AdminFeedback
+                error={filters.error}
+                success={filters.success}
+            />
+
+            {/* ===================================================
+                ACTIVITY RESULTS SUMMARY
+            =================================================== */}
+
+            <section
+                className={
+                    attendanceStyles.activitySummary
+                }
+            >
+                <div
+                    className={
+                        attendanceStyles.activitySummaryHead
+                    }
+                >
+                    <div>
+                        <span
+                            className={
+                                attendanceStyles.activitySummaryEyebrow
+                            }
+                        >
+                            <BarChart3
+                                size={16}
+                            />
+                            ملخص النشاط
+                        </span>
+
+                        <h2>
+                            نتائج التسجيل والحضور
+                        </h2>
+
+                        <p>
+                            ملخص سريع لأهم أرقام النشاط وحالة الحضور.
+                        </p>
+                    </div>
+
+                    <span
+                        className={`${attendanceStyles.activityStatusBadge} ${
+                            isArchived
+                                ? attendanceStyles.activityArchived
+                                : attendanceStyles.activityPublished
+                        }`}
+                    >
+                        {isArchived
+                            ? "مؤرشف"
+                            : "منشور"}
+                    </span>
+                </div>
+
+                <div
+                    className={
+                        attendanceStyles.activityMetaRow
+                    }
+                >
+                    <div>
+                        <CalendarDays
+                            size={18}
+                        />
+
+                        <span>
+                            {new Intl.DateTimeFormat(
+                                "ar-PS",
+                                {
+                                    dateStyle:
+                                        "medium",
+                                    timeStyle:
+                                        "short",
+                                },
+                            ).format(
+                                activity.startsAt,
+                            )}
+                        </span>
+                    </div>
+
+                    <div>
+                        <MapPin size={18} />
+
+                        <span>
+                            {activity.location}
+                        </span>
+                    </div>
+                </div>
+
+                <div
+                    className={
+                        attendanceStyles.activityResultsGrid
+                    }
+                >
+                    <div>
+                        <span>
+                            إجمالي التسجيلات
+                        </span>
+
+                        <strong>
+                            {totalCount}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>
+                            المقبولون
+                        </span>
+
+                        <strong>
+                            {approvedCount}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>
+                            الحضور الفعلي
+                        </span>
+
+                        <strong>
+                            {checkedInCount}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>
+                            لم يحضروا
+                        </span>
+
+                        <strong>
+                            {absentApprovedCount}
+                        </strong>
+                    </div>
+                </div>
+
+                <div
+                    className={
+                        attendanceStyles.attendanceRateBlock
+                    }
+                >
+                    <div
+                        className={
+                            attendanceStyles.attendanceRateHead
+                        }
+                    >
+                        <div>
+                            <strong>
+                                نسبة الحضور
+                            </strong>
+
+                            <span>
+                                من إجمالي الطلاب المقبولين
+                            </span>
+                        </div>
+
+                        <strong>
+                            {attendanceRate}%
+                        </strong>
+                    </div>
+
+                    <div
+                        className={
+                            attendanceStyles.attendanceProgress
+                        }
+                    >
+                        <span
+                            style={{
+                                width:
+                                    `${attendanceRate}%`,
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {isArchived && (
+                    <div
+                        className={
+                            attendanceStyles.archivedNotice
+                        }
+                    >
+                        تم أرشفة هذا النشاط وإغلاق التسجيل. يمكنك الاحتفاظ بالنتائج وتصديرها إلى Excel، أو إعادة النشاط إلى حالة منشور عند الحاجة.
+                    </div>
+                )}
+            </section>
+
+{/* ===================================================
+    REGISTRATION SETTINGS
+=================================================== */}
+
+<div className="admin-card activity-registration-settings">
+
+    <div className="activity-registration-settings-head">
+
+        <div>
+            <span className="activity-registration-settings-eyebrow">
+                إعدادات التسجيل
+            </span>
+
+            <h2>
+                التحكم بالتسجيل
+            </h2>
+
+            <p>
+                تحكم في عدد المقاعد المتاحة وفتح أو إغلاق التسجيل للطلاب.
+            </p>
+        </div>
+
+        <span
+            className={`activity-registration-open-state ${
+                form.isOpen
+                    ? "is-open"
+                    : "is-closed"
+            }`}
+        >
+            <span className="registration-state-dot" />
+
+            {form.isOpen
+                ? "التسجيل مفتوح"
+                : "التسجيل مغلق"}
+        </span>
+
+    </div>
+
+
+    <form
+        action={updateRegistrationSettings}
+        className="activity-registration-settings-form"
+    >
+        <input
+            type="hidden"
+            name="activityId"
+            value={activity.id}
+        />
+
+
+        {/* السعة */}
+
+        <div className="registration-setting-box">
+
+            <div className="registration-setting-box-head">
+                <div>
+                    <strong>
+                        السعة الطلابية
+                    </strong>
+
+                    <span>
+                        العدد الأقصى للمقاعد الفعلية
+                    </span>
+                </div>
+            </div>
+
+            <div className="registration-capacity-control">
+
+                <input
+                    type="number"
+                    name="capacity"
+                    min={Math.max(
+                        1,
+                        occupiedSeats,
+                    )}
+                    max="100000"
+                    defaultValue={
+                        activity.capacity
+                    }
+                    required
+                    disabled={isArchived}
+                />
+
+                <span>
+                    مقعد
+                </span>
+
+            </div>
+
+            <small>
+                المشغول حاليًا:
+                {" "}
+                <strong>
+                    {occupiedSeats}
+                </strong>
+                {" "}
+                مقعد
+            </small>
+
+        </div>
+
+
+        {/* فتح / إغلاق */}
+
+        <div className="registration-setting-box">
+
+            <div className="registration-setting-box-head">
+
+                <div>
+                    <strong>
+                        حالة التسجيل
+                    </strong>
+
+                    <span>
+                        تحكم بإمكانية تسجيل الطلاب
+                    </span>
+                </div>
+
+            </div>
+
+
+            <label className="registration-switch-row">
+
+                <div className="registration-switch-text">
+
+                    <strong>
+                        السماح بالتسجيل
+                    </strong>
+
+                    <span>
+                        {form.isOpen
+                            ? "يمكن للطلاب التسجيل في النشاط حاليًا"
+                            : "التسجيل متوقف أمام الطلاب حاليًا"}
+                    </span>
+
+                </div>
+
+
+                <span className="registration-switch">
+
+                    <input
+                        type="checkbox"
+                        name="isOpen"
+                        defaultChecked={
+                            form.isOpen
+                        }
+                        disabled={isArchived}
+                    />
+
+                    <span className="registration-switch-track">
+                        <span className="registration-switch-thumb" />
+                    </span>
+
+                </span>
+
+            </label>
+
+        </div>
+
+
+        {/* زر الحفظ */}
+
+        <div className="registration-settings-save">
+
+            <div>
+                <strong>
+                    المقاعد المتبقية
+                </strong>
+
+                <span>
+                    {remaining} من أصل{" "}
+                    {activity.capacity}
+                </span>
+            </div>
+
+            <button
+                type="submit"
+                className="primary-btn registration-settings-save-btn"
+                disabled={isArchived}
+            >
+                {isArchived
+                    ? "النشاط مؤرشف"
+                    : "حفظ التغييرات"}
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+            {/* ===================================================
+          STATS
+      =================================================== */}
+
+            <div className="activity-registration-stats">
+
+                <div className="activity-registration-stat">
+                    <span>
+                        إجمالي التسجيلات
+                    </span>
+
+                    <strong>
+                        {totalCount}
+                    </strong>
+
+                    <small>
+                        يشمل المقبولين والمرفوضين وقيد المراجعة
+                    </small>
+                </div>
+
+
+                <div className="activity-registration-stat">
+                    <span>
+                        قيد المراجعة
+                    </span>
+
+                    <strong>
+                        {submittedCount}
+                    </strong>
+                </div>
+
+
+                <div className="activity-registration-stat">
+                    <span>
+                        المقبولون
+                    </span>
+
+                    <strong>
+                        {approvedCount}
+                    </strong>
+                </div>
+
+
+                <div className={`activity-registration-stat ${attendanceStyles.attendanceStatPresent}`}>
+                    <span>
+                        حضروا
+                    </span>
+
+                    <strong>
+                        {checkedInCount}
+                    </strong>
+
+                    <small>
+                        تم تسجيل دخولهم بالـ QR
+                    </small>
+                </div>
+
+
+                <div className={`activity-registration-stat ${attendanceStyles.attendanceStatAbsent}`}>
+                    <span>
+                        لم يحضروا
+                    </span>
+
+                    <strong>
+                        {absentApprovedCount}
+                    </strong>
+
+                    <small>
+                        من الطلاب المقبولين
+                    </small>
+                </div>
+
+
+                <div className="activity-registration-stat">
+                    <span>
+                        المرفوضون
+                    </span>
+
+                    <strong>
+                        {rejectedCount}
+                    </strong>
+                </div>
+
+
+                <div className="activity-registration-stat">
+                    <span>
+                        المقاعد المتبقية
+                    </span>
+
+                    <strong>
+                        {remaining}
+                    </strong>
+                    <small>
+                        من أصل {activity.capacity} مقعد
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            {/* ===================================================
+          FILTERS
+      =================================================== */}
+
+            <div className="admin-card activity-registration-filters">
+
+                <form
+                    method="get"
+                    className="activity-registration-filter-form"
+                >
+
+                    <label>
+                        البحث
+
+                        <input
+                            type="search"
+                            name="q"
+                            defaultValue={query}
+                            placeholder="الاسم، البريد أو التخصص..."
+                        />
+                    </label>
+
+
+                    <label>
+                        الحالة
+
+                        <select
+                            name="status"
+                            defaultValue={status}
+                        >
+                            <option value="ALL">
+                                جميع الحالات
+                            </option>
+
+                            <option value="SUBMITTED">
+                                قيد المراجعة
+                            </option>
+
+                            <option value="APPROVED">
+                                المقبولون
+                            </option>
+
+                            <option value="REJECTED">
+                                المرفوضون
+                            </option>
+                        </select>
+                    </label>
+
+
+                    <label>
+                        الحضور
+
+                        <select
+                            name="attendance"
+                            defaultValue={attendance}
+                        >
+                            <option value="ALL">
+                                الكل
+                            </option>
+
+                            <option value="PRESENT">
+                                حضر
+                            </option>
+
+                            <option value="ABSENT">
+                                لم يحضر
+                            </option>
+                        </select>
+                    </label>
+
+
+                    <button
+                        type="submit"
+                        className="primary-btn"
+                    >
+                        تطبيق
+                    </button>
+
+
+                    {(query ||
+                        status !== "ALL" ||
+                        attendance !== "ALL") && (
+                            <Link
+                                href={`/admin/activities/${activity.id}/registrations`}
+                                className="ghost-btn"
+                            >
+                                مسح الفلاتر
+                            </Link>
+                        )}
+
+                </form>
+
+            </div>
+
+
+            {/* ===================================================
+          REGISTRATIONS
+      =================================================== */}
+
+            <div className="activity-registration-admin-list">
+
+                {form.submissions.length ? (
+                    form.submissions.map(
+                        (submission) => {
+
+                            const answerMap =
+                                new Map(
+                                    submission.answers.map(
+                                        (answer) => [
+                                            answer.questionId,
+                                            answer.value,
+                                        ],
+                                    ),
+                                );
+
+                            return (
+                                <article
+                                    className="activity-registration-admin-card"
+                                    key={submission.id}
+                                >
+
+                                    {/* =======================================
+                      STUDENT HEADER
+                  ======================================= */}
+
+                                    <div className="activity-registration-admin-card-head">
+
+                                        <div className="activity-registration-student">
+
+                                            <div className="activity-registration-avatar">
+                                                {submission.studentName
+                                                    .trim()
+                                                    .charAt(0)
+                                                    .toUpperCase()}
+                                            </div>
+
+
+                                            <div>
+
+                                                <h2>
+                                                    {
+                                                        submission.studentName
+                                                    }
+                                                </h2>
+
+                                                <div className="activity-registration-student-meta">
+
+                                                    <span>
+                                                        {
+                                                            submission.studentEmail
+                                                        }
+                                                    </span>
+
+                                                    {submission.studentDepartment && (
+                                                        <span>
+                                                            {
+                                                                submission.studentDepartment
+                                                            }
+                                                        </span>
+                                                    )}
+
+                                                    <span>
+                                                        {new Intl.DateTimeFormat(
+                                                            "ar-PS",
+                                                            {
+                                                                dateStyle:
+                                                                    "medium",
+
+                                                                timeStyle:
+                                                                    "short",
+                                                            },
+                                                        ).format(
+                                                            submission.submittedAt,
+                                                        )}
+                                                    </span>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <div className={attendanceStyles.statusStack}>
+                                            <span
+                                                className={`activity-registration-status status-${submission.status.toLowerCase()}`}
+                                            >
+                                                {
+                                                    statusLabels[
+                                                    submission.status
+                                                    ]
+                                                }
+                                            </span>
+
+                                            {submission.status === "APPROVED" && (
+                                                <div className={attendanceStyles.attendanceStateWrap}>
+                                                    <span
+                                                        className={`${attendanceStyles.attendanceBadge} ${
+                                                            submission.checkedInAt
+                                                                ? attendanceStyles.attendancePresent
+                                                                : attendanceStyles.attendanceAbsent
+                                                        }`}
+                                                    >
+                                                        <span className={attendanceStyles.attendanceDot} />
+
+                                                        {submission.checkedInAt
+                                                            ? "حضر"
+                                                            : "لم يحضر"}
+                                                    </span>
+
+                                                    {submission.checkedInAt && (
+                                                        <small className={attendanceStyles.attendanceTime}>
+                                                            وقت الحضور:{" "}
+                                                            {new Intl.DateTimeFormat(
+                                                                "ar-PS",
+                                                                {
+                                                                    dateStyle: "medium",
+                                                                    timeStyle: "short",
+                                                                },
+                                                            ).format(
+                                                                submission.checkedInAt,
+                                                            )}
+                                                        </small>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                    </div>
+
+
+                                    {/* =======================================
+                      ANSWERS
+                  ======================================= */}
+
+                                    <details className="activity-registration-answers">
+
+                                        <summary>
+                                            عرض إجابات الطالب
+                                        </summary>
+
+
+                                        <div className="activity-registration-answers-grid">
+
+                                            {form.questions.map(
+                                                (question) => {
+
+                                                    const answer =
+                                                        answerMap.get(
+                                                            question.id,
+                                                        );
+
+                                                    return (
+                                                        <div
+                                                            className="activity-registration-answer"
+                                                            key={
+                                                                question.id
+                                                            }
+                                                        >
+
+                                                            <strong>
+                                                                {
+                                                                    question.label
+                                                                }
+                                                            </strong>
+
+                                                            <p>
+                                                                {answer !==
+                                                                    undefined
+                                                                    ? formatAnswer(
+                                                                        answer,
+                                                                    )
+                                                                    : "لم تتم الإجابة"}
+                                                            </p>
+
+                                                        </div>
+                                                    );
+                                                },
+                                            )}
+
+                                        </div>
+
+                                    </details>
+
+
+                                    {/* =======================================
+                      ACTIONS
+                  ======================================= */}
+
+                                    <div className="activity-registration-review-actions">
+
+                                        {!isArchived &&
+                                            submission.status === "APPROVED" && (
+                                            <form
+                                                action={
+                                                    updateRegistrationAttendance
+                                                }
+                                            >
+                                                <input
+                                                    type="hidden"
+                                                    name="activityId"
+                                                    value={
+                                                        activity.id
+                                                    }
+                                                />
+
+                                                <input
+                                                    type="hidden"
+                                                    name="submissionId"
+                                                    value={
+                                                        submission.id
+                                                    }
+                                                />
+
+                                                <input
+                                                    type="hidden"
+                                                    name="attendanceAction"
+                                                    value={
+                                                        submission.checkedInAt
+                                                            ? "CHECK_OUT"
+                                                            : "CHECK_IN"
+                                                    }
+                                                />
+
+                                                <button
+                                                    type="submit"
+                                                    className={
+                                                        submission.checkedInAt
+                                                            ? attendanceStyles.manualCheckoutButton
+                                                            : attendanceStyles.manualCheckinButton
+                                                    }
+                                                >
+                                                    {submission.checkedInAt
+                                                        ? "إلغاء الحضور"
+                                                        : "تسجيل حضور"}
+                                                </button>
+                                            </form>
+                                        )}
+
+
+                                        {submission.status !==
+                                            "APPROVED" && (
+                                                <form
+                                                    action={
+                                                        updateRegistrationStatus
+                                                    }
+                                                >
+                                                    <input
+                                                        type="hidden"
+                                                        name="activityId"
+                                                        value={
+                                                            activity.id
+                                                        }
+                                                    />
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="submissionId"
+                                                        value={
+                                                            submission.id
+                                                        }
+                                                    />
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="status"
+                                                        value="APPROVED"
+                                                    />
+
+                                                    <button
+                                                        type="submit"
+                                                        className="activity-registration-approve"
+                                                    >
+                                                        قبول
+                                                    </button>
+                                                </form>
+                                            )}
+
+
+                                        {submission.status !==
+                                            "REJECTED" && (
+                                                <form
+                                                    action={
+                                                        updateRegistrationStatus
+                                                    }
+                                                >
+                                                    <input
+                                                        type="hidden"
+                                                        name="activityId"
+                                                        value={
+                                                            activity.id
+                                                        }
+                                                    />
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="submissionId"
+                                                        value={
+                                                            submission.id
+                                                        }
+                                                    />
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="status"
+                                                        value="REJECTED"
+                                                    />
+
+                                                    <button
+                                                        type="submit"
+                                                        className="activity-registration-reject"
+                                                    >
+                                                        رفض
+                                                    </button>
+                                                </form>
+                                            )}
+
+
+                                        {submission.status !==
+                                            "SUBMITTED" && (
+                                                <form
+                                                    action={
+                                                        updateRegistrationStatus
+                                                    }
+                                                >
+                                                    <input
+                                                        type="hidden"
+                                                        name="activityId"
+                                                        value={
+                                                            activity.id
+                                                        }
+                                                    />
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="submissionId"
+                                                        value={
+                                                            submission.id
+                                                        }
+                                                    />
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="status"
+                                                        value="SUBMITTED"
+                                                    />
+
+                                                    <button
+                                                        type="submit"
+                                                        className="activity-registration-pending"
+                                                    >
+                                                        إعادة للمراجعة
+                                                    </button>
+                                                </form>
+                                            )}
+
+                                    </div>
+
+                                </article>
+                            );
+                        },
+                    )
+                ) : (
+                    <div className="admin-card">
+
+                        <p className="empty-state">
+                            {query ||
+                                status !== "ALL" ||
+                                attendance !== "ALL"
+                                ? "لا توجد تسجيلات تطابق البحث أو الفلترة."
+                                : "لا يوجد طلاب مسجلون في هذا النشاط بعد."}
+                        </p>
+
+                    </div>
+                )}
+
+            </div>
+
+        </section>
+    );
+}
+
+============================================================
+FILE: app\admin\activities\[id]\registrations\actions.ts
+============================================================
+
+"use server";
+
+import { Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
+import { prisma } from "@/lib/prisma";
+
+const allowedStatuses = [
+  "SUBMITTED",
+  "APPROVED",
+  "REJECTED",
+] as const;
+
+type SubmissionStatus =
+  (typeof allowedStatuses)[number];
+
+const allowedAttendanceActions = [
+  "CHECK_IN",
+  "CHECK_OUT",
+] as const;
+
+type AttendanceAction =
+  (typeof allowedAttendanceActions)[number];
+
+function revalidateRegistrationPages(
+  activityId: string,
+) {
+  revalidatePath(
+    `/admin/activities/${activityId}/registrations`,
+  );
+
+  revalidatePath(
+    `/admin/activities/${activityId}/check-in`,
+  );
+
+  revalidatePath(
+    `/activities/${activityId}/register`,
+  );
+
+  revalidatePath("/activities");
+  revalidatePath("/admin/activities");
+  revalidatePath("/student");
+}
+
+/* =========================================================
+   UPDATE ONE REGISTRATION STATUS
+========================================================= */
+
+export async function updateRegistrationStatus(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.REGISTRATION_REVIEW,
+  );
+
+  const activityId = String(
+    formData.get("activityId") ?? "",
+  ).trim();
+
+  const submissionId = String(
+    formData.get("submissionId") ?? "",
+  ).trim();
+
+  const requestedStatus = String(
+    formData.get("status") ?? "",
+  ).trim();
+
+  if (
+    !activityId ||
+    !submissionId ||
+    !allowedStatuses.includes(
+      requestedStatus as SubmissionStatus,
+    )
+  ) {
+    return;
+  }
+
+  const status =
+    requestedStatus as SubmissionStatus;
+
+  const maxAttempts = 3;
+
+  for (
+    let attempt = 1;
+    attempt <= maxAttempts;
+    attempt++
+  ) {
+    try {
+      await prisma.$transaction(
+        async (tx) => {
+          const submission =
+            await tx.activityFormSubmission.findFirst({
+              where: {
+                id: submissionId,
+
+                form: {
+                  activityId,
+                },
+              },
+
+              select: {
+                id: true,
+                status: true,
+                formId: true,
+
+                form: {
+                  select: {
+                    activity: {
+                      select: {
+                        capacity: true,
+                      },
+                    },
+                  },
+                },
+              },
+            });
+
+          if (!submission) {
+            throw new Error(
+              "REGISTRATION_NOT_FOUND",
+            );
+          }
+
+          if (
+            submission.status === status
+          ) {
+            return;
+          }
+
+          /*
+           * SUBMITTED + APPROVED يحجزان مقعدًا.
+           * REJECTED لا يحجز مقعدًا.
+           *
+           * لذلك عند إعادة طالب مرفوض للمراجعة
+           * أو قبوله، يجب وجود مقعد متاح.
+           */
+          const needsSeat =
+            submission.status ===
+              "REJECTED" &&
+            status !== "REJECTED";
+
+          if (needsSeat) {
+            const occupiedSeats =
+              await tx.activityFormSubmission.count({
+                where: {
+                  formId:
+                    submission.formId,
+
+                  status: {
+                    not: "REJECTED",
+                  },
+                },
+              });
+
+            const capacity =
+              submission.form.activity
+                .capacity;
+
+            if (
+              capacity > 0 &&
+              occupiedSeats >= capacity
+            ) {
+              throw new Error(
+                "CAPACITY_FULL",
+              );
+            }
+          }
+
+          await tx.activityFormSubmission.update({
+            where: {
+              id: submission.id,
+            },
+
+            data: {
+              status,
+
+              /*
+               * إذا لم يعد الطالب "مقبولًا"
+               * فلا يجوز أن يبقى مسجلًا كحاضر.
+               */
+              ...(status !== "APPROVED"
+                ? {
+                    checkedInAt: null,
+                    checkedInById: null,
+                  }
+                : {}),
+            },
+          });
+        },
+        {
+          isolationLevel:
+            Prisma.TransactionIsolationLevel
+              .Serializable,
+        },
+      );
+
+      break;
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message ===
+          "REGISTRATION_NOT_FOUND"
+      ) {
+        return;
+      }
+
+      if (
+        error instanceof Error &&
+        error.message ===
+          "CAPACITY_FULL"
+      ) {
+        redirect(
+          `/admin/activities/${activityId}/registrations?error=${encodeURIComponent(
+            "لا يمكن إعادة هذا التسجيل أو قبوله لأن جميع المقاعد ممتلئة.",
+          )}`,
+        );
+      }
+
+      if (
+        error instanceof
+          Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2034" &&
+        attempt < maxAttempts
+      ) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  revalidateRegistrationPages(
+    activityId,
+  );
+}
+
+/* =========================================================
+   MANUAL CHECK-IN / CHECK-OUT
+========================================================= */
+
+export async function updateRegistrationAttendance(
+  formData: FormData,
+) {
+  const { user } =
+    await requirePermission(
+      PERMISSIONS.ATTENDANCE_MANUAL,
+    );
+
+  const activityId = String(
+    formData.get("activityId") ?? "",
+  ).trim();
+
+  const submissionId = String(
+    formData.get("submissionId") ?? "",
+  ).trim();
+
+  const requestedAction = String(
+    formData.get("attendanceAction") ?? "",
+  ).trim();
+
+  if (
+    !activityId ||
+    !submissionId ||
+    !allowedAttendanceActions.includes(
+      requestedAction as AttendanceAction,
+    )
+  ) {
+    return;
+  }
+
+  const attendanceAction =
+    requestedAction as AttendanceAction;
+
+  const basePath =
+    `/admin/activities/${activityId}/registrations`;
+
+  const submission =
+    await prisma.activityFormSubmission.findFirst({
+      where: {
+        id: submissionId,
+
+        form: {
+          activityId,
+        },
+      },
+
+      select: {
+        id: true,
+        status: true,
+        checkedInAt: true,
+      },
+    });
+
+  if (!submission) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "التسجيل غير موجود لهذا النشاط.",
+      )}`,
+    );
+  }
+
+  if (
+    submission.status !== "APPROVED"
+  ) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "يمكن تسجيل الحضور للطلاب المقبولين فقط.",
+      )}`,
+    );
+  }
+
+  if (
+    attendanceAction === "CHECK_IN"
+  ) {
+    if (submission.checkedInAt) {
+      redirect(
+        `${basePath}?error=${encodeURIComponent(
+          "تم تسجيل حضور هذا الطالب مسبقًا.",
+        )}`,
+      );
+    }
+
+    const checkedInAt =
+      new Date();
+
+    /*
+     * updateMany يمنع الضغط المزدوج أو تسجيل
+     * الحضور مرتين في نفس اللحظة.
+     */
+    const result =
+      await prisma.activityFormSubmission.updateMany({
+        where: {
+          id: submission.id,
+          status: "APPROVED",
+          checkedInAt: null,
+        },
+
+        data: {
+          checkedInAt,
+          checkedInById:
+            user.id,
+        },
+      });
+
+    if (result.count !== 1) {
+      redirect(
+        `${basePath}?error=${encodeURIComponent(
+          "تعذر تسجيل الحضور. حدّث الصفحة وحاول مرة أخرى.",
+        )}`,
+      );
+    }
+
+    revalidateRegistrationPages(
+      activityId,
+    );
+
+    redirect(
+      `${basePath}?success=${encodeURIComponent(
+        "تم تسجيل حضور الطالب يدويًا بنجاح.",
+      )}`,
+    );
+  }
+
+  /*
+   * CHECK_OUT
+   */
+  if (!submission.checkedInAt) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "هذا الطالب غير مسجل كحاضر أصلًا.",
+      )}`,
+    );
+  }
+
+  await prisma.activityFormSubmission.updateMany({
+    where: {
+      id: submission.id,
+      status: "APPROVED",
+      checkedInAt: {
+        not: null,
+      },
+    },
+
+    data: {
+      checkedInAt: null,
+      checkedInById: null,
+    },
+  });
+
+  revalidateRegistrationPages(
+    activityId,
+  );
+
+  redirect(
+    `${basePath}?success=${encodeURIComponent(
+      "تم إلغاء تسجيل حضور الطالب.",
+    )}`,
+  );
+}
+
+/* =========================================================
+   ARCHIVE / RESTORE ACTIVITY
+========================================================= */
+
+export async function updateActivityArchiveState(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.ACTIVITY_ARCHIVE,
+  );
+
+  const activityId = String(
+    formData.get("activityId") ?? "",
+  ).trim();
+
+  const requestedState = String(
+    formData.get("activityState") ?? "",
+  ).trim();
+
+  if (
+    !activityId ||
+    ![
+      "ARCHIVED",
+      "PUBLISHED",
+    ].includes(requestedState)
+  ) {
+    return;
+  }
+
+  const basePath =
+    `/admin/activities/${activityId}/registrations`;
+
+  const activity =
+    await prisma.activity.findUnique({
+      where: {
+        id: activityId,
+      },
+
+      select: {
+        id: true,
+        status: true,
+        registrationForm: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+  if (!activity) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "النشاط غير موجود.",
+      )}`,
+    );
+  }
+
+  const nextStatus =
+    requestedState === "ARCHIVED"
+      ? "ARCHIVED"
+      : "PUBLISHED";
+
+  if (activity.status === nextStatus) {
+    return;
+  }
+
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.activity.update({
+        where: {
+          id: activityId,
+        },
+
+        data: {
+          status: nextStatus,
+        },
+      });
+
+      /*
+       * عند الأرشفة نغلق التسجيل تلقائيًا.
+       * وعند إعادة النشاط إلى منشور لا نفتح التسجيل
+       * تلقائيًا؛ الأدمن يقرر ذلك يدويًا من الإعدادات.
+       */
+      if (
+        nextStatus === "ARCHIVED" &&
+        activity.registrationForm
+      ) {
+        await tx.activityRegistrationForm.update({
+          where: {
+            id:
+              activity.registrationForm.id,
+          },
+
+          data: {
+            isOpen: false,
+          },
+        });
+      }
+    },
+  );
+
+  revalidateRegistrationPages(
+    activityId,
+  );
+
+  redirect(
+    `${basePath}?success=${encodeURIComponent(
+      nextStatus === "ARCHIVED"
+        ? "تمت أرشفة النشاط وإغلاق التسجيل بنجاح."
+        : "تمت إعادة النشاط إلى حالة منشور. التسجيل بقي مغلقًا حتى تفتحه يدويًا.",
+    )}`,
+  );
+}
+
+/* =========================================================
+   UPDATE CAPACITY + OPEN/CLOSE REGISTRATION
+========================================================= */
+
+export async function updateRegistrationSettings(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.REGISTRATION_SETTINGS,
+  );
+
+  const activityId = String(
+    formData.get("activityId") ?? "",
+  ).trim();
+
+  const capacity = Number(
+    formData.get("capacity"),
+  );
+
+  const isOpen =
+    formData.get("isOpen") === "on";
+
+  const basePath =
+    `/admin/activities/${activityId}/registrations`;
+
+  if (!activityId) {
+    return;
+  }
+
+  if (
+    !Number.isInteger(capacity) ||
+    capacity < 1 ||
+    capacity > 100_000
+  ) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "السعة يجب أن تكون رقمًا صحيحًا بين 1 و100000.",
+      )}`,
+    );
+  }
+
+  let businessError:
+    | "FORM_NOT_FOUND"
+    | "CAPACITY_TOO_SMALL"
+    | "ACTIVITY_ARCHIVED"
+    | null = null;
+
+  const maxAttempts = 3;
+
+  for (
+    let attempt = 1;
+    attempt <= maxAttempts;
+    attempt++
+  ) {
+    try {
+      await prisma.$transaction(
+        async (tx) => {
+          const form =
+            await tx.activityRegistrationForm.findUnique({
+              where: {
+                activityId,
+              },
+
+              select: {
+                id: true,
+
+                activity: {
+                  select: {
+                    status: true,
+                  },
+                },
+              },
+            });
+
+          if (!form) {
+            throw new Error(
+              "FORM_NOT_FOUND",
+            );
+          }
+
+          if (
+            form.activity.status ===
+            "ARCHIVED"
+          ) {
+            throw new Error(
+              "ACTIVITY_ARCHIVED",
+            );
+          }
+
+          const occupiedSeats =
+            await tx.activityFormSubmission.count({
+              where: {
+                formId: form.id,
+
+                status: {
+                  not: "REJECTED",
+                },
+              },
+            });
+
+          /*
+           * لا نسمح للأدمن بتخفيض السعة
+           * إلى أقل من عدد المقاعد المشغولة.
+           */
+          if (
+            capacity < occupiedSeats
+          ) {
+            throw new Error(
+              "CAPACITY_TOO_SMALL",
+            );
+          }
+
+          await tx.activity.update({
+            where: {
+              id: activityId,
+            },
+
+            data: {
+              capacity,
+            },
+          });
+
+          await tx.activityRegistrationForm.update({
+            where: {
+              id: form.id,
+            },
+
+            data: {
+              isOpen,
+            },
+          });
+        },
+        {
+          isolationLevel:
+            Prisma.TransactionIsolationLevel
+              .Serializable,
+        },
+      );
+
+      businessError = null;
+      break;
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message ===
+          "FORM_NOT_FOUND"
+      ) {
+        businessError =
+          "FORM_NOT_FOUND";
+        break;
+      }
+
+      if (
+        error instanceof Error &&
+        error.message ===
+          "CAPACITY_TOO_SMALL"
+      ) {
+        businessError =
+          "CAPACITY_TOO_SMALL";
+        break;
+      }
+
+      if (
+        error instanceof Error &&
+        error.message ===
+          "ACTIVITY_ARCHIVED"
+      ) {
+        businessError =
+          "ACTIVITY_ARCHIVED";
+        break;
+      }
+
+      if (
+        error instanceof
+          Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2034" &&
+        attempt < maxAttempts
+      ) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  if (
+    businessError ===
+    "FORM_NOT_FOUND"
+  ) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "نموذج التسجيل غير موجود لهذا النشاط.",
+      )}`,
+    );
+  }
+
+  if (
+    businessError ===
+    "CAPACITY_TOO_SMALL"
+  ) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "لا يمكن جعل السعة أقل من عدد المقاعد المشغولة حاليًا.",
+      )}`,
+    );
+  }
+
+  if (
+    businessError ===
+    "ACTIVITY_ARCHIVED"
+  ) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "النشاط مؤرشف. أعده إلى حالة منشور قبل تعديل إعدادات التسجيل.",
+      )}`,
+    );
+  }
+
+  revalidateRegistrationPages(
+    activityId,
+  );
+
+  redirect(
+    `${basePath}?success=${encodeURIComponent(
+      `تم حفظ الإعدادات. التسجيل الآن ${
+        isOpen ? "مفتوح" : "مغلق"
+      } والسعة ${capacity} مقعد.`,
+    )}`,
+  );
+}
+
+============================================================
+FILE: app\admin\activities\[id]\registrations\export\route.ts
+============================================================
+
+import type { Prisma } from "@prisma/client";
+import ExcelJS from "exceljs";
+
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+type RouteContext = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+const statusLabels = {
+  SUBMITTED: "قيد المراجعة",
+  APPROVED: "مقبول",
+  REJECTED: "مرفوض",
+} as const;
+
+function formatAnswer(
+  value: Prisma.JsonValue,
+) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item))
+      .join("، ");
+  }
+
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return "";
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
+}
+
+function formatDate(
+  date: Date | null,
+) {
+  if (!date) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(
+    "ar-PS",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
+  ).format(date);
+}
+
+function safeFileName(
+  value: string,
+) {
+  return value
+    .replace(/[\\/:*?"<>|]/g, "-")
+    .replace(/\s+/g, "-")
+    .slice(0, 80);
+}
+
+export async function GET(
+  _request: Request,
+  { params }: RouteContext,
+) {
+  await requirePermission(
+    PERMISSIONS.REGISTRATION_EXPORT,
+  );
+
+  const { id } = await params;
+
+  const activity =
+    await prisma.activity.findUnique({
+      where: {
+        id,
+      },
+
+      include: {
+        registrationForm: {
+          include: {
+            questions: {
+              orderBy: {
+                sortOrder: "asc",
+              },
+            },
+
+            submissions: {
+              include: {
+                answers: true,
+              },
+
+              orderBy: {
+                submittedAt: "asc",
+              },
+            },
+          },
+        },
+      },
+    });
+
+  if (
+    !activity ||
+    !activity.registrationForm
+  ) {
+    return new Response(
+      "Activity registration form not found",
+      {
+        status: 404,
+      },
+    );
+  }
+
+  const form =
+    activity.registrationForm;
+
+  const workbook =
+    new ExcelJS.Workbook();
+
+  workbook.creator =
+    "IUG Engineering Club";
+
+  workbook.created =
+    new Date();
+
+  const worksheet =
+    workbook.addWorksheet(
+      "المسجلون",
+      {
+        views: [
+          {
+            rightToLeft: true,
+            state: "frozen",
+            ySplit: 1,
+          },
+        ],
+      },
+    );
+
+  const dynamicQuestionColumns =
+    form.questions.map(
+      (question) => ({
+        header: question.label,
+        key: `question_${question.id}`,
+        width: 24,
+      }),
+    );
+
+  worksheet.columns = [
+    {
+      header: "#",
+      key: "number",
+      width: 8,
+    },
+    {
+      header: "اسم الطالب",
+      key: "studentName",
+      width: 24,
+    },
+    {
+      header: "البريد الإلكتروني",
+      key: "studentEmail",
+      width: 30,
+    },
+    {
+      header: "التخصص",
+      key: "studentDepartment",
+      width: 22,
+    },
+    {
+      header: "حالة التسجيل",
+      key: "registrationStatus",
+      width: 18,
+    },
+    {
+      header: "حالة الحضور",
+      key: "attendanceStatus",
+      width: 18,
+    },
+    {
+      header: "وقت الحضور",
+      key: "checkedInAt",
+      width: 24,
+    },
+    {
+      header: "وقت التسجيل",
+      key: "submittedAt",
+      width: 24,
+    },
+    ...dynamicQuestionColumns,
+  ];
+
+  form.submissions.forEach(
+    (submission, index) => {
+      const answerMap =
+        new Map(
+          submission.answers.map(
+            (answer) => [
+              answer.questionId,
+              answer.value,
+            ],
+          ),
+        );
+
+      const attendanceStatus =
+        submission.status ===
+        "APPROVED"
+          ? submission.checkedInAt
+            ? "حضر"
+            : "لم يحضر"
+          : "غير مطبق";
+
+      const rowData: Record<
+        string,
+        string | number
+      > = {
+        number: index + 1,
+        studentName:
+          submission.studentName,
+        studentEmail:
+          submission.studentEmail,
+        studentDepartment:
+          submission.studentDepartment ??
+          "",
+        registrationStatus:
+          statusLabels[
+            submission.status
+          ],
+        attendanceStatus,
+        checkedInAt:
+          formatDate(
+            submission.checkedInAt,
+          ),
+        submittedAt:
+          formatDate(
+            submission.submittedAt,
+          ),
+      };
+
+      for (
+        const question of
+        form.questions
+      ) {
+        rowData[
+          `question_${question.id}`
+        ] = formatAnswer(
+          answerMap.get(
+            question.id,
+          ) ?? null,
+        );
+      }
+
+      const row =
+        worksheet.addRow(
+          rowData,
+        );
+
+      row.alignment = {
+        vertical: "middle",
+        horizontal: "right",
+        wrapText: true,
+      };
+
+      row.eachCell(
+        (cell, colNumber) => {
+          /*
+           * لا نغيّر تنسيق خلية حالة التسجيل هنا
+           * حتى تبقى قابلة للقراءة مثل باقي البيانات.
+           */
+          if (
+            colNumber !== 5
+          ) {
+            cell.alignment = {
+              vertical: "middle",
+              horizontal: "right",
+              wrapText: true,
+            };
+          }
+        },
+      );
+    },
+  );
+
+  const header =
+    worksheet.getRow(1);
+
+  header.height = 28;
+
+  header.font = {
+    bold: true,
+  };
+
+  header.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+    wrapText: true,
+  };
+
+  header.eachCell((cell) => {
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: {
+        argb: "FFEAF2F8",
+      },
+    };
+
+    cell.border = {
+      bottom: {
+        style: "thin",
+        color: {
+          argb: "FFCBD5E1",
+        },
+      },
+    };
+  });
+
+  worksheet.autoFilter = {
+    from: {
+      row: 1,
+      column: 1,
+    },
+    to: {
+      row: 1,
+      column:
+        worksheet.columnCount,
+    },
+  };
+
+  const buffer =
+    await workbook.xlsx.writeBuffer();
+
+  const filename =
+    `${safeFileName(
+      activity.title,
+    )}-registrations.xlsx`;
+
+  return new Response(
+    Buffer.from(buffer),
+    {
+      status: 200,
+
+      headers: {
+        "Content-Type":
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+
+        "Content-Disposition":
+          `attachment; filename*=UTF-8''${encodeURIComponent(
+            filename,
+          )}`,
+
+        "Cache-Control":
+          "no-store",
+      },
+    },
+  );
+}
+
+============================================================
+FILE: app\admin\activities\[id]\check-in\page.tsx
+============================================================
+
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import {
+  ArrowRight,
+  CheckCircle2,
+  QrCode,
+  Users,
+} from "lucide-react";
+
+import ActivityCheckInScanner from "@/components/admin/ActivityCheckInScanner";
+
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
+
+import styles from "./check-in.module.css";
+
+export const dynamic =
+  "force-dynamic";
+
+type Props = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+function formatDate(
+  date: Date,
+) {
+  return new Intl.DateTimeFormat(
+    "ar-PS",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
+  ).format(date);
+}
+
+export default async function ActivityCheckInPage({
+  params,
+}: Props) {
+  await requirePermission(
+    PERMISSIONS.REGISTRATION_MANAGE,
+  );
+
+  const { id } =
+    await params;
+
+  const activity =
+    await prisma.activity.findUnique({
+      where: {
+        id,
+      },
+
+      select: {
+        id: true,
+        title: true,
+        location: true,
+        startsAt: true,
+
+        registrationForm: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+  if (
+    !activity ||
+    !activity.registrationForm
+  ) {
+    notFound();
+  }
+
+  const formId =
+    activity.registrationForm.id;
+
+  const [
+    approvedCount,
+    checkedInCount,
+  ] = await Promise.all([
+    prisma.activityFormSubmission.count({
+      where: {
+        formId,
+        status: "APPROVED",
+      },
+    }),
+
+    prisma.activityFormSubmission.count({
+      where: {
+        formId,
+        status: "APPROVED",
+
+        checkedInAt: {
+          not: null,
+        },
+      },
+    }),
+  ]);
+
+  const waitingCount =
+    Math.max(
+      approvedCount -
+        checkedInCount,
+      0,
+    );
+
+  return (
+    <main
+      className={
+        styles.page
+      }
+    >
+      <div
+        className={
+          styles.topBar
+        }
+      >
+        <Link
+          href={`/admin/activities/${activity.id}/registrations`}
+          className={
+            styles.backLink
+          }
+        >
+          <ArrowRight
+            size={18}
+          />
+
+          إدارة المسجلين
+        </Link>
+      </div>
+
+      <section
+        className={
+          styles.hero
+        }
+      >
+        <div>
+          <span
+            className={
+              styles.eyebrow
+            }
+          >
+            CHECK-IN
+          </span>
+
+          <h1>
+            تسجيل الحضور
+          </h1>
+
+          <p>
+            {activity.title}
+          </p>
+        </div>
+
+        <div
+          className={
+            styles.activityInfo
+          }
+        >
+          <span>
+            {formatDate(
+              activity.startsAt,
+            )}
+          </span>
+
+          <strong>
+            {activity.location}
+          </strong>
+        </div>
+      </section>
+
+      <section
+        className={
+          styles.stats
+        }
+      >
+        <article>
+          <span
+            className={
+              styles.statIcon
+            }
+          >
+            <Users size={21} />
+          </span>
+
+          <div>
+            <span>
+              المقبولون
+            </span>
+
+            <strong>
+              {approvedCount}
+            </strong>
+          </div>
+        </article>
+
+        <article>
+          <span
+            className={
+              styles.statIcon
+            }
+          >
+            <CheckCircle2
+              size={21}
+            />
+          </span>
+
+          <div>
+            <span>
+              حضروا
+            </span>
+
+            <strong>
+              {checkedInCount}
+            </strong>
+          </div>
+        </article>
+
+        <article>
+          <span
+            className={
+              styles.statIcon
+            }
+          >
+            <QrCode size={21} />
+          </span>
+
+          <div>
+            <span>
+              بانتظار الحضور
+            </span>
+
+            <strong>
+              {waitingCount}
+            </strong>
+          </div>
+        </article>
+      </section>
+
+      <ActivityCheckInScanner
+        activityId={
+          activity.id
+        }
+      />
+    </main>
+  );
+}
+
+============================================================
+FILE: app\admin\activities\[id]\check-in\actions.ts
+============================================================
+
+"use server";
+
+import { revalidatePath } from "next/cache";
+
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
+import { prisma } from "@/lib/prisma";
+
+export type CheckInResult = {
+  status:
+    | "IDLE"
+    | "SUCCESS"
+    | "ALREADY_CHECKED_IN"
+    | "INVALID_QR"
+    | "WRONG_ACTIVITY"
+    | "NOT_APPROVED"
+    | "UNAUTHORIZED"
+    | "ERROR";
+
+  message: string;
+
+  student?: {
+    name: string;
+    email: string;
+    department: string | null;
+  };
+
+  checkedInAt?: string;
+};
+
+const QR_PREFIX = "ENGCLUB:";
+
+export async function checkInByQrCode(
+  activityId: string,
+  rawCode: string,
+): Promise<CheckInResult> {
+  const { user } =
+    await requirePermission(
+      PERMISSIONS.REGISTRATION_MANAGE,
+    );
+
+  const code = rawCode.trim();
+
+  if (
+    !activityId ||
+    !code.startsWith(QR_PREFIX)
+  ) {
+    return {
+      status: "INVALID_QR",
+      message:
+        "رمز QR غير صالح لنظام النادي الهندسي.",
+    };
+  }
+
+  const token = code
+    .slice(QR_PREFIX.length)
+    .trim();
+
+  if (!token) {
+    return {
+      status: "INVALID_QR",
+      message:
+        "رمز الدخول غير صالح.",
+    };
+  }
+
+  try {
+    const submission =
+      await prisma.activityFormSubmission.findUnique({
+        where: {
+          checkInToken: token,
+        },
+
+        select: {
+          id: true,
+          status: true,
+          checkedInAt: true,
+
+          studentName: true,
+          studentEmail: true,
+          studentDepartment: true,
+
+          form: {
+            select: {
+              activityId: true,
+
+              activity: {
+                select: {
+                  id: true,
+                  title: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+    if (!submission) {
+      return {
+        status: "INVALID_QR",
+        message:
+          "رمز الدخول غير موجود أو غير صالح.",
+      };
+    }
+
+    if (
+      submission.form.activityId !==
+      activityId
+    ) {
+      return {
+        status: "WRONG_ACTIVITY",
+        message:
+          "هذا الرمز تابع لنشاط آخر، وليس لهذا النشاط.",
+      };
+    }
+
+    if (
+      submission.status !==
+      "APPROVED"
+    ) {
+      return {
+        status: "NOT_APPROVED",
+        message:
+          "لا يمكن تسجيل الحضور لأن تسجيل الطالب غير مقبول.",
+        student: {
+          name:
+            submission.studentName,
+
+          email:
+            submission.studentEmail,
+
+          department:
+            submission.studentDepartment,
+        },
+      };
+    }
+
+    if (submission.checkedInAt) {
+      return {
+        status:
+          "ALREADY_CHECKED_IN",
+
+        message:
+          "تم تسجيل حضور هذا الطالب مسبقًا.",
+
+        student: {
+          name:
+            submission.studentName,
+
+          email:
+            submission.studentEmail,
+
+          department:
+            submission.studentDepartment,
+        },
+
+        checkedInAt:
+          submission.checkedInAt.toISOString(),
+      };
+    }
+
+    const checkedInAt =
+      new Date();
+
+    /*
+     * updateMany هنا مهم:
+     * يمنع تسجيل نفس QR مرتين
+     * إذا تم مسحه من جهازين في نفس اللحظة.
+     */
+    const result =
+      await prisma.activityFormSubmission.updateMany({
+        where: {
+          id: submission.id,
+
+          status: "APPROVED",
+
+          checkedInAt: null,
+        },
+
+        data: {
+          checkedInAt,
+
+          checkedInById:
+            user.id,
+        },
+      });
+
+    if (result.count !== 1) {
+      const current =
+        await prisma.activityFormSubmission.findUnique({
+          where: {
+            id: submission.id,
+          },
+
+          select: {
+            status: true,
+            checkedInAt: true,
+          },
+        });
+
+      if (current?.checkedInAt) {
+        return {
+          status:
+            "ALREADY_CHECKED_IN",
+
+          message:
+            "تم تسجيل حضور هذا الطالب مسبقًا.",
+
+          student: {
+            name:
+              submission.studentName,
+
+            email:
+              submission.studentEmail,
+
+            department:
+              submission.studentDepartment,
+          },
+
+          checkedInAt:
+            current.checkedInAt.toISOString(),
+        };
+      }
+
+      if (
+        current?.status !==
+        "APPROVED"
+      ) {
+        return {
+          status:
+            "NOT_APPROVED",
+
+          message:
+            "لم يعد تسجيل الطالب في حالة مقبول.",
+        };
+      }
+
+      return {
+        status: "ERROR",
+        message:
+          "تعذر تسجيل الحضور. حاول مرة أخرى.",
+      };
+    }
+
+    revalidatePath(
+      `/admin/activities/${activityId}/check-in`,
+    );
+
+    revalidatePath(
+      `/admin/activities/${activityId}/registrations`,
+    );
+
+    revalidatePath("/student");
+
+    return {
+      status: "SUCCESS",
+
+      message:
+        "تم تسجيل حضور الطالب بنجاح.",
+
+      student: {
+        name:
+          submission.studentName,
+
+        email:
+          submission.studentEmail,
+
+        department:
+          submission.studentDepartment,
+      },
+
+      checkedInAt:
+        checkedInAt.toISOString(),
+    };
+  } catch (error) {
+    console.error(
+      "Activity check-in error:",
+      error,
+    );
+
+    return {
+      status: "ERROR",
+      message:
+        "حدث خطأ أثناء تسجيل الحضور.",
+    };
+  }
+}
+
+============================================================
+FILE: app\admin\guides\page.tsx
+============================================================
+
+import DepartmentGuideEditor from "@/components/admin/DepartmentGuideEditor";
+import AdminFeedback from "@/components/admin/AdminFeedback";
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+export default async function GuidesAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; success?: string }>;
+}) {
+  await requirePermission(
+    PERMISSIONS.GUIDE_MANAGE,
+  );
+
+  const feedback = await searchParams;
+  const departments = await prisma.department.findMany({
+    include: { guide: true },
+    orderBy: { sortOrder: "asc" },
+  });
+
+  return (
+    <section className="admin-page">
+      <div className="admin-page-head">
+        <div>
+          <h1>تحرير دليل قسم</h1>
+          <p className="muted">اختر أحد أقسام الهندسة، ثم حدّث محتوى دليله واحفظ التغييرات.</p>
+        </div>
+      </div>
+
+      <AdminFeedback error={feedback.error} success={feedback.success} />
+
+      <div className="admin-card guide-editor-card">
+        <DepartmentGuideEditor departments={departments} />
+      </div>
+    </section>
+  );
+}
+
+============================================================
+FILE: app\admin\structure\page.tsx
+============================================================
+
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
+import { prisma } from "@/lib/prisma";
+import AdminFeedback from "@/components/admin/AdminFeedback";
+import { addStructureItem } from "../actions";
+
+export const dynamic = "force-dynamic";
+
+export default async function StructureAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; success?: string }>;
+}) {
+  await requirePermission(
+    PERMISSIONS.STRUCTURE_MANAGE,
+  );
+
+  const feedback = await searchParams;
+  const [departments, items] = await Promise.all([
+    prisma.department.findMany({ orderBy: { sortOrder: "asc" } }),
+    prisma.clubStructureItem.findMany({
+      include: { department: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  return (
+    <section className="admin-page">
+      <div className="admin-page-head">
+        <div>
+          <h1>إضافة عنصر إلى الهيكلية</h1>
+          <p className="muted">أضف الاسم والمنصب والقسم فقط لتحديث الهيكلية العامة للنادي.</p>
+        </div>
+      </div>
+
+      <AdminFeedback error={feedback.error} success={feedback.success} />
+
+      <div className="admin-content-grid">
+        <div className="admin-card">
+          <h2>بيانات عنصر الهيكلية</h2>
+          <form action={addStructureItem} className="stack-form">
+            <label>
+              اسم الشخص
+              <input name="name" required />
+            </label>
+            <label>
+              المنصب
+              <input name="title" required placeholder="رئيس النادي / مندوب القسم" />
+            </label>
+            <label>
+              القسم
+              <select name="departmentId" defaultValue="">
+                <option value="">بدون قسم</option>
+                {departments.map((department) => (
+                  <option value={department.id} key={department.id}>{department.nameAr}</option>
+                ))}
+              </select>
+            </label>
+            <button className="primary-btn" type="submit">إضافة إلى الهيكلية</button>
+          </form>
+        </div>
+
+        <div className="admin-card admin-list-card">
+          <h2>عناصر الهيكلية الحالية</h2>
+          <div className="data-list">
+            {items.length ? items.map((item) => (
+              <article className="data-row" key={item.id}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <div className="data-row-meta">
+                    <span>{item.title}</span>
+                    <span>{item.department?.nameAr ?? "بدون قسم"}</span>
+                  </div>
+                </div>
+              </article>
+            )) : <p className="empty-state">لم تتم إضافة عناصر إلى الهيكلية بعد.</p>}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+============================================================
+FILE: app\member\check-in\page.tsx
+============================================================
+
+import Link from "next/link";
+
+import {
+  CalendarDays,
+  CheckCircle2,
+  MapPin,
+  QrCode,
+  Users,
+} from "lucide-react";
+
+import { requireAttendanceStaff } from "@/lib/attendance-staff";
+import { prisma } from "@/lib/prisma";
+
+import styles from "./member-checkin.module.css";
+
+export const dynamic =
+  "force-dynamic";
+
+function formatDate(
+  date: Date,
+) {
+  return new Intl.DateTimeFormat(
+    "ar-PS",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
+  ).format(date);
+}
+
+export default async function MemberCheckInActivitiesPage() {
+  const { user } =
+    await requireAttendanceStaff();
+
+  const activities =
+    await prisma.activity.findMany({
+      where: {
+        status: "PUBLISHED",
+
+        registrationForm: {
+          isNot: null,
+        },
+      },
+
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        location: true,
+        startsAt: true,
+
+        registrationForm: {
+          select: {
+            id: true,
+          },
+        },
+      },
+
+      orderBy: {
+        startsAt: "asc",
+      },
+    });
+
+  const rows =
+    await Promise.all(
+      activities.map(
+        async (activity) => {
+          const formId =
+            activity.registrationForm
+              ?.id;
+
+          if (!formId) {
+            return {
+              ...activity,
+              approvedCount: 0,
+              checkedInCount: 0,
+            };
+          }
+
+          const [
+            approvedCount,
+            checkedInCount,
+          ] = await Promise.all([
+            prisma.activityFormSubmission.count({
+              where: {
+                formId,
+                status:
+                  "APPROVED",
+              },
+            }),
+
+            prisma.activityFormSubmission.count({
+              where: {
+                formId,
+                status:
+                  "APPROVED",
+
+                checkedInAt: {
+                  not: null,
+                },
+              },
+            }),
+          ]);
+
+          return {
+            ...activity,
+            approvedCount,
+            checkedInCount,
+          };
+        },
+      ),
+    );
+
+  return (
+    <main
+      className={
+        styles.page
+      }
+    >
+      <section
+        className={
+          styles.hero
+        }
+      >
+        <div>
+          <span
+            className={
+              styles.eyebrow
+            }
+          >
+            بوابة العضو
+          </span>
+
+          <h1>
+            تسجيل حضور الأنشطة
+          </h1>
+
+          <p>
+            أهلًا {user.name}،
+            اختر النشاط ثم ابدأ مسح
+            بطاقات قبول الطلاب.
+          </p>
+        </div>
+
+        <div
+          className={
+            styles.heroIcon
+          }
+        >
+          <QrCode size={32} />
+        </div>
+      </section>
+
+      <div
+        className={
+          styles.sectionHead
+        }
+      >
+        <div>
+          <span>
+            الأنشطة المتاحة
+          </span>
+
+          <h2>
+            اختر النشاط
+          </h2>
+        </div>
+
+        <small>
+          {rows.length} نشاط
+        </small>
+      </div>
+
+      {rows.length ? (
+        <div
+          className={
+            styles.activityGrid
+          }
+        >
+          {rows.map(
+            (activity) => {
+              const remaining =
+                Math.max(
+                  activity.approvedCount -
+                    activity.checkedInCount,
+                  0,
+                );
+
+              return (
+                <article
+                  key={
+                    activity.id
+                  }
+                  className={
+                    styles.activityCard
+                  }
+                >
+                  <div
+                    className={
+                      styles.activityCardTop
+                    }
+                  >
+                    <span
+                      className={
+                        styles.activityIcon
+                      }
+                    >
+                      <QrCode
+                        size={22}
+                      />
+                    </span>
+
+                    <div>
+                      <h3>
+                        {
+                          activity.title
+                        }
+                      </h3>
+
+                      <p>
+                        {
+                          activity.description
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    className={
+                      styles.activityMeta
+                    }
+                  >
+                    <div>
+                      <CalendarDays
+                        size={17}
+                      />
+
+                      <span>
+                        {formatDate(
+                          activity.startsAt,
+                        )}
+                      </span>
+                    </div>
+
+                    <div>
+                      <MapPin
+                        size={17}
+                      />
+
+                      <span>
+                        {
+                          activity.location
+                        }
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    className={
+                      styles.activityStats
+                    }
+                  >
+                    <div>
+                      <Users
+                        size={18}
+                      />
+
+                      <span>
+                        المقبولون
+                      </span>
+
+                      <strong>
+                        {
+                          activity.approvedCount
+                        }
+                      </strong>
+                    </div>
+
+                    <div>
+                      <CheckCircle2
+                        size={18}
+                      />
+
+                      <span>
+                        حضروا
+                      </span>
+
+                      <strong>
+                        {
+                          activity.checkedInCount
+                        }
+                      </strong>
+                    </div>
+
+                    <div>
+                      <QrCode
+                        size={18}
+                      />
+
+                      <span>
+                        بانتظار الحضور
+                      </span>
+
+                      <strong>
+                        {remaining}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <Link
+                    href={`/member/check-in/${activity.id}`}
+                    className={
+                      styles.openScannerButton
+                    }
+                  >
+                    <QrCode
+                      size={18}
+                    />
+
+                    فتح ماسح الحضور
+                  </Link>
+                </article>
+              );
+            },
+          )}
+        </div>
+      ) : (
+        <div
+          className={
+            styles.emptyState
+          }
+        >
+          <QrCode size={34} />
+
+          <h3>
+            لا توجد أنشطة متاحة
+          </h3>
+
+          <p>
+            لا يوجد نشاط منشور مع
+            نموذج تسجيل داخلي حاليًا.
+          </p>
+        </div>
+      )}
+    </main>
+  );
+}
+
+============================================================
+FILE: app\member\check-in\actions.ts
+============================================================
+
+"use server";
+
+import { revalidatePath } from "next/cache";
+
+import { requireAttendanceStaff } from "@/lib/attendance-staff";
+import { prisma } from "@/lib/prisma";
+
+export type MemberCheckInResult = {
+  status:
+    | "IDLE"
+    | "SUCCESS"
+    | "ALREADY_CHECKED_IN"
+    | "INVALID_QR"
+    | "WRONG_ACTIVITY"
+    | "NOT_APPROVED"
+    | "ACTIVITY_UNAVAILABLE"
+    | "ERROR";
+
+  message: string;
+
+  student?: {
+    name: string;
+    email: string;
+    department: string | null;
+  };
+
+  checkedInAt?: string;
+};
+
+const QR_PREFIX = "ENGCLUB:";
+
+export async function checkInMemberQr(
+  activityId: string,
+  rawCode: string,
+): Promise<MemberCheckInResult> {
+  const { user } =
+    await requireAttendanceStaff();
+
+  const code =
+    rawCode.trim();
+
+  if (
+    !activityId ||
+    !code.startsWith(QR_PREFIX)
+  ) {
+    return {
+      status: "INVALID_QR",
+      message:
+        "رمز QR غير صالح لنظام النادي الهندسي.",
+    };
+  }
+
+  const token =
+    code
+      .slice(QR_PREFIX.length)
+      .trim();
+
+  if (!token) {
+    return {
+      status: "INVALID_QR",
+      message:
+        "رمز الدخول غير صالح.",
+    };
+  }
+
+  try {
+    const submission =
+      await prisma.activityFormSubmission.findUnique({
+        where: {
+          checkInToken: token,
+        },
+
+        select: {
+          id: true,
+          status: true,
+          checkedInAt: true,
+
+          studentName: true,
+          studentEmail: true,
+          studentDepartment: true,
+
+          form: {
+            select: {
+              activityId: true,
+
+              activity: {
+                select: {
+                  id: true,
+                  status: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+    if (!submission) {
+      return {
+        status: "INVALID_QR",
+        message:
+          "رمز الدخول غير موجود أو غير صالح.",
+      };
+    }
+
+    if (
+      submission.form.activityId !==
+      activityId
+    ) {
+      return {
+        status: "WRONG_ACTIVITY",
+        message:
+          "هذا الرمز تابع لنشاط آخر، وليس لهذا النشاط.",
+      };
+    }
+
+    if (
+      submission.form.activity.status !==
+      "PUBLISHED"
+    ) {
+      return {
+        status:
+          "ACTIVITY_UNAVAILABLE",
+
+        message:
+          "هذا النشاط غير متاح حاليًا لتسجيل الحضور.",
+      };
+    }
+
+    if (
+      submission.status !==
+      "APPROVED"
+    ) {
+      return {
+        status: "NOT_APPROVED",
+
+        message:
+          "لا يمكن تسجيل الحضور لأن تسجيل الطالب غير مقبول.",
+
+        student: {
+          name:
+            submission.studentName,
+
+          email:
+            submission.studentEmail,
+
+          department:
+            submission.studentDepartment,
+        },
+      };
+    }
+
+    if (submission.checkedInAt) {
+      return {
+        status:
+          "ALREADY_CHECKED_IN",
+
+        message:
+          "تم تسجيل حضور هذا الطالب مسبقًا.",
+
+        student: {
+          name:
+            submission.studentName,
+
+          email:
+            submission.studentEmail,
+
+          department:
+            submission.studentDepartment,
+        },
+
+        checkedInAt:
+          submission.checkedInAt.toISOString(),
+      };
+    }
+
+    const checkedInAt =
+      new Date();
+
+    /*
+     * التحديث الذري يمنع تسجيل نفس الطالب مرتين
+     * لو تمت قراءة الرمز من جهازين بنفس اللحظة.
+     */
+    const updated =
+      await prisma.activityFormSubmission.updateMany({
+        where: {
+          id: submission.id,
+          status: "APPROVED",
+          checkedInAt: null,
+
+          form: {
+            activityId,
+            activity: {
+              status: "PUBLISHED",
+            },
+          },
+        },
+
+        data: {
+          checkedInAt,
+          checkedInById:
+            user.id,
+        },
+      });
+
+    if (updated.count !== 1) {
+      const current =
+        await prisma.activityFormSubmission.findUnique({
+          where: {
+            id: submission.id,
+          },
+
+          select: {
+            status: true,
+            checkedInAt: true,
+          },
+        });
+
+      if (
+        current?.checkedInAt
+      ) {
+        return {
+          status:
+            "ALREADY_CHECKED_IN",
+
+          message:
+            "تم تسجيل حضور هذا الطالب مسبقًا.",
+
+          student: {
+            name:
+              submission.studentName,
+
+            email:
+              submission.studentEmail,
+
+            department:
+              submission.studentDepartment,
+          },
+
+          checkedInAt:
+            current.checkedInAt.toISOString(),
+        };
+      }
+
+      if (
+        current?.status !==
+        "APPROVED"
+      ) {
+        return {
+          status:
+            "NOT_APPROVED",
+
+          message:
+            "لم يعد تسجيل الطالب في حالة مقبول.",
+        };
+      }
+
+      return {
+        status: "ERROR",
+        message:
+          "تعذر تسجيل الحضور. حاول مرة أخرى.",
+      };
+    }
+
+    revalidatePath(
+      `/member/check-in/${activityId}`,
+    );
+
+    revalidatePath(
+      "/member/check-in",
+    );
+
+    revalidatePath(
+      `/admin/activities/${activityId}/registrations`,
+    );
+
+    revalidatePath(
+      `/admin/activities/${activityId}/check-in`,
+    );
+
+    revalidatePath("/student");
+
+    return {
+      status: "SUCCESS",
+
+      message:
+        "تم تسجيل حضور الطالب بنجاح.",
+
+      student: {
+        name:
+          submission.studentName,
+
+        email:
+          submission.studentEmail,
+
+        department:
+          submission.studentDepartment,
+      },
+
+      checkedInAt:
+        checkedInAt.toISOString(),
+    };
+  } catch (error) {
+    console.error(
+      "Member QR check-in error:",
+      error,
+    );
+
+    return {
+      status: "ERROR",
+      message:
+        "حدث خطأ أثناء تسجيل الحضور.",
+    };
+  }
+}
+
+============================================================
+FILE: app\member\check-in\[id]\page.tsx
+============================================================
+
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import {
+  ArrowRight,
+  CheckCircle2,
+  MapPin,
+  QrCode,
+  Users,
+} from "lucide-react";
+
+import MemberCheckInScanner from "@/components/member/MemberCheckInScanner";
+
+import { requireAttendanceStaff } from "@/lib/attendance-staff";
+import { prisma } from "@/lib/prisma";
+
+import styles from "../member-checkin.module.css";
+
+export const dynamic =
+  "force-dynamic";
+
+type Props = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+function formatDate(
+  date: Date,
+) {
+  return new Intl.DateTimeFormat(
+    "ar-PS",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
+  ).format(date);
+}
+
+export default async function MemberActivityCheckInPage({
+  params,
+}: Props) {
+  await requireAttendanceStaff();
+
+  const { id } =
+    await params;
+
+  const activity =
+    await prisma.activity.findFirst({
+      where: {
+        id,
+        status: "PUBLISHED",
+      },
+
+      select: {
+        id: true,
+        title: true,
+        location: true,
+        startsAt: true,
+
+        registrationForm: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+  if (
+    !activity ||
+    !activity.registrationForm
+  ) {
+    notFound();
+  }
+
+  const formId =
+    activity.registrationForm.id;
+
+  const [
+    approvedCount,
+    checkedInCount,
+  ] = await Promise.all([
+    prisma.activityFormSubmission.count({
+      where: {
+        formId,
+        status: "APPROVED",
+      },
+    }),
+
+    prisma.activityFormSubmission.count({
+      where: {
+        formId,
+        status: "APPROVED",
+
+        checkedInAt: {
+          not: null,
+        },
+      },
+    }),
+  ]);
+
+  const waitingCount =
+    Math.max(
+      approvedCount -
+        checkedInCount,
+      0,
+    );
+
+  return (
+    <main
+      className={
+        styles.page
+      }
+    >
+      <div
+        className={
+          styles.topBar
+        }
+      >
+        <Link
+          href="/member/check-in"
+          className={
+            styles.backLink
+          }
+        >
+          <ArrowRight
+            size={18}
+          />
+
+          العودة للأنشطة
+        </Link>
+      </div>
+
+      <section
+        className={
+          styles.activityHero
+        }
+      >
+        <div>
+          <span
+            className={
+              styles.eyebrow
+            }
+          >
+            تسجيل الحضور
+          </span>
+
+          <h1>
+            {activity.title}
+          </h1>
+
+          <div
+            className={
+              styles.heroMeta
+            }
+          >
+            <span>
+              {formatDate(
+                activity.startsAt,
+              )}
+            </span>
+
+            <span>
+              <MapPin
+                size={15}
+              />
+
+              {
+                activity.location
+              }
+            </span>
+          </div>
+        </div>
+
+        <QrCode size={34} />
+      </section>
+
+      <section
+        className={
+          styles.quickStats
+        }
+      >
+        <div>
+          <Users size={20} />
+
+          <span>
+            المقبولون
+          </span>
+
+          <strong>
+            {approvedCount}
+          </strong>
+        </div>
+
+        <div>
+          <CheckCircle2
+            size={20}
+          />
+
+          <span>
+            حضروا
+          </span>
+
+          <strong>
+            {checkedInCount}
+          </strong>
+        </div>
+
+        <div>
+          <QrCode size={20} />
+
+          <span>
+            بانتظار الحضور
+          </span>
+
+          <strong>
+            {waitingCount}
+          </strong>
+        </div>
+      </section>
+
+      <MemberCheckInScanner
+        activityId={
+          activity.id
+        }
+      />
+    </main>
+  );
+}
