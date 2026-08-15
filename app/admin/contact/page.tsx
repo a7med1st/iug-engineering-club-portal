@@ -1,54 +1,78 @@
 import Link from "next/link";
-import { Download, Printer } from "lucide-react";
+import {
+  Download,
+  Printer,
+} from "lucide-react";
 
-import { requireAdmin } from "@/lib/auth";
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
 import { prisma } from "@/lib/prisma";
-import { CONTACT_STATUS_LABELS } from "@/lib/contact-options";
+import {
+  CONTACT_STATUS_LABELS,
+} from "@/lib/contact-options";
 
-import { updateContactStatus } from "./actions";
+import {
+  updateContactStatus,
+} from "./actions";
 
-export const dynamic = "force-dynamic";
+export const dynamic =
+  "force-dynamic";
 
 export default async function AdminContactPage() {
-  await requireAdmin();
+  await requirePermission(
+    PERMISSIONS.CONTACT_MANAGE,
+  );
 
-  const [complaints, suggestions, collaborations] =
-    await Promise.all([
-      prisma.complaint.findMany({
-        include: {
-          department: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      }),
+  const [
+    complaints,
+    suggestions,
+    collaborations,
+  ] = await Promise.all([
+    prisma.complaint.findMany({
+      include: {
+        department: true,
+      },
 
-      prisma.suggestion.findMany({
-        include: {
-          department: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      }),
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
 
-      prisma.collaborationRequest.findMany({
-        orderBy: {
-          createdAt: "desc",
-        },
-      }),
-    ]);
+    prisma.suggestion.findMany({
+      include: {
+        department: true,
+      },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+
+    prisma.collaborationRequest.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+  ]);
 
   return (
     <main className="admin-contact-page shell">
       <div className="admin-contact-header">
         <div>
-          <span className="eyebrow">ADMIN</span>
+          <span className="eyebrow">
+            ADMIN
+          </span>
 
-          <h1>إدارة التواصل</h1>
+          <h1>
+            إدارة التواصل
+          </h1>
 
           <p>
-            متابعة الشكاوى والاقتراحات وطلبات التعاون.
+            متابعة الشكاوى والاقتراحات
+            وطلبات التعاون.
           </p>
         </div>
       </div>
@@ -58,7 +82,9 @@ export default async function AdminContactPage() {
           title="الشكاوى الجديدة"
           value={
             complaints.filter(
-              (item) => item.status === "NEW"
+              (item) =>
+                item.status ===
+                "NEW",
             ).length
           }
         />
@@ -67,7 +93,9 @@ export default async function AdminContactPage() {
           title="الاقتراحات الجديدة"
           value={
             suggestions.filter(
-              (item) => item.status === "NEW"
+              (item) =>
+                item.status ===
+                "NEW",
             ).length
           }
         />
@@ -76,7 +104,9 @@ export default async function AdminContactPage() {
           title="طلبات التعاون الجديدة"
           value={
             collaborations.filter(
-              (item) => item.status === "NEW"
+              (item) =>
+                item.status ===
+                "NEW",
             ).length
           }
         />
@@ -102,15 +132,23 @@ export default async function AdminContactPage() {
               <summary>
                 <div>
                   <strong>
-                    {item.studentName || "طالب مجهول"}
+                    {item.studentName ||
+                      "طالب مجهول"}
                   </strong>
 
                   <small>
-                    {item.department.nameAr}
+                    {
+                      item.department
+                        .nameAr
+                    }
                   </small>
                 </div>
 
-                <StatusBadge status={item.status} />
+                <StatusBadge
+                  status={
+                    item.status
+                  }
+                />
               </summary>
 
               <div className="contact-admin-details">
@@ -124,7 +162,10 @@ export default async function AdminContactPage() {
 
                 <Info
                   title="التخصص"
-                  value={item.department.nameAr}
+                  value={
+                    item.department
+                      .nameAr
+                  }
                 />
 
                 <Info
@@ -139,7 +180,7 @@ export default async function AdminContactPage() {
                 <Info
                   title="تاريخ الإرسال"
                   value={item.createdAt.toLocaleString(
-                    "ar-EG"
+                    "ar-EG",
                   )}
                 />
 
@@ -148,7 +189,9 @@ export default async function AdminContactPage() {
                     تفاصيل الشكوى
                   </strong>
 
-                  <p>{item.details}</p>
+                  <p>
+                    {item.details}
+                  </p>
                 </div>
 
                 <div className="contact-admin-actions">
@@ -162,6 +205,7 @@ export default async function AdminContactPage() {
                       size={17}
                       strokeWidth={1.8}
                     />
+
                     طباعة / حفظ PDF
                   </Link>
                 </div>
@@ -169,7 +213,9 @@ export default async function AdminContactPage() {
                 <StatusForm
                   id={item.id}
                   kind="complaint"
-                  currentStatus={item.status}
+                  currentStatus={
+                    item.status
+                  }
                   statuses={[
                     "NEW",
                     "IN_REVIEW",
@@ -206,22 +252,34 @@ export default async function AdminContactPage() {
                   </strong>
 
                   <small>
-                    {item.department.nameAr}
+                    {
+                      item.department
+                        .nameAr
+                    }
                   </small>
                 </div>
 
-                <StatusBadge status={item.status} />
+                <StatusBadge
+                  status={
+                    item.status
+                  }
+                />
               </summary>
 
               <div className="contact-admin-details">
                 <Info
                   title="رقم الواتساب"
-                  value={item.whatsapp}
+                  value={
+                    item.whatsapp
+                  }
                 />
 
                 <Info
                   title="التخصص"
-                  value={item.department.nameAr}
+                  value={
+                    item.department
+                      .nameAr
+                  }
                 />
 
                 <Info
@@ -234,7 +292,9 @@ export default async function AdminContactPage() {
 
                 <Info
                   title="فكرة الفعالية أو المشروع"
-                  value={item.projectIdea}
+                  value={
+                    item.projectIdea
+                  }
                 />
 
                 <div className="contact-admin-actions">
@@ -248,6 +308,7 @@ export default async function AdminContactPage() {
                       size={17}
                       strokeWidth={1.8}
                     />
+
                     طباعة / حفظ PDF
                   </Link>
                 </div>
@@ -255,7 +316,9 @@ export default async function AdminContactPage() {
                 <StatusForm
                   id={item.id}
                   kind="suggestion"
-                  currentStatus={item.status}
+                  currentStatus={
+                    item.status
+                  }
                   statuses={[
                     "NEW",
                     "IN_REVIEW",
@@ -274,126 +337,162 @@ export default async function AdminContactPage() {
 
       <AdminSection
         title="طلبات التعاون"
-        count={collaborations.length}
+        count={
+          collaborations.length
+        }
         exportHref="/admin/contact/export/collaborations"
       >
         {collaborations.length === 0 ? (
           <EmptyState text="لا توجد طلبات تعاون حتى الآن." />
         ) : (
-          collaborations.map((item) => (
-            <details
-              className="contact-admin-item"
-              key={item.id}
-            >
-              <summary>
-                <div>
-                  <strong>
-                    {item.entityName}
-                  </strong>
-
-                  <small>
-                    {item.contactPerson}
-                  </small>
-                </div>
-
-                <StatusBadge status={item.status} />
-              </summary>
-
-              <div className="contact-admin-details">
-                <Info
-                  title="مسؤول التواصل"
-                  value={item.contactPerson}
-                />
-
-                <Info
-                  title="الهاتف"
-                  value={item.phone}
-                />
-
-                <Info
-                  title="البريد الإلكتروني"
-                  value={item.email}
-                />
-
-                <Info
-                  title="المجال"
-                  value={item.field}
-                />
-
-                <Info
-                  title="الرابط"
-                  value={item.socialUrl}
-                />
-
-                <div className="contact-admin-description">
-                  <strong>
-                    وصف التعاون
-                  </strong>
-
-                  <p>
-                    {item.description}
-                  </p>
-                </div>
-
-                {item.attachmentStoredName && (
-                  <div className="contact-admin-description">
+          collaborations.map(
+            (item) => (
+              <details
+                className="contact-admin-item"
+                key={item.id}
+              >
+                <summary>
+                  <div>
                     <strong>
-                      الملف المرفق
+                      {
+                        item.entityName
+                      }
                     </strong>
 
-                    <div style={{ marginTop: "10px" }}>
-                      <Link
-                        href={`/admin/contact/files/${item.id}`}
-                        className="ghost-btn"
-                      >
-                        تحميل الملف المرفق
-                      </Link>
-                    </div>
+                    <small>
+                      {
+                        item.contactPerson
+                      }
+                    </small>
                   </div>
-                )}
 
-                {item.additionalNotes && (
+                  <StatusBadge
+                    status={
+                      item.status
+                    }
+                  />
+                </summary>
+
+                <div className="contact-admin-details">
+                  <Info
+                    title="مسؤول التواصل"
+                    value={
+                      item.contactPerson
+                    }
+                  />
+
+                  <Info
+                    title="الهاتف"
+                    value={
+                      item.phone
+                    }
+                  />
+
+                  <Info
+                    title="البريد الإلكتروني"
+                    value={
+                      item.email
+                    }
+                  />
+
+                  <Info
+                    title="المجال"
+                    value={
+                      item.field
+                    }
+                  />
+
+                  <Info
+                    title="الرابط"
+                    value={
+                      item.socialUrl
+                    }
+                  />
+
                   <div className="contact-admin-description">
                     <strong>
-                      ملاحظات إضافية
+                      وصف التعاون
                     </strong>
 
                     <p>
-                      {item.additionalNotes}
+                      {
+                        item.description
+                      }
                     </p>
                   </div>
-                )}
 
-                <div className="contact-admin-actions">
-                  <Link
-                    href={`/admin/contact/print/collaboration/${item.id}`}
-                    className="ghost-btn"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Printer
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-                    طباعة / حفظ PDF
-                  </Link>
+                  {item.attachmentStoredName && (
+                    <div className="contact-admin-description">
+                      <strong>
+                        الملف المرفق
+                      </strong>
+
+                      <div
+                        style={{
+                          marginTop:
+                            "10px",
+                        }}
+                      >
+                        <Link
+                          href={`/admin/contact/files/${item.id}`}
+                          className="ghost-btn"
+                        >
+                          تحميل الملف المرفق
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+
+                  {item.additionalNotes && (
+                    <div className="contact-admin-description">
+                      <strong>
+                        ملاحظات إضافية
+                      </strong>
+
+                      <p>
+                        {
+                          item.additionalNotes
+                        }
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="contact-admin-actions">
+                    <Link
+                      href={`/admin/contact/print/collaboration/${item.id}`}
+                      className="ghost-btn"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Printer
+                        size={17}
+                        strokeWidth={
+                          1.8
+                        }
+                      />
+
+                      طباعة / حفظ PDF
+                    </Link>
+                  </div>
+
+                  <StatusForm
+                    id={item.id}
+                    kind="collaboration"
+                    currentStatus={
+                      item.status
+                    }
+                    statuses={[
+                      "NEW",
+                      "IN_REVIEW",
+                      "CONTACTED",
+                      "ACCEPTED",
+                      "REJECTED",
+                    ]}
+                  />
                 </div>
-
-                <StatusForm
-                  id={item.id}
-                  kind="collaboration"
-                  currentStatus={item.status}
-                  statuses={[
-                    "NEW",
-                    "IN_REVIEW",
-                    "CONTACTED",
-                    "ACCEPTED",
-                    "REJECTED",
-                  ]}
-                />
-              </div>
-            </details>
-          ))
+              </details>
+            ),
+          )
         )}
       </AdminSection>
     </main>
@@ -413,8 +512,13 @@ function StatCard({
 }) {
   return (
     <div className="contact-admin-stat">
-      <span>{title}</span>
-      <strong>{value}</strong>
+      <span>
+        {title}
+      </span>
+
+      <strong>
+        {value}
+      </strong>
     </div>
   );
 }
@@ -434,7 +538,9 @@ function AdminSection({
     <section className="contact-admin-section">
       <div className="contact-admin-heading">
         <div>
-          <h2>{title}</h2>
+          <h2>
+            {title}
+          </h2>
 
           <span>
             {count} طلب
@@ -450,6 +556,7 @@ function AdminSection({
               size={17}
               strokeWidth={1.8}
             />
+
             تصدير Excel
           </Link>
         )}
@@ -503,7 +610,11 @@ function StatusBadge({
     <span
       className={`contact-status status-${status.toLowerCase()}`}
     >
-      {CONTACT_STATUS_LABELS[status]}
+      {
+        CONTACT_STATUS_LABELS[
+          status
+        ]
+      }
     </span>
   );
 }
@@ -521,7 +632,9 @@ function StatusForm({
 }) {
   return (
     <form
-      action={updateContactStatus}
+      action={
+        updateContactStatus
+      }
       className="contact-status-form"
     >
       <input
@@ -538,20 +651,24 @@ function StatusForm({
 
       <select
         name="status"
-        defaultValue={currentStatus}
+        defaultValue={
+          currentStatus
+        }
       >
-        {statuses.map((status) => (
-          <option
-            key={status}
-            value={status}
-          >
-            {
-              CONTACT_STATUS_LABELS[
-                status as keyof typeof CONTACT_STATUS_LABELS
-              ]
-            }
-          </option>
-        ))}
+        {statuses.map(
+          (status) => (
+            <option
+              key={status}
+              value={status}
+            >
+              {
+                CONTACT_STATUS_LABELS[
+                  status as keyof typeof CONTACT_STATUS_LABELS
+                ]
+              }
+            </option>
+          ),
+        )}
       </select>
 
       <button

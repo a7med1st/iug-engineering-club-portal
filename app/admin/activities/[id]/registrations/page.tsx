@@ -3,14 +3,28 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import AdminFeedback from "@/components/admin/AdminFeedback";
-import { requireAdmin } from "@/lib/auth";
+import {
+    PERMISSIONS,
+    requirePermission,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 import {
+    updateActivityArchiveState,
+    updateRegistrationAttendance,
     updateRegistrationSettings,
     updateRegistrationStatus,
 } from "./actions";
-import { Download } from "lucide-react";
+import {
+    Archive,
+    BarChart3,
+    CalendarDays,
+    Download,
+    MapPin,
+    QrCode,
+    RotateCcw,
+} from "lucide-react";
+import attendanceStyles from "./attendance.module.css";
 export const dynamic = "force-dynamic";
 
 type Props = {
@@ -21,6 +35,7 @@ type Props = {
     searchParams: Promise<{
         q?: string;
         status?: string;
+        attendance?: string;
         error?: string;
         success?: string;
     }>;
@@ -37,6 +52,12 @@ const allowedFilters = [
     "SUBMITTED",
     "APPROVED",
     "REJECTED",
+] as const;
+
+const allowedAttendanceFilters = [
+    "ALL",
+    "PRESENT",
+    "ABSENT",
 ] as const;
 
 function formatAnswer(
@@ -66,7 +87,9 @@ export default async function ActivityRegistrationsPage({
     params,
     searchParams,
 }: Props) {
-    await requireAdmin();
+    await requirePermission(
+        PERMISSIONS.REGISTRATION_REVIEW,
+    );
 
     const { id } = await params;
 
@@ -85,6 +108,18 @@ export default async function ActivityRegistrationsPage({
     )
         ? requestedStatus
         : "ALL";
+
+    const requestedAttendance =
+        filters.attendance?.trim() ??
+        "ALL";
+
+    const attendance =
+        allowedAttendanceFilters.includes(
+            requestedAttendance as
+            (typeof allowedAttendanceFilters)[number],
+        )
+            ? requestedAttendance
+            : "ALL";
 
     const activity =
         await prisma.activity.findUnique({
@@ -111,6 +146,20 @@ export default async function ActivityRegistrationsPage({
                                             | "REJECTED",
                                     }
                                     : {}),
+
+                                ...(attendance === "PRESENT"
+                                    ? {
+                                        status: "APPROVED",
+                                        checkedInAt: {
+                                            not: null,
+                                        },
+                                    }
+                                    : attendance === "ABSENT"
+                                        ? {
+                                            status: "APPROVED",
+                                            checkedInAt: null,
+                                        }
+                                        : {}),
 
                                 ...(query
                                     ? {
@@ -264,6 +313,24 @@ export default async function ActivityRegistrationsPage({
                 "REJECTED",
         )?._count._all ?? 0;
 
+    const checkedInCount =
+        await prisma.activityFormSubmission.count({
+            where: {
+                formId: form.id,
+                status: "APPROVED",
+                checkedInAt: {
+                    not: null,
+                },
+            },
+        });
+
+    const absentApprovedCount =
+        Math.max(
+            approvedCount -
+            checkedInCount,
+            0,
+        );
+
     const occupiedSeats =
         submittedCount +
         approvedCount;
@@ -274,6 +341,19 @@ export default async function ActivityRegistrationsPage({
             occupiedSeats,
             0,
         );
+
+    const attendanceRate =
+        approvedCount > 0
+            ? Math.round(
+                (checkedInCount /
+                    approvedCount) *
+                    100,
+            )
+            : 0;
+
+    const isArchived =
+        activity.status ===
+        "ARCHIVED";
 
     return (
         <section className="admin-page activity-registrations-admin">
@@ -303,13 +383,74 @@ export default async function ActivityRegistrationsPage({
 
                 </div>
 
-                <Link
-                    href={`/admin/activities/${activity.id}/registrations/export`}
-                    className="ghost-btn activity-registration-export"
+                <div
+                    className={
+                        attendanceStyles.headerActions
+                    }
                 >
-                    <Download size={17} />
-                    تصدير Excel
-                </Link>
+                    {!isArchived && (
+                        <Link
+                            href={`/admin/activities/${activity.id}/check-in`}
+                            className="primary-btn"
+                        >
+                            <QrCode size={18} />
+                            تسجيل الحضور
+                        </Link>
+                    )}
+
+                    <Link
+                        href={`/admin/activities/${activity.id}/registrations/export`}
+                        className="ghost-btn activity-registration-export"
+                    >
+                        <Download size={17} />
+                        تصدير Excel
+                    </Link>
+
+                    <form
+                        action={
+                            updateActivityArchiveState
+                        }
+                    >
+                        <input
+                            type="hidden"
+                            name="activityId"
+                            value={activity.id}
+                        />
+
+                        <input
+                            type="hidden"
+                            name="activityState"
+                            value={
+                                isArchived
+                                    ? "PUBLISHED"
+                                    : "ARCHIVED"
+                            }
+                        />
+
+                        <button
+                            type="submit"
+                            className={
+                                isArchived
+                                    ? attendanceStyles.restoreActivityButton
+                                    : attendanceStyles.archiveActivityButton
+                            }
+                        >
+                            {isArchived ? (
+                                <RotateCcw
+                                    size={17}
+                                />
+                            ) : (
+                                <Archive
+                                    size={17}
+                                />
+                            )}
+
+                            {isArchived
+                                ? "إعادة النشاط"
+                                : "أرشفة النشاط"}
+                        </button>
+                    </form>
+                </div>
 
             </div>
 
@@ -318,6 +459,184 @@ export default async function ActivityRegistrationsPage({
                 error={filters.error}
                 success={filters.success}
             />
+
+            {/* ===================================================
+                ACTIVITY RESULTS SUMMARY
+            =================================================== */}
+
+            <section
+                className={
+                    attendanceStyles.activitySummary
+                }
+            >
+                <div
+                    className={
+                        attendanceStyles.activitySummaryHead
+                    }
+                >
+                    <div>
+                        <span
+                            className={
+                                attendanceStyles.activitySummaryEyebrow
+                            }
+                        >
+                            <BarChart3
+                                size={16}
+                            />
+                            ملخص النشاط
+                        </span>
+
+                        <h2>
+                            نتائج التسجيل والحضور
+                        </h2>
+
+                        <p>
+                            ملخص سريع لأهم أرقام النشاط وحالة الحضور.
+                        </p>
+                    </div>
+
+                    <span
+                        className={`${attendanceStyles.activityStatusBadge} ${
+                            isArchived
+                                ? attendanceStyles.activityArchived
+                                : attendanceStyles.activityPublished
+                        }`}
+                    >
+                        {isArchived
+                            ? "مؤرشف"
+                            : "منشور"}
+                    </span>
+                </div>
+
+                <div
+                    className={
+                        attendanceStyles.activityMetaRow
+                    }
+                >
+                    <div>
+                        <CalendarDays
+                            size={18}
+                        />
+
+                        <span>
+                            {new Intl.DateTimeFormat(
+                                "ar-PS",
+                                {
+                                    dateStyle:
+                                        "medium",
+                                    timeStyle:
+                                        "short",
+                                },
+                            ).format(
+                                activity.startsAt,
+                            )}
+                        </span>
+                    </div>
+
+                    <div>
+                        <MapPin size={18} />
+
+                        <span>
+                            {activity.location}
+                        </span>
+                    </div>
+                </div>
+
+                <div
+                    className={
+                        attendanceStyles.activityResultsGrid
+                    }
+                >
+                    <div>
+                        <span>
+                            إجمالي التسجيلات
+                        </span>
+
+                        <strong>
+                            {totalCount}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>
+                            المقبولون
+                        </span>
+
+                        <strong>
+                            {approvedCount}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>
+                            الحضور الفعلي
+                        </span>
+
+                        <strong>
+                            {checkedInCount}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>
+                            لم يحضروا
+                        </span>
+
+                        <strong>
+                            {absentApprovedCount}
+                        </strong>
+                    </div>
+                </div>
+
+                <div
+                    className={
+                        attendanceStyles.attendanceRateBlock
+                    }
+                >
+                    <div
+                        className={
+                            attendanceStyles.attendanceRateHead
+                        }
+                    >
+                        <div>
+                            <strong>
+                                نسبة الحضور
+                            </strong>
+
+                            <span>
+                                من إجمالي الطلاب المقبولين
+                            </span>
+                        </div>
+
+                        <strong>
+                            {attendanceRate}%
+                        </strong>
+                    </div>
+
+                    <div
+                        className={
+                            attendanceStyles.attendanceProgress
+                        }
+                    >
+                        <span
+                            style={{
+                                width:
+                                    `${attendanceRate}%`,
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {isArchived && (
+                    <div
+                        className={
+                            attendanceStyles.archivedNotice
+                        }
+                    >
+                        تم أرشفة هذا النشاط وإغلاق التسجيل. يمكنك الاحتفاظ بالنتائج وتصديرها إلى Excel، أو إعادة النشاط إلى حالة منشور عند الحاجة.
+                    </div>
+                )}
+            </section>
 
 {/* ===================================================
     REGISTRATION SETTINGS
@@ -399,6 +718,7 @@ export default async function ActivityRegistrationsPage({
                         activity.capacity
                     }
                     required
+                    disabled={isArchived}
                 />
 
                 <span>
@@ -464,6 +784,7 @@ export default async function ActivityRegistrationsPage({
                         defaultChecked={
                             form.isOpen
                         }
+                        disabled={isArchived}
                     />
 
                     <span className="registration-switch-track">
@@ -495,8 +816,11 @@ export default async function ActivityRegistrationsPage({
             <button
                 type="submit"
                 className="primary-btn registration-settings-save-btn"
+                disabled={isArchived}
             >
-                حفظ التغييرات
+                {isArchived
+                    ? "النشاط مؤرشف"
+                    : "حفظ التغييرات"}
             </button>
 
         </div>
@@ -546,6 +870,36 @@ export default async function ActivityRegistrationsPage({
                     <strong>
                         {approvedCount}
                     </strong>
+                </div>
+
+
+                <div className={`activity-registration-stat ${attendanceStyles.attendanceStatPresent}`}>
+                    <span>
+                        حضروا
+                    </span>
+
+                    <strong>
+                        {checkedInCount}
+                    </strong>
+
+                    <small>
+                        تم تسجيل دخولهم بالـ QR
+                    </small>
+                </div>
+
+
+                <div className={`activity-registration-stat ${attendanceStyles.attendanceStatAbsent}`}>
+                    <span>
+                        لم يحضروا
+                    </span>
+
+                    <strong>
+                        {absentApprovedCount}
+                    </strong>
+
+                    <small>
+                        من الطلاب المقبولين
+                    </small>
                 </div>
 
 
@@ -626,6 +980,28 @@ export default async function ActivityRegistrationsPage({
                     </label>
 
 
+                    <label>
+                        الحضور
+
+                        <select
+                            name="attendance"
+                            defaultValue={attendance}
+                        >
+                            <option value="ALL">
+                                الكل
+                            </option>
+
+                            <option value="PRESENT">
+                                حضر
+                            </option>
+
+                            <option value="ABSENT">
+                                لم يحضر
+                            </option>
+                        </select>
+                    </label>
+
+
                     <button
                         type="submit"
                         className="primary-btn"
@@ -635,7 +1011,8 @@ export default async function ActivityRegistrationsPage({
 
 
                     {(query ||
-                        status !== "ALL") && (
+                        status !== "ALL" ||
+                        attendance !== "ALL") && (
                             <Link
                                 href={`/admin/activities/${activity.id}/registrations`}
                                 className="ghost-btn"
@@ -737,15 +1114,50 @@ export default async function ActivityRegistrationsPage({
                                         </div>
 
 
-                                        <span
-                                            className={`activity-registration-status status-${submission.status.toLowerCase()}`}
-                                        >
-                                            {
-                                                statusLabels[
-                                                submission.status
-                                                ]
-                                            }
-                                        </span>
+                                        <div className={attendanceStyles.statusStack}>
+                                            <span
+                                                className={`activity-registration-status status-${submission.status.toLowerCase()}`}
+                                            >
+                                                {
+                                                    statusLabels[
+                                                    submission.status
+                                                    ]
+                                                }
+                                            </span>
+
+                                            {submission.status === "APPROVED" && (
+                                                <div className={attendanceStyles.attendanceStateWrap}>
+                                                    <span
+                                                        className={`${attendanceStyles.attendanceBadge} ${
+                                                            submission.checkedInAt
+                                                                ? attendanceStyles.attendancePresent
+                                                                : attendanceStyles.attendanceAbsent
+                                                        }`}
+                                                    >
+                                                        <span className={attendanceStyles.attendanceDot} />
+
+                                                        {submission.checkedInAt
+                                                            ? "حضر"
+                                                            : "لم يحضر"}
+                                                    </span>
+
+                                                    {submission.checkedInAt && (
+                                                        <small className={attendanceStyles.attendanceTime}>
+                                                            وقت الحضور:{" "}
+                                                            {new Intl.DateTimeFormat(
+                                                                "ar-PS",
+                                                                {
+                                                                    dateStyle: "medium",
+                                                                    timeStyle: "short",
+                                                                },
+                                                            ).format(
+                                                                submission.checkedInAt,
+                                                            )}
+                                                        </small>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
 
                                     </div>
 
@@ -809,6 +1221,55 @@ export default async function ActivityRegistrationsPage({
                   ======================================= */}
 
                                     <div className="activity-registration-review-actions">
+
+                                        {!isArchived &&
+                                            submission.status === "APPROVED" && (
+                                            <form
+                                                action={
+                                                    updateRegistrationAttendance
+                                                }
+                                            >
+                                                <input
+                                                    type="hidden"
+                                                    name="activityId"
+                                                    value={
+                                                        activity.id
+                                                    }
+                                                />
+
+                                                <input
+                                                    type="hidden"
+                                                    name="submissionId"
+                                                    value={
+                                                        submission.id
+                                                    }
+                                                />
+
+                                                <input
+                                                    type="hidden"
+                                                    name="attendanceAction"
+                                                    value={
+                                                        submission.checkedInAt
+                                                            ? "CHECK_OUT"
+                                                            : "CHECK_IN"
+                                                    }
+                                                />
+
+                                                <button
+                                                    type="submit"
+                                                    className={
+                                                        submission.checkedInAt
+                                                            ? attendanceStyles.manualCheckoutButton
+                                                            : attendanceStyles.manualCheckinButton
+                                                    }
+                                                >
+                                                    {submission.checkedInAt
+                                                        ? "إلغاء الحضور"
+                                                        : "تسجيل حضور"}
+                                                </button>
+                                            </form>
+                                        )}
+
 
                                         {submission.status !==
                                             "APPROVED" && (
@@ -937,7 +1398,8 @@ export default async function ActivityRegistrationsPage({
 
                         <p className="empty-state">
                             {query ||
-                                status !== "ALL"
+                                status !== "ALL" ||
+                                attendance !== "ALL"
                                 ? "لا توجد تسجيلات تطابق البحث أو الفلترة."
                                 : "لا يوجد طلاب مسجلون في هذا النشاط بعد."}
                         </p>

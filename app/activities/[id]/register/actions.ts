@@ -6,7 +6,10 @@ import {
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
-import { requireStudent } from "@/lib/auth";
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export type RegistrationFormState = {
@@ -195,7 +198,9 @@ export async function submitActivityRegistration(
    * لو مش Student.
    */
   const { user } =
-    await requireStudent();
+    await requirePermission(
+      PERMISSIONS.ACTIVITY_REGISTER,
+    );
 
   const activityId = String(
     formData.get("activityId") ??

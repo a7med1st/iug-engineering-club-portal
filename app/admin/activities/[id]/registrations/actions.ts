@@ -4,7 +4,11 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { requireAdmin } from "@/lib/auth";
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
 import { prisma } from "@/lib/prisma";
 
 const allowedStatuses = [
@@ -16,6 +20,14 @@ const allowedStatuses = [
 type SubmissionStatus =
   (typeof allowedStatuses)[number];
 
+const allowedAttendanceActions = [
+  "CHECK_IN",
+  "CHECK_OUT",
+] as const;
+
+type AttendanceAction =
+  (typeof allowedAttendanceActions)[number];
+
 function revalidateRegistrationPages(
   activityId: string,
 ) {
@@ -24,11 +36,16 @@ function revalidateRegistrationPages(
   );
 
   revalidatePath(
+    `/admin/activities/${activityId}/check-in`,
+  );
+
+  revalidatePath(
     `/activities/${activityId}/register`,
   );
 
   revalidatePath("/activities");
   revalidatePath("/admin/activities");
+  revalidatePath("/student");
 }
 
 /* =========================================================
@@ -38,7 +55,9 @@ function revalidateRegistrationPages(
 export async function updateRegistrationStatus(
   formData: FormData,
 ) {
-  await requireAdmin();
+  await requirePermission(
+    PERMISSIONS.REGISTRATION_REVIEW,
+  );
 
   const activityId = String(
     formData.get("activityId") ?? "",
@@ -160,6 +179,17 @@ export async function updateRegistrationStatus(
 
             data: {
               status,
+
+              /*
+               * إذا لم يعد الطالب "مقبولًا"
+               * فلا يجوز أن يبقى مسجلًا كحاضر.
+               */
+              ...(status !== "APPROVED"
+                ? {
+                    checkedInAt: null,
+                    checkedInById: null,
+                  }
+                : {}),
             },
           });
         },
@@ -211,13 +241,293 @@ export async function updateRegistrationStatus(
 }
 
 /* =========================================================
+   MANUAL CHECK-IN / CHECK-OUT
+========================================================= */
+
+export async function updateRegistrationAttendance(
+  formData: FormData,
+) {
+  const { user } =
+    await requirePermission(
+      PERMISSIONS.ATTENDANCE_MANUAL,
+    );
+
+  const activityId = String(
+    formData.get("activityId") ?? "",
+  ).trim();
+
+  const submissionId = String(
+    formData.get("submissionId") ?? "",
+  ).trim();
+
+  const requestedAction = String(
+    formData.get("attendanceAction") ?? "",
+  ).trim();
+
+  if (
+    !activityId ||
+    !submissionId ||
+    !allowedAttendanceActions.includes(
+      requestedAction as AttendanceAction,
+    )
+  ) {
+    return;
+  }
+
+  const attendanceAction =
+    requestedAction as AttendanceAction;
+
+  const basePath =
+    `/admin/activities/${activityId}/registrations`;
+
+  const submission =
+    await prisma.activityFormSubmission.findFirst({
+      where: {
+        id: submissionId,
+
+        form: {
+          activityId,
+        },
+      },
+
+      select: {
+        id: true,
+        status: true,
+        checkedInAt: true,
+      },
+    });
+
+  if (!submission) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "التسجيل غير موجود لهذا النشاط.",
+      )}`,
+    );
+  }
+
+  if (
+    submission.status !== "APPROVED"
+  ) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "يمكن تسجيل الحضور للطلاب المقبولين فقط.",
+      )}`,
+    );
+  }
+
+  if (
+    attendanceAction === "CHECK_IN"
+  ) {
+    if (submission.checkedInAt) {
+      redirect(
+        `${basePath}?error=${encodeURIComponent(
+          "تم تسجيل حضور هذا الطالب مسبقًا.",
+        )}`,
+      );
+    }
+
+    const checkedInAt =
+      new Date();
+
+    /*
+     * updateMany يمنع الضغط المزدوج أو تسجيل
+     * الحضور مرتين في نفس اللحظة.
+     */
+    const result =
+      await prisma.activityFormSubmission.updateMany({
+        where: {
+          id: submission.id,
+          status: "APPROVED",
+          checkedInAt: null,
+        },
+
+        data: {
+          checkedInAt,
+          checkedInById:
+            user.id,
+        },
+      });
+
+    if (result.count !== 1) {
+      redirect(
+        `${basePath}?error=${encodeURIComponent(
+          "تعذر تسجيل الحضور. حدّث الصفحة وحاول مرة أخرى.",
+        )}`,
+      );
+    }
+
+    revalidateRegistrationPages(
+      activityId,
+    );
+
+    redirect(
+      `${basePath}?success=${encodeURIComponent(
+        "تم تسجيل حضور الطالب يدويًا بنجاح.",
+      )}`,
+    );
+  }
+
+  /*
+   * CHECK_OUT
+   */
+  if (!submission.checkedInAt) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "هذا الطالب غير مسجل كحاضر أصلًا.",
+      )}`,
+    );
+  }
+
+  await prisma.activityFormSubmission.updateMany({
+    where: {
+      id: submission.id,
+      status: "APPROVED",
+      checkedInAt: {
+        not: null,
+      },
+    },
+
+    data: {
+      checkedInAt: null,
+      checkedInById: null,
+    },
+  });
+
+  revalidateRegistrationPages(
+    activityId,
+  );
+
+  redirect(
+    `${basePath}?success=${encodeURIComponent(
+      "تم إلغاء تسجيل حضور الطالب.",
+    )}`,
+  );
+}
+
+/* =========================================================
+   ARCHIVE / RESTORE ACTIVITY
+========================================================= */
+
+export async function updateActivityArchiveState(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.ACTIVITY_ARCHIVE,
+  );
+
+  const activityId = String(
+    formData.get("activityId") ?? "",
+  ).trim();
+
+  const requestedState = String(
+    formData.get("activityState") ?? "",
+  ).trim();
+
+  if (
+    !activityId ||
+    ![
+      "ARCHIVED",
+      "PUBLISHED",
+    ].includes(requestedState)
+  ) {
+    return;
+  }
+
+  const basePath =
+    `/admin/activities/${activityId}/registrations`;
+
+  const activity =
+    await prisma.activity.findUnique({
+      where: {
+        id: activityId,
+      },
+
+      select: {
+        id: true,
+        status: true,
+        registrationForm: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+  if (!activity) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "النشاط غير موجود.",
+      )}`,
+    );
+  }
+
+  const nextStatus =
+    requestedState === "ARCHIVED"
+      ? "ARCHIVED"
+      : "PUBLISHED";
+
+  if (activity.status === nextStatus) {
+    return;
+  }
+
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.activity.update({
+        where: {
+          id: activityId,
+        },
+
+        data: {
+          status: nextStatus,
+        },
+      });
+
+      /*
+       * عند الأرشفة نغلق التسجيل تلقائيًا.
+       * وعند إعادة النشاط إلى منشور لا نفتح التسجيل
+       * تلقائيًا؛ الأدمن يقرر ذلك يدويًا من الإعدادات.
+       */
+      if (
+        nextStatus === "ARCHIVED" &&
+        activity.registrationForm
+      ) {
+        await tx.activityRegistrationForm.update({
+          where: {
+            id:
+              activity.registrationForm.id,
+          },
+
+          data: {
+            isOpen: false,
+          },
+        });
+      }
+    },
+  );
+
+  revalidateRegistrationPages(
+    activityId,
+  );
+
+  redirect(
+    `${basePath}?success=${encodeURIComponent(
+      nextStatus === "ARCHIVED"
+        ? "تمت أرشفة النشاط وإغلاق التسجيل بنجاح."
+        : "تمت إعادة النشاط إلى حالة منشور. التسجيل بقي مغلقًا حتى تفتحه يدويًا.",
+    )}`,
+  );
+}
+
+/* =========================================================
    UPDATE CAPACITY + OPEN/CLOSE REGISTRATION
 ========================================================= */
 
 export async function updateRegistrationSettings(
   formData: FormData,
 ) {
-  await requireAdmin();
+  await requirePermission(
+    PERMISSIONS.REGISTRATION_SETTINGS,
+  );
 
   const activityId = String(
     formData.get("activityId") ?? "",
@@ -252,6 +562,7 @@ export async function updateRegistrationSettings(
   let businessError:
     | "FORM_NOT_FOUND"
     | "CAPACITY_TOO_SMALL"
+    | "ACTIVITY_ARCHIVED"
     | null = null;
 
   const maxAttempts = 3;
@@ -272,12 +583,27 @@ export async function updateRegistrationSettings(
 
               select: {
                 id: true,
+
+                activity: {
+                  select: {
+                    status: true,
+                  },
+                },
               },
             });
 
           if (!form) {
             throw new Error(
               "FORM_NOT_FOUND",
+            );
+          }
+
+          if (
+            form.activity.status ===
+            "ARCHIVED"
+          ) {
+            throw new Error(
+              "ACTIVITY_ARCHIVED",
             );
           }
 
@@ -355,6 +681,16 @@ export async function updateRegistrationSettings(
       }
 
       if (
+        error instanceof Error &&
+        error.message ===
+          "ACTIVITY_ARCHIVED"
+      ) {
+        businessError =
+          "ACTIVITY_ARCHIVED";
+        break;
+      }
+
+      if (
         error instanceof
           Prisma.PrismaClientKnownRequestError &&
         error.code === "P2034" &&
@@ -385,6 +721,17 @@ export async function updateRegistrationSettings(
     redirect(
       `${basePath}?error=${encodeURIComponent(
         "لا يمكن جعل السعة أقل من عدد المقاعد المشغولة حاليًا.",
+      )}`,
+    );
+  }
+
+  if (
+    businessError ===
+    "ACTIVITY_ARCHIVED"
+  ) {
+    redirect(
+      `${basePath}?error=${encodeURIComponent(
+        "النشاط مؤرشف. أعده إلى حالة منشور قبل تعديل إعدادات التسجيل.",
       )}`,
     );
   }

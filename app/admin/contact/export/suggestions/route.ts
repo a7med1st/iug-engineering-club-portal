@@ -15,8 +15,8 @@ export async function GET() {
     PERMISSIONS.CONTACT_MANAGE,
   );
 
-  const complaints =
-    await prisma.complaint.findMany({
+  const suggestions =
+    await prisma.suggestion.findMany({
       include: {
         department: true,
       },
@@ -34,7 +34,7 @@ export async function GET() {
 
   const sheet =
     workbook.addWorksheet(
-      "الشكاوى",
+      "الاقتراحات",
       {
         views: [
           {
@@ -51,9 +51,9 @@ export async function GET() {
       width: 24,
     },
     {
-      header: "وسيلة التواصل",
-      key: "contact",
-      width: 25,
+      header: "رقم الواتساب",
+      key: "whatsapp",
+      width: 22,
     },
     {
       header: "التخصص",
@@ -61,19 +61,14 @@ export async function GET() {
       width: 24,
     },
     {
-      header: "نوع الملاحظة",
-      key: "type",
-      width: 22,
+      header: "المواضيع المقترحة",
+      key: "topics",
+      width: 35,
     },
     {
-      header: "التفاصيل",
-      key: "details",
+      header: "فكرة الفعالية أو المشروع",
+      key: "projectIdea",
       width: 55,
-    },
-    {
-      header: "يرغب برد",
-      key: "wantsReply",
-      width: 15,
     },
     {
       header: "الحالة",
@@ -88,30 +83,24 @@ export async function GET() {
   ];
 
   for (
-    const item of complaints
+    const item of suggestions
   ) {
     sheet.addRow({
       studentName:
-        item.studentName ||
-        "غير مذكور",
+        item.studentName,
 
-      contact:
-        item.contact ||
-        "غير مذكور",
+      whatsapp:
+        item.whatsapp,
 
       department:
         item.department.nameAr,
 
-      type:
-        item.type,
+      topics:
+        item.topics ||
+        "غير مذكورة",
 
-      details:
-        item.details,
-
-      wantsReply:
-        item.wantsReply
-          ? "نعم"
-          : "لا",
+      projectIdea:
+        item.projectIdea,
 
       status:
         item.status,
@@ -155,7 +144,7 @@ export async function GET() {
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 
         "Content-Disposition":
-          'attachment; filename="complaints.xlsx"',
+          'attachment; filename="suggestions.xlsx"',
 
         "Cache-Control":
           "private, no-store",

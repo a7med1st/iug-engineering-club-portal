@@ -15,12 +15,8 @@ export async function GET() {
     PERMISSIONS.CONTACT_MANAGE,
   );
 
-  const complaints =
-    await prisma.complaint.findMany({
-      include: {
-        department: true,
-      },
-
+  const collaborations =
+    await prisma.collaborationRequest.findMany({
       orderBy: {
         createdAt: "desc",
       },
@@ -34,7 +30,7 @@ export async function GET() {
 
   const sheet =
     workbook.addWorksheet(
-      "الشكاوى",
+      "طلبات التعاون",
       {
         views: [
           {
@@ -46,34 +42,49 @@ export async function GET() {
 
   sheet.columns = [
     {
-      header: "اسم الطالب",
-      key: "studentName",
+      header: "اسم الجهة",
+      key: "entityName",
+      width: 30,
+    },
+    {
+      header: "مسؤول التواصل",
+      key: "contactPerson",
       width: 24,
     },
     {
-      header: "وسيلة التواصل",
-      key: "contact",
-      width: 25,
+      header: "رقم الهاتف",
+      key: "phone",
+      width: 20,
     },
     {
-      header: "التخصص",
-      key: "department",
+      header: "البريد الإلكتروني",
+      key: "email",
+      width: 30,
+    },
+    {
+      header: "الموقع / التواصل الاجتماعي",
+      key: "socialUrl",
+      width: 35,
+    },
+    {
+      header: "المجال",
+      key: "field",
       width: 24,
     },
     {
-      header: "نوع الملاحظة",
-      key: "type",
-      width: 22,
-    },
-    {
-      header: "التفاصيل",
-      key: "details",
+      header: "وصف التعاون",
+      key: "description",
       width: 55,
     },
     {
-      header: "يرغب برد",
-      key: "wantsReply",
-      width: 15,
+      header: "ملاحظات إضافية",
+      key: "additionalNotes",
+      width: 40,
+    },
+    {
+      header: "يوجد ملف مرفق",
+      key: "hasAttachment",
+      width: 18,
     },
     {
       header: "الحالة",
@@ -88,28 +99,36 @@ export async function GET() {
   ];
 
   for (
-    const item of complaints
+    const item of collaborations
   ) {
     sheet.addRow({
-      studentName:
-        item.studentName ||
-        "غير مذكور",
+      entityName:
+        item.entityName,
 
-      contact:
-        item.contact ||
-        "غير مذكور",
+      contactPerson:
+        item.contactPerson,
 
-      department:
-        item.department.nameAr,
+      phone:
+        item.phone,
 
-      type:
-        item.type,
+      email:
+        item.email,
 
-      details:
-        item.details,
+      socialUrl:
+        item.socialUrl,
 
-      wantsReply:
-        item.wantsReply
+      field:
+        item.field,
+
+      description:
+        item.description,
+
+      additionalNotes:
+        item.additionalNotes ||
+        "لا يوجد",
+
+      hasAttachment:
+        item.attachmentStoredName
           ? "نعم"
           : "لا",
 
@@ -155,7 +174,7 @@ export async function GET() {
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 
         "Content-Disposition":
-          'attachment; filename="complaints.xlsx"',
+          'attachment; filename="collaborations.xlsx"',
 
         "Cache-Control":
           "private, no-store",

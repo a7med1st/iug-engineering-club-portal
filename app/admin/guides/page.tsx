@@ -1,5 +1,10 @@
 import DepartmentGuideEditor from "@/components/admin/DepartmentGuideEditor";
 import AdminFeedback from "@/components/admin/AdminFeedback";
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +14,10 @@ export default async function GuidesAdminPage({
 }: {
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
+  await requirePermission(
+    PERMISSIONS.GUIDE_MANAGE,
+  );
+
   const feedback = await searchParams;
   const departments = await prisma.department.findMany({
     include: { guide: true },

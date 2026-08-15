@@ -1,0 +1,1231 @@
+
+============================================================
+FILE: app\admin\activities\page.tsx
+============================================================
+
+import ActivityFormBuilder from "@/components/admin/ActivityFormBuilder";
+import AdminFeedback from "@/components/admin/AdminFeedback";
+import DeleteActivityForm from "@/components/admin/DeleteActivityForm";
+import DepartmentChecklist from "@/components/admin/DepartmentChecklist";
+import Link from "next/link";
+
+import { prisma } from "@/lib/prisma";
+
+import { createActivity } from "../actions";
+
+export const dynamic = "force-dynamic";
+
+const statusLabels = {
+  DRAFT: "مسودة",
+  PUBLISHED: "منشور",
+  ARCHIVED: "مؤرشف",
+} as const;
+
+export default async function ActivitiesAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    error?: string;
+    success?: string;
+  }>;
+}) {
+  const feedback = await searchParams;
+
+  const [departments, activities] =
+    await Promise.all([
+      prisma.department.findMany({
+        orderBy: {
+          sortOrder: "asc",
+        },
+      }),
+
+      prisma.activity.findMany({
+        include: {
+          departments: {
+            include: {
+              department: true,
+            },
+          },
+
+          registrationForm: {
+            include: {
+              _count: {
+                select: {
+                  questions: true,
+                  submissions: true,
+                },
+              },
+            },
+          },
+        },
+
+        orderBy: {
+          startsAt: "desc",
+        },
+      }),
+    ]);
+
+  return (
+    <section className="admin-page">
+
+      {/* =====================================================
+          PAGE HEADER
+      ===================================================== */}
+
+      <div className="admin-page-head">
+
+        <div>
+          <h1>
+            إضافة نشاط
+          </h1>
+
+          <p className="muted">
+            أنشئ النشاط وحدد الأقسام
+            المستهدفة، ثم صمّم نموذج
+            التسجيل الخاص بالنشاط من
+            داخل الموقع.
+          </p>
+        </div>
+
+      </div>
+
+
+      {/* =====================================================
+          FEEDBACK
+      ===================================================== */}
+
+      <AdminFeedback
+        error={feedback.error}
+        success={feedback.success}
+      />
+
+
+      {/* =====================================================
+          CONTENT
+      ===================================================== */}
+
+      <div className="admin-content-grid">
+
+        {/* ===================================================
+            CREATE ACTIVITY
+        =================================================== */}
+
+        <div className="admin-card">
+
+          <h2>
+            بيانات النشاط
+          </h2>
+
+
+          <form
+            action={createActivity}
+            className="stack-form"
+          >
+
+            {/* ===============================================
+                BASIC INFORMATION
+            =============================================== */}
+
+            <label>
+              اسم النشاط
+
+              <input
+                name="title"
+                required
+                placeholder="مثال: ورشة تطوير تطبيقات الويب"
+              />
+            </label>
+
+
+            <label>
+              وصف مختصر للنشاط
+
+              <textarea
+                name="description"
+                required
+                rows={5}
+                placeholder="اكتب وصفًا مختصرًا وواضحًا للنشاط"
+              />
+            </label>
+
+
+            <div className="form-grid">
+
+              <label>
+                تاريخ ووقت النشاط
+
+                <input
+                  type="datetime-local"
+                  name="startsAt"
+                  required
+                />
+              </label>
+
+
+              <label>
+                مكان النشاط
+
+                <input
+                  name="location"
+                  required
+                  placeholder="مثال: مبنى طيبة - القاعة 201"
+                />
+              </label>
+
+
+              <label>
+                السعة الطلابية
+
+                <input
+                  type="number"
+                  min="1"
+                  name="capacity"
+                  required
+                  placeholder="مثال: 50"
+                />
+              </label>
+
+
+              <label>
+                حالة النشاط
+
+                <select
+                  name="status"
+                  defaultValue="PUBLISHED"
+                >
+                  <option value="DRAFT">
+                    مسودة
+                  </option>
+
+                  <option value="PUBLISHED">
+                    منشور
+                  </option>
+
+                  <option value="ARCHIVED">
+                    مؤرشف
+                  </option>
+                </select>
+              </label>
+
+            </div>
+
+
+            {/* ===============================================
+                DEPARTMENTS
+            =============================================== */}
+
+            <DepartmentChecklist
+              departments={departments.map(
+                ({
+                  id,
+                  nameAr,
+                }) => ({
+                  id,
+                  nameAr,
+                })
+              )}
+            />
+
+
+            {/* ===============================================
+                INTERNAL REGISTRATION FORM BUILDER
+            =============================================== */}
+
+            <ActivityFormBuilder />
+
+
+            {/* ===============================================
+                SAVE BUTTON
+            =============================================== */}
+
+            <button
+              className="primary-btn"
+              type="submit"
+            >
+              حفظ النشاط ونموذج التسجيل
+            </button>
+
+          </form>
+
+        </div>
+
+
+        {/* ===================================================
+            CURRENT ACTIVITIES
+        =================================================== */}
+
+        <div className="admin-card admin-list-card">
+
+          <h2>
+            الأنشطة الحالية
+          </h2>
+
+
+          <div className="data-list">
+
+            {activities.length ? (
+              activities.map(
+                (activity) => {
+                  const departmentNames =
+                    activity.departments.map(
+                      (link) =>
+                        link.department
+                          .nameAr
+                    );
+
+                  const isGeneral =
+                    departmentNames.length ===
+                    0 ||
+                    departmentNames.length ===
+                    departments.length;
+
+                  const form =
+                    activity.registrationForm;
+
+                  return (
+                    <article
+                      className="data-row activity-admin-row"
+                      key={activity.id}
+                    >
+
+                      <div>
+
+                        <strong>
+                          {activity.title}
+                        </strong>
+
+
+                        <div className="data-row-meta">
+
+                          <span>
+                            {isGeneral
+                              ? "عام · جميع الأقسام"
+                              : departmentNames.join(
+                                "، "
+                              )}
+                          </span>
+
+
+                          <span>
+                            {new Intl.DateTimeFormat(
+                              "ar-PS",
+                              {
+                                dateStyle:
+                                  "medium",
+
+                                timeStyle:
+                                  "short",
+                              }
+                            ).format(
+                              activity.startsAt
+                            )}
+                          </span>
+
+
+                          <span>
+                            {
+                              statusLabels[
+                              activity
+                                .status
+                              ]
+                            }
+                          </span>
+
+                        </div>
+
+
+                        {/* ===================================
+                            INTERNAL FORM INFO
+                        =================================== */}
+
+                        <div className="activity-admin-form-meta">
+
+                          {form ? (
+                            <>
+                              <span>
+                                نموذج داخلي
+                              </span>
+
+                              <span>
+                                {
+                                  form._count
+                                    .questions
+                                }{" "}
+                                سؤال
+                              </span>
+
+                              <span>
+                                {
+                                  form._count
+                                    .submissions
+                                }{" "}
+                                تسجيل
+                              </span>
+
+                              <span>
+                                {form.isOpen
+                                  ? "التسجيل مفتوح"
+                                  : "التسجيل مغلق"}
+                              </span>
+                            </>
+                          ) : (
+                            <span>
+                              لا يوجد نموذج
+                              تسجيل داخلي
+                            </span>
+                          )}
+
+                        </div>
+
+                      </div>
+
+
+                      <div className="activity-admin-row-actions">
+
+                        {activity.registrationForm && (
+                          <Link
+                            href={`/admin/activities/${activity.id}/registrations`}
+                            className="ghost-btn"
+                          >
+                            إدارة المسجلين
+                          </Link>
+                        )}
+
+                        <DeleteActivityForm
+                          id={activity.id}
+                          title={activity.title}
+                        />
+
+                      </div>
+
+                    </article>
+                  );
+                }
+              )
+            ) : (
+              <p className="empty-state">
+                لا توجد أنشطة مضافة بعد.
+              </p>
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+  );
+}
+
+============================================================
+FILE: app\admin\activities\[id]\check-in\actions.ts
+============================================================
+
+"use server";
+
+import { revalidatePath } from "next/cache";
+
+import {
+  getSession,
+  requireAdmin,
+} from "@/lib/auth";
+
+import { prisma } from "@/lib/prisma";
+
+export type CheckInResult = {
+  status:
+    | "IDLE"
+    | "SUCCESS"
+    | "ALREADY_CHECKED_IN"
+    | "INVALID_QR"
+    | "WRONG_ACTIVITY"
+    | "NOT_APPROVED"
+    | "UNAUTHORIZED"
+    | "ERROR";
+
+  message: string;
+
+  student?: {
+    name: string;
+    email: string;
+    department: string | null;
+  };
+
+  checkedInAt?: string;
+};
+
+const QR_PREFIX = "ENGCLUB:";
+
+export async function checkInByQrCode(
+  activityId: string,
+  rawCode: string,
+): Promise<CheckInResult> {
+  await requireAdmin();
+
+  const session =
+    await getSession();
+
+  if (
+    !session ||
+    session.role !== "ADMIN"
+  ) {
+    return {
+      status: "UNAUTHORIZED",
+      message:
+        "ليس لديك صلاحية لتسجيل الحضور.",
+    };
+  }
+
+  const code = rawCode.trim();
+
+  if (
+    !activityId ||
+    !code.startsWith(QR_PREFIX)
+  ) {
+    return {
+      status: "INVALID_QR",
+      message:
+        "رمز QR غير صالح لنظام النادي الهندسي.",
+    };
+  }
+
+  const token = code
+    .slice(QR_PREFIX.length)
+    .trim();
+
+  if (!token) {
+    return {
+      status: "INVALID_QR",
+      message:
+        "رمز الدخول غير صالح.",
+    };
+  }
+
+  try {
+    const submission =
+      await prisma.activityFormSubmission.findUnique({
+        where: {
+          checkInToken: token,
+        },
+
+        select: {
+          id: true,
+          status: true,
+          checkedInAt: true,
+
+          studentName: true,
+          studentEmail: true,
+          studentDepartment: true,
+
+          form: {
+            select: {
+              activityId: true,
+
+              activity: {
+                select: {
+                  id: true,
+                  title: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+    if (!submission) {
+      return {
+        status: "INVALID_QR",
+        message:
+          "رمز الدخول غير موجود أو غير صالح.",
+      };
+    }
+
+    if (
+      submission.form.activityId !==
+      activityId
+    ) {
+      return {
+        status: "WRONG_ACTIVITY",
+        message:
+          "هذا الرمز تابع لنشاط آخر، وليس لهذا النشاط.",
+      };
+    }
+
+    if (
+      submission.status !==
+      "APPROVED"
+    ) {
+      return {
+        status: "NOT_APPROVED",
+        message:
+          "لا يمكن تسجيل الحضور لأن تسجيل الطالب غير مقبول.",
+        student: {
+          name:
+            submission.studentName,
+
+          email:
+            submission.studentEmail,
+
+          department:
+            submission.studentDepartment,
+        },
+      };
+    }
+
+    if (submission.checkedInAt) {
+      return {
+        status:
+          "ALREADY_CHECKED_IN",
+
+        message:
+          "تم تسجيل حضور هذا الطالب مسبقًا.",
+
+        student: {
+          name:
+            submission.studentName,
+
+          email:
+            submission.studentEmail,
+
+          department:
+            submission.studentDepartment,
+        },
+
+        checkedInAt:
+          submission.checkedInAt.toISOString(),
+      };
+    }
+
+    const checkedInAt =
+      new Date();
+
+    /*
+     * updateMany هنا مهم:
+     * يمنع تسجيل نفس QR مرتين
+     * إذا تم مسحه من جهازين في نفس اللحظة.
+     */
+    const result =
+      await prisma.activityFormSubmission.updateMany({
+        where: {
+          id: submission.id,
+
+          status: "APPROVED",
+
+          checkedInAt: null,
+        },
+
+        data: {
+          checkedInAt,
+
+          checkedInById:
+            session.sub,
+        },
+      });
+
+    if (result.count !== 1) {
+      const current =
+        await prisma.activityFormSubmission.findUnique({
+          where: {
+            id: submission.id,
+          },
+
+          select: {
+            status: true,
+            checkedInAt: true,
+          },
+        });
+
+      if (current?.checkedInAt) {
+        return {
+          status:
+            "ALREADY_CHECKED_IN",
+
+          message:
+            "تم تسجيل حضور هذا الطالب مسبقًا.",
+
+          student: {
+            name:
+              submission.studentName,
+
+            email:
+              submission.studentEmail,
+
+            department:
+              submission.studentDepartment,
+          },
+
+          checkedInAt:
+            current.checkedInAt.toISOString(),
+        };
+      }
+
+      if (
+        current?.status !==
+        "APPROVED"
+      ) {
+        return {
+          status:
+            "NOT_APPROVED",
+
+          message:
+            "لم يعد تسجيل الطالب في حالة مقبول.",
+        };
+      }
+
+      return {
+        status: "ERROR",
+        message:
+          "تعذر تسجيل الحضور. حاول مرة أخرى.",
+      };
+    }
+
+    revalidatePath(
+      `/admin/activities/${activityId}/check-in`,
+    );
+
+    revalidatePath(
+      `/admin/activities/${activityId}/registrations`,
+    );
+
+    revalidatePath("/student");
+
+    return {
+      status: "SUCCESS",
+
+      message:
+        "تم تسجيل حضور الطالب بنجاح.",
+
+      student: {
+        name:
+          submission.studentName,
+
+        email:
+          submission.studentEmail,
+
+        department:
+          submission.studentDepartment,
+      },
+
+      checkedInAt:
+        checkedInAt.toISOString(),
+    };
+  } catch (error) {
+    console.error(
+      "Activity check-in error:",
+      error,
+    );
+
+    return {
+      status: "ERROR",
+      message:
+        "حدث خطأ أثناء تسجيل الحضور.",
+    };
+  }
+}
+
+============================================================
+FILE: app\admin\activities\[id]\check-in\page.tsx
+============================================================
+
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import {
+  ArrowRight,
+  CheckCircle2,
+  QrCode,
+  Users,
+} from "lucide-react";
+
+import ActivityCheckInScanner from "@/components/admin/ActivityCheckInScanner";
+
+import { requireAdmin } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+import styles from "./check-in.module.css";
+
+export const dynamic =
+  "force-dynamic";
+
+type Props = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+function formatDate(
+  date: Date,
+) {
+  return new Intl.DateTimeFormat(
+    "ar-PS",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
+  ).format(date);
+}
+
+export default async function ActivityCheckInPage({
+  params,
+}: Props) {
+  await requireAdmin();
+
+  const { id } =
+    await params;
+
+  const activity =
+    await prisma.activity.findUnique({
+      where: {
+        id,
+      },
+
+      select: {
+        id: true,
+        title: true,
+        location: true,
+        startsAt: true,
+
+        registrationForm: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+  if (
+    !activity ||
+    !activity.registrationForm
+  ) {
+    notFound();
+  }
+
+  const formId =
+    activity.registrationForm.id;
+
+  const [
+    approvedCount,
+    checkedInCount,
+  ] = await Promise.all([
+    prisma.activityFormSubmission.count({
+      where: {
+        formId,
+        status: "APPROVED",
+      },
+    }),
+
+    prisma.activityFormSubmission.count({
+      where: {
+        formId,
+        status: "APPROVED",
+
+        checkedInAt: {
+          not: null,
+        },
+      },
+    }),
+  ]);
+
+  const waitingCount =
+    Math.max(
+      approvedCount -
+        checkedInCount,
+      0,
+    );
+
+  return (
+    <main
+      className={
+        styles.page
+      }
+    >
+      <div
+        className={
+          styles.topBar
+        }
+      >
+        <Link
+          href={`/admin/activities/${activity.id}/registrations`}
+          className={
+            styles.backLink
+          }
+        >
+          <ArrowRight
+            size={18}
+          />
+
+          إدارة المسجلين
+        </Link>
+      </div>
+
+      <section
+        className={
+          styles.hero
+        }
+      >
+        <div>
+          <span
+            className={
+              styles.eyebrow
+            }
+          >
+            CHECK-IN
+          </span>
+
+          <h1>
+            تسجيل الحضور
+          </h1>
+
+          <p>
+            {activity.title}
+          </p>
+        </div>
+
+        <div
+          className={
+            styles.activityInfo
+          }
+        >
+          <span>
+            {formatDate(
+              activity.startsAt,
+            )}
+          </span>
+
+          <strong>
+            {activity.location}
+          </strong>
+        </div>
+      </section>
+
+      <section
+        className={
+          styles.stats
+        }
+      >
+        <article>
+          <span
+            className={
+              styles.statIcon
+            }
+          >
+            <Users size={21} />
+          </span>
+
+          <div>
+            <span>
+              المقبولون
+            </span>
+
+            <strong>
+              {approvedCount}
+            </strong>
+          </div>
+        </article>
+
+        <article>
+          <span
+            className={
+              styles.statIcon
+            }
+          >
+            <CheckCircle2
+              size={21}
+            />
+          </span>
+
+          <div>
+            <span>
+              حضروا
+            </span>
+
+            <strong>
+              {checkedInCount}
+            </strong>
+          </div>
+        </article>
+
+        <article>
+          <span
+            className={
+              styles.statIcon
+            }
+          >
+            <QrCode size={21} />
+          </span>
+
+          <div>
+            <span>
+              بانتظار الحضور
+            </span>
+
+            <strong>
+              {waitingCount}
+            </strong>
+          </div>
+        </article>
+      </section>
+
+      <ActivityCheckInScanner
+        activityId={
+          activity.id
+        }
+      />
+    </main>
+  );
+}
+
+============================================================
+FILE: app\admin\members\page.tsx
+============================================================
+
+import { prisma } from "@/lib/prisma";
+import AdminFeedback from "@/components/admin/AdminFeedback";
+import { createMember } from "../actions";
+
+export const dynamic = "force-dynamic";
+
+const formatCreatedAt = (date: Date) => new Intl.DateTimeFormat("ar-PS", {
+  dateStyle: "medium",
+}).format(date);
+
+export default async function MembersAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; success?: string }>;
+}) {
+  const feedback = await searchParams;
+  const [departments, members] = await Promise.all([
+    prisma.department.findMany({ orderBy: { sortOrder: "asc" } }),
+    prisma.user.findMany({
+      where: { role: "MEMBER" },
+      include: { department: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  return (
+    <section className="admin-page">
+      <div className="admin-page-head">
+        <div>
+          <h1>إنشاء حساب عضو</h1>
+          <p className="muted">حسابات الأعضاء ينشئها الأدمن فقط، ولا يمكن منح صلاحية أدمن من هذا النموذج.</p>
+        </div>
+      </div>
+
+      <AdminFeedback error={feedback.error} success={feedback.success} />
+
+      <div className="admin-card admin-form-card">
+        <h2>بيانات العضو الجديد</h2>
+        <form action={createMember} className="stack-form">
+          <div className="form-grid">
+            <label>
+              الاسم
+              <input name="name" required autoComplete="name" />
+            </label>
+            <label>
+              البريد الإلكتروني
+              <input name="email" type="email" required autoComplete="email" dir="ltr" />
+            </label>
+            <label>
+              كلمة مرور مؤقتة
+              <input name="password" type="password" minLength={8} required autoComplete="new-password" dir="ltr" />
+            </label>
+            <label>
+              المسمى داخل النادي
+              <input name="position" placeholder="مندوب هندسة الحاسوب" />
+            </label>
+            <label>
+              القسم
+              <select name="departmentId" defaultValue="">
+                <option value="">بدون قسم</option>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id}>{department.nameAr}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              الدور والصلاحية
+              <input value="عضو (MEMBER)" disabled />
+              <input type="hidden" name="role" value="MEMBER" />
+            </label>
+          </div>
+          <button className="primary-btn" type="submit">إنشاء حساب العضو</button>
+        </form>
+      </div>
+
+      <div className="admin-card members-list-card">
+        <div className="admin-card-head">
+          <h2>الأعضاء الموجودون</h2>
+          <span className="count-badge">{members.length} عضو</span>
+        </div>
+
+        {members.length ? (
+          <>
+            <div className="member-table-wrap">
+              <table className="member-table">
+                <thead>
+                  <tr>
+                    <th>الاسم</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>القسم</th>
+                    <th>الدور</th>
+                    <th>تاريخ الإنشاء</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((member) => (
+                    <tr key={member.id}>
+                      <td><strong>{member.name}</strong></td>
+                      <td dir="ltr">{member.email}</td>
+                      <td>{member.department?.nameAr ?? "بدون قسم"}</td>
+                      <td>عضو</td>
+                      <td>{formatCreatedAt(member.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="member-cards">
+              {members.map((member) => (
+                <article className="member-card" key={member.id}>
+                  <div className="member-card-head">
+                    <strong>{member.name}</strong>
+                    <span>عضو</span>
+                  </div>
+                  <dl>
+                    <div><dt>البريد</dt><dd dir="ltr">{member.email}</dd></div>
+                    <div><dt>القسم</dt><dd>{member.department?.nameAr ?? "بدون قسم"}</dd></div>
+                    <div><dt>تاريخ الإنشاء</dt><dd>{formatCreatedAt(member.createdAt)}</dd></div>
+                  </dl>
+                </article>
+              ))}
+            </div>
+          </>
+        ) : <p className="empty-state">لا توجد حسابات أعضاء حتى الآن.</p>}
+      </div>
+    </section>
+  );
+}
+
+============================================================
+FILE: app\admin\structure\page.tsx
+============================================================
+
+import { prisma } from "@/lib/prisma";
+import AdminFeedback from "@/components/admin/AdminFeedback";
+import { addStructureItem } from "../actions";
+
+export const dynamic = "force-dynamic";
+
+export default async function StructureAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; success?: string }>;
+}) {
+  const feedback = await searchParams;
+  const [departments, items] = await Promise.all([
+    prisma.department.findMany({ orderBy: { sortOrder: "asc" } }),
+    prisma.clubStructureItem.findMany({
+      include: { department: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  return (
+    <section className="admin-page">
+      <div className="admin-page-head">
+        <div>
+          <h1>إضافة عنصر إلى الهيكلية</h1>
+          <p className="muted">أضف الاسم والمنصب والقسم فقط لتحديث الهيكلية العامة للنادي.</p>
+        </div>
+      </div>
+
+      <AdminFeedback error={feedback.error} success={feedback.success} />
+
+      <div className="admin-content-grid">
+        <div className="admin-card">
+          <h2>بيانات عنصر الهيكلية</h2>
+          <form action={addStructureItem} className="stack-form">
+            <label>
+              اسم الشخص
+              <input name="name" required />
+            </label>
+            <label>
+              المنصب
+              <input name="title" required placeholder="رئيس النادي / مندوب القسم" />
+            </label>
+            <label>
+              القسم
+              <select name="departmentId" defaultValue="">
+                <option value="">بدون قسم</option>
+                {departments.map((department) => (
+                  <option value={department.id} key={department.id}>{department.nameAr}</option>
+                ))}
+              </select>
+            </label>
+            <button className="primary-btn" type="submit">إضافة إلى الهيكلية</button>
+          </form>
+        </div>
+
+        <div className="admin-card admin-list-card">
+          <h2>عناصر الهيكلية الحالية</h2>
+          <div className="data-list">
+            {items.length ? items.map((item) => (
+              <article className="data-row" key={item.id}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <div className="data-row-meta">
+                    <span>{item.title}</span>
+                    <span>{item.department?.nameAr ?? "بدون قسم"}</span>
+                  </div>
+                </div>
+              </article>
+            )) : <p className="empty-state">لم تتم إضافة عناصر إلى الهيكلية بعد.</p>}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+============================================================
+FILE: app\admin\guides\page.tsx
+============================================================
+
+import DepartmentGuideEditor from "@/components/admin/DepartmentGuideEditor";
+import AdminFeedback from "@/components/admin/AdminFeedback";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+export default async function GuidesAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; success?: string }>;
+}) {
+  const feedback = await searchParams;
+  const departments = await prisma.department.findMany({
+    include: { guide: true },
+    orderBy: { sortOrder: "asc" },
+  });
+
+  return (
+    <section className="admin-page">
+      <div className="admin-page-head">
+        <div>
+          <h1>تحرير دليل قسم</h1>
+          <p className="muted">اختر أحد أقسام الهندسة، ثم حدّث محتوى دليله واحفظ التغييرات.</p>
+        </div>
+      </div>
+
+      <AdminFeedback error={feedback.error} success={feedback.success} />
+
+      <div className="admin-card guide-editor-card">
+        <DepartmentGuideEditor departments={departments} />
+      </div>
+    </section>
+  );
+}

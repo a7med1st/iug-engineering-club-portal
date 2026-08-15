@@ -1,0 +1,728 @@
+/* =========================================================
+   STUDENT PROFILE
+========================================================= */
+
+.profileEditor {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.profileIdentity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 0 4px 20px;
+
+  border-bottom: 1px solid var(--line);
+}
+
+.profileIdentityText {
+  width: 100%;
+
+  text-align: center;
+}
+
+.profileIdentityText h2 {
+  margin: 0 0 8px;
+
+  color: var(--ink);
+
+  font-size: 1.2rem;
+  font-weight: 900;
+  line-height: 1.35;
+
+  overflow-wrap: anywhere;
+}
+
+.studentBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 25px;
+
+  padding: 0 10px;
+
+  border-radius: 999px;
+
+  background: rgba(22, 136, 255, 0.09);
+  color: var(--blue);
+
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.editProfileButton {
+  width: 100%;
+  min-height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  border:
+    1px solid
+    rgba(22, 136, 255, 0.22);
+
+  border-radius: 12px;
+
+  background:
+    rgba(22, 136, 255, 0.065);
+
+  color: var(--blue);
+
+  padding: 0 14px;
+
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.editProfileButton:hover {
+  background:
+    rgba(22, 136, 255, 0.12);
+
+  border-color:
+    rgba(22, 136, 255, 0.4);
+
+  transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   PROFILE DETAILS
+========================================================= */
+
+.profileDetails {
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+
+  margin-top: 16px;
+}
+
+.profileInfoItem {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    38px minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 10px;
+
+  box-sizing: border-box;
+
+  min-height: 60px;
+
+  padding: 10px;
+
+  border: 1px solid var(--line);
+
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff,
+      rgba(246, 248, 251, 0.9)
+    );
+
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.profileInfoItem:hover {
+  border-color:
+    rgba(22, 136, 255, 0.24);
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 18px
+    rgba(16, 33, 57, 0.05);
+}
+
+.profileInfoIcon {
+  width: 36px;
+  height: 36px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  background:
+    rgba(22, 136, 255, 0.08);
+
+  color: var(--blue);
+}
+
+.profileInfoContent {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.profileInfoLabel {
+  color: var(--muted);
+
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.profileInfoContent strong {
+  min-width: 0;
+
+  color: var(--ink);
+
+  font-size: 0.82rem;
+  font-weight: 850;
+  line-height: 1.5;
+
+  text-align: right;
+
+  overflow-wrap: anywhere;
+}
+
+.profileInfoContent strong[dir="ltr"] {
+  direction: ltr;
+  text-align: right;
+}
+
+.profileInfoEmail {
+  font-size: 0.72rem !important;
+
+  word-break: break-all;
+}
+
+
+/* =========================================================
+   SUCCESS / ERROR
+========================================================= */
+
+.profileSuccess,
+.profileError {
+  margin-top: 14px;
+
+  padding: 11px 13px;
+
+  border-radius: 11px;
+
+  font-size: 0.77rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.profileSuccess {
+  border:
+    1px solid
+    rgba(21, 115, 71, 0.17);
+
+  background: #effaf3;
+
+  color: #157347;
+}
+
+.profileError {
+  border:
+    1px solid
+    rgba(180, 35, 24, 0.17);
+
+  background: #fff4f4;
+
+  color: #b42318;
+}
+
+
+/* =========================================================
+   FLOATING EDIT CARD
+========================================================= */
+
+.profileEditLayer {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 999999;
+
+  display: grid;
+
+  place-items: center;
+
+  padding: 24px;
+
+  pointer-events: none;
+}
+
+.profileEditLayer::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    rgba(6, 24, 44, 0.32);
+
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   EDIT CARD
+========================================================= */
+
+.profileEditCard {
+  position: relative;
+
+  z-index: 2;
+
+  width:
+    min(
+      670px,
+      calc(100vw - 44px)
+    );
+
+  max-height:
+    calc(100vh - 60px);
+
+  overflow-y: auto;
+
+  box-sizing: border-box;
+
+  pointer-events: auto;
+
+  direction: rtl;
+
+  border:
+    1px solid
+    rgba(219, 227, 237, 0.95);
+
+  border-radius: 20px;
+
+  background: #fff;
+
+  box-shadow:
+    0 28px 80px
+    rgba(6, 24, 44, 0.28);
+}
+
+
+/* =========================================================
+   EDIT CARD HEADER
+========================================================= */
+
+.profileEditCardHeader {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content:
+    space-between;
+
+  gap: 20px;
+
+  padding: 23px 24px 20px;
+
+  border-bottom:
+    1px solid var(--line);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(22, 136, 255, 0.07),
+      rgba(53, 212, 255, 0.025),
+      #ffffff
+    );
+}
+
+.profileEditCardHeader > div {
+  min-width: 0;
+}
+
+.profileEditEyebrow {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: var(--blue);
+
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.profileEditCardHeader h2 {
+  margin: 0;
+
+  color: var(--ink);
+
+  font-size: 1.45rem;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.profileEditCardHeader p {
+  margin: 6px 0 0;
+
+  color: var(--muted);
+
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+
+.profileEditClose {
+  flex: 0 0 38px;
+
+  width: 38px;
+  height: 38px;
+
+  display: grid;
+
+  place-items: center;
+
+  padding: 0;
+
+  border: 1px solid var(--line);
+
+  border-radius: 10px;
+
+  background: #fff;
+
+  color: var(--muted);
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.profileEditClose:hover:not(:disabled) {
+  background: #fff4f4;
+
+  border-color:
+    rgba(180, 35, 24, 0.2);
+
+  color: #b42318;
+}
+
+
+/* =========================================================
+   PROFILE FORM
+========================================================= */
+
+.profileForm {
+  padding: 24px;
+}
+
+.profileFormGrid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap: 18px;
+}
+
+.profileField {
+  min-width: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.profileField label {
+  color: var(--ink);
+
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.profileField input,
+.profileField select {
+  width: 100%;
+  height: 48px;
+
+  box-sizing: border-box;
+
+  padding: 0 13px;
+
+  border: 1px solid var(--line);
+
+  border-radius: 11px;
+
+  background: #fff;
+
+  color: var(--ink);
+
+  font: inherit;
+  font-size: 0.86rem;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.profileField input:focus,
+.profileField select:focus {
+  border-color:
+    rgba(22, 136, 255, 0.65);
+
+  box-shadow:
+    0 0 0 4px
+    rgba(22, 136, 255, 0.08);
+}
+
+.profileField input:disabled,
+.profileField select:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+.fieldError {
+  color: #b42318;
+
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   READ ONLY DATA
+========================================================= */
+
+.profileReadonlyGrid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap: 12px;
+
+  margin-top: 20px;
+
+  padding-top: 20px;
+
+  border-top:
+    1px solid var(--line);
+}
+
+.readonlyProfileField {
+  min-width: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    34px minmax(0, 1fr);
+
+  gap: 10px;
+
+  align-items: start;
+
+  padding: 13px;
+
+  box-sizing: border-box;
+
+  border: 1px solid var(--line);
+
+  border-radius: 12px;
+
+  background: var(--paper);
+
+  color: var(--blue);
+}
+
+.readonlyProfileField > div {
+  min-width: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.readonlyProfileField span {
+  color: var(--muted);
+
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.readonlyProfileField strong {
+  color: var(--ink);
+
+  font-size: 0.8rem;
+  font-weight: 800;
+
+  overflow-wrap: anywhere;
+}
+
+.readonlyProfileField small {
+  color: #8a98aa;
+
+  font-size: 0.66rem;
+
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   FORM ACTIONS
+========================================================= */
+
+.profileFormActions {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 22px;
+
+  padding-top: 20px;
+
+  border-top:
+    1px solid var(--line);
+}
+
+.saveProfileButton,
+.cancelProfileButton {
+  min-width: 135px;
+  min-height: 44px;
+
+  border-radius: 11px;
+
+  padding: 0 18px;
+
+  font: inherit;
+
+  font-size: 0.8rem;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.saveProfileButton {
+  border: 0;
+
+  background: var(--navy);
+
+  color: #fff;
+
+  box-shadow:
+    0 8px 20px
+    rgba(6, 24, 44, 0.14);
+}
+
+.saveProfileButton:hover:not(:disabled) {
+  background: var(--navy2);
+}
+
+.cancelProfileButton {
+  border: 1px solid var(--line);
+
+  background: #fff;
+
+  color: var(--ink);
+}
+
+.cancelProfileButton:hover:not(:disabled) {
+  background: var(--paper);
+}
+
+.saveProfileButton:disabled,
+.cancelProfileButton:disabled,
+.profileEditClose:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+  .profileEditLayer {
+    align-items: start;
+
+    padding:
+      18px 10px;
+  }
+
+  .profileEditCard {
+    width: 100%;
+
+    max-height:
+      calc(100vh - 36px);
+
+    border-radius: 17px;
+  }
+
+  .profileEditCardHeader {
+    padding:
+      19px 17px 17px;
+  }
+
+  .profileEditCardHeader h2 {
+    font-size: 1.3rem;
+  }
+
+  .profileForm {
+    padding: 18px 17px;
+  }
+
+  .profileFormGrid,
+  .profileReadonlyGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .profileFormActions {
+    flex-direction:
+      column-reverse;
+  }
+
+  .saveProfileButton,
+  .cancelProfileButton {
+    width: 100%;
+  }
+}

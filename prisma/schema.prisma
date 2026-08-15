@@ -117,8 +117,30 @@ model User {
   role         Role    @default(STUDENT)
   position     String?
 
+  // =====================================================
+  // STUDENT PROFILE
+  // =====================================================
+
+  studentNumber String?     @unique
+  phone         String?
+  studyLevel    StudyLevel?
+
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  // =====================================================
+  // PROFILE IMAGE
+  // =====================================================
+
+  avatarStoredName   String?
+  avatarOriginalName String?
+  avatarMime         String?
+  avatarSize         Int?
+  avatarUpdatedAt    DateTime?
+
+  // =====================================================
+  // ACTIVITY REGISTRATIONS
+  // =====================================================
 
   activityFormSubmissions ActivityFormSubmission[]
 
@@ -274,6 +296,12 @@ model ActivityFormSubmission {
   status ActivitySubmissionStatus @default(SUBMITTED)
 
   answers ActivityFormAnswer[]
+
+  // مؤقتًا Optional حتى نتمكن من تطبيق الـ migration على التسجيلات القديمة.
+  // بعد تعبئة Tokens للسجلات الموجودة سنعيده إلى String بدون ?.
+  checkInToken  String    @unique @default(uuid())
+  checkedInAt   DateTime?
+  checkedInById String?
 
   submittedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt

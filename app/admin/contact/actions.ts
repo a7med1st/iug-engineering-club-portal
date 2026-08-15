@@ -1,77 +1,136 @@
 "use server";
 
-import { ContactRequestStatus } from "@prisma/client";
+import type {
+  ContactRequestStatus,
+} from "@prisma/client";
+
 import { revalidatePath } from "next/cache";
 
-import { requireAdmin } from "@/lib/auth";
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
 import { prisma } from "@/lib/prisma";
 
-const complaintStatuses = [
-  "NEW",
-  "IN_REVIEW",
-  "RESOLVED",
-];
+type ContactKind =
+  | "complaint"
+  | "suggestion"
+  | "collaboration";
 
-const suggestionStatuses = [
-  "NEW",
-  "IN_REVIEW",
-  "RESOLVED",
-];
+const complaintStatuses:
+  readonly ContactRequestStatus[] = [
+    "NEW",
+    "IN_REVIEW",
+    "RESOLVED",
+  ];
 
-const collaborationStatuses = [
-  "NEW",
-  "IN_REVIEW",
-  "CONTACTED",
-  "ACCEPTED",
-  "REJECTED",
-];
+const suggestionStatuses:
+  readonly ContactRequestStatus[] = [
+    "NEW",
+    "IN_REVIEW",
+    "RESOLVED",
+  ];
 
-export async function updateContactStatus(
-  formData: FormData
+const collaborationStatuses:
+  readonly ContactRequestStatus[] = [
+    "NEW",
+    "IN_REVIEW",
+    "CONTACTED",
+    "ACCEPTED",
+    "REJECTED",
+  ];
+
+function isAllowedStatus(
+  kind: ContactKind,
+  status: ContactRequestStatus,
 ) {
-  await requireAdmin();
-
-  const id = String(formData.get("id") || "");
-  const kind = String(formData.get("kind") || "");
-  const status = String(formData.get("status") || "");
-
-  if (!id || !kind || !status) {
-    throw new Error("بيانات الطلب غير مكتملة.");
+  if (kind === "complaint") {
+    return complaintStatuses.includes(
+      status,
+    );
   }
 
+  if (kind === "suggestion") {
+    return suggestionStatuses.includes(
+      status,
+    );
+  }
+
+  return collaborationStatuses.includes(
+    status,
+  );
+}
+
+export async function updateContactStatus(
+  formData: FormData,
+) {
+  await requirePermission(
+    PERMISSIONS.CONTACT_MANAGE,
+  );
+
+  const id = String(
+    formData.get("id") ?? "",
+  ).trim();
+
+  const kind = String(
+    formData.get("kind") ?? "",
+  ).trim() as ContactKind;
+
+  const status = String(
+    formData.get("status") ?? "",
+  ).trim() as ContactRequestStatus;
+
   if (
-    kind === "complaint" &&
-    complaintStatuses.includes(status)
+    !id ||
+    ![
+      "complaint",
+      "suggestion",
+      "collaboration",
+    ].includes(kind) ||
+    !isAllowedStatus(
+      kind,
+      status,
+    )
   ) {
-    await prisma.complaint.update({
-      where: { id },
+    return;
+  }
+
+  if (kind === "complaint") {
+    await prisma.complaint.updateMany({
+      where: {
+        id,
+      },
+
       data: {
-        status: status as ContactRequestStatus,
+        status,
       },
     });
   } else if (
-    kind === "suggestion" &&
-    suggestionStatuses.includes(status)
+    kind === "suggestion"
   ) {
-    await prisma.suggestion.update({
-      where: { id },
-      data: {
-        status: status as ContactRequestStatus,
+    await prisma.suggestion.updateMany({
+      where: {
+        id,
       },
-    });
-  } else if (
-    kind === "collaboration" &&
-    collaborationStatuses.includes(status)
-  ) {
-    await prisma.collaborationRequest.update({
-      where: { id },
+
       data: {
-        status: status as ContactRequestStatus,
+        status,
       },
     });
   } else {
-    throw new Error("الحالة غير صالحة.");
+    await prisma.collaborationRequest.updateMany({
+      where: {
+        id,
+      },
+
+      data: {
+        status,
+      },
+    });
   }
 
-  revalidatePath("/admin/contact");
+  revalidatePath(
+    "/admin/contact",
+  );
 }

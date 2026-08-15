@@ -1,11 +1,15 @@
+import type { Prisma } from "@prisma/client";
 import ExcelJS from "exceljs";
 
-import { requireAdmin } from "@/lib/auth";
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-type Props = {
+type RouteContext = {
   params: Promise<{
     id: string;
   }>;
@@ -17,9 +21,13 @@ const statusLabels = {
   REJECTED: "مرفوض",
 } as const;
 
-function formatAnswer(value: unknown): string {
+function formatAnswer(
+  value: Prisma.JsonValue,
+) {
   if (Array.isArray(value)) {
-    return value.map(String).join("، ");
+    return value
+      .map((item) => String(item))
+      .join("، ");
   }
 
   if (
@@ -36,11 +44,38 @@ function formatAnswer(value: unknown): string {
   return String(value);
 }
 
+function formatDate(
+  date: Date | null,
+) {
+  if (!date) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(
+    "ar-PS",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
+  ).format(date);
+}
+
+function safeFileName(
+  value: string,
+) {
+  return value
+    .replace(/[\\/:*?"<>|]/g, "-")
+    .replace(/\s+/g, "-")
+    .slice(0, 80);
+}
+
 export async function GET(
   _request: Request,
-  { params }: Props,
+  { params }: RouteContext,
 ) {
-  await requireAdmin();
+  await requirePermission(
+    PERMISSIONS.REGISTRATION_EXPORT,
+  );
 
   const { id } = await params;
 
@@ -62,20 +97,6 @@ export async function GET(
             submissions: {
               include: {
                 answers: true,
-
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-
-                    department: {
-                      select: {
-                        nameAr: true,
-                      },
-                    },
-                  },
-                },
               },
 
               orderBy: {
@@ -87,18 +108,12 @@ export async function GET(
       },
     });
 
-  if (!activity) {
+  if (
+    !activity ||
+    !activity.registrationForm
+  ) {
     return new Response(
-      "Activity not found",
-      {
-        status: 404,
-      },
-    );
-  }
-
-  if (!activity.registrationForm) {
-    return new Response(
-      "Registration form not found",
+      "Activity registration form not found",
       {
         status: 404,
       },
@@ -108,236 +123,81 @@ export async function GET(
   const form =
     activity.registrationForm;
 
-  /* =====================================================
-     EXCEL
-  ===================================================== */
-
   const workbook =
     new ExcelJS.Workbook();
 
   workbook.creator =
-    "Engineering Club - IUG";
+    "IUG Engineering Club";
 
   workbook.created =
     new Date();
 
-
-  /* =====================================================
-     REGISTRANTS SHEET
-  ===================================================== */
-
-  const sheet =
+  const worksheet =
     workbook.addWorksheet(
-      "بيانات المسجلين",
+      "المسجلون",
       {
         views: [
           {
             rightToLeft: true,
             state: "frozen",
-            ySplit: 4,
+            ySplit: 1,
           },
         ],
       },
     );
 
-
-  /* =====================================================
-     ACTIVITY TITLE
-  ===================================================== */
-
-  const totalColumns =
-    6 +
-    form.questions.length;
-
-  sheet.mergeCells(
-    1,
-    1,
-    1,
-    Math.max(totalColumns, 6),
-  );
-
-  const clubCell =
-    sheet.getCell(1, 1);
-
-  clubCell.value =
-    "النادي الهندسي - الجامعة الإسلامية بغزة";
-
-  clubCell.font = {
-    bold: true,
-    size: 18,
-    color: {
-      argb: "FFFFFFFF",
-    },
-  };
-
-  clubCell.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: {
-      argb: "FF06182C",
-    },
-  };
-
-  clubCell.alignment = {
-    horizontal: "center",
-    vertical: "middle",
-  };
-
-  sheet.getRow(1).height = 34;
-
-
-  /* =====================================================
-     ACTIVITY NAME
-  ===================================================== */
-
-  sheet.mergeCells(
-    2,
-    1,
-    2,
-    Math.max(totalColumns, 6),
-  );
-
-  const activityCell =
-    sheet.getCell(2, 1);
-
-  activityCell.value =
-    `بيانات المسجلين في نشاط: ${activity.title}`;
-
-  activityCell.font = {
-    bold: true,
-    size: 15,
-    color: {
-      argb: "FF102139",
-    },
-  };
-
-  activityCell.alignment = {
-    horizontal: "center",
-    vertical: "middle",
-  };
-
-  sheet.getRow(2).height = 30;
-
-
-  /* =====================================================
-     SMALL INFO
-  ===================================================== */
-
-  sheet.mergeCells(
-    3,
-    1,
-    3,
-    Math.max(totalColumns, 6),
-  );
-
-  const infoCell =
-    sheet.getCell(3, 1);
-
-  infoCell.value =
-    `عدد المسجلين: ${form.submissions.length} | السعة: ${activity.capacity}`;
-
-  infoCell.alignment = {
-    horizontal: "center",
-  };
-
-  infoCell.font = {
-    size: 11,
-    color: {
-      argb: "FF66768C",
-    },
-  };
-
-
-  /* =====================================================
-     HEADERS
-  ===================================================== */
-
-  const basicHeaders = [
-    "م",
-    "اسم الطالب",
-    "البريد الإلكتروني",
-    "التخصص",
-    "حالة التسجيل",
-    "تاريخ التسجيل",
-  ];
-
-  /*
-   * كل سؤال أنشأه الأدمن
-   * يصبح Column تلقائيًا.
-   */
-  const questionHeaders =
+  const dynamicQuestionColumns =
     form.questions.map(
-      (question) =>
-        question.label,
+      (question) => ({
+        header: question.label,
+        key: `question_${question.id}`,
+        width: 24,
+      }),
     );
 
-  const headers = [
-    ...basicHeaders,
-    ...questionHeaders,
+  worksheet.columns = [
+    {
+      header: "#",
+      key: "number",
+      width: 8,
+    },
+    {
+      header: "اسم الطالب",
+      key: "studentName",
+      width: 24,
+    },
+    {
+      header: "البريد الإلكتروني",
+      key: "studentEmail",
+      width: 30,
+    },
+    {
+      header: "التخصص",
+      key: "studentDepartment",
+      width: 22,
+    },
+    {
+      header: "حالة التسجيل",
+      key: "registrationStatus",
+      width: 18,
+    },
+    {
+      header: "حالة الحضور",
+      key: "attendanceStatus",
+      width: 18,
+    },
+    {
+      header: "وقت الحضور",
+      key: "checkedInAt",
+      width: 24,
+    },
+    {
+      header: "وقت التسجيل",
+      key: "submittedAt",
+      width: 24,
+    },
+    ...dynamicQuestionColumns,
   ];
-
-  const headerRow =
-    sheet.addRow(headers);
-
-  headerRow.height = 32;
-
-  headerRow.eachCell((cell) => {
-    cell.font = {
-      bold: true,
-      color: {
-        argb: "FFFFFFFF",
-      },
-    };
-
-    cell.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: {
-        argb: "FF1688FF",
-      },
-    };
-
-    cell.alignment = {
-      horizontal: "center",
-      vertical: "middle",
-      wrapText: true,
-    };
-
-    cell.border = {
-      top: {
-        style: "thin",
-        color: {
-          argb: "FFFFFFFF",
-        },
-      },
-
-      bottom: {
-        style: "thin",
-        color: {
-          argb: "FFFFFFFF",
-        },
-      },
-
-      left: {
-        style: "thin",
-        color: {
-          argb: "FFFFFFFF",
-        },
-      },
-
-      right: {
-        style: "thin",
-        color: {
-          argb: "FFFFFFFF",
-        },
-      },
-    };
-  });
-
-
-  /* =====================================================
-     REGISTRANTS
-  ===================================================== */
 
   form.submissions.forEach(
     (submission, index) => {
@@ -351,239 +211,138 @@ export async function GET(
           ),
         );
 
-      /*
-       * الإجابات مرتبة بنفس ترتيب
-       * الأسئلة التي وضعها الأدمن.
-       */
-      const answers =
-        form.questions.map(
-          (question) =>
-            formatAnswer(
-              answerMap.get(
-                question.id,
-              ),
-            ),
-        );
+      const attendanceStatus =
+        submission.status ===
+        "APPROVED"
+          ? submission.checkedInAt
+            ? "حضر"
+            : "لم يحضر"
+          : "غير مطبق";
 
-      const row =
-        sheet.addRow([
-          index + 1,
-
+      const rowData: Record<
+        string,
+        string | number
+      > = {
+        number: index + 1,
+        studentName:
           submission.studentName,
-
+        studentEmail:
           submission.studentEmail,
-
+        studentDepartment:
           submission.studentDepartment ??
-            "غير محدد",
-
+          "",
+        registrationStatus:
           statusLabels[
             submission.status
           ],
-
-          submission.submittedAt.toLocaleString(
-            "ar-PS",
-            {
-              dateStyle: "medium",
-              timeStyle: "short",
-            },
+        attendanceStatus,
+        checkedInAt:
+          formatDate(
+            submission.checkedInAt,
           ),
+        submittedAt:
+          formatDate(
+            submission.submittedAt,
+          ),
+      };
 
-          ...answers,
-        ]);
+      for (
+        const question of
+        form.questions
+      ) {
+        rowData[
+          `question_${question.id}`
+        ] = formatAnswer(
+          answerMap.get(
+            question.id,
+          ) ?? null,
+        );
+      }
 
+      const row =
+        worksheet.addRow(
+          rowData,
+        );
 
-      /* ===============================================
-         ROW STYLE
-      =============================================== */
+      row.alignment = {
+        vertical: "middle",
+        horizontal: "right",
+        wrapText: true,
+      };
 
-      row.eachCell((cell) => {
-        cell.alignment = {
-          horizontal: "right",
-          vertical: "top",
-          wrapText: true,
-        };
-
-        cell.border = {
-          top: {
-            style: "thin",
-            color: {
-              argb: "FFDCE3ED",
-            },
-          },
-
-          bottom: {
-            style: "thin",
-            color: {
-              argb: "FFDCE3ED",
-            },
-          },
-
-          left: {
-            style: "thin",
-            color: {
-              argb: "FFDCE3ED",
-            },
-          },
-
-          right: {
-            style: "thin",
-            color: {
-              argb: "FFDCE3ED",
-            },
-          },
-        };
-      });
-
-
-      /* ===============================================
-         ALTERNATING ROWS
-      =============================================== */
-
-if (index % 2 === 1) {
-  row.eachCell((cell, colNumber) => {
-    if (colNumber !== 5) {
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: {
-          argb: "FFF8FAFC",
+      row.eachCell(
+        (cell, colNumber) => {
+          /*
+           * لا نغيّر تنسيق خلية حالة التسجيل هنا
+           * حتى تبقى قابلة للقراءة مثل باقي البيانات.
+           */
+          if (
+            colNumber !== 5
+          ) {
+            cell.alignment = {
+              vertical: "middle",
+              horizontal: "right",
+              wrapText: true,
+            };
+          }
         },
-      };
-    }
-  });
-}
-
-
-      /* ===============================================
-         STATUS COLOR
-      =============================================== */
-
-      const statusCell =
-        row.getCell(5);
-
-      statusCell.font = {
-        bold: true,
-      };
-
-      if (
-        submission.status ===
-        "APPROVED"
-      ) {
-        statusCell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: {
-            argb: "FFDCFCE7",
-          },
-        };
-
-        statusCell.font = {
-          bold: true,
-          color: {
-            argb: "FF166534",
-          },
-        };
-      }
-
-      if (
-        submission.status ===
-        "REJECTED"
-      ) {
-        statusCell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: {
-            argb: "FFFEE2E2",
-          },
-        };
-
-        statusCell.font = {
-          bold: true,
-          color: {
-            argb: "FF991B1B",
-          },
-        };
-      }
-
-      if (
-        submission.status ===
-        "SUBMITTED"
-      ) {
-        statusCell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: {
-            argb: "FFFEF3C7",
-          },
-        };
-
-        statusCell.font = {
-          bold: true,
-          color: {
-            argb: "FF92400E",
-          },
-        };
-      }
+      );
     },
   );
 
+  const header =
+    worksheet.getRow(1);
 
-  /* =====================================================
-     COLUMN WIDTHS
-  ===================================================== */
+  header.height = 28;
 
-  sheet.getColumn(1).width = 7;
-
-  sheet.getColumn(2).width = 25;
-
-  sheet.getColumn(3).width = 32;
-
-  sheet.getColumn(4).width = 24;
-
-  sheet.getColumn(5).width = 18;
-
-  sheet.getColumn(6).width = 24;
-
-  /*
-   * أعمدة الأسئلة
-   */
-  for (
-    let i = 7;
-    i <= headers.length;
-    i++
-  ) {
-    sheet.getColumn(i).width =
-      30;
-  }
-
-
-  /* =====================================================
-     FILTER
-  ===================================================== */
-
-  sheet.autoFilter = {
-    from: {
-      row: 4,
-      column: 1,
-    },
-
-    to: {
-      row: 4,
-      column:
-        headers.length,
-    },
+  header.font = {
+    bold: true,
   };
 
+  header.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+    wrapText: true,
+  };
 
-  /* =====================================================
-     EXPORT
-  ===================================================== */
+  header.eachCell((cell) => {
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: {
+        argb: "FFEAF2F8",
+      },
+    };
+
+    cell.border = {
+      bottom: {
+        style: "thin",
+        color: {
+          argb: "FFCBD5E1",
+        },
+      },
+    };
+  });
+
+  worksheet.autoFilter = {
+    from: {
+      row: 1,
+      column: 1,
+    },
+    to: {
+      row: 1,
+      column:
+        worksheet.columnCount,
+    },
+  };
 
   const buffer =
     await workbook.xlsx.writeBuffer();
 
-  const safeFileName =
-    `registrations-${activity.id}.xlsx`;
+  const filename =
+    `${safeFileName(
+      activity.title,
+    )}-registrations.xlsx`;
 
   return new Response(
     Buffer.from(buffer),
@@ -595,10 +354,12 @@ if (index % 2 === 1) {
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 
         "Content-Disposition":
-          `attachment; filename="${safeFileName}"`,
+          `attachment; filename*=UTF-8''${encodeURIComponent(
+            filename,
+          )}`,
 
         "Cache-Control":
-          "private, no-store",
+          "no-store",
       },
     },
   );

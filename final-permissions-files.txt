@@ -1,0 +1,2316 @@
+
+============================================================
+FILE: app\admin\layout.tsx
+============================================================
+
+import type { ReactNode } from "react";
+import AdminNavigation from "@/components/admin/AdminNavigation";
+import { requireAdmin } from "@/lib/auth";
+
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  await requireAdmin();
+
+  return (
+    <div className="admin-wrap">
+      <AdminNavigation />
+      <div className="admin-main">{children}</div>
+    </div>
+  );
+}
+
+============================================================
+FILE: app\activities\[id]\register\actions.ts
+============================================================
+
+"use server";
+
+import {
+  Prisma,
+  type ActivityFormQuestionType,
+} from "@prisma/client";
+import { revalidatePath } from "next/cache";
+
+import { requireStudent } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export type RegistrationFormState = {
+  success: boolean;
+  message: string;
+};
+
+const initialFailure: RegistrationFormState = {
+  success: false,
+  message: "",
+};
+
+function isOptionQuestion(
+  type: ActivityFormQuestionType,
+) {
+  return (
+    type === "SELECT" ||
+    type === "RADIO" ||
+    type === "CHECKBOX"
+  );
+}
+
+function getQuestionOptions(
+  options: Prisma.JsonValue | null,
+): string[] {
+  if (!Array.isArray(options)) {
+    return [];
+  }
+
+  return options.filter(
+    (item): item is string =>
+      typeof item === "string",
+  );
+}
+
+function validateAndGetAnswer(
+  question: {
+    id: string;
+    label: string;
+    type: ActivityFormQuestionType;
+    required: boolean;
+    options: Prisma.JsonValue | null;
+  },
+  formData: FormData,
+): Prisma.InputJsonValue | null {
+  const fieldName =
+    `question_${question.id}`;
+
+  /*
+   * CHECKBOX
+   */
+  if (question.type === "CHECKBOX") {
+    const submittedValues = formData
+      .getAll(fieldName)
+      .map((value) =>
+        String(value).trim(),
+      )
+      .filter(Boolean);
+
+    if (
+      question.required &&
+      submittedValues.length === 0
+    ) {
+      throw new Error(
+        `السؤال "${question.label}" مطلوب.`,
+      );
+    }
+
+    const allowedOptions =
+      getQuestionOptions(
+        question.options,
+      );
+
+    const invalidOption =
+      submittedValues.some(
+        (value) =>
+          !allowedOptions.includes(
+            value,
+          ),
+      );
+
+    if (invalidOption) {
+      throw new Error(
+        `تم إرسال خيار غير صالح في السؤال "${question.label}".`,
+      );
+    }
+
+    /*
+     * السؤال الاختياري وغير المجاب
+     * لا نحتاج لتخزين Answer له.
+     */
+    if (
+      submittedValues.length === 0
+    ) {
+      return null;
+    }
+
+    return submittedValues;
+  }
+
+  /*
+   * باقي الأنواع
+   */
+  const value = String(
+    formData.get(fieldName) ?? "",
+  ).trim();
+
+  if (
+    question.required &&
+    !value
+  ) {
+    throw new Error(
+      `السؤال "${question.label}" مطلوب.`,
+    );
+  }
+
+  if (!value) {
+    return null;
+  }
+
+  /*
+   * SELECT / RADIO
+   */
+  if (isOptionQuestion(question.type)) {
+    const allowedOptions =
+      getQuestionOptions(
+        question.options,
+      );
+
+    if (
+      !allowedOptions.includes(value)
+    ) {
+      throw new Error(
+        `تم إرسال خيار غير صالح في السؤال "${question.label}".`,
+      );
+    }
+  }
+
+  /*
+   * EMAIL
+   */
+  if (
+    question.type === "EMAIL" &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+      value,
+    )
+  ) {
+    throw new Error(
+      `أدخل بريدًا إلكترونيًا صالحًا في السؤال "${question.label}".`,
+    );
+  }
+
+  /*
+   * NUMBER
+   */
+  if (
+    question.type === "NUMBER" &&
+    !Number.isFinite(
+      Number(value),
+    )
+  ) {
+    throw new Error(
+      `أدخل رقمًا صالحًا في السؤال "${question.label}".`,
+    );
+  }
+
+  /*
+   * حماية من نصوص ضخمة بشكل غير منطقي.
+   */
+  if (value.length > 10_000) {
+    throw new Error(
+      `الإجابة على السؤال "${question.label}" طويلة جدًا.`,
+    );
+  }
+
+  return value;
+}
+
+export async function submitActivityRegistration(
+  _previousState: RegistrationFormState =
+    initialFailure,
+  formData: FormData,
+): Promise<RegistrationFormState> {
+  /*
+   * سيحوّل المستخدم إلى صفحة Login
+   * لو مش Student.
+   */
+  const { user } =
+    await requireStudent();
+
+  const activityId = String(
+    formData.get("activityId") ??
+      "",
+  ).trim();
+
+  const formId = String(
+    formData.get("formId") ?? "",
+  ).trim();
+
+  if (!activityId || !formId) {
+    return {
+      success: false,
+      message:
+        "بيانات نموذج التسجيل غير مكتملة.",
+    };
+  }
+
+  try {
+    /*
+     * نجيب النموذج والأسئلة من السيرفر.
+     * لا نثق بالأسئلة القادمة من المتصفح.
+     */
+    const form =
+      await prisma.activityRegistrationForm.findUnique({
+        where: {
+          id: formId,
+        },
+
+        include: {
+          activity: {
+            select: {
+              id: true,
+              title: true,
+              capacity: true,
+              status: true,
+            },
+          },
+
+          questions: {
+            orderBy: {
+              sortOrder: "asc",
+            },
+          },
+        },
+      });
+
+    if (
+      !form ||
+      form.activityId !==
+        activityId ||
+      form.activity.id !==
+        activityId
+    ) {
+      return {
+        success: false,
+        message:
+          "نموذج التسجيل غير موجود أو لا يتبع لهذا النشاط.",
+      };
+    }
+
+    if (
+      form.activity.status !==
+      "PUBLISHED"
+    ) {
+      return {
+        success: false,
+        message:
+          "هذا النشاط غير متاح للتسجيل حاليًا.",
+      };
+    }
+
+    if (!form.isOpen) {
+      return {
+        success: false,
+        message:
+          "التسجيل في هذا النشاط مغلق.",
+      };
+    }
+
+    /*
+     * نتحقق من الإجابات قبل بدء عملية الحفظ.
+     */
+    const answers =
+      form.questions
+        .map((question) => {
+          const value =
+            validateAndGetAnswer(
+              question,
+              formData,
+            );
+
+          if (value === null) {
+            return null;
+          }
+
+          return {
+            questionId:
+              question.id,
+            value,
+          };
+        })
+        .filter(
+          (
+            answer,
+          ): answer is {
+            questionId: string;
+            value: Prisma.InputJsonValue;
+          } => answer !== null,
+        );
+
+    /*
+     * محاولة الحفظ داخل Transaction.
+     *
+     * Serializable تقلل مشكلة أن طالبين
+     * يأخذوا آخر مقعد بنفس اللحظة.
+     */
+    const maxAttempts = 3;
+
+    for (
+      let attempt = 1;
+      attempt <= maxAttempts;
+      attempt++
+    ) {
+      try {
+        await prisma.$transaction(
+          async (tx) => {
+            /*
+             * هل سجل الطالب من قبل؟
+             */
+            const existing =
+              await tx.activityFormSubmission.findFirst({
+                where: {
+                  formId:
+                    form.id,
+                  userId:
+                    user.id,
+                },
+
+                select: {
+                  id: true,
+                },
+              });
+
+            if (existing) {
+              throw new Error(
+                "ALREADY_REGISTERED",
+              );
+            }
+
+            /*
+             * تأكد مرة ثانية أن الفورم
+             * لم يتم إغلاقه أثناء تعبئة الطالب.
+             */
+            const latestForm =
+              await tx.activityRegistrationForm.findUnique({
+                where: {
+                  id: form.id,
+                },
+
+                select: {
+                  isOpen: true,
+
+                  activity: {
+                    select: {
+                      capacity:
+                        true,
+                      status:
+                        true,
+                    },
+                  },
+                },
+              });
+
+            if (
+              !latestForm ||
+              !latestForm.isOpen
+            ) {
+              throw new Error(
+                "REGISTRATION_CLOSED",
+              );
+            }
+
+            if (
+              latestForm.activity
+                .status !==
+              "PUBLISHED"
+            ) {
+              throw new Error(
+                "ACTIVITY_NOT_AVAILABLE",
+              );
+            }
+
+            /*
+             * فحص السعة داخل نفس Transaction.
+             */
+const currentCount =
+  await tx.activityFormSubmission.count({
+    where: {
+      formId: form.id,
+
+      status: {
+        not: "REJECTED",
+      },
+    },
+  });
+
+            if (
+              latestForm.activity
+                .capacity > 0 &&
+              currentCount >=
+                latestForm.activity
+                  .capacity
+            ) {
+              throw new Error(
+                "CAPACITY_FULL",
+              );
+            }
+
+            /*
+             * إنشاء التسجيل والإجابات.
+             */
+            await tx.activityFormSubmission.create({
+              data: {
+                formId:
+                  form.id,
+
+                userId:
+                  user.id,
+
+                studentName:
+                  user.name,
+
+                studentEmail:
+                  user.email,
+
+                studentDepartment:
+                  user.department
+                    ?.nameAr ??
+                  null,
+
+                answers:
+                  answers.length >
+                  0
+                    ? {
+                        create:
+                          answers.map(
+                            (
+                              answer,
+                            ) => ({
+                              questionId:
+                                answer.questionId,
+
+                              value:
+                                answer.value,
+                            }),
+                          ),
+                      }
+                    : undefined,
+              },
+            });
+          },
+
+          {
+            isolationLevel:
+              Prisma.TransactionIsolationLevel
+                .Serializable,
+          },
+        );
+
+        /*
+         * إذا نجح الحفظ نخرج من Retry Loop.
+         */
+        break;
+      } catch (error) {
+        /*
+         * رسائل business logic
+         */
+        if (
+          error instanceof Error
+        ) {
+          if (
+            error.message ===
+            "ALREADY_REGISTERED"
+          ) {
+            return {
+              success: false,
+              message:
+                "أنت مسجل مسبقًا في هذا النشاط.",
+            };
+          }
+
+          if (
+            error.message ===
+            "REGISTRATION_CLOSED"
+          ) {
+            return {
+              success: false,
+              message:
+                "تم إغلاق التسجيل في هذا النشاط.",
+            };
+          }
+
+          if (
+            error.message ===
+            "ACTIVITY_NOT_AVAILABLE"
+          ) {
+            return {
+              success: false,
+              message:
+                "هذا النشاط غير متاح للتسجيل حاليًا.",
+            };
+          }
+
+          if (
+            error.message ===
+            "CAPACITY_FULL"
+          ) {
+            return {
+              success: false,
+              message:
+                "عذرًا، اكتمل العدد في هذا النشاط.",
+            };
+          }
+        }
+
+        /*
+         * Prisma Serializable transaction conflict.
+         * نعيد المحاولة حتى 3 مرات.
+         */
+        if (
+          error instanceof
+            Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2034" &&
+          attempt < maxAttempts
+        ) {
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    revalidatePath(
+      `/activities/${activityId}/register`,
+    );
+
+    revalidatePath(
+      "/activities",
+    );
+
+    revalidatePath(
+      "/admin/activities",
+    );
+
+    return {
+      success: true,
+      message:
+        "تم تسجيلك في النشاط بنجاح ✅",
+    };
+  } catch (error) {
+    /*
+     * Validation messages
+     */
+    if (error instanceof Error) {
+      const safeMessages = [
+        "مطلوب.",
+        "غير صالح",
+        "صالحًا",
+        "طويلة جدًا",
+      ];
+
+      if (
+        safeMessages.some(
+          (part) =>
+            error.message.includes(
+              part,
+            ),
+        )
+      ) {
+        return {
+          success: false,
+          message:
+            error.message,
+        };
+      }
+    }
+
+    console.error(
+      "Activity registration error:",
+      error,
+    );
+
+    return {
+      success: false,
+      message:
+        "حدث خطأ أثناء حفظ التسجيل. حاول مرة أخرى.",
+    };
+  }
+}
+
+============================================================
+FILE: app\student\actions.ts
+============================================================
+
+"use server";
+
+import {
+  mkdir,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
+
+import { Prisma } from "@prisma/client";
+import type { StudyLevel } from "@prisma/client";
+import { revalidatePath } from "next/cache";
+
+import { requireStudent } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export type StudentProfileState = {
+  success: boolean;
+  message: string;
+  version?: string;
+
+  fieldErrors?: {
+    name?: string;
+    studentNumber?: string;
+    phone?: string;
+    studyLevel?: string;
+  };
+};
+
+export type StudentAvatarState = {
+  success: boolean;
+  message: string;
+  version?: string;
+  removed?: boolean;
+};
+
+const STUDY_LEVELS = new Set([
+  "FIRST",
+  "SECOND",
+  "THIRD",
+  "FOURTH",
+  "FIFTH",
+  "GRADUATE",
+]);
+
+const MAX_AVATAR_SIZE =
+  5 * 1024 * 1024;
+
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
+const EXTENSIONS: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+};
+
+function normalizeName(value: string) {
+  return value
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function normalizePhone(value: string) {
+  return value
+    .trim()
+    .replace(/[\s()-]/g, "");
+}
+
+/* =========================================================
+   STUDENT PROFILE
+========================================================= */
+
+export async function updateStudentProfile(
+  _previousState: StudentProfileState,
+  formData: FormData,
+): Promise<StudentProfileState> {
+  const { user } = await requireStudent();
+
+  const name = normalizeName(
+    String(
+      formData.get("name") ?? "",
+    ),
+  );
+
+  const studentNumber = String(
+    formData.get("studentNumber") ?? "",
+  ).trim();
+
+  const phone = normalizePhone(
+    String(
+      formData.get("phone") ?? "",
+    ),
+  );
+
+  const studyLevelRaw = String(
+    formData.get("studyLevel") ?? "",
+  ).trim();
+
+  const fieldErrors: NonNullable<
+    StudentProfileState["fieldErrors"]
+  > = {};
+
+  /* -------------------------
+     NAME
+  ------------------------- */
+
+  if (!name) {
+    fieldErrors.name =
+      "الاسم مطلوب.";
+  } else if (name.length < 3) {
+    fieldErrors.name =
+      "الاسم قصير جدًا.";
+  } else if (name.length > 100) {
+    fieldErrors.name =
+      "الاسم يجب ألا يتجاوز 100 حرف.";
+  }
+
+  /* -------------------------
+     STUDENT NUMBER
+  ------------------------- */
+
+  if (
+    studentNumber &&
+    !/^\d{5,20}$/.test(
+      studentNumber,
+    )
+  ) {
+    fieldErrors.studentNumber =
+      "الرقم الجامعي يجب أن يحتوي على أرقام فقط.";
+  }
+
+  /* -------------------------
+     PHONE
+  ------------------------- */
+
+  if (
+    phone &&
+    !/^\+?\d{7,15}$/.test(phone)
+  ) {
+    fieldErrors.phone =
+      "أدخل رقم جوال صحيحًا.";
+  }
+
+  /* -------------------------
+     STUDY LEVEL
+  ------------------------- */
+
+  if (
+    studyLevelRaw &&
+    !STUDY_LEVELS.has(
+      studyLevelRaw,
+    )
+  ) {
+    fieldErrors.studyLevel =
+      "المستوى الدراسي غير صالح.";
+  }
+
+  if (
+    Object.keys(fieldErrors).length >
+    0
+  ) {
+    return {
+      success: false,
+      message:
+        "راجع البيانات المدخلة وحاول مرة أخرى.",
+      fieldErrors,
+    };
+  }
+
+  /* -------------------------
+     UNIQUE STUDENT NUMBER
+  ------------------------- */
+
+  if (studentNumber) {
+    const existingStudent =
+      await prisma.user.findFirst({
+        where: {
+          studentNumber,
+          id: {
+            not: user.id,
+          },
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+    if (existingStudent) {
+      return {
+        success: false,
+        message:
+          "الرقم الجامعي مستخدم في حساب آخر.",
+        fieldErrors: {
+          studentNumber:
+            "هذا الرقم الجامعي مسجل مسبقًا.",
+        },
+      };
+    }
+  }
+
+  try {
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+
+      data: {
+        name,
+
+        studentNumber:
+          studentNumber || null,
+
+        phone:
+          phone || null,
+
+        studyLevel:
+          studyLevelRaw
+            ? (studyLevelRaw as StudyLevel)
+            : null,
+      },
+    });
+
+    revalidatePath("/student");
+
+    return {
+      success: true,
+      message:
+        "تم تحديث بياناتك بنجاح.",
+      version:
+        Date.now().toString(),
+    };
+  } catch (error) {
+    if (
+      error instanceof
+        Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return {
+        success: false,
+        message:
+          "تعذر حفظ الرقم الجامعي لأنه مستخدم في حساب آخر.",
+        fieldErrors: {
+          studentNumber:
+            "الرقم الجامعي مستخدم مسبقًا.",
+        },
+      };
+    }
+
+    console.error(
+      "Student profile update error:",
+      error,
+    );
+
+    return {
+      success: false,
+      message:
+        "تعذر تحديث البيانات. حاول مرة أخرى.",
+    };
+  }
+}
+
+/* =========================================================
+   AVATAR
+========================================================= */
+
+function isValidImageSignature(
+  bytes: Uint8Array,
+  mime: string,
+) {
+  if (mime === "image/jpeg") {
+    return (
+      bytes.length >= 3 &&
+      bytes[0] === 0xff &&
+      bytes[1] === 0xd8 &&
+      bytes[2] === 0xff
+    );
+  }
+
+  if (mime === "image/png") {
+    return (
+      bytes.length >= 8 &&
+      bytes[0] === 0x89 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x4e &&
+      bytes[3] === 0x47 &&
+      bytes[4] === 0x0d &&
+      bytes[5] === 0x0a &&
+      bytes[6] === 0x1a &&
+      bytes[7] === 0x0a
+    );
+  }
+
+  if (mime === "image/webp") {
+    return (
+      bytes.length >= 12 &&
+      String.fromCharCode(
+        ...bytes.slice(0, 4),
+      ) === "RIFF" &&
+      String.fromCharCode(
+        ...bytes.slice(8, 12),
+      ) === "WEBP"
+    );
+  }
+
+  return false;
+}
+
+function avatarDirectory() {
+  return path.join(
+    process.cwd(),
+    "storage",
+    "avatars",
+  );
+}
+
+async function safeDeleteAvatar(
+  storedName: string | null,
+) {
+  if (!storedName) {
+    return;
+  }
+
+  const safeName =
+    path.basename(storedName);
+
+  try {
+    await unlink(
+      path.join(
+        avatarDirectory(),
+        safeName,
+      ),
+    );
+  } catch {
+    // عدم وجود الملف القديم لا يفشل العملية.
+  }
+}
+
+export async function updateStudentAvatar(
+  _previousState: StudentAvatarState,
+  formData: FormData,
+): Promise<StudentAvatarState> {
+  const { user } =
+    await requireStudent();
+
+  const file =
+    formData.get("avatar");
+
+  if (
+    !(file instanceof File) ||
+    file.size === 0
+  ) {
+    return {
+      success: false,
+      message:
+        "اختر صورة أولًا.",
+    };
+  }
+
+  if (
+    file.size >
+    MAX_AVATAR_SIZE
+  ) {
+    return {
+      success: false,
+      message:
+        "حجم الصورة يجب ألا يتجاوز 5MB.",
+    };
+  }
+
+  if (
+    !ALLOWED_MIME_TYPES.has(
+      file.type,
+    )
+  ) {
+    return {
+      success: false,
+      message:
+        "الصيغ المسموحة هي JPG وPNG وWebP فقط.",
+    };
+  }
+
+  const buffer = Buffer.from(
+    await file.arrayBuffer(),
+  );
+
+  if (
+    !isValidImageSignature(
+      new Uint8Array(buffer),
+      file.type,
+    )
+  ) {
+    return {
+      success: false,
+      message:
+        "الملف المحدد لا يبدو كصورة صالحة.",
+    };
+  }
+
+  const extension =
+    EXTENSIONS[file.type];
+
+  const storedName =
+    `${randomUUID()}${extension}`;
+
+  const directory =
+    avatarDirectory();
+
+  await mkdir(directory, {
+    recursive: true,
+  });
+
+  const previous =
+    await prisma.user.findUnique({
+      where: {
+        id: user.id,
+      },
+
+      select: {
+        avatarStoredName: true,
+      },
+    });
+
+  try {
+    await writeFile(
+      path.join(
+        directory,
+        storedName,
+      ),
+      buffer,
+      {
+        flag: "wx",
+      },
+    );
+
+    const updatedAt =
+      new Date();
+
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+
+      data: {
+        avatarStoredName:
+          storedName,
+
+        avatarOriginalName:
+          file.name.slice(0, 255),
+
+        avatarMime:
+          file.type,
+
+        avatarSize:
+          file.size,
+
+        avatarUpdatedAt:
+          updatedAt,
+      },
+    });
+
+    await safeDeleteAvatar(
+      previous?.avatarStoredName ??
+        null,
+    );
+
+    revalidatePath("/student");
+
+    return {
+      success: true,
+      message:
+        "تم تحديث الصورة الشخصية بنجاح.",
+      version:
+        updatedAt
+          .getTime()
+          .toString(),
+    };
+  } catch (error) {
+    await safeDeleteAvatar(
+      storedName,
+    );
+
+    console.error(
+      "Student avatar upload error:",
+      error,
+    );
+
+    return {
+      success: false,
+      message:
+        "تعذر تحديث الصورة الشخصية. حاول مرة أخرى.",
+    };
+  }
+}
+
+export async function removeStudentAvatar(
+  _previousState: StudentAvatarState,
+  _formData: FormData,
+): Promise<StudentAvatarState> {
+  const { user } =
+    await requireStudent();
+
+  const current =
+    await prisma.user.findUnique({
+      where: {
+        id: user.id,
+      },
+
+      select: {
+        avatarStoredName: true,
+      },
+    });
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+
+    data: {
+      avatarStoredName: null,
+      avatarOriginalName: null,
+      avatarMime: null,
+      avatarSize: null,
+      avatarUpdatedAt: null,
+    },
+  });
+
+  await safeDeleteAvatar(
+    current?.avatarStoredName ??
+      null,
+  );
+
+  revalidatePath("/student");
+
+  return {
+    success: true,
+    message:
+      "تم حذف الصورة الشخصية.",
+    removed: true,
+    version:
+      Date.now().toString(),
+  };
+}
+/* =========================================================
+   CANCEL ACTIVITY REGISTRATION
+========================================================= */
+
+export type CancelRegistrationState = {
+  success: boolean;
+  message: string;
+};
+
+export async function cancelActivityRegistration(
+  _previousState: CancelRegistrationState,
+  formData: FormData,
+): Promise<CancelRegistrationState> {
+  const { user } = await requireStudent();
+
+  const submissionId = String(
+    formData.get("submissionId") ?? "",
+  ).trim();
+
+  if (!submissionId) {
+    return {
+      success: false,
+      message: "تعذر تحديد التسجيل المطلوب.",
+    };
+  }
+
+  const submission =
+    await prisma.activityFormSubmission.findFirst({
+      where: {
+        id: submissionId,
+        userId: user.id,
+      },
+
+      select: {
+        id: true,
+        status: true,
+
+        form: {
+          select: {
+            activity: {
+              select: {
+                id: true,
+                title: true,
+                startsAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+  if (!submission) {
+    return {
+      success: false,
+      message:
+        "التسجيل غير موجود أو لا يخص حسابك.",
+    };
+  }
+
+  const activity =
+    submission.form.activity;
+
+  if (
+    submission.status === "REJECTED"
+  ) {
+    return {
+      success: false,
+      message:
+        "لا يمكن إلغاء تسجيل مرفوض.",
+    };
+  }
+
+  if (
+    activity.startsAt <= new Date()
+  ) {
+    return {
+      success: false,
+      message:
+        "لا يمكن إلغاء التسجيل بعد بدء النشاط.",
+    };
+  }
+
+  try {
+    const deleted =
+      await prisma.activityFormSubmission.deleteMany({
+        where: {
+          id: submission.id,
+          userId: user.id,
+        },
+      });
+
+    if (deleted.count !== 1) {
+      return {
+        success: false,
+        message:
+          "تعذر إلغاء التسجيل. حاول مرة أخرى.",
+      };
+    }
+
+    /*
+     * ActivityFormAnswer مرتبط بالتسجيل
+     * بـ onDelete: Cascade، لذلك تُحذف
+     * إجابات التسجيل تلقائيًا.
+     */
+
+    revalidatePath("/student");
+    revalidatePath("/activities");
+
+    revalidatePath(
+      `/activities/${activity.id}/register`,
+    );
+
+    revalidatePath(
+      `/admin/activities/${activity.id}/registrations`,
+    );
+
+    revalidatePath(
+      "/admin/activities",
+    );
+
+    return {
+      success: true,
+      message:
+        "تم إلغاء تسجيلك في النشاط بنجاح.",
+    };
+  } catch (error) {
+    console.error(
+      "Cancel student registration error:",
+      error,
+    );
+
+    return {
+      success: false,
+      message:
+        "تعذر إلغاء التسجيل حاليًا. حاول مرة أخرى.",
+    };
+  }
+}
+
+============================================================
+FILE: app\student\page.tsx
+============================================================
+
+import Link from "next/link";
+import StudentCancelRegistrationButton from "@/components/student/StudentCancelRegistrationButton";
+import StudentAvatarUploader from "@/components/student/StudentAvatarUploader";
+import StudentProfileEditor from "@/components/student/StudentProfileEditor";
+import { requireStudent } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import StudentAcceptanceCard from "@/components/student/StudentAcceptanceCard";
+import styles from "./student.module.css";
+
+export const dynamic = "force-dynamic";
+
+const statusLabels = {
+  SUBMITTED: "قيد المراجعة",
+  APPROVED: "مقبول",
+  REJECTED: "مرفوض",
+} as const;
+
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("ar-PS", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function formatAnswer(value: unknown) {
+  if (value === null || value === undefined) {
+    return "لم تتم الإجابة";
+  }
+
+  if (Array.isArray(value)) {
+    return value.length
+      ? value.map(String).join("، ")
+      : "لم تتم الإجابة";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "نعم" : "لا";
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  const text = String(value).trim();
+
+  return text || "لم تتم الإجابة";
+}
+
+type ActivityTab =
+  | "all"
+  | "upcoming"
+  | "past"
+  | "rejected";
+
+type StudentDashboardPageProps = {
+  searchParams?: Promise<{
+    activityTab?: string | string[];
+  }>;
+};
+
+function resolveActivityTab(
+  value: string | string[] | undefined,
+): ActivityTab {
+  const normalized = Array.isArray(value)
+    ? value[0]
+    : value;
+
+  if (
+    normalized === "upcoming" ||
+    normalized === "past" ||
+    normalized === "rejected"
+  ) {
+    return normalized;
+  }
+
+  return "all";
+}
+
+export default async function StudentDashboardPage({
+  searchParams,
+}: StudentDashboardPageProps) {
+  const params = await searchParams;
+  const activityTab = resolveActivityTab(
+    params?.activityTab,
+  );
+
+  const { user: sessionUser } =
+    await requireStudent();
+
+  const user =
+    await prisma.user.findUnique({
+      where: {
+        id: sessionUser.id,
+      },
+
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+
+        studentNumber: true,
+        phone: true,
+        studyLevel: true,
+
+        avatarStoredName: true,
+        avatarUpdatedAt: true,
+
+        department: {
+          select: {
+            id: true,
+            nameAr: true,
+            nameEn: true,
+          },
+        },
+
+        activityFormSubmissions: {
+          select: {
+            id: true,
+            status: true,
+            submittedAt: true,
+            checkInToken: true,
+            checkedInAt: true,
+
+            answers: {
+              select: {
+                id: true,
+                value: true,
+
+                question: {
+                  select: {
+                    id: true,
+                    label: true,
+                    sortOrder: true,
+                  },
+                },
+              },
+            },
+
+            form: {
+              select: {
+                title: true,
+
+                activity: {
+                  select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    location: true,
+                    startsAt: true,
+                    capacity: true,
+                    status: true,
+                  },
+                },
+              },
+            },
+          },
+
+          orderBy: {
+            submittedAt: "desc",
+          },
+        },
+      },
+    });
+
+  if (!user) {
+    return null;
+  }
+
+  const submissions =
+    user.activityFormSubmissions;
+
+  const pendingCount =
+    submissions.filter(
+      (item) =>
+        item.status === "SUBMITTED",
+    ).length;
+
+  const approvedCount =
+    submissions.filter(
+      (item) =>
+        item.status === "APPROVED",
+    ).length;
+
+  const rejectedCount =
+    submissions.filter(
+      (item) =>
+        item.status === "REJECTED",
+    ).length;
+
+  const now = new Date();
+
+  const activeCount =
+    submissions.filter(
+      (item) =>
+        item.status !== "REJECTED" &&
+        item.form.activity.startsAt >=
+        now,
+    ).length;
+
+  const upcomingSubmissions =
+    submissions.filter(
+      (item) =>
+        item.status !== "REJECTED" &&
+        item.form.activity.startsAt >=
+        now,
+    );
+
+  const pastSubmissions =
+    submissions.filter(
+      (item) =>
+        item.status !== "REJECTED" &&
+        item.form.activity.startsAt <
+        now,
+    );
+
+  const rejectedSubmissions =
+    submissions.filter(
+      (item) =>
+        item.status === "REJECTED",
+    );
+
+  const filteredSubmissions =
+    activityTab === "upcoming"
+      ? upcomingSubmissions
+      : activityTab === "past"
+        ? pastSubmissions
+        : activityTab === "rejected"
+          ? rejectedSubmissions
+          : submissions;
+
+  const initials =
+    user.name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) =>
+        part.charAt(0),
+      )
+      .join("")
+      .toUpperCase() || "ST";
+
+  const createdAtLabel =
+    new Intl.DateTimeFormat(
+      "ar-PS",
+      {
+        dateStyle: "medium",
+      },
+    ).format(user.createdAt);
+
+  return (
+    <main className={styles.page}>
+      {/* ==================================================
+          HERO
+      ================================================== */}
+
+      <section className={styles.hero}>
+        <div>
+          <span
+            className={styles.eyebrow}
+          >
+            لوحة الطالب
+          </span>
+
+          <h1>
+            مرحبًا، {user.name}
+          </h1>
+
+          <p>
+            تابع تسجيلاتك في الأنشطة،
+            حالة قبولك، وبيانات حسابك
+            من مكان واحد.
+          </p>
+        </div>
+
+        <Link
+          href="/activities"
+          className={
+            styles.activitiesLink
+          }
+        >
+          استكشف الأنشطة
+        </Link>
+      </section>
+
+      {/* ==================================================
+          DASHBOARD
+      ================================================== */}
+
+      <section
+        className={
+          styles.dashboardGrid
+        }
+      >
+        {/* PROFILE */}
+
+        <aside
+          className={
+            styles.profileCard
+          }
+        >
+          <StudentAvatarUploader
+            name={user.name}
+            initials={initials}
+            hasAvatar={Boolean(
+              user.avatarStoredName,
+            )}
+            initialVersion={
+              user.avatarUpdatedAt
+                ?.getTime()
+                .toString() ?? "0"
+            }
+          />
+
+          <StudentProfileEditor
+            name={user.name}
+            email={user.email}
+            studentNumber={
+              user.studentNumber
+            }
+            phone={user.phone}
+            studyLevel={
+              user.studyLevel
+            }
+            departmentName={
+              user.department
+                ?.nameAr ??
+              "غير محدد"
+            }
+            createdAtLabel={
+              createdAtLabel
+            }
+          />
+        </aside>
+
+        {/* MAIN CONTENT */}
+
+        <div
+          className={
+            styles.mainContent
+          }
+        >
+          {/* ==============================================
+              STATS
+          ============================================== */}
+
+          <section
+            className={
+              styles.statsGrid
+            }
+          >
+            <article
+              className={
+                styles.statCard
+              }
+            >
+              <span>
+                إجمالي تسجيلاتي
+              </span>
+
+              <strong>
+                {submissions.length}
+              </strong>
+
+              <small>
+                كل الأنشطة التي سجلت
+                فيها
+              </small>
+            </article>
+
+            <article
+              className={
+                styles.statCard
+              }
+            >
+              <span>
+                قيد المراجعة
+              </span>
+
+              <strong>
+                {pendingCount}
+              </strong>
+
+              <small>
+                بانتظار قرار الإدارة
+              </small>
+            </article>
+
+            <article
+              className={
+                styles.statCard
+              }
+            >
+              <span>مقبول</span>
+
+              <strong>
+                {approvedCount}
+              </strong>
+
+              <small>
+                تسجيلات تم قبولها
+              </small>
+            </article>
+
+            <article
+              className={
+                styles.statCard
+              }
+            >
+              <span>
+                أنشطة قادمة
+              </span>
+
+              <strong>
+                {activeCount}
+              </strong>
+
+              <small>
+                تسجيلات فعالة لم تبدأ
+                بعد
+              </small>
+            </article>
+          </section>
+
+          {/* ==============================================
+              MY ACTIVITIES
+          ============================================== */}
+
+          <section
+            id="my-activities"
+            className={
+              styles.activitiesSection
+            }
+          >
+            <div
+              className={
+                styles.sectionHead
+              }
+            >
+              <div>
+                <span>نشاطاتي</span>
+
+                <h2>
+                  الأنشطة المسجل فيها
+                </h2>
+              </div>
+
+              <small>
+                تابع حالة تسجيلك
+                وتفاصيل مشاركتك
+              </small>
+            </div>
+
+            <div
+              className={
+                styles.activityTabs
+              }
+              aria-label="تصفية الأنشطة المسجل فيها"
+            >
+              <Link
+                href="/student?activityTab=all#my-activities"
+                className={`${styles.activityTab} ${activityTab === "all"
+                  ? styles.activityTabActive
+                  : ""
+                  }`}
+              >
+                <span>الكل</span>
+                <strong>
+                  {submissions.length}
+                </strong>
+              </Link>
+
+              <Link
+                href="/student?activityTab=upcoming#my-activities"
+                className={`${styles.activityTab} ${activityTab === "upcoming"
+                  ? styles.activityTabActive
+                  : ""
+                  }`}
+              >
+                <span>القادمة</span>
+                <strong>
+                  {upcomingSubmissions.length}
+                </strong>
+              </Link>
+
+              <Link
+                href="/student?activityTab=past#my-activities"
+                className={`${styles.activityTab} ${activityTab === "past"
+                  ? styles.activityTabActive
+                  : ""
+                  }`}
+              >
+                <span>السابقة</span>
+                <strong>
+                  {pastSubmissions.length}
+                </strong>
+              </Link>
+
+              <Link
+                href="/student?activityTab=rejected#my-activities"
+                className={`${styles.activityTab} ${activityTab === "rejected"
+                  ? styles.activityTabActive
+                  : ""
+                  }`}
+              >
+                <span>المرفوضة</span>
+                <strong>
+                  {rejectedSubmissions.length}
+                </strong>
+              </Link>
+            </div>
+
+            {filteredSubmissions.length ? (
+              <div
+                className={
+                  styles.activityList
+                }
+              >
+                {filteredSubmissions.map(
+                  (submission) => {
+                    const activity =
+                      submission.form
+                        .activity;
+
+                    const isUpcoming =
+                      activity.startsAt >=
+                      now;
+
+                    const answers = [
+                      ...submission.answers,
+                    ].sort(
+                      (a, b) =>
+                        a.question
+                          .sortOrder -
+                        b.question
+                          .sortOrder,
+                    );
+
+                    return (
+                      <article
+                        key={
+                          submission.id
+                        }
+                        className={
+                          styles.registrationCard
+                        }
+                      >
+                        {/* TOP */}
+
+                        <div
+                          className={
+                            styles.registrationCardHeader
+                          }
+                        >
+                          <div
+                            className={
+                              styles.registrationTitleArea
+                            }
+                          >
+                            <div
+                              className={
+                                styles.registrationBadges
+                              }
+                            >
+                              <span
+                                className={`${styles.statusBadge} ${submission.status ===
+                                  "APPROVED"
+                                  ? styles.approved
+                                  : submission.status ===
+                                    "REJECTED"
+                                    ? styles.rejected
+                                    : styles.pending
+                                  }`}
+                              >
+                                {
+                                  statusLabels[
+                                  submission
+                                    .status
+                                  ]
+                                }
+                              </span>
+
+                              <span
+                                className={
+                                  isUpcoming
+                                    ? styles.upcomingBadge
+                                    : styles.finishedBadge
+                                }
+                              >
+                                {isUpcoming
+                                  ? "نشاط قادم"
+                                  : "نشاط سابق"}
+                              </span>
+                            </div>
+
+                            <h3>
+                              {
+                                activity.title
+                              }
+                            </h3>
+
+                            <p>
+                              {
+                                activity.description
+                              }
+                            </p>
+                          </div>
+
+                          <div
+                            className={
+                              styles.registrationDateBox
+                            }
+                          >
+                            <span>
+                              موعد النشاط
+                            </span>
+
+                            <strong>
+                              {formatDate(
+                                activity.startsAt,
+                              )}
+                            </strong>
+                          </div>
+                        </div>
+
+                        {/* META */}
+
+                        <div
+                          className={
+                            styles.registrationMetaGrid
+                          }
+                        >
+                          <div>
+                            <span>
+                              المكان
+                            </span>
+
+                            <strong>
+                              {
+                                activity.location
+                              }
+                            </strong>
+                          </div>
+
+                          <div>
+                            <span>
+                              تاريخ التسجيل
+                            </span>
+
+                            <strong>
+                              {formatDate(
+                                submission.submittedAt,
+                              )}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <span>
+                              حالة الطلب
+                            </span>
+
+                            <strong>
+                              {
+                                statusLabels[
+                                submission
+                                  .status
+                                ]
+                              }
+                            </strong>
+                          </div>
+                        </div>
+
+                        {/* REGISTRATION DETAILS */}
+
+                        <details
+                          className={
+                            styles.registrationDetails
+                          }
+                        >
+                          <summary>
+                            <span>
+                              تفاصيل تسجيلي
+                            </span>
+
+                            <small>
+                              عرض الإجابات
+                              التي قدمتها
+                            </small>
+                          </summary>
+
+                          <div
+                            className={
+                              styles.registrationAnswers
+                            }
+                          >
+                            <div
+                              className={
+                                styles.registrationAnswersHeader
+                              }
+                            >
+                              <div>
+                                <span>
+                                  نموذج التسجيل
+                                </span>
+
+                                <h4>
+                                  {
+                                    submission
+                                      .form
+                                      .title
+                                  }
+                                </h4>
+                              </div>
+
+                              <small>
+                                {
+                                  answers.length
+                                }{" "}
+                                إجابة
+                              </small>
+                            </div>
+
+                            {answers.length ? (
+                              <div
+                                className={
+                                  styles.answerList
+                                }
+                              >
+                                {answers.map(
+                                  (
+                                    answer,
+                                    index,
+                                  ) => (
+                                    <div
+                                      key={
+                                        answer.id
+                                      }
+                                      className={
+                                        styles.answerItem
+                                      }
+                                    >
+                                      <span
+                                        className={
+                                          styles.answerNumber
+                                        }
+                                      >
+                                        {index +
+                                          1}
+                                      </span>
+
+                                      <div>
+                                        <span
+                                          className={
+                                            styles.answerQuestion
+                                          }
+                                        >
+                                          {
+                                            answer
+                                              .question
+                                              .label
+                                          }
+                                        </span>
+
+                                        <strong
+                                          className={
+                                            styles.answerValue
+                                          }
+                                        >
+                                          {formatAnswer(
+                                            answer.value,
+                                          )}
+                                        </strong>
+                                      </div>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            ) : (
+                              <div
+                                className={
+                                  styles.noAnswers
+                                }
+                              >
+                                لا توجد
+                                إجابات محفوظة
+                                لهذا التسجيل.
+                              </div>
+                            )}
+                          </div>
+                        </details>
+
+                        {/* ACTIONS */}
+
+                        <div
+                          className={
+                            styles.registrationActions
+                          }
+                        >
+                          <Link
+                            href={`/activities/${activity.id}/register`}
+                            className={
+                              styles.secondaryButton
+                            }
+                          >
+                            فتح صفحة النشاط
+                          </Link>
+
+                          {submission.status ===
+                            "APPROVED" && (
+                              <StudentAcceptanceCard
+                                studentName={user.name}
+                                studentNumber={
+                                  user.studentNumber
+                                }
+                                departmentName={
+                                  user.department?.nameAr ??
+                                  "غير محدد"
+                                }
+                                activityTitle={
+                                  activity.title
+                                }
+                                activityLocation={
+                                  activity.location
+                                }
+                                activityDate={formatDate(
+                                  activity.startsAt,
+                                )}
+                                checkInToken={
+                                  submission.checkInToken
+                                }
+                                checkedInAt={
+                                  submission.checkedInAt
+                                    ? formatDate(
+                                      submission.checkedInAt,
+                                    )
+                                    : null
+                                }
+                              />
+                            )}
+
+                          {isUpcoming &&
+                            submission.status !==
+                            "REJECTED" && (
+                              <StudentCancelRegistrationButton
+                                submissionId={
+                                  submission.id
+                                }
+                                activityTitle={
+                                  activity.title
+                                }
+                              />
+                            )}
+                        </div>                      </article>
+                    );
+                  },
+                )}
+              </div>
+            ) : (
+              <div
+                className={
+                  styles.emptyState
+                }
+              >
+                <div
+                  className={
+                    styles.emptyIcon
+                  }
+                >
+                  +
+                </div>
+
+                <h3>
+                  {activityTab ===
+                    "upcoming"
+                    ? "ما عندك أنشطة قادمة"
+                    : activityTab ===
+                      "past"
+                      ? "ما عندك أنشطة سابقة"
+                      : activityTab ===
+                        "rejected"
+                        ? "ما عندك تسجيلات مرفوضة"
+                        : "لسا ما سجلت بأي نشاط"}
+                </h3>
+
+                <p>
+                  {activityTab === "all"
+                    ? "استكشف الأنشطة المنشورة وسجّل في النشاط المناسب لك."
+                    : "لا توجد تسجيلات ضمن هذا التصنيف حاليًا."}
+                </p>
+
+                <Link
+                  href="/activities"
+                  className={
+                    styles.primaryButton
+                  }
+                >
+                  تصفح الأنشطة
+                </Link>
+              </div>
+            )}
+          </section>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+============================================================
+FILE: app\student\avatar\route.ts
+============================================================
+
+import {
+  readFile,
+} from "node:fs/promises";
+import path from "node:path";
+
+import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  const session =
+    await getSession();
+
+  if (!session) {
+    return new Response(
+      "Unauthorized",
+      {
+        status: 401,
+      },
+    );
+  }
+
+  const user =
+    await prisma.user.findUnique({
+      where: {
+        id: session.sub,
+      },
+
+      select: {
+        avatarStoredName: true,
+        avatarMime: true,
+      },
+    });
+
+  if (
+    !user?.avatarStoredName ||
+    !user.avatarMime
+  ) {
+    return new Response(
+      "Avatar not found",
+      {
+        status: 404,
+      },
+    );
+  }
+
+  const safeName =
+    path.basename(
+      user.avatarStoredName,
+    );
+
+  try {
+    const file =
+      await readFile(
+        path.join(
+          process.cwd(),
+          "storage",
+          "avatars",
+          safeName,
+        ),
+      );
+
+    return new Response(file, {
+      status: 200,
+
+      headers: {
+        "Content-Type":
+          user.avatarMime,
+
+        "Content-Disposition":
+          'inline; filename="avatar"',
+
+        "Cache-Control":
+          "private, no-store",
+      },
+    });
+  } catch {
+    return new Response(
+      "Avatar not found",
+      {
+        status: 404,
+      },
+    );
+  }
+}

@@ -4,6 +4,11 @@ import DeleteActivityForm from "@/components/admin/DeleteActivityForm";
 import DepartmentChecklist from "@/components/admin/DepartmentChecklist";
 import Link from "next/link";
 
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
 import { prisma } from "@/lib/prisma";
 
 import { createActivity } from "../actions";
@@ -24,6 +29,10 @@ export default async function ActivitiesAdminPage({
     success?: string;
   }>;
 }) {
+  await requirePermission(
+    PERMISSIONS.ACTIVITY_MANAGE,
+  );
+
   const feedback = await searchParams;
 
   const [departments, activities] =

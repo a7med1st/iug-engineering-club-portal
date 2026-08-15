@@ -1,3 +1,8 @@
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
 import { prisma } from "@/lib/prisma";
 import AdminFeedback from "@/components/admin/AdminFeedback";
 import { createMember } from "../actions";
@@ -13,6 +18,10 @@ export default async function MembersAdminPage({
 }: {
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
+  await requirePermission(
+    PERMISSIONS.MEMBER_MANAGE,
+  );
+
   const feedback = await searchParams;
   const [departments, members] = await Promise.all([
     prisma.department.findMany({ orderBy: { sortOrder: "asc" } }),

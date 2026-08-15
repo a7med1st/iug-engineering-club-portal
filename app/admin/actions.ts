@@ -5,7 +5,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth";
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
 
 /* =========================================================
    ACTIVITY CONSTANTS
@@ -377,7 +380,9 @@ async function runAdminAction(
 export async function createMember(
   formData: FormData,
 ) {
-  await requireAdmin();
+  await requirePermission(
+    PERMISSIONS.MEMBER_MANAGE,
+  );
 
   return runAdminAction(
     "/admin/members",
@@ -505,7 +510,9 @@ export async function createMember(
 export async function createActivity(
   formData: FormData,
 ) {
-  await requireAdmin();
+  await requirePermission(
+    PERMISSIONS.ACTIVITY_MANAGE,
+  );
 
   return runAdminAction(
     "/admin/activities",
@@ -880,7 +887,9 @@ export async function createActivity(
 export async function deleteActivity(
   formData: FormData,
 ) {
-  await requireAdmin();
+  await requirePermission(
+    PERMISSIONS.ACTIVITY_MANAGE,
+  );
 
   return runAdminAction(
     "/admin/activities",
@@ -920,7 +929,9 @@ export async function deleteActivity(
 export async function saveGuide(
   formData: FormData,
 ) {
-  await requireAdmin();
+  await requirePermission(
+    PERMISSIONS.GUIDE_MANAGE,
+  );
 
   return runAdminAction(
     "/admin/guides",
@@ -1030,7 +1041,9 @@ export async function saveGuide(
 export async function addStructureItem(
   formData: FormData,
 ) {
-  await requireAdmin();
+  await requirePermission(
+    PERMISSIONS.STRUCTURE_MANAGE,
+  );
 
   return runAdminAction(
     "/admin/structure",

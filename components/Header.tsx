@@ -10,10 +10,7 @@ const navigationLinks = [
   { href: "/activities", label: "الأنشطة" },
   { href: "/departments", label: "الأقسام" },
   { href: "/delegates", label: "المناديب" },
-
-  // الصفحة السادسة الجديدة
   { href: "/contact", label: "بوابة التواصل" },
-
   { href: "/about", label: "من نحن" },
 ];
 
@@ -31,7 +28,12 @@ export default async function Header() {
             href: "/member",
             label: "بوابة العضو",
           }
-        : null;
+        : session?.role === "STUDENT"
+          ? {
+              href: "/student",
+              label: "لوحتي",
+            }
+          : null;
 
   return (
     <header className="site-header">

@@ -1,0 +1,131 @@
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\activities\[id]\register\actions.ts:9 :: import { requireStudent } from "@/lib/auth";
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\activities\[id]\register\actions.ts:198 :: await requireStudent();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\check-in\actions.ts:7 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\check-in\actions.ts:41 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\check-in\actions.ts:42 :: PERMISSIONS.REGISTRATION_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\check-in\page.tsx:15 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\check-in\page.tsx:45 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\check-in\page.tsx:46 :: PERMISSIONS.REGISTRATION_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\export\route.ts:6 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\export\route.ts:76 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\export\route.ts:77 :: PERMISSIONS.REGISTRATION_EXPORT,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\actions.ts:9 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\actions.ts:58 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\actions.ts:59 :: PERMISSIONS.REGISTRATION_REVIEW,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\actions.ts:251 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\actions.ts:252 :: PERMISSIONS.ATTENDANCE_MANUAL,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\actions.ts:414 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\actions.ts:415 :: PERMISSIONS.ACTIVITY_ARCHIVE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\actions.ts:528 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\actions.ts:529 :: PERMISSIONS.REGISTRATION_SETTINGS,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\page.tsx:8 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\page.tsx:90 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\[id]\registrations\page.tsx:91 :: PERMISSIONS.REGISTRATION_REVIEW,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\page.tsx:9 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\page.tsx:32 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\activities\page.tsx:33 :: PERMISSIONS.ACTIVITY_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\export\collaborations\route.ts:5 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\export\collaborations\route.ts:14 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\export\collaborations\route.ts:15 :: PERMISSIONS.CONTACT_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\export\complaints\route.ts:5 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\export\complaints\route.ts:14 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\export\complaints\route.ts:15 :: PERMISSIONS.CONTACT_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\export\suggestions\route.ts:5 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\export\suggestions\route.ts:14 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\export\suggestions\route.ts:15 :: PERMISSIONS.CONTACT_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\files\[id]\route.ts:9 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\files\[id]\route.ts:27 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\files\[id]\route.ts:28 :: PERMISSIONS.CONTACT_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\print\[type]\[id]\page.tsx:10 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\print\[type]\[id]\page.tsx:25 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\print\[type]\[id]\page.tsx:26 :: PERMISSIONS.CONTACT_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\actions.ts:11 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\actions.ts:68 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\actions.ts:69 :: PERMISSIONS.CONTACT_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\page.tsx:9 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\page.tsx:25 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\contact\page.tsx:26 :: PERMISSIONS.CONTACT_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\guides\page.tsx:5 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\guides\page.tsx:17 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\guides\page.tsx:18 :: PERMISSIONS.GUIDE_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\members\page.tsx:3 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\members\page.tsx:21 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\members\page.tsx:22 :: PERMISSIONS.MEMBER_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\structure\page.tsx:3 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\structure\page.tsx:17 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\structure\page.tsx:18 :: PERMISSIONS.STRUCTURE_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\actions.ts:10 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\actions.ts:383 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\actions.ts:384 :: PERMISSIONS.MEMBER_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\actions.ts:513 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\actions.ts:514 :: PERMISSIONS.ACTIVITY_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\actions.ts:890 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\actions.ts:891 :: PERMISSIONS.ACTIVITY_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\actions.ts:932 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\actions.ts:933 :: PERMISSIONS.GUIDE_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\actions.ts:1044 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\actions.ts:1045 :: PERMISSIONS.STRUCTURE_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\layout.tsx:3 :: import { requireAdmin } from "@/lib/auth";
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\admin\layout.tsx:6 :: await requireAdmin();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\api\auth\login\route.ts:5 :: export async function POST(req:Request){try{const body=await req.json();const email=String(body.email||"").trim().toLowerCase();const password=String(body.password||"");const portal=body.portal==="member"?"member":"student";const user=await prisma.user.findUnique({where:{email}});if(!user||!(await bcrypt.compare(password,user.passwordHash)))return NextResponse.json({error:"«·»—Ìœ «·≈·ﬂ —Ê‰Ì √Ê ﬂ·„… «·„—Ê— €Ì— ’ÕÌÕ…."},{status:401});if(portal==="student"&&user.role!=="STUDENT")return NextResponse.json({error:"Â–« «·Õ”«» ·Ì” Õ”«» ÿ«·». «” Œœ„ »Ê«»… «·√⁄÷«¡."},{status:403});if(portal==="member"&&user.role==="STUDENT")return NextResponse.json({error:"Õ”«» «·ÿ«·» ·« Ì„ﬂ‰Â «·œŒÊ· „‰ »Ê«»… «·√⁄÷«¡."},{status:403});await createSession({sub:user.id,email:user.email,name:user.name,role:user.role});return NextResponse.json({ok:true,redirect:user.role==="ADMIN"?"/admin":user.role==="MEMBER"?"/member":"/"});}catch{return NextResponse.json({error:"ÕœÀ Œÿ√ €Ì— „ Êﬁ⁄."},{status:500})}}
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\member\page.tsx:11 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\member\page.tsx:16 :: await requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\member\page.tsx:17 :: PERMISSIONS.MEMBER_DASHBOARD,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\student\avatar\route.ts:13 :: await getSession();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\student\actions.ts:15 :: import { requireStudent } from "@/lib/auth";
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\student\actions.ts:82 :: const { user } = await requireStudent();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\student\actions.ts:349 :: await requireStudent();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\student\actions.ts:506 :: await requireStudent();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\student\actions.ts:562 :: const { user } = await requireStudent();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\student\page.tsx:5 :: import { requireStudent } from "@/lib/auth";
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\app\student\page.tsx:88 :: await requireStudent();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\components\Header.tsx:18 :: const session = await getSession();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\attendance-staff.ts:3 :: requirePermission,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\attendance-staff.ts:14 :: return requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\attendance-staff.ts:15 :: PERMISSIONS.ATTENDANCE_SCAN,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:39 :: export async function getSession(): Promise<SessionPayload | null> {
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:51 :: export async function requireAdmin() {
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:52 :: const session = await getSession();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:53 :: if (!session || session.role !== "ADMIN") redirect("/login?portal=member");
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:64 :: export async function requireMember() {
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:65 :: const session = await getSession();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:66 :: if (!session || (session.role !== "MEMBER" && session.role !== "ADMIN")) redirect("/login?portal=member");
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:72 :: if (!user || (user.role !== "MEMBER" && user.role !== "ADMIN")) redirect("/login?portal=member");
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:76 :: export async function requireStudent() {
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:77 :: const session = await getSession();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:79 :: if (!session || session.role !== "STUDENT") {
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\auth.ts:100 :: if (!user || user.role !== "STUDENT") {
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:109 :: PERMISSIONS.STUDENT_DASHBOARD,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:110 :: PERMISSIONS.STUDENT_PROFILE_EDIT,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:111 :: PERMISSIONS.ACTIVITY_REGISTER,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:112 :: PERMISSIONS.ACTIVITY_CANCEL_OWN_REGISTRATION,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:116 :: PERMISSIONS.MEMBER_DASHBOARD,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:117 :: PERMISSIONS.ATTENDANCE_SCAN,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:121 :: PERMISSIONS.ADMIN_DASHBOARD,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:127 :: PERMISSIONS.MEMBER_DASHBOARD,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:128 :: PERMISSIONS.ATTENDANCE_SCAN,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:130 :: PERMISSIONS.ACTIVITY_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:131 :: PERMISSIONS.ACTIVITY_ARCHIVE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:133 :: PERMISSIONS.REGISTRATION_REVIEW,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:134 :: PERMISSIONS.REGISTRATION_SETTINGS,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:135 :: PERMISSIONS.ATTENDANCE_MANUAL,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:136 :: PERMISSIONS.REGISTRATION_EXPORT,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:137 :: PERMISSIONS.REGISTRATION_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:139 :: PERMISSIONS.MEMBER_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:140 :: PERMISSIONS.STRUCTURE_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:141 :: PERMISSIONS.GUIDE_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:142 :: PERMISSIONS.CONTACT_MANAGE,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:146 :: export function hasPermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:159 :: return permissions.some(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:161 :: hasPermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:172 :: return permissions.every(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:174 :: hasPermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:202 :: export async function requirePermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:206 :: await getSession();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:241 :: !hasPermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:242 :: user.role,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:248 :: user.role,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:259 :: export async function requireAnyPermission(
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:263 :: await getSession();
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:299 :: user.role,
+R:\iug-engineering-club-portal\mnt\data\iug-engineering-club-portal\lib\permissions.ts:305 :: user.role,

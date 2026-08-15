@@ -1,3 +1,8 @@
+import {
+  PERMISSIONS,
+  requirePermission,
+} from "@/lib/permissions";
+
 import { prisma } from "@/lib/prisma";
 import AdminFeedback from "@/components/admin/AdminFeedback";
 import { addStructureItem } from "../actions";
@@ -9,6 +14,10 @@ export default async function StructureAdminPage({
 }: {
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
+  await requirePermission(
+    PERMISSIONS.STRUCTURE_MANAGE,
+  );
+
   const feedback = await searchParams;
   const [departments, items] = await Promise.all([
     prisma.department.findMany({ orderBy: { sortOrder: "asc" } }),
