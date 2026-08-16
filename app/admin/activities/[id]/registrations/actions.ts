@@ -46,6 +46,7 @@ function revalidateRegistrationPages(
   revalidatePath("/activities");
   revalidatePath("/admin/activities");
   revalidatePath("/student");
+  revalidatePath("/notifications");
 }
 
 /* =========================================================
@@ -109,11 +110,15 @@ export async function updateRegistrationStatus(
                 id: true,
                 status: true,
                 formId: true,
+                userId: true,
+
 
                 form: {
                   select: {
                     activity: {
                       select: {
+                        id: true,
+                        title: true,
                         capacity: true,
                       },
                     },
@@ -193,6 +198,41 @@ export async function updateRegistrationStatus(
                 : {}),
             },
           });
+
+          if (
+            submission.userId &&
+            (
+              status === "APPROVED" ||
+              status === "REJECTED"
+            )
+          ) {
+            await tx.notification.create({
+              data: {
+                userId:
+                  submission.userId,
+
+                type:
+                  status === "APPROVED"
+                    ? "ACTIVITY_APPROVED"
+                    : "ACTIVITY_REJECTED",
+
+                title:
+                  status === "APPROVED"
+                    ? `تم قبول تسجيلك في ${submission.form.activity.title}`
+                    : `تم رفض تسجيلك في ${submission.form.activity.title}`,
+
+                body:
+                  status === "APPROVED"
+                    ? "تمت مراجعة طلبك وقبوله. يمكنك مراجعة تفاصيل النشاط من لوحة الطالب."
+                    : "تمت مراجعة طلبك وتحديث حالته إلى مرفوض. يمكنك مراجعة تفاصيل التسجيل من لوحة الطالب.",
+
+                href:
+                  status === "APPROVED"
+                    ? "/student?activityTab=all#my-activities"
+                    : "/student?activityTab=rejected#my-activities",
+              },
+            });
+          }
         },
         {
           isolationLevel:

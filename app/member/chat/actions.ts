@@ -34,6 +34,14 @@ function directKey(
   return [firstUserId, secondUserId].sort().join(":");
 }
 
+function messagePreview(body: string) {
+  if (body.length <= 120) {
+    return body;
+  }
+
+  return `${body.slice(0, 117)}...`;
+}
+
 export async function startDirectConversation(
   formData: FormData,
 ) {
@@ -147,13 +155,24 @@ export async function sendChatMessage(formData: FormData) {
 
   if (!participant) redirect("/member/chat");
 
-  const recipients = await prisma.chatParticipant.findMany({
-    where: {
-      conversationId,
-      userId: { not: user.id },
-    },
-    select: { userId: true },
-  });
+  const [recipients, sender] = await Promise.all([
+    prisma.chatParticipant.findMany({
+      where: {
+        conversationId,
+        userId: { not: user.id },
+      },
+      select: { userId: true },
+    }),
+
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { name: true },
+    }),
+  ]);
+
+  if (!sender) {
+    redirect("/member/chat");
+  }
 
   const now = new Date();
 
@@ -172,6 +191,19 @@ export async function sendChatMessage(formData: FormData) {
         data: recipients.map((recipient) => ({
           messageId: message.id,
           userId: recipient.userId,
+        })),
+        skipDuplicates: true,
+      });
+
+      await tx.notification.createMany({
+        data: recipients.map((recipient) => ({
+          userId: recipient.userId,
+          type: "CHAT_MESSAGE",
+          title: `رسالة جديدة من ${sender.name}`,
+          body: messagePreview(body),
+          href: `/member/chat/${conversationId}`,
+          chatConversationId: conversationId,
+          chatMessageId: message.id,
         })),
         skipDuplicates: true,
       });
@@ -202,4 +234,5 @@ export async function sendChatMessage(formData: FormData) {
 
   revalidatePath("/member/chat");
   revalidatePath(`/member/chat/${conversationId}`);
+  revalidatePath("/notifications");
 }

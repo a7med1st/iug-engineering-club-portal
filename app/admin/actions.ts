@@ -929,7 +929,7 @@ export async function createActivity(
          CREATE EVERYTHING
       ============================================= */
 
-      await prisma.activity.create({
+      const activity = await prisma.activity.create({
         data: {
           title,
           description,
@@ -1032,6 +1032,66 @@ export async function createActivity(
         },
       });
 
+      /*
+       * Notify students when a new activity is published.
+       * General activity => all students.
+       * Department activity => students in the selected departments.
+       */
+      if (
+        statusValue === "PUBLISHED"
+      ) {
+        const students =
+          await prisma.user.findMany({
+            where: {
+              role: "STUDENT",
+
+              ...(departmentIds.length > 0
+                ? {
+                    departmentId: {
+                      in: departmentIds,
+                    },
+                  }
+                : {}),
+            },
+
+            select: {
+              id: true,
+            },
+          });
+
+        if (students.length > 0) {
+          const activityDate =
+            new Intl.DateTimeFormat(
+              "ar-PS",
+              {
+                dateStyle: "medium",
+                timeStyle: "short",
+              },
+            ).format(startsAt);
+
+          await prisma.notification.createMany({
+            data: students.map(
+              (student) => ({
+                userId:
+                  student.id,
+
+                type:
+                  "ACTIVITY_NEW",
+
+                title:
+                  `نشاط جديد: ${title}`,
+
+                body:
+                  `${activityDate} · ${location}`,
+
+                href:
+                  `/activities/${activity.id}/register`,
+              }),
+            ),
+          });
+        }
+      }
+
       /* =============================================
          REVALIDATE
       ============================================= */
@@ -1042,6 +1102,10 @@ export async function createActivity(
       );
       revalidatePath(
         "/activities",
+      );
+
+      revalidatePath(
+        "/notifications",
       );
     },
   );

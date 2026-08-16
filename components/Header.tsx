@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import MainNav from "@/components/MainNav";
 import MobileNavigation from "@/components/MobileNavigation";
 import MemberPresenceHeartbeat from "@/components/member/MemberPresenceHeartbeat";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 const navigationLinks = [
   { href: "/", label: "الرئيسية" },
@@ -69,6 +70,12 @@ export default async function Header() {
         </Link>
 
         <MainNav />
+
+        {session && (
+  <div className="header-notification-slot">
+    <NotificationBell />
+  </div>
+)}
 
         <div className="header-actions desktop-header-actions">
           {portal && (

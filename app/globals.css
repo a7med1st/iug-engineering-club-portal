@@ -5604,3 +5604,29 @@ p {
     }
 
 }
+/* =========================================================
+   Notification bell beside hamburger menu ONLY
+========================================================= */
+
+@media (max-width: 1100px) {
+  .header-inner {
+    position: relative;
+  }
+
+  .header-notification-slot {
+    position: absolute;
+    left: 90px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    z-index: 40;
+  }
+}
+
+/* Mobile */
+@media (max-width: 520px) {
+  .header-notification-slot {
+    left: 82px;
+  }
+}

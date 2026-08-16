@@ -68,6 +68,17 @@ export async function POST(
       },
     }),
 
+    prisma.notification.updateMany({
+      where: {
+        userId: user.id,
+        chatConversationId: id,
+        readAt: null,
+      },
+      data: {
+        readAt: now,
+      },
+    }),
+
     prisma.chatTyping.deleteMany({
       where: {
         conversationId: id,

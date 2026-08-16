@@ -1,0 +1,261 @@
+.page {
+  width: min(1040px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 34px 0 64px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 22px;
+  padding: 24px;
+  border: 1px solid rgba(125, 153, 183, 0.18);
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 90% 0%,
+      rgba(22, 136, 255, 0.11),
+      transparent 34%
+    ),
+    #fff;
+  box-shadow: 0 18px 50px rgba(8, 42, 74, 0.07);
+}
+
+.heroIcon {
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: #e8f5ff;
+  color: #1688ff;
+}
+
+.heroIcon svg {
+  width: 27px;
+  height: 27px;
+}
+
+.hero > div:nth-child(2) > span {
+  color: #1688ff;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.hero h1 {
+  margin: 3px 0 2px;
+  color: #0d2c50;
+  font-size: clamp(1.55rem, 3vw, 2rem);
+}
+
+.hero p {
+  margin: 0;
+  color: #6b8299;
+  font-size: 0.9rem;
+}
+
+.hero button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(22, 136, 255, 0.22);
+  border-radius: 13px;
+  background: #f4faff;
+  color: #1688ff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.hero button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.panel {
+  overflow: hidden;
+  border: 1px solid rgba(125, 153, 183, 0.18);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 16px 46px rgba(8, 42, 74, 0.06);
+}
+
+.panelHead {
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(125, 153, 183, 0.13);
+}
+
+.panelHead > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panelHead strong {
+  color: #123456;
+  font-size: 1rem;
+}
+
+.panelHead span {
+  color: #7b90a4;
+  font-size: 0.76rem;
+}
+
+.list {
+  display: grid;
+}
+
+.item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 10px;
+  align-items: center;
+  gap: 13px;
+  padding: 17px 20px;
+  border: 0;
+  border-bottom: 1px solid rgba(125, 153, 183, 0.11);
+  background: #fff;
+  color: inherit;
+  text-align: start;
+  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+.item:last-child {
+  border-bottom: 0;
+}
+
+.item:hover {
+  background: #f8fbff;
+}
+
+.unread {
+  background: #eef7ff;
+}
+
+.unread:hover {
+  background: #e7f4ff;
+}
+
+.iconBox {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: #f0f4f8;
+  color: #56718d;
+}
+
+.iconBox svg {
+  width: 22px;
+  height: 22px;
+}
+
+.chatIcon {
+  background: #e5f4ff;
+  color: #1688ff;
+}
+
+.content {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.content strong {
+  color: #102f52;
+  font-size: 0.92rem;
+}
+
+.content > span {
+  color: #627b93;
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.content small {
+  color: #8a9bad;
+  font-size: 0.72rem;
+}
+
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1688ff;
+  box-shadow: 0 0 0 5px rgba(22, 136, 255, 0.09);
+}
+
+.empty {
+  min-height: 300px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 35px;
+  color: #758a9e;
+  text-align: center;
+}
+
+.empty svg {
+  width: 34px;
+  height: 34px;
+  color: #1688ff;
+}
+
+.empty strong {
+  color: #15385c;
+}
+
+.empty span {
+  font-size: 0.84rem;
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding-top: 20px;
+  }
+
+  .hero {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 13px;
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .heroIcon {
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+  }
+
+  .hero button {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    justify-content: center;
+  }
+
+  .item {
+    grid-template-columns: 46px minmax(0, 1fr) 8px;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .iconBox {
+    width: 43px;
+    height: 43px;
+    border-radius: 13px;
+  }
+}
