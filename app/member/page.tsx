@@ -6,6 +6,7 @@ import {
   CalendarDays,
   ExternalLink,
   MessageSquareText,
+  MessagesSquare,
   Network,
   QrCode,
   ShieldCheck,
@@ -24,55 +25,44 @@ import { prisma } from "@/lib/prisma";
 import styles from "./member-dashboard.module.css";
 
 export default async function Member() {
-  const { user } =
-    await requirePermission(
-      PERMISSIONS.MEMBER_DASHBOARD,
-    );
+  const { user } = await requirePermission(
+    PERMISSIONS.MEMBER_DASHBOARD,
+  );
 
-  const structureItem =
-    await prisma.clubStructureItem.findUnique({
-      where: {
-        userId: user.id,
-      },
-      select: {
-        title: true,
-      },
-    });
+  const structureItem = await prisma.clubStructureItem.findUnique({
+    where: { userId: user.id },
+    select: { title: true },
+  });
 
-  const canManageActivities =
-    hasAnyPermission(
-      user.role,
-      ACTIVITY_ADMIN_PERMISSIONS,
-      user.memberPermissions,
-    );
+  const canManageActivities = hasAnyPermission(
+    user.role,
+    ACTIVITY_ADMIN_PERMISSIONS,
+    user.memberPermissions,
+  );
 
-  const canScanAttendance =
-    hasPermission(
-      user.role,
-      PERMISSIONS.ATTENDANCE_SCAN,
-      user.memberPermissions,
-    );
+  const canScanAttendance = hasPermission(
+    user.role,
+    PERMISSIONS.ATTENDANCE_SCAN,
+    user.memberPermissions,
+  );
 
-  const canManageGuides =
-    hasPermission(
-      user.role,
-      PERMISSIONS.GUIDE_MANAGE,
-      user.memberPermissions,
-    );
+  const canManageGuides = hasPermission(
+    user.role,
+    PERMISSIONS.GUIDE_MANAGE,
+    user.memberPermissions,
+  );
 
-  const canManageStructure =
-    hasPermission(
-      user.role,
-      PERMISSIONS.STRUCTURE_MANAGE,
-      user.memberPermissions,
-    );
+  const canManageStructure = hasPermission(
+    user.role,
+    PERMISSIONS.STRUCTURE_MANAGE,
+    user.memberPermissions,
+  );
 
-  const canManageContact =
-    hasPermission(
-      user.role,
-      PERMISSIONS.CONTACT_MANAGE,
-      user.memberPermissions,
-    );
+  const canManageContact = hasPermission(
+    user.role,
+    PERMISSIONS.CONTACT_MANAGE,
+    user.memberPermissions,
+  );
 
   const tools = [
     {
@@ -80,6 +70,13 @@ export default async function Member() {
       title: "ملفي الشخصي",
       text: "عدّل الصورة والغلاف والنبذة والمهارات وروابطك العامة.",
       icon: UserRound,
+      visible: true,
+    },
+    {
+      href: "/member/chat",
+      title: "محادثات الأعضاء",
+      text: "تواصل مباشرة مع أعضاء النادي والإدارة من داخل الموقع.",
+      icon: MessagesSquare,
       visible: true,
     },
     {
@@ -134,15 +131,12 @@ export default async function Member() {
             </div>
 
             <div>
-              <span className={styles.eyebrow}>
-                Member Portal
-              </span>
+              <span className={styles.eyebrow}>Member Portal</span>
               <h1>{user.name}</h1>
               <p>
                 {title}
                 {" · "}
-                {user.department?.nameAr ||
-                  "الإدارة العامة"}
+                {user.department?.nameAr || "الإدارة العامة"}
               </p>
             </div>
           </div>
@@ -158,10 +152,7 @@ export default async function Member() {
               </Link>
             )}
 
-            <Link
-              href="/member/profile"
-              className={styles.heroButton}
-            >
+            <Link href="/member/profile" className={styles.heroButton}>
               <UserRound size={17} />
               تعديل الملف الشخصي
             </Link>
@@ -196,47 +187,30 @@ export default async function Member() {
           <h2>أدوات العضو</h2>
         </div>
 
-        <p>
-          تظهر الأدوات حسب الصلاحيات التي منحتها الإدارة لحسابك.
-        </p>
+        <p>تظهر الأدوات حسب الصلاحيات التي منحتها الإدارة لحسابك.</p>
       </div>
 
       <section className={styles.grid}>
-        {tools.map(
-          ({
-            href,
-            title,
-            text,
-            icon: Icon,
-          }) => (
-            <Link
-              href={href}
-              className={styles.card}
-              key={href}
-            >
-              <div className={styles.cardIcon}>
-                <Icon size={22} />
-              </div>
+        {tools.map(({ href, title, text, icon: Icon }) => (
+          <Link href={href} className={styles.card} key={href}>
+            <div className={styles.cardIcon}>
+              <Icon size={22} />
+            </div>
 
-              <div className={styles.cardBody}>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </div>
+            <div className={styles.cardBody}>
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </div>
 
-              <ArrowLeft
-                size={18}
-                className={styles.cardArrow}
-              />
-            </Link>
-          ),
-        )}
+            <ArrowLeft size={18} className={styles.cardArrow} />
+          </Link>
+        ))}
 
         {!structureItem && (
           <div className={styles.notice}>
-            <strong>
-              صفحتك العامة غير مفعلة بعد
-            </strong>
-            عندما تربط الإدارة حسابك بعنصر داخل الهيكلية، سيظهر اسمك فيها ويمكن للطلاب والأعضاء فتح ملفك العام.
+            <strong>صفحتك العامة غير مفعلة بعد</strong>
+            عندما تربط الإدارة حسابك بعنصر داخل الهيكلية، سيظهر اسمك فيها
+            ويمكن للطلاب والأعضاء فتح ملفك العام.
           </div>
         )}
       </section>

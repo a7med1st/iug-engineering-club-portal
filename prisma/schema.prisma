@@ -106,6 +106,15 @@ enum ActivitySubmissionStatus {
 }
 
 // =========================================================
+// MEMBER CHAT
+// =========================================================
+
+enum ChatConversationType {
+  DIRECT
+  GROUP
+}
+
+// =========================================================
 // USER
 // =========================================================
 
@@ -161,6 +170,9 @@ model User {
   structureItem ClubStructureItem?
 
   activityFormSubmissions ActivityFormSubmission[]
+
+  chatParticipants ChatParticipant[]
+  sentChatMessages ChatMessage[]     @relation("ChatMessageSender")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -503,4 +515,57 @@ model CollaborationRequest {
   updatedAt DateTime @updatedAt
 
   @@index([status, createdAt])
+}
+
+// =========================================================
+// MEMBER CHAT MODELS
+// =========================================================
+
+model ChatConversation {
+  id   String               @id @default(cuid())
+  type ChatConversationType @default(DIRECT)
+  name String?
+
+  directKey     String?   @unique
+  lastMessageAt DateTime?
+
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([lastMessageAt])
+}
+
+model ChatParticipant {
+  conversationId String
+  userId         String
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt   DateTime  @default(now())
+  lastReadAt DateTime?
+
+  @@id([conversationId, userId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id String @id @default(cuid())
+
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   User   @relation("ChatMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  body String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([conversationId, createdAt])
+  @@index([senderId, createdAt])
 }
