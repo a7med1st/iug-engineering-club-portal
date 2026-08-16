@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import type { ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+} from "react";
 import { useRouter } from "next/navigation";
 
 export default function ChatConversationView({
@@ -11,7 +13,7 @@ export default function ChatConversationView({
 }: {
   conversationId: string;
   lastMessageId: string;
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   const router = useRouter();
   const firstRender = useRef(true);
@@ -19,24 +21,28 @@ export default function ChatConversationView({
   useEffect(() => {
     const markRead = async () => {
       try {
-        await fetch(`/member/chat/${conversationId}/read`, {
-          method: "POST",
-          cache: "no-store",
-        });
-      } catch {
-        // Read receipt failure should not interrupt chat.
-      }
+        await fetch(
+          `/member/chat/${conversationId}/read`,
+          {
+            method: "POST",
+            cache: "no-store",
+          },
+        );
+      } catch {}
     };
 
     void markRead();
   }, [conversationId, lastMessageId]);
 
   useEffect(() => {
-    const bottom = document.getElementById("chat-bottom");
+    const bottom =
+      document.getElementById("chat-bottom");
+
     bottom?.scrollIntoView({
       behavior: firstRender.current ? "auto" : "smooth",
       block: "end",
     });
+
     firstRender.current = false;
   }, [lastMessageId]);
 
@@ -45,7 +51,7 @@ export default function ChatConversationView({
       if (document.visibilityState === "visible") {
         router.refresh();
       }
-    }, 4000);
+    }, 2_500);
 
     return () => window.clearInterval(timer);
   }, [router]);

@@ -10,11 +10,17 @@ import {
   Menu,
   MessageSquareText,
   Network,
+  UserRound,
   Users,
   X,
 } from "lucide-react";
 
 const adminLinks = [
+  {
+    href: "/member/profile",
+    label: "ملفي الشخصي",
+    icon: UserRound,
+  },
   {
     href: "/admin/activities",
     label: "إضافة نشاط",
@@ -54,34 +60,34 @@ function AdminLinks({
   return (
     <nav aria-label="صفحات لوحة الإدارة">
       {adminLinks
-        .filter(({ href }) =>
-          allowedHrefs.includes(
-            href,
-          ),
+        .filter(
+          ({ href }) =>
+            href === "/member/profile" ||
+            allowedHrefs.includes(href),
         )
         .map(({ href, label, icon: Icon }) => {
-        const active =
-          pathname === href ||
-          pathname.startsWith(`${href}/`);
+          const active =
+            pathname === href ||
+            pathname.startsWith(`${href}/`);
 
-        return (
-          <Link
-            className={`admin-nav-link${active ? " active" : ""}`}
-            href={href}
-            key={href}
-            aria-current={active ? "page" : undefined}
-            onClick={onNavigate}
-          >
-            <Icon
-              aria-hidden="true"
-              size={18}
-              strokeWidth={1.8}
-            />
+          return (
+            <Link
+              className={`admin-nav-link${active ? " active" : ""}`}
+              href={href}
+              key={href}
+              aria-current={active ? "page" : undefined}
+              onClick={onNavigate}
+            >
+              <Icon
+                aria-hidden="true"
+                size={18}
+                strokeWidth={1.8}
+              />
 
-            <span>{label}</span>
-          </Link>
-        );
-      })}
+              <span>{label}</span>
+            </Link>
+          );
+        })}
     </nav>
   );
 }
@@ -97,11 +103,8 @@ export default function AdminNavigation({
 
   const [open, setOpen] = useState(false);
 
-  const toggleRef =
-    useRef<HTMLButtonElement>(null);
-
-  const drawerRef =
-    useRef<HTMLElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -109,26 +112,22 @@ export default function AdminNavigation({
     const previousOverflow =
       document.body.style.overflow;
 
-    document.body.style.overflow =
-      "hidden";
+    document.body.style.overflow = "hidden";
 
     const focusable = Array.from(
       drawerRef.current?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      ) ?? []
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ) ?? [],
     );
 
     focusable[0]?.focus();
 
-    const handleKeyDown = (
-      event: KeyboardEvent
-    ) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setOpen(false);
 
-        window.requestAnimationFrame(
-          () =>
-            toggleRef.current?.focus()
+        window.requestAnimationFrame(() =>
+          toggleRef.current?.focus(),
         );
 
         return;
@@ -143,9 +142,7 @@ export default function AdminNavigation({
 
       const first = focusable[0];
       const last =
-        focusable[
-          focusable.length - 1
-        ];
+        focusable[focusable.length - 1];
 
       if (
         event.shiftKey &&
@@ -164,7 +161,7 @@ export default function AdminNavigation({
 
     document.addEventListener(
       "keydown",
-      handleKeyDown
+      handleKeyDown,
     );
 
     return () => {
@@ -173,20 +170,19 @@ export default function AdminNavigation({
 
       document.removeEventListener(
         "keydown",
-        handleKeyDown
+        handleKeyDown,
       );
     };
   }, [open]);
 
   function closeDrawer(
-    restoreFocus = false
+    restoreFocus = false,
   ) {
     setOpen(false);
 
     if (restoreFocus) {
-      window.requestAnimationFrame(
-        () =>
-          toggleRef.current?.focus()
+      window.requestAnimationFrame(() =>
+        toggleRef.current?.focus(),
       );
     }
   }
@@ -199,17 +195,13 @@ export default function AdminNavigation({
 
         <AdminLinks
           pathname={pathname}
-          allowedHrefs={
-            allowedHrefs
-          }
+          allowedHrefs={allowedHrefs}
         />
       </aside>
 
       {/* Mobile top bar */}
       <div className="admin-mobile-nav">
-        <strong>
-          {title}
-        </strong>
+        <strong>{title}</strong>
 
         <button
           ref={toggleRef}
@@ -264,7 +256,6 @@ export default function AdminNavigation({
         aria-hidden={!open}
       >
         <div className="admin-mobile-drawer-head">
-
           <strong>
             صفحات الإدارة
           </strong>
@@ -281,14 +272,11 @@ export default function AdminNavigation({
               size={22}
             />
           </button>
-
         </div>
 
         <AdminLinks
           pathname={pathname}
-          allowedHrefs={
-            allowedHrefs
-          }
+          allowedHrefs={allowedHrefs}
           onNavigate={() =>
             closeDrawer(true)
           }

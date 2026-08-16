@@ -119,13 +119,14 @@ enum ChatConversationType {
 // =========================================================
 
 model User {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   name              String
-  email             String   @unique
+  email             String    @unique
   passwordHash      String
-  role              Role     @default(STUDENT)
+  role              Role      @default(STUDENT)
   position          String?
-  memberPermissions String[] @default([])
+  memberPermissions String[]  @default([])
+  chatLastSeenAt    DateTime?
   // =====================================================
   // MEMBER PUBLIC PROFILE
   // =====================================================
@@ -171,8 +172,10 @@ model User {
 
   activityFormSubmissions ActivityFormSubmission[]
 
-  chatParticipants ChatParticipant[]
-  sentChatMessages ChatMessage[]     @relation("ChatMessageSender")
+  chatParticipants    ChatParticipant[]
+  sentChatMessages    ChatMessage[]        @relation("ChatMessageSender")
+  chatMessageReceipts ChatMessageReceipt[]
+  chatTyping          ChatTyping[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -214,15 +217,15 @@ model Activity {
   startsAt    DateTime
   capacity    Int
 
-  // ط¸â€‍ط¸â€‍ط·آ£ط¸â€ ط·آ´ط·آ·ط·آ© ط·آ§ط¸â€‍ط¸â€ڑط·آ¯ط¸ظ¹ط¸â€¦ط·آ© ط·آ§ط¸â€‍ط·ع¾ط¸ظ¹ ط¸ئ’ط·آ§ط¸â€ ط·ع¾ ط·ع¾ط·آ³ط·ع¾ط·آ®ط·آ¯ط¸â€¦ Google Forms
-  // ط·آ§ط¸â€‍ط·آ£ط¸â€ ط·آ´ط·آ·ط·آ© ط·آ§ط¸â€‍ط·آ¬ط·آ¯ط¸ظ¹ط·آ¯ط·آ© ط¸â€‍ط¸â€  ط·ع¾ط·آ­ط·ع¾ط·آ§ط·آ¬ط¸â€،
+  // ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬â€چط·آ·ط¢آ£ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ´ط·آ·ط¢آ·ط·آ·ط¢آ© ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬ع‘ط·آ·ط¢آ¯ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ© ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ¸ط¸آ¹ ط·آ¸ط¦â€™ط·آ·ط¢آ§ط·آ¸أ¢â‚¬آ ط·آ·ط¹آ¾ ط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ·ط¢آ®ط·آ·ط¢آ¯ط·آ¸أ¢â‚¬آ¦ Google Forms
+  // ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ£ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ´ط·آ·ط¢آ·ط·آ·ط¢آ© ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¬ط·آ·ط¢آ¯ط·آ¸ط¸آ¹ط·آ·ط¢آ¯ط·آ·ط¢آ© ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ  ط·آ·ط¹آ¾ط·آ·ط¢آ­ط·آ·ط¹آ¾ط·آ·ط¢آ§ط·آ·ط¢آ¬ط·آ¸أ¢â‚¬طŒ
   formUrl String?
 
   status ActivityStatus @default(PUBLISHED)
 
   departments ActivityDepartment[]
 
-  // ط¸â€ ط¸â€¦ط¸ث†ط·آ°ط·آ¬ ط·آ§ط¸â€‍ط·ع¾ط·آ³ط·آ¬ط¸ظ¹ط¸â€‍ ط·آ§ط¸â€‍ط·آ¯ط·آ§ط·آ®ط¸â€‍ط¸ظ¹
+  // ط·آ¸أ¢â‚¬آ ط·آ¸أ¢â‚¬آ¦ط·آ¸ط«â€ ط·آ·ط¢آ°ط·آ·ط¢آ¬ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬â€چ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¯ط·آ·ط¢آ§ط·آ·ط¢آ®ط·آ¸أ¢â‚¬â€چط·آ¸ط¸آ¹
   registrationForm ActivityRegistrationForm?
 
   createdAt DateTime @default(now())
@@ -250,10 +253,10 @@ model ActivityRegistrationForm {
   activityId String   @unique
   activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
-  title       String @default("ط¸â€ ط¸â€¦ط¸ث†ط·آ°ط·آ¬ ط·آ§ط¸â€‍ط·ع¾ط·آ³ط·آ¬ط¸ظ¹ط¸â€‍")
+  title       String @default("ط·آ¸أ¢â‚¬آ ط·آ¸أ¢â‚¬آ¦ط·آ¸ط«â€ ط·آ·ط¢آ°ط·آ·ط¢آ¬ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬â€چ")
   description String @default("")
 
-  // ط·آ§ط¸â€‍ط·آ£ط·آ¯ط¸â€¦ط¸â€  ط¸ظ¹ط·آ³ط·ع¾ط·آ·ط¸ظ¹ط·آ¹ ط¸ظ¾ط·ع¾ط·آ­ ط¸ث†ط·آ¥ط·ط›ط¸â€‍ط·آ§ط¸â€ڑ ط·آ§ط¸â€‍ط·ع¾ط·آ³ط·آ¬ط¸ظ¹ط¸â€‍
+  // ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ£ط·آ·ط¢آ¯ط·آ¸أ¢â‚¬آ¦ط·آ¸أ¢â‚¬آ  ط·آ¸ط¸آ¹ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ·ط¢آ·ط·آ¸ط¸آ¹ط·آ·ط¢آ¹ ط·آ¸ط¸آ¾ط·آ·ط¹آ¾ط·آ·ط¢آ­ ط·آ¸ط«â€ ط·آ·ط¢آ¥ط·آ·ط·â€؛ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ§ط·آ¸أ¢â‚¬ع‘ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬â€چ
   isOpen Boolean @default(true)
 
   questions   ActivityFormQuestion[]
@@ -273,7 +276,7 @@ model ActivityFormQuestion {
   formId String
   form   ActivityRegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
 
-  // ط¸â€ ط·آµ ط·آ§ط¸â€‍ط·آ³ط·آ¤ط·آ§ط¸â€‍
+  // ط·آ¸أ¢â‚¬آ ط·آ·ط¢آµ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ³ط·آ·ط¢آ¤ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چ
   label String
 
   // SHORT_TEXT / RADIO / CHECKBOX ...
@@ -284,13 +287,13 @@ model ActivityFormQuestion {
   placeholder String?
   helpText    String?
 
-  // ط·ع¾ط·آ³ط·ع¾ط·آ®ط·آ¯ط¸â€¦ ط¸â€¦ط·آ¹:
+  // ط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ·ط¢آ®ط·آ·ط¢آ¯ط·آ¸أ¢â‚¬آ¦ ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ¹:
   // SELECT
   // RADIO
   // CHECKBOX
   //
-  // ط¸â€¦ط·آ«ط·آ§ط¸â€‍:
-  // ["ط·آ§ط¸â€‍ط¸â€¦ط·آ³ط·ع¾ط¸ث†ط¸â€° ط·آ§ط¸â€‍ط·آ£ط¸ث†ط¸â€‍", "ط·آ§ط¸â€‍ط¸â€¦ط·آ³ط·ع¾ط¸ث†ط¸â€° ط·آ§ط¸â€‍ط·آ«ط·آ§ط¸â€ ط¸ظ¹"]
+  // ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ«ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چ:
+  // ["ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ¸ط«â€ ط·آ¸أ¢â‚¬آ° ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ£ط·آ¸ط«â€ ط·آ¸أ¢â‚¬â€چ", "ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ¸ط«â€ ط·آ¸أ¢â‚¬آ° ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ«ط·آ·ط¢آ§ط·آ¸أ¢â‚¬آ ط·آ¸ط¸آ¹"]
   options Json?
 
   sortOrder Int @default(0)
@@ -313,12 +316,12 @@ model ActivityFormSubmission {
   formId String
   form   ActivityRegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
 
-  // ط·آ§ط¸â€‍ط¸â€¦ط·آ³ط·ع¾ط·آ®ط·آ¯ط¸â€¦ ط·آ§ط¸â€‍ط¸â€¦ط·آ³ط·آ¬ط¸â€‍
-  // Optional ط·آ­ط·ع¾ط¸â€° ط¸â€ ط·آ­ط·آ§ط¸ظ¾ط·آ¸ ط·آ¹ط¸â€‍ط¸â€° ط·آ§ط¸â€‍ط·ع¾ط·آ³ط·آ¬ط¸ظ¹ط¸â€‍ ط¸â€‍ط¸ث† ط·آ­ط¸عˆط·آ°ط¸ظ¾ ط·آ­ط·آ³ط·آ§ط·آ¨ ط·آ§ط¸â€‍ط·آ·ط·آ§ط¸â€‍ط·آ¨ ط¸â€¦ط·آ³ط·ع¾ط¸â€ڑط·آ¨ط¸â€‍ط¸â€¹ط·آ§
+  // ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ·ط¢آ®ط·آ·ط¢آ¯ط·آ¸أ¢â‚¬آ¦ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸أ¢â‚¬â€چ
+  // Optional ط·آ·ط¢آ­ط·آ·ط¹آ¾ط·آ¸أ¢â‚¬آ° ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ­ط·آ·ط¢آ§ط·آ¸ط¸آ¾ط·آ·ط¢آ¸ ط·آ·ط¢آ¹ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ° ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬â€چ ط·آ¸أ¢â‚¬â€چط·آ¸ط«â€  ط·آ·ط¢آ­ط·آ¸ط¹ث†ط·آ·ط¢آ°ط·آ¸ط¸آ¾ ط·آ·ط¢آ­ط·آ·ط¢آ³ط·آ·ط¢آ§ط·آ·ط¢آ¨ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ·ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¨ ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ¸أ¢â‚¬ع‘ط·آ·ط¢آ¨ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ¹ط·آ·ط¢آ§
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  // Snapshot ط¸â€‍ط·آ¨ط¸ظ¹ط·آ§ط¸â€ ط·آ§ط·ع¾ ط·آ§ط¸â€‍ط·آ·ط·آ§ط¸â€‍ط·آ¨ ط¸ث†ط¸â€ڑط·ع¾ ط·آ§ط¸â€‍ط·ع¾ط·آ³ط·آ¬ط¸ظ¹ط¸â€‍
+  // Snapshot ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¨ط·آ¸ط¸آ¹ط·آ·ط¢آ§ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ§ط·آ·ط¹آ¾ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ·ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¨ ط·آ¸ط«â€ ط·آ¸أ¢â‚¬ع‘ط·آ·ط¹آ¾ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬â€چ
   studentName       String
   studentEmail      String
   studentDepartment String?
@@ -334,7 +337,7 @@ model ActivityFormSubmission {
   submittedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // ط·آ§ط¸â€‍ط·آ·ط·آ§ط¸â€‍ط·آ¨ ط¸â€‍ط·آ§ ط¸ظ¹ط·آ³ط·آ¬ط¸â€‍ ط¸â€¦ط·آ±ط·ع¾ط¸ظ¹ط¸â€  ط·آ¨ط¸â€ ط¸ظ¾ط·آ³ ط·آ§ط¸â€‍ط¸â€ ط·آ´ط·آ§ط·آ·/ط·آ§ط¸â€‍ط¸ظ¾ط¸ث†ط·آ±ط¸â€¦
+  // ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ·ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¨ ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ§ ط·آ¸ط¸آ¹ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸أ¢â‚¬â€چ ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ±ط·آ·ط¹آ¾ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬آ  ط·آ·ط¢آ¨ط·آ¸أ¢â‚¬آ ط·آ¸ط¸آ¾ط·آ·ط¢آ³ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ ط·آ·ط¢آ´ط·آ·ط¢آ§ط·آ·ط¢آ·/ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸ط¸آ¾ط·آ¸ط«â€ ط·آ·ط¢آ±ط·آ¸أ¢â‚¬آ¦
   @@unique([formId, userId])
   @@index([formId, submittedAt])
   @@index([userId])
@@ -354,13 +357,13 @@ model ActivityFormAnswer {
 
   question ActivityFormQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
 
-  // ط·آ£ط¸â€¦ط·آ«ط¸â€‍ط·آ©:
+  // ط·آ·ط¢آ£ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ«ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ©:
   //
   // Text:
-  // "ط·آ£ط·آ­ط¸â€¦ط·آ¯ ط¸â€¦ط·آ­ط¸â€¦ط·آ¯"
+  // "ط·آ·ط¢آ£ط·آ·ط¢آ­ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ¯ ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ­ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ¯"
   //
   // Radio:
-  // "ط¸â€ ط·آ¹ط¸â€¦"
+  // "ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ¹ط·آ¸أ¢â‚¬آ¦"
   //
   // Checkbox:
   // ["AI", "Web", "Embedded"]
@@ -531,6 +534,7 @@ model ChatConversation {
 
   participants ChatParticipant[]
   messages     ChatMessage[]
+  typingUsers  ChatTyping[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -563,9 +567,44 @@ model ChatMessage {
 
   body String
 
+  receipts ChatMessageReceipt[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([conversationId, createdAt])
   @@index([senderId, createdAt])
+}
+
+// =========================================================
+// CHAT DELIVERY / READ RECEIPTS
+// =========================================================
+
+model ChatMessageReceipt {
+  messageId String
+  userId    String
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  deliveredAt DateTime?
+  readAt      DateTime?
+
+  @@id([messageId, userId])
+  @@index([userId, deliveredAt])
+  @@index([userId, readAt])
+}
+
+model ChatTyping {
+  conversationId String
+  userId         String
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  updatedAt DateTime @updatedAt
+
+  @@id([conversationId, userId])
+  @@index([expiresAt])
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import MainNav from "@/components/MainNav";
 import MobileNavigation from "@/components/MobileNavigation";
+import MemberPresenceHeartbeat from "@/components/member/MemberPresenceHeartbeat";
 
 const navigationLinks = [
   { href: "/", label: "الرئيسية" },
@@ -37,12 +38,13 @@ export default async function Header() {
 
   return (
     <header className="site-header">
+      {session &&
+        (session.role === "MEMBER" ||
+          session.role === "ADMIN") && (
+          <MemberPresenceHeartbeat />
+        )}
+
       <div className="shell header-inner">
-
-        {/* =========================================
-            BRAND
-        ========================================= */}
-
         <Link
           className="brand"
           href="/"
@@ -66,20 +68,9 @@ export default async function Header() {
           </span>
         </Link>
 
-
-        {/* =========================================
-            DESKTOP NAVIGATION
-        ========================================= */}
-
         <MainNav />
 
-
-        {/* =========================================
-            DESKTOP ACTIONS
-        ========================================= */}
-
         <div className="header-actions desktop-header-actions">
-
           {portal && (
             <Link
               className="ghost-btn"
@@ -88,7 +79,6 @@ export default async function Header() {
               {portal.label}
             </Link>
           )}
-
 
           {session ? (
             <form
@@ -110,20 +100,13 @@ export default async function Header() {
               تسجيل الدخول
             </Link>
           )}
-
         </div>
-
-
-        {/* =========================================
-            MOBILE NAVIGATION
-        ========================================= */}
 
         <MobileNavigation
           links={navigationLinks}
           portal={portal}
           authenticated={Boolean(session)}
         />
-
       </div>
     </header>
   );

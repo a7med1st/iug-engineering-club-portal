@@ -27,16 +27,29 @@ function conversationError(
   );
 }
 
-function directKey(firstUserId: string, secondUserId: string) {
+function directKey(
+  firstUserId: string,
+  secondUserId: string,
+) {
   return [firstUserId, secondUserId].sort().join(":");
 }
 
-export async function startDirectConversation(formData: FormData) {
-  const { user } = await requirePermission(PERMISSIONS.MEMBER_DASHBOARD);
+export async function startDirectConversation(
+  formData: FormData,
+) {
+  const { user } = await requirePermission(
+    PERMISSIONS.MEMBER_DASHBOARD,
+  );
+
   const targetUserId = text(formData, "targetUserId");
 
-  if (!targetUserId) chatError("اختر عضوًا لبدء المحادثة.");
-  if (targetUserId === user.id) chatError("لا يمكنك بدء محادثة مع نفسك.");
+  if (!targetUserId) {
+    chatError("اختر عضوًا لبدء المحادثة.");
+  }
+
+  if (targetUserId === user.id) {
+    chatError("لا يمكنك بدء محادثة مع نفسك.");
+  }
 
   const target = await prisma.user.findFirst({
     where: {
@@ -51,12 +64,15 @@ export async function startDirectConversation(formData: FormData) {
   }
 
   const key = directKey(user.id, target.id);
+
   const existing = await prisma.chatConversation.findUnique({
     where: { directKey: key },
     select: { id: true },
   });
 
-  if (existing) redirect(`/member/chat/${existing.id}`);
+  if (existing) {
+    redirect(`/member/chat/${existing.id}`);
+  }
 
   let conversationId: string;
 
@@ -81,10 +97,11 @@ export async function startDirectConversation(formData: FormData) {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      const conversation = await prisma.chatConversation.findUnique({
-        where: { directKey: key },
-        select: { id: true },
-      });
+      const conversation =
+        await prisma.chatConversation.findUnique({
+          where: { directKey: key },
+          select: { id: true },
+        });
 
       if (!conversation) throw error;
       conversationId = conversation.id;
@@ -98,13 +115,19 @@ export async function startDirectConversation(formData: FormData) {
 }
 
 export async function sendChatMessage(formData: FormData) {
-  const { user } = await requirePermission(PERMISSIONS.MEMBER_DASHBOARD);
+  const { user } = await requirePermission(
+    PERMISSIONS.MEMBER_DASHBOARD,
+  );
 
   const conversationId = text(formData, "conversationId");
   const body = text(formData, "body");
 
   if (!conversationId) chatError("المحادثة غير صالحة.");
-  if (!body) conversationError(conversationId, "اكتب رسالة أولًا.");
+
+  if (!body) {
+    conversationError(conversationId, "اكتب رسالة أولًا.");
+  }
+
   if (body.length > 3000) {
     conversationError(
       conversationId,
@@ -124,21 +147,42 @@ export async function sendChatMessage(formData: FormData) {
 
   if (!participant) redirect("/member/chat");
 
+  const recipients = await prisma.chatParticipant.findMany({
+    where: {
+      conversationId,
+      userId: { not: user.id },
+    },
+    select: { userId: true },
+  });
+
   const now = new Date();
 
-  await prisma.$transaction([
-    prisma.chatMessage.create({
+  await prisma.$transaction(async (tx) => {
+    const message = await tx.chatMessage.create({
       data: {
         conversationId,
         senderId: user.id,
         body,
       },
-    }),
-    prisma.chatConversation.update({
+      select: { id: true },
+    });
+
+    if (recipients.length) {
+      await tx.chatMessageReceipt.createMany({
+        data: recipients.map((recipient) => ({
+          messageId: message.id,
+          userId: recipient.userId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    await tx.chatConversation.update({
       where: { id: conversationId },
       data: { lastMessageAt: now },
-    }),
-    prisma.chatParticipant.update({
+    });
+
+    await tx.chatParticipant.update({
       where: {
         conversationId_userId: {
           conversationId,
@@ -146,8 +190,15 @@ export async function sendChatMessage(formData: FormData) {
         },
       },
       data: { lastReadAt: now },
-    }),
-  ]);
+    });
+
+    await tx.chatTyping.deleteMany({
+      where: {
+        conversationId,
+        userId: user.id,
+      },
+    });
+  });
 
   revalidatePath("/member/chat");
   revalidatePath(`/member/chat/${conversationId}`);

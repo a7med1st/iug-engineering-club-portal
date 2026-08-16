@@ -434,7 +434,7 @@
     rgba(8, 42, 74, 0.06);
 }
 
-/* رسالتي */
+/* ط±ط³ط§ظ„طھظٹ */
 .messageMine {
   margin-inline-start: auto;
 
@@ -450,7 +450,7 @@
   border-bottom-right-radius: 6px;
 }
 
-/* رسالة الطرف الآخر */
+/* ط±ط³ط§ظ„ط© ط§ظ„ط·ط±ظپ ط§ظ„ط¢ط®ط± */
 .messageOther {
   margin-inline-end: auto;
 
@@ -464,7 +464,7 @@
   border-bottom-left-radius: 6px;
 }
 
-/* اسم المرسل */
+/* ط§ط³ظ… ط§ظ„ظ…ط±ط³ظ„ */
 .senderName {
   display: block;
 
@@ -478,7 +478,7 @@
   line-height: 1.4;
 }
 
-/* نص الرسالة */
+/* ظ†طµ ط§ظ„ط±ط³ط§ظ„ط© */
 .messageMine p,
 .messageOther p {
   margin: 0;
@@ -492,7 +492,7 @@
   letter-spacing: 0;
 }
 
-/* وقت الرسالة */
+/* ظˆظ‚طھ ط§ظ„ط±ط³ط§ظ„ط© */
 .messageMine time,
 .messageOther time {
   display: block;
@@ -505,13 +505,13 @@
   line-height: 1;
 }
 
-/* وقت رسالتي */
+/* ظˆظ‚طھ ط±ط³ط§ظ„طھظٹ */
 .messageMine time {
   color:
     rgba(255, 255, 255, 0.72);
 }
 
-/* وقت رسالة الطرف الآخر */
+/* ظˆظ‚طھ ط±ط³ط§ظ„ط© ط§ظ„ط·ط±ظپ ط§ظ„ط¢ط®ط± */
 .messageOther time {
   color: var(--muted);
 }
@@ -795,7 +795,7 @@
     0 3px 12px rgba(8, 42, 74, 0.08);
 }
 
-/* رسائلي */
+/* ط±ط³ط§ط¦ظ„ظٹ */
 .messageMine {
   margin-inline-start: auto;
 
@@ -811,7 +811,7 @@
   border-bottom-right-radius: 6px;
 }
 
-/* رسائل الطرف الثاني */
+/* ط±ط³ط§ط¦ظ„ ط§ظ„ط·ط±ظپ ط§ظ„ط«ط§ظ†ظٹ */
 .messageOther {
   margin-inline-end: auto;
 
@@ -824,7 +824,7 @@
   border-bottom-left-radius: 6px;
 }
 
-/* اسم الشخص المرسل */
+/* ط§ط³ظ… ط§ظ„ط´ط®طµ ط§ظ„ظ…ط±ط³ظ„ */
 .senderName {
   display: block;
 
@@ -838,7 +838,7 @@
   line-height: 1.3;
 }
 
-/* نص الرسالة */
+/* ظ†طµ ط§ظ„ط±ط³ط§ظ„ط© */
 .messageMine p,
 .messageOther p {
   margin: 0;
@@ -852,7 +852,7 @@
   line-height: 1.75;
 }
 
-/* الوقت */
+/* ط§ظ„ظˆظ‚طھ */
 .messageMine time,
 .messageOther time {
   display: block;
@@ -921,4 +921,92 @@
 .messageMine {
   border-radius: 18px;
   border-bottom-left-radius: 5px;
+}
+
+/* =========================================================
+   CHAT STATUS PHASE 5.1
+========================================================= */
+
+.partnerInfo p [data-chat-presence="typing"] {
+  color: var(--blue);
+  font-weight: 850;
+}
+
+.partnerInfo p [data-chat-presence="online"] {
+  color: #178a57;
+  font-weight: 850;
+}
+
+.partnerInfo p [data-chat-presence="offline"] {
+  color: var(--muted);
+}
+
+.messageFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 5px;
+  min-height: 15px;
+}
+
+.messageFooter time {
+  margin-top: 0 !important;
+}
+
+.deliverySent,
+.deliveryDelivered {
+  color: rgba(255,255,255,.72);
+  flex-shrink: 0;
+}
+
+.deliveryRead {
+  color: #74c8ff;
+  flex-shrink: 0;
+}
+
+/* =========================================
+   PREMIUM CHAT MESSAGE STATUS
+========================================= */
+
+/* فقاعة رسائلي */
+.messageMine {
+  background: linear-gradient(
+    135deg,
+    #1976D2 0%,
+    #1688E8 100%
+  );
+
+  color: #ffffff;
+}
+
+/* ✓ تم الإرسال */
+.deliverySent {
+  color: #E2ECF8;
+  opacity: 0.9;
+}
+
+/* ✓✓ تم الوصول */
+.deliveryDelivered {
+  color: #D7E5F5;
+  opacity: 1;
+}
+
+/* ✓✓ تمت القراءة */
+.deliveryRead {
+  color: #4DD0E1;
+  opacity: 1;
+
+  filter:
+    drop-shadow(
+      0 0 2px
+      rgba(77, 208, 225, 0.35)
+    );
+}
+
+/* نخلي الصحّات أوضح */
+.deliverySent,
+.deliveryDelivered,
+.deliveryRead {
+  stroke-width: 2.8;
 }
