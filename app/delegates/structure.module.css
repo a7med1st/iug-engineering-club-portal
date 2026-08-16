@@ -1,38 +1,43 @@
 .page {
-  width: min(1280px, calc(100% - 32px));
+  width: min(1320px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 46px 0 90px;
+  padding: 44px 0 92px;
 }
 
 .hero {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 28px;
+  padding: 29px;
   border: 1px solid var(--line);
-  border-radius: 24px;
+  border-radius: 25px;
   background:
-    linear-gradient(135deg, rgba(22, 136, 255, .08), transparent 55%),
+    radial-gradient(circle at 92% 20%, rgba(28, 183, 162, .10), transparent 24%),
+    linear-gradient(135deg, rgba(22, 136, 255, .075), transparent 58%),
     var(--paper);
   margin-bottom: 28px;
 }
 
 .heroIcon {
-  width: 58px;
-  height: 58px;
-  border-radius: 17px;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
   display: grid;
   place-items: center;
-  background: rgba(22, 136, 255, .10);
+  background:
+    linear-gradient(135deg, rgba(22, 136, 255, .12), rgba(27, 181, 196, .10));
+  border: 1px solid rgba(22, 136, 255, .10);
   color: var(--blue);
   flex-shrink: 0;
 }
 
 .eyebrow {
   color: var(--blue);
-  font-size: .74rem;
+  font-size: .73rem;
   font-weight: 900;
-  letter-spacing: .08em;
+  letter-spacing: .09em;
   text-transform: uppercase;
 }
 
@@ -42,13 +47,21 @@
 
 .hero p {
   margin: 0;
+  max-width: 850px;
   color: var(--muted);
-  line-height: 1.8;
+  line-height: 1.85;
 }
 
 .treeScroll {
+  position: relative;
   overflow-x: auto;
-  padding: 10px 4px 32px;
+  padding: 20px 8px 42px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 0, rgba(22, 136, 255, .035), transparent 36%),
+    var(--paper);
+  scrollbar-width: thin;
 }
 
 .tree,
@@ -66,7 +79,7 @@
 
 .branch {
   position: relative;
-  padding: 0 12px;
+  padding: 0 13px;
   text-align: center;
 }
 
@@ -74,7 +87,7 @@
   display: flex;
   justify-content: center;
   position: relative;
-  padding-top: 36px;
+  padding-top: 42px;
 }
 
 .children::before {
@@ -82,8 +95,8 @@
   position: absolute;
   top: 0;
   left: 50%;
-  height: 22px;
-  border-left: 2px solid var(--line);
+  height: 27px;
+  border-left: 2px solid rgba(54, 116, 161, .22);
 }
 
 .children > .branch::before,
@@ -92,8 +105,8 @@
   position: absolute;
   top: 0;
   width: 50%;
-  height: 22px;
-  border-top: 2px solid var(--line);
+  height: 27px;
+  border-top: 2px solid rgba(54, 116, 161, .22);
 }
 
 .children > .branch::before {
@@ -102,7 +115,7 @@
 
 .children > .branch::after {
   left: 50%;
-  border-left: 2px solid var(--line);
+  border-left: 2px solid rgba(54, 116, 161, .22);
 }
 
 .children > .branch:first-child::before,
@@ -117,15 +130,17 @@
 }
 
 .nodeCard {
-  width: 230px;
-  min-height: 108px;
+  position: relative;
+  overflow: hidden;
+  width: 238px;
+  min-height: 112px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 13px;
   text-align: right;
-  padding: 15px;
+  padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 19px;
   background: var(--paper);
   box-shadow: 0 10px 30px rgba(11, 39, 68, .05);
   transition:
@@ -134,22 +149,52 @@
     border-color .2s ease;
 }
 
+.nodeCard::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #0b75be, #18a4b8);
+  opacity: .4;
+}
+
 .nodeLink:hover .nodeCard {
-  transform: translateY(-4px);
-  border-color: rgba(22, 136, 255, .42);
-  box-shadow: 0 16px 36px rgba(11, 39, 68, .10);
+  transform: translateY(-5px);
+  border-color: rgba(22, 136, 255, .36);
+  box-shadow: 0 18px 40px rgba(11, 39, 68, .10);
+}
+
+.tree > .branch > .nodeLink .nodeCard,
+.tree > .branch > .nodeCard {
+  width: 260px;
+  min-height: 122px;
+  border-color: rgba(22, 136, 255, .22);
+  background:
+    linear-gradient(135deg, rgba(22, 136, 255, .055), transparent 72%),
+    var(--paper);
+  box-shadow: 0 16px 42px rgba(11, 39, 68, .08);
+}
+
+.tree > .branch > .nodeLink .nodeCard::after,
+.tree > .branch > .nodeCard::after {
+  opacity: 1;
+  width: 5px;
 }
 
 .avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 15px;
+  width: 53px;
+  height: 53px;
+  border-radius: 16px;
   flex-shrink: 0;
   overflow: hidden;
   display: grid;
   place-items: center;
   color: var(--blue);
-  background: rgba(22, 136, 255, .08);
+  background:
+    linear-gradient(135deg, rgba(22, 136, 255, .10), rgba(24, 171, 190, .08));
+  border: 1px solid rgba(22, 136, 255, .08);
 }
 
 .avatar img {
@@ -163,11 +208,16 @@
 }
 
 .title {
-  display: block;
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(22, 136, 255, .07);
   color: var(--blue);
-  font-size: .72rem;
+  font-size: .69rem;
   font-weight: 900;
-  margin-bottom: 3px;
+  margin-bottom: 5px;
 }
 
 .nodeCard strong {
@@ -175,16 +225,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: .92rem;
 }
 
 .nodeCard small {
   display: block;
   color: var(--muted);
-  margin-top: 3px;
+  margin-top: 4px;
+  font-size: .75rem;
 }
 
 .empty {
-  padding: 54px 20px;
+  padding: 56px 20px;
   display: grid;
   place-items: center;
   text-align: center;
@@ -204,16 +256,41 @@
 
 @media (max-width: 720px) {
   .page {
-    width: min(100% - 22px, 1280px);
+    width: min(100% - 22px, 1320px);
     padding-top: 26px;
   }
 
   .hero {
     padding: 20px;
     align-items: flex-start;
+    border-radius: 20px;
+  }
+
+  .heroIcon {
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+  }
+
+  .treeScroll {
+    border-radius: 18px;
+    padding-inline: 2px;
   }
 
   .nodeCard {
-    width: 205px;
+    width: 212px;
+    min-height: 104px;
+  }
+
+  .tree > .branch > .nodeLink .nodeCard,
+  .tree > .branch > .nodeCard {
+    width: 225px;
+    min-height: 112px;
+  }
+
+  .avatar {
+    width: 47px;
+    height: 47px;
+    border-radius: 14px;
   }
 }

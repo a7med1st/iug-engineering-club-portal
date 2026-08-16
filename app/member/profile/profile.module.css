@@ -1,7 +1,7 @@
 .page {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 36px 0 72px;
+  padding: 36px 0 76px;
 }
 
 .topBar {
@@ -9,50 +9,62 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
   flex-wrap: wrap;
 }
 
 .backLink,
 .previewLink {
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  padding: 0 12px;
+  border-radius: 11px;
   text-decoration: none;
-  font-weight: 800;
+  font-weight: 850;
+}
+
+.backLink {
   color: var(--ink);
+  background: rgba(22, 136, 255, .04);
 }
 
 .previewLink {
   color: var(--blue);
+  border: 1px solid rgba(22, 136, 255, .14);
 }
 
 .hero {
+  position: relative;
+  overflow: hidden;
   padding: 28px;
   border: 1px solid var(--line);
   border-radius: 24px;
   background:
-    linear-gradient(135deg, rgba(22, 136, 255, .08), transparent 55%),
+    radial-gradient(circle at 88% 18%, rgba(24, 171, 203, .12), transparent 24%),
+    linear-gradient(135deg, rgba(22, 136, 255, .07), transparent 58%),
     var(--paper);
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .eyebrow,
 .cardHead span {
   color: var(--blue);
-  font-size: .78rem;
+  font-size: .74rem;
   font-weight: 900;
-  letter-spacing: .08em;
+  letter-spacing: .09em;
   text-transform: uppercase;
 }
 
 .hero h1,
 .cardHead h2 {
-  margin: 7px 0 8px;
+  margin: 6px 0 8px;
 }
 
 .hero p {
   margin: 0;
+  max-width: 760px;
   color: var(--muted);
   line-height: 1.9;
 }
@@ -66,49 +78,61 @@
 }
 
 .error {
-  background: rgba(185, 28, 28, .08);
+  background: rgba(185, 28, 28, .07);
   color: #991b1b;
-  border: 1px solid rgba(185, 28, 28, .16);
+  border: 1px solid rgba(185, 28, 28, .14);
 }
 
 .success {
-  background: rgba(21, 115, 71, .08);
+  background: rgba(21, 115, 71, .07);
   color: #146c43;
-  border: 1px solid rgba(21, 115, 71, .16);
+  border: 1px solid rgba(21, 115, 71, .14);
 }
 
 .identityCard {
   overflow: hidden;
   border: 1px solid var(--line);
   background: var(--paper);
-  border-radius: 24px;
-  margin-bottom: 22px;
+  border-radius: 26px;
+  margin-bottom: 20px;
+  box-shadow: 0 14px 38px rgba(9, 45, 78, .05);
 }
 
 .coverPreview {
-  height: 220px;
+  position: relative;
+  height: 240px;
   background:
-    radial-gradient(circle at 25% 30%, rgba(22, 136, 255, .34), transparent 32%),
-    linear-gradient(135deg, #0d2747, #123f70 55%, #0b6fa8);
+    radial-gradient(circle at 22% 26%, rgba(54, 178, 255, .38), transparent 29%),
+    radial-gradient(circle at 78% 20%, rgba(27, 191, 158, .21), transparent 31%),
+    linear-gradient(135deg, #09213a, #0e426f 56%, #08749c);
   background-position: center;
   background-size: cover;
   display: grid;
   place-items: center;
-  color: rgba(255,255,255,.72);
+  color: rgba(255,255,255,.68);
+}
+
+.coverPreview::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(4, 24, 43, .22));
+  pointer-events: none;
 }
 
 .identityBody {
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 0 26px 24px;
+  padding: 0 28px 24px;
 }
 
 .avatarWrap {
-  width: 112px;
-  height: 112px;
-  margin-top: -52px;
-  border-radius: 28px;
+  width: 116px;
+  height: 116px;
+  margin-top: -54px;
+  z-index: 1;
+  border-radius: 29px;
   border: 5px solid var(--paper);
   background: #eef5fb;
   display: grid;
@@ -116,6 +140,7 @@
   overflow: hidden;
   flex-shrink: 0;
   color: var(--blue);
+  box-shadow: 0 10px 26px rgba(7, 40, 70, .12);
 }
 
 .avatarWrap img {
@@ -128,26 +153,39 @@
   margin: 10px 0 4px;
 }
 
-.identityBody p,
+.identityBody p {
+  margin: 0 0 3px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
 .identityBody span {
-  margin: 0;
   color: var(--muted);
+  font-size: .88rem;
 }
 
 .form {
   display: grid;
-  gap: 18px;
+  gap: 17px;
 }
 
 .card {
+  position: relative;
   border: 1px solid var(--line);
   border-radius: 22px;
   padding: 24px;
   background: var(--paper);
+  box-shadow: 0 8px 26px rgba(9, 45, 78, .035);
 }
 
 .cardHead {
-  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 15px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid rgba(148, 163, 184, .16);
 }
 
 .cardHead h2 {
@@ -158,7 +196,7 @@
   display: grid;
   gap: 8px;
   font-weight: 800;
-  margin-top: 15px;
+  margin-top: 17px;
 }
 
 .card input,
@@ -170,6 +208,21 @@
   padding: 12px 14px;
   font: inherit;
   color: var(--ink);
+  outline: none;
+  transition:
+    border-color .18s ease,
+    box-shadow .18s ease;
+}
+
+.card input:focus,
+.card textarea:focus {
+  border-color: rgba(22, 136, 255, .52);
+  box-shadow: 0 0 0 3px rgba(22, 136, 255, .08);
+}
+
+.card input[type="file"] {
+  padding: 10px;
+  background: rgba(22, 136, 255, .025);
 }
 
 .card textarea {
@@ -180,6 +233,7 @@
 .card small {
   color: var(--muted);
   font-weight: 500;
+  line-height: 1.6;
 }
 
 .twoColumns {
@@ -192,7 +246,9 @@
   display: flex;
   gap: 18px;
   flex-wrap: wrap;
-  margin-top: 16px;
+  margin-top: 17px;
+  padding-top: 15px;
+  border-top: 1px dashed var(--line);
 }
 
 .checkLabel {
@@ -203,6 +259,7 @@
   gap: 8px !important;
   font-weight: 700 !important;
   margin-top: 0 !important;
+  color: var(--muted);
 }
 
 .checkLabel input {
@@ -212,14 +269,21 @@
 .saveButton {
   border: 0;
   border-radius: 14px;
-  min-height: 50px;
-  padding: 0 24px;
-  background: var(--blue);
+  min-height: 52px;
+  padding: 0 26px;
+  background: linear-gradient(135deg, #0c5f9e, var(--blue));
   color: #fff;
   font: inherit;
   font-weight: 900;
   cursor: pointer;
   justify-self: start;
+  box-shadow: 0 10px 24px rgba(22, 136, 255, .18);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.saveButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(22, 136, 255, .24);
 }
 
 @media (max-width: 720px) {
@@ -231,11 +295,11 @@
   .hero,
   .card {
     padding: 20px;
-    border-radius: 18px;
+    border-radius: 19px;
   }
 
   .coverPreview {
-    height: 170px;
+    height: 180px;
   }
 
   .identityBody {
@@ -244,12 +308,17 @@
   }
 
   .avatarWrap {
-    width: 92px;
-    height: 92px;
-    border-radius: 23px;
+    width: 94px;
+    height: 94px;
+    border-radius: 24px;
   }
 
   .twoColumns {
     grid-template-columns: 1fr;
+  }
+
+  .saveButton {
+    width: 100%;
+    justify-self: stretch;
   }
 }

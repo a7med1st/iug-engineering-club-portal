@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import {
+  ArrowLeft,
   BookOpenText,
   CalendarDays,
   ExternalLink,
@@ -19,6 +20,8 @@ import {
   requirePermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+
+import styles from "./member-dashboard.module.css";
 
 export default async function Member() {
   const { user } =
@@ -71,516 +74,172 @@ export default async function Member() {
       user.memberPermissions,
     );
 
-  const managementLinks = [
-    ...(canManageActivities
-      ? [
-          {
-            href:
-              "/admin/activities",
-            title:
-              "إدارة أنشطة القسم",
-            text:
-              "إدارة الأنشطة والتسجيلات ضمن القسم المرتبط بحسابك.",
-            icon:
-              CalendarDays,
-          },
-        ]
-      : []),
+  const tools = [
+    {
+      href: "/member/profile",
+      title: "ملفي الشخصي",
+      text: "عدّل الصورة والغلاف والنبذة والمهارات وروابطك العامة.",
+      icon: UserRound,
+      visible: true,
+    },
+    {
+      href: "/admin/activities",
+      title: "إدارة أنشطة القسم",
+      text: "إدارة الأنشطة والتسجيلات ضمن النطاق المسموح لحسابك.",
+      icon: CalendarDays,
+      visible: canManageActivities,
+    },
+    {
+      href: "/member/check-in",
+      title: "تسجيل حضور الطلاب",
+      text: "افتح ماسح QR لأنشطة القسم المسموح لك بتسجيل حضورها.",
+      icon: QrCode,
+      visible: canScanAttendance,
+    },
+    {
+      href: "/admin/guides",
+      title: "دليل القسم",
+      text: "حدّث محتوى دليل قسمك فقط.",
+      icon: BookOpenText,
+      visible: canManageGuides,
+    },
+    {
+      href: "/admin/structure",
+      title: "الهيكلية",
+      text: "إدارة عناصر الهيكلية التي تقع ضمن نطاق صلاحياتك.",
+      icon: Network,
+      visible: canManageStructure,
+    },
+    {
+      href: "/admin/contact",
+      title: "إدارة التواصل",
+      text: "متابعة الشكاوى والاقتراحات وطلبات التعاون.",
+      icon: MessageSquareText,
+      visible: canManageContact,
+    },
+  ].filter((tool) => tool.visible);
 
-    ...(canManageGuides
-      ? [
-          {
-            href:
-              "/admin/guides",
-            title:
-              "دليل القسم",
-            text:
-              "تعديل دليل قسمك فقط.",
-            icon:
-              BookOpenText,
-          },
-        ]
-      : []),
-
-    ...(canManageStructure
-      ? [
-          {
-            href:
-              "/admin/structure",
-            title:
-              "هيكلية القسم",
-            text:
-              "إدارة عناصر الهيكلية التابعة لقسمك.",
-            icon:
-              Network,
-          },
-        ]
-      : []),
-
-    ...(canManageContact
-      ? [
-          {
-            href:
-              "/admin/contact",
-            title:
-              "إدارة التواصل",
-            text:
-              "متابعة الشكاوى والاقتراحات وطلبات التعاون.",
-            icon:
-              MessageSquareText,
-          },
-        ]
-      : []),
-  ];
+  const title =
+    structureItem?.title ||
+    user.position ||
+    "عضو في النادي الهندسي";
 
   return (
-    <section className="section">
-      <div className="shell">
-        <div className="section-head">
-          <div>
-            <div className="eyebrow">
-              Member Portal
+    <main className={styles.page}>
+      <section className={styles.hero}>
+        <div className={styles.heroTop}>
+          <div className={styles.identity}>
+            <div className={styles.avatar}>
+              <UserRound size={29} />
             </div>
 
-            <h2>
-              لوحة العضو
-            </h2>
-          </div>
-        </div>
-
-        <div className="about-grid">
-          <div className="about-panel">
-            <div
-              style={{
-                display: "flex",
-                alignItems:
-                  "center",
-                gap: "10px",
-                marginBottom:
-                  "14px",
-              }}
-            >
-              <span
-                style={{
-                  width: "42px",
-                  height: "42px",
-                  display: "grid",
-                  placeItems: "center",
-                  borderRadius: "12px",
-                  background:
-                    "rgba(22, 136, 255, 0.08)",
-                  color:
-                    "var(--blue)",
-                }}
-              >
-                <UserRound
-                  size={21}
-                />
+            <div>
+              <span className={styles.eyebrow}>
+                Member Portal
               </span>
-
-              <div>
-                <span
-                  style={{
-                    display: "block",
-                    color: "var(--muted)",
-                    fontSize: ".75rem",
-                    fontWeight: 700,
-                  }}
-                >
-                  حساب العضو
-                </span>
-
-                <h2
-                  style={{
-                    margin: 0,
-                  }}
-                >
-                  {user.name}
-                </h2>
-              </div>
-            </div>
-
-            <p>
-              {structureItem?.title ||
-                user.position ||
-                "عضو في النادي الهندسي"}
-            </p>
-
-            <p>
-              {user.department
-                ?.nameAr ||
-                "الإدارة العامة"}
-            </p>
-          </div>
-
-          <div className="about-panel">
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "18px",
-                flexWrap: "wrap",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                }}
-              >
-                <span
-                  style={{
-                    width: "46px",
-                    height: "46px",
-                    display: "grid",
-                    placeItems: "center",
-                    borderRadius: "13px",
-                    background:
-                      "rgba(22, 136, 255, 0.08)",
-                    color:
-                      "var(--blue)",
-                  }}
-                >
-                  <UserRound size={22} />
-                </span>
-
-                <div>
-                  <h2
-                    style={{
-                      margin: "0 0 5px",
-                    }}
-                  >
-                    ملفي الشخصي
-                  </h2>
-
-                  <p
-                    style={{
-                      margin: 0,
-                    }}
-                  >
-                    عدّل صورتك وغلافك ونبذتك ومهاراتك وروابطك.
-                  </p>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: "8px",
-                  flexWrap: "wrap",
-                }}
-              >
-                {structureItem && (
-                  <Link
-                    href={`/members/${user.id}`}
-                    className="ghost-btn"
-                  >
-                    <ExternalLink size={16} />
-                    عرض
-                  </Link>
-                )}
-
-                <Link
-                  href="/member/profile"
-                  className="primary-btn"
-                  style={{
-                    textDecoration: "none",
-                  }}
-                >
-                  تعديل الملف
-                </Link>
-              </div>
-            </div>
-
-            {!structureItem && (
-              <p
-                style={{
-                  marginTop: "14px",
-                  color: "var(--muted)",
-                }}
-              >
-                ستصبح صفحتك العامة متاحة عند ربط حسابك بالهيكلية من الإدارة.
+              <h1>{user.name}</h1>
+              <p>
+                {title}
+                {" · "}
+                {user.department?.nameAr ||
+                  "الإدارة العامة"}
               </p>
-            )}
+            </div>
           </div>
 
-          <div className="about-panel">
-            <div
-              style={{
-                display: "flex",
-                alignItems:
-                  "center",
-                gap: "10px",
-                marginBottom:
-                  "12px",
-              }}
-            >
-              <span
-                style={{
-                  width: "42px",
-                  height: "42px",
-                  display: "grid",
-                  placeItems:
-                    "center",
-                  borderRadius:
-                    "12px",
-                  background:
-                    "rgba(21, 115, 71, 0.08)",
-                  color:
-                    "#157347",
-                }}
+          <div className={styles.heroActions}>
+            {structureItem && (
+              <Link
+                href={`/members/${user.id}`}
+                className={styles.heroGhostButton}
               >
-                <ShieldCheck
-                  size={21}
-                />
-              </span>
-
-              <h2
-                style={{
-                  margin: 0,
-                }}
-              >
-                صلاحيات الحساب
-              </h2>
-            </div>
-
-            <p>
-              الأدوات الظاهرة لك
-              تعتمد على الصلاحيات
-              التي منحتها الإدارة
-              لحسابك.
-            </p>
-
-            <p>
-              الصلاحيات المرتبطة
-              بقسم تعمل فقط داخل{" "}
-              <strong>
-                {user.department
-                  ?.nameAr ||
-                  "القسم المحدد لحسابك"}
-              </strong>
-              .
-            </p>
-          </div>
-
-          {managementLinks.map(
-            ({
-              href,
-              title,
-              text,
-              icon: Icon,
-            }) => (
-              <div
-                className="about-panel"
-                key={href}
-              >
-                <div
-                  style={{
-                    display:
-                      "flex",
-                    alignItems:
-                      "center",
-                    justifyContent:
-                      "space-between",
-                    gap: "18px",
-                    flexWrap:
-                      "wrap",
-                  }}
-                >
-                  <div
-                    style={{
-                      display:
-                        "flex",
-                      alignItems:
-                        "center",
-                      gap: "12px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        width:
-                          "46px",
-                        height:
-                          "46px",
-                        display:
-                          "grid",
-                        placeItems:
-                          "center",
-                        borderRadius:
-                          "13px",
-                        background:
-                          "rgba(22, 136, 255, 0.08)",
-                        color:
-                          "var(--blue)",
-                      }}
-                    >
-                      <Icon
-                        size={22}
-                      />
-                    </span>
-
-                    <div>
-                      <h2
-                        style={{
-                          margin:
-                            "0 0 5px",
-                        }}
-                      >
-                        {title}
-                      </h2>
-
-                      <p
-                        style={{
-                          margin: 0,
-                        }}
-                      >
-                        {text}
-                      </p>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={href}
-                    className="ghost-btn"
-                  >
-                    فتح
-                  </Link>
-                </div>
-              </div>
-            ),
-          )}
-
-          {canScanAttendance && (
-            <div
-              className="about-panel"
-              style={{
-                gridColumn:
-                  "1 / -1",
-              }}
-            >
-              <div
-                style={{
-                  display:
-                    "flex",
-                  alignItems:
-                    "center",
-                  justifyContent:
-                    "space-between",
-                  gap: "20px",
-                  flexWrap:
-                    "wrap",
-                }}
-              >
-                <div
-                  style={{
-                    display:
-                      "flex",
-                    alignItems:
-                      "center",
-                    gap: "12px",
-                  }}
-                >
-                  <span
-                    style={{
-                      width:
-                        "48px",
-                      height:
-                        "48px",
-                      display:
-                        "grid",
-                      placeItems:
-                        "center",
-                      flexShrink: 0,
-                      borderRadius:
-                        "14px",
-                      background:
-                        "rgba(22, 136, 255, 0.08)",
-                      color:
-                        "var(--blue)",
-                    }}
-                  >
-                    <QrCode
-                      size={24}
-                    />
-                  </span>
-
-                  <div>
-                    <h2
-                      style={{
-                        margin:
-                          "0 0 5px",
-                      }}
-                    >
-                      تسجيل حضور
-                      الطلاب
-                    </h2>
-
-                    <p
-                      style={{
-                        margin: 0,
-                      }}
-                    >
-                      ستظهر لك أنشطة
-                      قسمك المسموح
-                      بتسجيل الحضور
-                      لها فقط.
-                    </p>
-                  </div>
-                </div>
-
-                <Link
-                  href="/member/check-in"
-                  className="primary-btn"
-                  style={{
-                    display:
-                      "inline-flex",
-                    alignItems:
-                      "center",
-                    justifyContent:
-                      "center",
-                    gap: "8px",
-                    minHeight:
-                      "44px",
-                    textDecoration:
-                      "none",
-                  }}
-                >
-                  <QrCode
-                    size={18}
-                  />
-
-                  فتح تسجيل الحضور
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {!managementLinks.length &&
-            !canScanAttendance && (
-              <div
-                className="about-panel"
-                style={{
-                  gridColumn:
-                    "1 / -1",
-                }}
-              >
-                <h2>
-                  لا توجد صلاحيات
-                  إضافية حاليًا
-                </h2>
-
-                <p>
-                  يمكن للإدارة تحديد
-                  صلاحيات هذا الحساب
-                  من صفحة إدارة
-                  الأعضاء.
-                </p>
-              </div>
+                <ExternalLink size={17} />
+                عرض صفحتي
+              </Link>
             )}
+
+            <Link
+              href="/member/profile"
+              className={styles.heroButton}
+            >
+              <UserRound size={17} />
+              تعديل الملف الشخصي
+            </Link>
+          </div>
         </div>
+
+        <div className={styles.metaBar}>
+          <span className={styles.metaPill}>
+            <ShieldCheck size={15} />
+            صلاحيات مخصصة للحساب
+          </span>
+
+          {user.department?.nameAr && (
+            <span className={styles.metaPill}>
+              <Network size={15} />
+              {user.department.nameAr}
+            </span>
+          )}
+
+          {structureItem && (
+            <span className={styles.metaPill}>
+              <UserRound size={15} />
+              ظاهر في الهيكلية
+            </span>
+          )}
+        </div>
+      </section>
+
+      <div className={styles.sectionHead}>
+        <div>
+          <span>Workspace</span>
+          <h2>أدوات العضو</h2>
+        </div>
+
+        <p>
+          تظهر الأدوات حسب الصلاحيات التي منحتها الإدارة لحسابك.
+        </p>
       </div>
-    </section>
+
+      <section className={styles.grid}>
+        {tools.map(
+          ({
+            href,
+            title,
+            text,
+            icon: Icon,
+          }) => (
+            <Link
+              href={href}
+              className={styles.card}
+              key={href}
+            >
+              <div className={styles.cardIcon}>
+                <Icon size={22} />
+              </div>
+
+              <div className={styles.cardBody}>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </div>
+
+              <ArrowLeft
+                size={18}
+                className={styles.cardArrow}
+              />
+            </Link>
+          ),
+        )}
+
+        {!structureItem && (
+          <div className={styles.notice}>
+            <strong>
+              صفحتك العامة غير مفعلة بعد
+            </strong>
+            عندما تربط الإدارة حسابك بعنصر داخل الهيكلية، سيظهر اسمك فيها ويمكن للطلاب والأعضاء فتح ملفك العام.
+          </div>
+        )}
+      </section>
+    </main>
   );
 }
