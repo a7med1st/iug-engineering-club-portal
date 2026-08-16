@@ -1,0 +1,219 @@
+.page {
+  width: min(1280px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 46px 0 90px;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(22, 136, 255, .08), transparent 55%),
+    var(--paper);
+  margin-bottom: 28px;
+}
+
+.heroIcon {
+  width: 58px;
+  height: 58px;
+  border-radius: 17px;
+  display: grid;
+  place-items: center;
+  background: rgba(22, 136, 255, .10);
+  color: var(--blue);
+  flex-shrink: 0;
+}
+
+.eyebrow {
+  color: var(--blue);
+  font-size: .74rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 5px 0 7px;
+}
+
+.hero p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.treeScroll {
+  overflow-x: auto;
+  padding: 10px 4px 32px;
+}
+
+.tree,
+.children {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tree {
+  display: flex;
+  justify-content: center;
+  min-width: max-content;
+}
+
+.branch {
+  position: relative;
+  padding: 0 12px;
+  text-align: center;
+}
+
+.children {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  padding-top: 36px;
+}
+
+.children::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 22px;
+  border-left: 2px solid var(--line);
+}
+
+.children > .branch::before,
+.children > .branch::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 22px;
+  border-top: 2px solid var(--line);
+}
+
+.children > .branch::before {
+  right: 50%;
+}
+
+.children > .branch::after {
+  left: 50%;
+  border-left: 2px solid var(--line);
+}
+
+.children > .branch:first-child::before,
+.children > .branch:last-child::after {
+  border-top-color: transparent;
+}
+
+.nodeLink {
+  display: inline-block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.nodeCard {
+  width: 230px;
+  min-height: 108px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: right;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: 0 10px 30px rgba(11, 39, 68, .05);
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    border-color .2s ease;
+}
+
+.nodeLink:hover .nodeCard {
+  transform: translateY(-4px);
+  border-color: rgba(22, 136, 255, .42);
+  box-shadow: 0 16px 36px rgba(11, 39, 68, .10);
+}
+
+.avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 15px;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--blue);
+  background: rgba(22, 136, 255, .08);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nodeCard div:last-child {
+  min-width: 0;
+}
+
+.title {
+  display: block;
+  color: var(--blue);
+  font-size: .72rem;
+  font-weight: 900;
+  margin-bottom: 3px;
+}
+
+.nodeCard strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nodeCard small {
+  display: block;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.empty {
+  padding: 54px 20px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: 22px;
+  color: var(--muted);
+}
+
+.empty h2 {
+  color: var(--ink);
+  margin: 12px 0 5px;
+}
+
+.empty p {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .page {
+    width: min(100% - 22px, 1280px);
+    padding-top: 26px;
+  }
+
+  .hero {
+    padding: 20px;
+    align-items: flex-start;
+  }
+
+  .nodeCard {
+    width: 205px;
+  }
+}

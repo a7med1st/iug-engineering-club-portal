@@ -110,13 +110,28 @@ enum ActivitySubmissionStatus {
 // =========================================================
 
 model User {
-  id           String  @id @default(cuid())
-  name         String
-  email        String  @unique
-  passwordHash String
-  role         Role    @default(STUDENT)
-  position     String?
+  id                String   @id @default(cuid())
+  name              String
+  email             String   @unique
+  passwordHash      String
+  role              Role     @default(STUDENT)
+  position          String?
   memberPermissions String[] @default([])
+  // =====================================================
+  // MEMBER PUBLIC PROFILE
+  // =====================================================
+
+  profileBio       String?
+  profileSkills    String[] @default([])
+  profileLinkedIn  String?
+  profileGithub    String?
+  profileInstagram String?
+
+  profileCoverStoredName   String?
+  profileCoverOriginalName String?
+  profileCoverMime         String?
+  profileCoverSize         Int?
+  profileCoverUpdatedAt    DateTime?
 
   // =====================================================
   // STUDENT PROFILE
@@ -142,6 +157,8 @@ model User {
   // =====================================================
   // ACTIVITY REGISTRATIONS
   // =====================================================
+
+  structureItem ClubStructureItem?
 
   activityFormSubmissions ActivityFormSubmission[]
 
@@ -185,15 +202,15 @@ model Activity {
   startsAt    DateTime
   capacity    Int
 
-  // للأنشطة القديمة التي كانت تستخدم Google Forms
-  // الأنشطة الجديدة لن تحتاجه
+  // ظ„ظ„ط£ظ†ط´ط·ط© ط§ظ„ظ‚ط¯ظٹظ…ط© ط§ظ„طھظٹ ظƒط§ظ†طھ طھط³طھط®ط¯ظ… Google Forms
+  // ط§ظ„ط£ظ†ط´ط·ط© ط§ظ„ط¬ط¯ظٹط¯ط© ظ„ظ† طھط­طھط§ط¬ظ‡
   formUrl String?
 
   status ActivityStatus @default(PUBLISHED)
 
   departments ActivityDepartment[]
 
-  // نموذج التسجيل الداخلي
+  // ظ†ظ…ظˆط°ط¬ ط§ظ„طھط³ط¬ظٹظ„ ط§ظ„ط¯ط§ط®ظ„ظٹ
   registrationForm ActivityRegistrationForm?
 
   createdAt DateTime @default(now())
@@ -221,10 +238,10 @@ model ActivityRegistrationForm {
   activityId String   @unique
   activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
-  title       String @default("نموذج التسجيل")
+  title       String @default("ظ†ظ…ظˆط°ط¬ ط§ظ„طھط³ط¬ظٹظ„")
   description String @default("")
 
-  // الأدمن يستطيع فتح وإغلاق التسجيل
+  // ط§ظ„ط£ط¯ظ…ظ† ظٹط³طھط·ظٹط¹ ظپطھط­ ظˆط¥ط؛ظ„ط§ظ‚ ط§ظ„طھط³ط¬ظٹظ„
   isOpen Boolean @default(true)
 
   questions   ActivityFormQuestion[]
@@ -244,7 +261,7 @@ model ActivityFormQuestion {
   formId String
   form   ActivityRegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
 
-  // نص السؤال
+  // ظ†طµ ط§ظ„ط³ط¤ط§ظ„
   label String
 
   // SHORT_TEXT / RADIO / CHECKBOX ...
@@ -255,13 +272,13 @@ model ActivityFormQuestion {
   placeholder String?
   helpText    String?
 
-  // تستخدم مع:
+  // طھط³طھط®ط¯ظ… ظ…ط¹:
   // SELECT
   // RADIO
   // CHECKBOX
   //
-  // مثال:
-  // ["المستوى الأول", "المستوى الثاني"]
+  // ظ…ط«ط§ظ„:
+  // ["ط§ظ„ظ…ط³طھظˆظ‰ ط§ظ„ط£ظˆظ„", "ط§ظ„ظ…ط³طھظˆظ‰ ط§ظ„ط«ط§ظ†ظٹ"]
   options Json?
 
   sortOrder Int @default(0)
@@ -284,12 +301,12 @@ model ActivityFormSubmission {
   formId String
   form   ActivityRegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
 
-  // المستخدم المسجل
-  // Optional حتى نحافظ على التسجيل لو حُذف حساب الطالب مستقبلًا
+  // ط§ظ„ظ…ط³طھط®ط¯ظ… ط§ظ„ظ…ط³ط¬ظ„
+  // Optional ط­طھظ‰ ظ†ط­ط§ظپط¸ ط¹ظ„ظ‰ ط§ظ„طھط³ط¬ظٹظ„ ظ„ظˆ ط­ظڈط°ظپ ط­ط³ط§ط¨ ط§ظ„ط·ط§ظ„ط¨ ظ…ط³طھظ‚ط¨ظ„ظ‹ط§
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  // Snapshot لبيانات الطالب وقت التسجيل
+  // Snapshot ظ„ط¨ظٹط§ظ†ط§طھ ط§ظ„ط·ط§ظ„ط¨ ظˆظ‚طھ ط§ظ„طھط³ط¬ظٹظ„
   studentName       String
   studentEmail      String
   studentDepartment String?
@@ -305,7 +322,7 @@ model ActivityFormSubmission {
   submittedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // الطالب لا يسجل مرتين بنفس النشاط/الفورم
+  // ط§ظ„ط·ط§ظ„ط¨ ظ„ط§ ظٹط³ط¬ظ„ ظ…ط±طھظٹظ† ط¨ظ†ظپط³ ط§ظ„ظ†ط´ط§ط·/ط§ظ„ظپظˆط±ظ…
   @@unique([formId, userId])
   @@index([formId, submittedAt])
   @@index([userId])
@@ -325,13 +342,13 @@ model ActivityFormAnswer {
 
   question ActivityFormQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
 
-  // أمثلة:
+  // ط£ظ…ط«ظ„ط©:
   //
   // Text:
-  // "أحمد محمد"
+  // "ط£ط­ظ…ط¯ ظ…ط­ظ…ط¯"
   //
   // Radio:
-  // "نعم"
+  // "ظ†ط¹ظ…"
   //
   // Checkbox:
   // ["AI", "Web", "Embedded"]
@@ -376,11 +393,21 @@ model ClubStructureItem {
   level     Int @default(1)
   sortOrder Int @default(0)
 
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  parentId String?
+  parent   ClubStructureItem?  @relation("ClubStructureTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children ClubStructureItem[] @relation("ClubStructureTree")
+
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+  @@index([departmentId, sortOrder])
 }
 
 // =========================================================

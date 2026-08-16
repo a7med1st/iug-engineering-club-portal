@@ -1,0 +1,255 @@
+.page {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 36px 0 72px;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.backLink,
+.previewLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.previewLink {
+  color: var(--blue);
+}
+
+.hero {
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(22, 136, 255, .08), transparent 55%),
+    var(--paper);
+  margin-bottom: 22px;
+}
+
+.eyebrow,
+.cardHead span {
+  color: var(--blue);
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.cardHead h2 {
+  margin: 7px 0 8px;
+}
+
+.hero p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+.error,
+.success {
+  border-radius: 14px;
+  padding: 13px 16px;
+  margin-bottom: 18px;
+  font-weight: 800;
+}
+
+.error {
+  background: rgba(185, 28, 28, .08);
+  color: #991b1b;
+  border: 1px solid rgba(185, 28, 28, .16);
+}
+
+.success {
+  background: rgba(21, 115, 71, .08);
+  color: #146c43;
+  border: 1px solid rgba(21, 115, 71, .16);
+}
+
+.identityCard {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 24px;
+  margin-bottom: 22px;
+}
+
+.coverPreview {
+  height: 220px;
+  background:
+    radial-gradient(circle at 25% 30%, rgba(22, 136, 255, .34), transparent 32%),
+    linear-gradient(135deg, #0d2747, #123f70 55%, #0b6fa8);
+  background-position: center;
+  background-size: cover;
+  display: grid;
+  place-items: center;
+  color: rgba(255,255,255,.72);
+}
+
+.identityBody {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 26px 24px;
+}
+
+.avatarWrap {
+  width: 112px;
+  height: 112px;
+  margin-top: -52px;
+  border-radius: 28px;
+  border: 5px solid var(--paper);
+  background: #eef5fb;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  color: var(--blue);
+}
+
+.avatarWrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.identityBody h2 {
+  margin: 10px 0 4px;
+}
+
+.identityBody p,
+.identityBody span {
+  margin: 0;
+  color: var(--muted);
+}
+
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 24px;
+  background: var(--paper);
+}
+
+.cardHead {
+  margin-bottom: 18px;
+}
+
+.cardHead h2 {
+  margin-bottom: 0;
+}
+
+.card label {
+  display: grid;
+  gap: 8px;
+  font-weight: 800;
+  margin-top: 15px;
+}
+
+.card input,
+.card textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 13px;
+  padding: 12px 14px;
+  font: inherit;
+  color: var(--ink);
+}
+
+.card textarea {
+  resize: vertical;
+  line-height: 1.8;
+}
+
+.card small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.twoColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.removeRow {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.checkLabel {
+  display: flex !important;
+  grid-template-columns: none !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px !important;
+  font-weight: 700 !important;
+  margin-top: 0 !important;
+}
+
+.checkLabel input {
+  width: auto;
+}
+
+.saveButton {
+  border: 0;
+  border-radius: 14px;
+  min-height: 50px;
+  padding: 0 24px;
+  background: var(--blue);
+  color: #fff;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  justify-self: start;
+}
+
+@media (max-width: 720px) {
+  .page {
+    width: min(100% - 22px, 1120px);
+    padding-top: 22px;
+  }
+
+  .hero,
+  .card {
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .coverPreview {
+    height: 170px;
+  }
+
+  .identityBody {
+    padding-inline: 18px;
+    align-items: flex-end;
+  }
+
+  .avatarWrap {
+    width: 92px;
+    height: 92px;
+    border-radius: 23px;
+  }
+
+  .twoColumns {
+    grid-template-columns: 1fr;
+  }
+}

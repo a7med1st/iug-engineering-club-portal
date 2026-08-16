@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   BookOpenText,
   CalendarDays,
+  ExternalLink,
   MessageSquareText,
   Network,
   QrCode,
@@ -17,12 +18,23 @@ import {
   hasPermission,
   requirePermission,
 } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
 
 export default async function Member() {
   const { user } =
     await requirePermission(
       PERMISSIONS.MEMBER_DASHBOARD,
     );
+
+  const structureItem =
+    await prisma.clubStructureItem.findUnique({
+      where: {
+        userId: user.id,
+      },
+      select: {
+        title: true,
+      },
+    });
 
   const canManageActivities =
     hasAnyPermission(
@@ -153,10 +165,8 @@ export default async function Member() {
                   width: "42px",
                   height: "42px",
                   display: "grid",
-                  placeItems:
-                    "center",
-                  borderRadius:
-                    "12px",
+                  placeItems: "center",
+                  borderRadius: "12px",
                   background:
                     "rgba(22, 136, 255, 0.08)",
                   color:
@@ -171,14 +181,10 @@ export default async function Member() {
               <div>
                 <span
                   style={{
-                    display:
-                      "block",
-                    color:
-                      "var(--muted)",
-                    fontSize:
-                      ".75rem",
-                    fontWeight:
-                      700,
+                    display: "block",
+                    color: "var(--muted)",
+                    fontSize: ".75rem",
+                    fontWeight: 700,
                   }}
                 >
                   حساب العضو
@@ -195,15 +201,109 @@ export default async function Member() {
             </div>
 
             <p>
-              {user.position ||
+              {structureItem?.title ||
+                user.position ||
                 "عضو في النادي الهندسي"}
             </p>
 
             <p>
               {user.department
                 ?.nameAr ||
-                "غير مرتبط بقسم"}
+                "الإدارة العامة"}
             </p>
+          </div>
+
+          <div className="about-panel">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "18px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                }}
+              >
+                <span
+                  style={{
+                    width: "46px",
+                    height: "46px",
+                    display: "grid",
+                    placeItems: "center",
+                    borderRadius: "13px",
+                    background:
+                      "rgba(22, 136, 255, 0.08)",
+                    color:
+                      "var(--blue)",
+                  }}
+                >
+                  <UserRound size={22} />
+                </span>
+
+                <div>
+                  <h2
+                    style={{
+                      margin: "0 0 5px",
+                    }}
+                  >
+                    ملفي الشخصي
+                  </h2>
+
+                  <p
+                    style={{
+                      margin: 0,
+                    }}
+                  >
+                    عدّل صورتك وغلافك ونبذتك ومهاراتك وروابطك.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  flexWrap: "wrap",
+                }}
+              >
+                {structureItem && (
+                  <Link
+                    href={`/members/${user.id}`}
+                    className="ghost-btn"
+                  >
+                    <ExternalLink size={16} />
+                    عرض
+                  </Link>
+                )}
+
+                <Link
+                  href="/member/profile"
+                  className="primary-btn"
+                  style={{
+                    textDecoration: "none",
+                  }}
+                >
+                  تعديل الملف
+                </Link>
+              </div>
+            </div>
+
+            {!structureItem && (
+              <p
+                style={{
+                  marginTop: "14px",
+                  color: "var(--muted)",
+                }}
+              >
+                ستصبح صفحتك العامة متاحة عند ربط حسابك بالهيكلية من الإدارة.
+              </p>
+            )}
           </div>
 
           <div className="about-panel">
