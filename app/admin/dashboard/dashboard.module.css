@@ -1,0 +1,460 @@
+.page {
+  width: min(100%, 1480px);
+  margin: 0 auto;
+  padding: 28px;
+  display: grid;
+  gap: 20px;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface, #fff);
+}
+
+.eyebrow,
+.panelHead span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+}
+
+.hero h1,
+.panelHead h2 {
+  margin: 0;
+}
+
+.hero p {
+  max-width: 680px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.heroMeta {
+  min-width: 180px;
+  display: grid;
+  gap: 5px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.heroMeta span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.filters {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface, #fff);
+}
+
+.filters label {
+  min-width: 190px;
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.filters select,
+.filters button,
+.reset {
+  min-height: 42px;
+  border-radius: 11px;
+  font: inherit;
+}
+
+.filters select {
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  background: var(--surface, #fff);
+  color: var(--ink);
+}
+
+.filters button {
+  padding: 0 20px;
+  border: 0;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.reset {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.metricCard {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--surface, #fff);
+}
+
+.metricIcon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(22, 136, 255, 0.09);
+  color: var(--blue);
+}
+
+.metricCard > div:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.metricCard span,
+.metricCard small {
+  color: var(--muted);
+}
+
+.metricCard span {
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.metricCard strong {
+  color: var(--ink);
+  font-size: 1.55rem;
+  line-height: 1.2;
+}
+
+.metricCard small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.68rem;
+}
+
+.twoColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.panel {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface, #fff);
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.panelHead > strong {
+  font-size: 1.35rem;
+}
+
+.panelHead > a {
+  color: var(--blue);
+  font-size: 0.75rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.statusRows,
+.ranking,
+.activityList,
+.registrationList {
+  display: grid;
+  gap: 10px;
+}
+
+.statusRow {
+  display: grid;
+  grid-template-columns: 115px minmax(90px, 1fr) 42px;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusRow > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.statusRow span,
+.statusRow small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.bar {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(127, 127, 127, 0.12);
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: var(--blue);
+}
+
+.rankRow {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 11px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+}
+
+.rankRow:last-child {
+  border-bottom: 0;
+}
+
+.rankNumber {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(22, 136, 255, 0.09);
+  color: var(--blue);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.rankMain {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.rankMain > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rankMain small {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.upcomingCard,
+.registrationRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+}
+
+.upcomingCard > div:first-child,
+.registrationRow > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.upcomingCard span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.69rem;
+}
+
+.capacityBox {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+
+.capacityBox small,
+.capacityBox a {
+  font-size: 0.65rem;
+}
+
+.capacityBox small {
+  color: var(--muted);
+}
+
+.capacityBox a {
+  color: var(--blue);
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.registrationRow {
+  color: inherit;
+  text-decoration: none;
+}
+
+.registrationRow span,
+.registrationRow small {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.statusBadge {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(127, 127, 127, 0.09);
+  font-size: 0.68rem !important;
+  font-weight: 850;
+}
+
+.statusBadge[data-status="APPROVED"] {
+  color: #168a57;
+}
+
+.statusBadge[data-status="REJECTED"] {
+  color: #c43d48;
+}
+
+.departmentTable {
+  overflow-x: auto;
+}
+
+.departmentHeader,
+.departmentRow {
+  min-width: 720px;
+  display: grid;
+  grid-template-columns: minmax(250px, 2fr) repeat(4, minmax(80px, 0.65fr));
+  align-items: center;
+  gap: 12px;
+  padding: 11px 6px;
+}
+
+.departmentHeader {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 850;
+  border-bottom: 1px solid var(--line);
+}
+
+.departmentRow {
+  border-bottom: 1px solid var(--line);
+}
+
+.departmentRow:last-child {
+  border-bottom: 0;
+}
+
+.departmentRow > div {
+  display: grid;
+  gap: 7px;
+}
+
+.departmentRow > span {
+  font-weight: 800;
+}
+
+.empty {
+  margin: 0;
+  padding: 20px 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 1180px) {
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .page {
+    padding: 18px;
+  }
+
+  .hero,
+  .twoColumns {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    display: grid;
+  }
+
+  .twoColumns {
+    display: grid;
+  }
+}
+
+@media (max-width: 620px) {
+  .page {
+    padding: 12px;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .filters label {
+    width: 100%;
+  }
+
+  .filters select,
+  .filters button,
+  .reset {
+    width: 100%;
+  }
+
+  .statusRow {
+    grid-template-columns: 92px minmax(70px, 1fr) 38px;
+  }
+
+  .rankMain > div:first-child,
+  .upcomingCard,
+  .registrationRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

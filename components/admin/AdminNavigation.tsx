@@ -13,9 +13,15 @@ import {
   UserRound,
   Users,
   X,
+  LayoutDashboard,
 } from "lucide-react";
 
 const adminLinks = [
+  {
+    href: "/admin/dashboard",
+    label: "الإحصائيات",
+    icon: LayoutDashboard,
+  },
   {
     href: "/member/profile",
     label: "ملفي الشخصي",
@@ -63,6 +69,8 @@ function AdminLinks({
         .filter(
           ({ href }) =>
             href === "/member/profile" ||
+            (href === "/admin/dashboard" &&
+              allowedHrefs.includes("/admin/members")) ||
             allowedHrefs.includes(href),
         )
         .map(({ href, label, icon: Icon }) => {
