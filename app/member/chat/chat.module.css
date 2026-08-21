@@ -1124,3 +1124,1196 @@
   border-top:
     1px solid var(--line);
 }
+
+
+/* =========================================================
+   CHAT VISUAL SYSTEM — CLUB IDENTITY REDESIGN
+   ========================================================= */
+
+.page {
+  width: min(1380px, calc(100% - 28px));
+  height: calc(100dvh - 110px);
+  padding: 18px 0 22px;
+}
+
+.shell {
+  position: relative;
+  isolation: isolate;
+  grid-template-columns: 360px minmax(0, 1fr);
+  border: 1px solid rgba(174, 205, 233, .78);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 83% 3%, rgba(22,136,255,.08), transparent 27%),
+    linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+  box-shadow:
+    0 24px 58px rgba(8,42,74,.10),
+    inset 0 1px 0 rgba(255,255,255,.95);
+}
+
+.shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(22,136,255,.023) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22,136,255,.023) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
+}
+
+.sidebar {
+  position: relative;
+  z-index: 5;
+  border-inline-end: 1px solid rgba(185, 208, 229, .8);
+  background:
+    radial-gradient(circle at 86% 3%, rgba(53,212,255,.10), transparent 24%),
+    linear-gradient(180deg, #fbfdff 0%, #f5faff 100%);
+}
+
+.sidebarTop {
+  min-height: 94px;
+  padding: 20px 18px 13px;
+}
+
+.sidebarTop h2 {
+  margin: 0;
+  color: #102a48;
+  font-family: "Alexandria", sans-serif;
+  font-size: 1.32rem;
+}
+
+.sidebarSubtitle {
+  margin: 5px 0 0;
+  color: #7a8ea2;
+  font-size: .68rem;
+  line-height: 1.55;
+}
+
+.sidebarEyebrow {
+  display: none;
+}
+
+.newChatButton {
+  position: relative;
+  overflow: hidden;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(22,136,255,.17);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, #eef8ff, #e9fbff);
+  color: #1688ff;
+  box-shadow:
+    0 9px 20px rgba(22,136,255,.09),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  transition:
+    transform .22s ease,
+    box-shadow .22s ease,
+    color .22s ease,
+    background .22s ease;
+}
+
+.newChatButton:hover {
+  transform: translateY(-3px) rotate(-3deg);
+  background:
+    linear-gradient(135deg, #1688ff, #35d4ff);
+  color: #fff;
+  box-shadow:
+    0 15px 28px rgba(22,136,255,.22),
+    0 0 0 4px rgba(53,212,255,.055);
+}
+
+.newChatButton:active {
+  transform: translateY(0) scale(.95);
+}
+
+.newConversation {
+  position: relative;
+  z-index: 30;
+  gap: 11px;
+  margin: 0 14px 14px;
+  padding: 14px;
+  border: 1px solid #bedcf3;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 92% 5%, rgba(53,212,255,.10), transparent 28%),
+    linear-gradient(145deg, #fff, #f6fbff);
+  box-shadow:
+    0 18px 34px rgba(8,42,74,.10),
+    inset 0 1px 0 rgba(255,255,255,.95);
+  animation: chatPanelIn .18s cubic-bezier(.22,1,.36,1) both;
+}
+
+.newConversationHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.newConversationHead > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.newConversationHead strong {
+  color: #173b63;
+  font-family: "Alexandria", sans-serif;
+  font-size: .76rem;
+}
+
+.newConversationHead small {
+  color: #8395a7;
+  font-size: .59rem;
+}
+
+.newConversationIcon {
+  width: 37px;
+  height: 37px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, #eaf6ff, #e9fcff);
+  color: #1688ff;
+}
+
+.memberSelectWrap {
+  position: relative;
+  z-index: 60;
+}
+
+.memberSelectTrigger {
+  width: 100%;
+  min-height: 58px;
+  padding: 8px 9px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #cadeef;
+  border-radius: 14px;
+  background: rgba(255,255,255,.92);
+  color: #173b63;
+  cursor: pointer;
+  text-align: right;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
+  transition:
+    border-color .2s ease,
+    box-shadow .2s ease,
+    transform .2s ease;
+}
+
+.memberSelectTrigger:hover,
+.memberSelectTriggerOpen {
+  transform: translateY(-1px);
+  border-color: #83c4f7;
+  box-shadow:
+    0 0 0 3px rgba(22,136,255,.07),
+    0 9px 20px rgba(22,136,255,.07);
+}
+
+.memberSelectCopy {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.memberSelectCopy strong {
+  overflow: hidden;
+  color: #173b63;
+  font-family: "Alexandria", sans-serif;
+  font-size: .69rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memberSelectCopy small {
+  overflow: hidden;
+  color: #8999a9;
+  font-size: .58rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memberSelectChevron {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #eef7ff;
+  color: #1688ff;
+  transition:
+    transform .22s ease,
+    color .22s ease,
+    background .22s ease;
+}
+
+.memberSelectChevronOpen {
+  transform: rotate(180deg);
+  background:
+    linear-gradient(135deg, #1688ff, #35d4ff);
+  color: #fff;
+}
+
+.memberSelectMenu {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 7px);
+  z-index: 999;
+  max-height: 255px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #bdd9ef;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow:
+    0 24px 50px rgba(8,42,74,.20),
+    0 8px 20px rgba(22,136,255,.08);
+  animation: chatMenuIn .16s cubic-bezier(.22,1,.36,1) both;
+}
+
+.memberSelectOption {
+  width: 100%;
+  min-height: 48px;
+  padding: 7px 8px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: #294e70;
+  cursor: pointer;
+  text-align: right;
+  transition:
+    transform .18s ease,
+    border-color .18s ease,
+    background .18s ease;
+}
+
+.memberSelectOption:hover {
+  transform: translateX(-2px);
+  border-color: rgba(22,136,255,.13);
+  background:
+    linear-gradient(90deg, #edf8ff, #f9fdff);
+}
+
+.memberSelectOptionActive {
+  border-color: rgba(22,136,255,.22);
+  background:
+    linear-gradient(135deg, rgba(22,136,255,.10), rgba(53,212,255,.07));
+}
+
+.memberSelectMark {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d5e4f0;
+  border-radius: 9px;
+  background: #fff;
+  color: #1688ff;
+}
+
+.memberSelectOptionActive .memberSelectMark {
+  border-color: transparent;
+  background:
+    linear-gradient(135deg, #1688ff, #35d4ff);
+  color: #fff;
+}
+
+.memberSelectOptionCopy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.memberSelectOptionCopy strong {
+  color: #173b63;
+  font-size: .68rem;
+}
+
+.memberSelectOptionCopy small {
+  color: #8395a7;
+  font-size: .57rem;
+}
+
+.memberSelectEmpty {
+  padding: 18px 10px;
+  color: #8193a6;
+  text-align: center;
+  font-size: .67rem;
+}
+
+.startConversationButton {
+  min-height: 42px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 12px !important;
+  background:
+    linear-gradient(118deg, #1177e1 0%, #1688ff 45%, #25b9f2 74%, #35d4ff 100%) !important;
+  box-shadow:
+    0 10px 22px rgba(22,136,255,.20),
+    inset 0 1px 0 rgba(255,255,255,.25);
+  transition:
+    transform .22s ease,
+    box-shadow .22s ease,
+    opacity .22s ease !important;
+}
+
+.startConversationButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 15px 29px rgba(22,136,255,.28),
+    0 0 0 4px rgba(53,212,255,.05);
+}
+
+.startConversationButton:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+}
+
+.searchBox {
+  min-height: 48px;
+  margin: 0 14px 13px;
+  padding: 0 13px;
+  border: 1px solid #cedfec;
+  border-radius: 15px;
+  background:
+    rgba(255,255,255,.90);
+  color: #8193a5;
+  box-shadow:
+    0 7px 18px rgba(8,42,74,.035),
+    inset 0 1px 0 rgba(255,255,255,.95);
+  transition:
+    border-color .2s ease,
+    box-shadow .2s ease,
+    transform .2s ease;
+}
+
+.searchBox:focus-within {
+  transform: translateY(-1px);
+  border-color: #80c1f4;
+  box-shadow:
+    0 0 0 3px rgba(22,136,255,.075),
+    0 10px 22px rgba(22,136,255,.07);
+}
+
+.searchBox input::placeholder {
+  color: #95a4b4;
+}
+
+.sidebarGroups {
+  gap: 7px;
+  padding: 0 11px 10px;
+}
+
+.sidebarSectionTitle {
+  padding: 7px 5px 4px;
+}
+
+.sidebarSectionTitle > span,
+.sidebarPrivateTitle {
+  color: #657b91;
+  font-size: .68rem;
+}
+
+.sidebarSectionTitle a {
+  min-height: 28px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  color: #1688ff;
+  background: rgba(22,136,255,.055);
+  transition:
+    background .18s ease,
+    transform .18s ease;
+}
+
+.sidebarSectionTitle a:hover {
+  transform: translateY(-1px);
+  background: rgba(22,136,255,.10);
+}
+
+.sidebarGroupList {
+  gap: 6px;
+}
+
+.sidebarGroupItem {
+  position: relative;
+  overflow: hidden;
+  min-height: 58px;
+  padding: 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  background: rgba(255,255,255,.45);
+  transition:
+    transform .2s ease,
+    background .2s ease,
+    border-color .2s ease,
+    box-shadow .2s ease;
+}
+
+.sidebarGroupItem:hover {
+  transform: translateY(-2px);
+  border-color: rgba(22,136,255,.14);
+  background:
+    linear-gradient(135deg, #fff, #eef8ff);
+  box-shadow: 0 10px 22px rgba(22,136,255,.07);
+}
+
+.sidebarGroupIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  background:
+    linear-gradient(135deg, #eaf6ff, #e8fbff);
+  color: #1688ff;
+  transition:
+    transform .22s ease,
+    background .22s ease,
+    color .22s ease;
+}
+
+.sidebarGroupItem:hover .sidebarGroupIcon {
+  transform: rotate(-4deg) translateY(-1px);
+  background:
+    linear-gradient(135deg, #1688ff, #35d4ff);
+  color: #fff;
+}
+
+.sidebarGroupBadge,
+.unreadBadge {
+  background:
+    linear-gradient(135deg, #1688ff, #35bff4);
+  box-shadow: 0 6px 14px rgba(22,136,255,.18);
+}
+
+.sidebarPrivateTitle {
+  margin-top: 5px;
+  padding: 9px 5px 2px;
+  border-top: 1px solid #dce8f2;
+}
+
+.conversationList {
+  padding: 0 10px 15px;
+  scrollbar-width: thin;
+  scrollbar-color: #9bc7ed transparent;
+}
+
+.conversationRow {
+  position: relative;
+  overflow: hidden;
+  min-height: 72px;
+  margin-bottom: 5px;
+  padding: 10px 9px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: rgba(255,255,255,.38);
+  transition:
+    transform .2s ease,
+    background .2s ease,
+    border-color .2s ease,
+    box-shadow .2s ease;
+}
+
+.conversationRow::after {
+  content: "";
+  position: absolute;
+  width: 75px;
+  height: 75px;
+  inset-inline-end: -38px;
+  bottom: -45px;
+  border: 12px solid rgba(22,136,255,.035);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.conversationRow:hover {
+  transform: translateY(-2px);
+  border-color: rgba(22,136,255,.15);
+  background:
+    linear-gradient(135deg, #fff, #f0f8ff);
+  box-shadow: 0 10px 23px rgba(8,42,74,.07);
+}
+
+.conversationRowActive {
+  border-color: rgba(22,136,255,.26);
+  background:
+    linear-gradient(135deg, rgba(22,136,255,.11), rgba(53,212,255,.07));
+  box-shadow:
+    0 10px 24px rgba(22,136,255,.09),
+    inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+.conversationRowActive::before {
+  top: 10px;
+  bottom: 10px;
+  width: 4px;
+  background:
+    linear-gradient(180deg, #1688ff, #35d4ff);
+}
+
+.rowAvatar {
+  width: 50px;
+  height: 50px;
+  border: 2px solid rgba(255,255,255,.95);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, #dfefff, #e8fbff);
+  color: #1688ff;
+  box-shadow: 0 7px 17px rgba(8,42,74,.07);
+  transition:
+    transform .22s ease,
+    box-shadow .22s ease;
+}
+
+.conversationRow:hover .rowAvatar {
+  transform: scale(1.045) rotate(-2deg);
+  box-shadow: 0 10px 22px rgba(22,136,255,.12);
+}
+
+.rowHead strong {
+  color: #183a5c;
+  font-family: "Alexandria", sans-serif;
+  font-size: .76rem;
+}
+
+.rowHead time {
+  color: #8295a8;
+  font-size: .6rem;
+}
+
+.rowRole {
+  margin-top: 3px;
+  color: #7f91a3;
+  font-size: .61rem;
+}
+
+.rowPreview {
+  margin-top: 5px;
+}
+
+.rowPreview p {
+  color: #73879a;
+  font-size: .67rem;
+}
+
+.content {
+  position: relative;
+  background:
+    radial-gradient(circle at 84% 4%, rgba(22,136,255,.07), transparent 24%),
+    radial-gradient(circle at 10% 95%, rgba(53,212,255,.055), transparent 24%),
+    linear-gradient(180deg, #fbfdff 0%, #f7fbff 100%);
+}
+
+.content::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(22,136,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22,136,255,.018) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(circle at center, black, transparent 82%);
+}
+
+.emptyConversation {
+  position: relative;
+  z-index: 1;
+  padding: 40px;
+}
+
+.emptyVisual {
+  position: relative;
+  width: 154px;
+  height: 154px;
+  display: grid;
+  place-items: center;
+}
+
+.emptyIcon {
+  position: relative;
+  z-index: 3;
+  width: 82px;
+  height: 82px;
+  border: 1px solid rgba(22,136,255,.16);
+  border-radius: 26px;
+  background:
+    linear-gradient(135deg, #e9f6ff, #e9fcff);
+  color: #1688ff;
+  box-shadow:
+    0 17px 36px rgba(22,136,255,.13),
+    inset 0 1px 0 rgba(255,255,255,.95);
+  animation: emptyIconFloat 4s ease-in-out infinite;
+}
+
+.emptyOrbit,
+.emptyOrbitSecondary {
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(22,136,255,.12);
+  border-radius: 50%;
+}
+
+.emptyOrbit::before,
+.emptyOrbitSecondary::before {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  top: -5px;
+  left: 50%;
+  border-radius: 50%;
+  background: #1688ff;
+  box-shadow: 0 0 0 5px rgba(22,136,255,.08);
+}
+
+.emptyOrbit {
+  animation: chatOrbit 11s linear infinite;
+}
+
+.emptyOrbitSecondary {
+  inset: 27px;
+  border-color: rgba(130,189,50,.13);
+  animation: chatOrbit 8s linear infinite reverse;
+}
+
+.emptyOrbitSecondary::before {
+  background: #82bd32;
+  box-shadow: 0 0 0 5px rgba(130,189,50,.07);
+}
+
+.emptyConversation h1 {
+  margin: 17px 0 7px;
+  color: #102a48;
+  font-family: "Alexandria", sans-serif;
+  font-size: 1.55rem;
+}
+
+.emptyConversation p {
+  color: #71869a;
+  font-size: .82rem;
+}
+
+.emptyHints {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.emptyHint {
+  margin-top: 0;
+  min-height: 36px;
+  border: 1px solid #d4e4f0;
+  background: rgba(255,255,255,.78);
+  color: #627b92;
+  box-shadow: 0 7px 16px rgba(8,42,74,.035);
+}
+
+.conversationHeader {
+  min-height: 88px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #dce7f0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.94), rgba(249,252,255,.88));
+  box-shadow: 0 7px 20px rgba(8,42,74,.035);
+}
+
+.partnerAvatar {
+  width: 52px;
+  height: 52px;
+  border: 2px solid #fff;
+  border-radius: 17px;
+  box-shadow: 0 8px 19px rgba(8,42,74,.08);
+}
+
+.partnerInfo h1 {
+  color: #143452;
+  font-family: "Alexandria", sans-serif;
+  font-size: .88rem;
+}
+
+.profileLink {
+  min-height: 40px;
+  border: 1px solid #cbdfee;
+  border-radius: 12px;
+  background: rgba(255,255,255,.88);
+  color: #244c70;
+  box-shadow: 0 6px 15px rgba(8,42,74,.035);
+  transition:
+    transform .2s ease,
+    border-color .2s ease,
+    color .2s ease,
+    box-shadow .2s ease;
+}
+
+.profileLink:hover {
+  transform: translateY(-2px);
+  border-color: #8cc5f2;
+  color: #1688ff;
+  box-shadow: 0 10px 21px rgba(22,136,255,.08);
+}
+
+.messages {
+  position: relative;
+  z-index: 1;
+  padding: 24px 28px 18px;
+  scrollbar-width: thin;
+  scrollbar-color: #9bc7ed transparent;
+}
+
+.dayDivider span {
+  border-color: #d3e2ef;
+  background: rgba(255,255,255,.88);
+  color: #73879a;
+  box-shadow: 0 5px 14px rgba(8,42,74,.035);
+}
+
+.messageMine,
+.messageOther {
+  max-width: min(72%, 650px);
+  margin-bottom: 12px;
+  padding: 13px 16px 9px;
+  border-radius: 19px;
+  box-shadow:
+    0 8px 20px rgba(8,42,74,.07);
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease;
+}
+
+.messageMine:hover,
+.messageOther:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 11px 25px rgba(8,42,74,.10);
+}
+
+.messageMine {
+  background:
+    linear-gradient(135deg, #1178df 0%, #1688ff 55%, #25baf2 100%);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.08);
+  border-bottom-left-radius: 6px;
+}
+
+.messageOther {
+  background:
+    linear-gradient(145deg, #fff, #f8fbfe);
+  color: var(--ink);
+  border: 1px solid rgba(174,199,222,.62);
+  border-bottom-right-radius: 6px;
+}
+
+.senderName {
+  color: #1688ff;
+  font-size: .84rem;
+}
+
+.composer {
+  z-index: 20;
+  padding: 13px 17px 15px;
+  border-top: 1px solid #dbe7f1;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.94), rgba(248,252,255,.98));
+  box-shadow: 0 -9px 25px rgba(8,42,74,.05);
+  backdrop-filter: blur(12px);
+}
+
+.composer textarea {
+  min-height: 52px;
+  border: 1px solid #cbddea;
+  border-radius: 25px;
+  background: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    0 5px 14px rgba(8,42,74,.025);
+}
+
+.composer textarea:hover {
+  border-color: #a7cde9;
+}
+
+.composer textarea:focus {
+  border-color: #69b5ee;
+  box-shadow:
+    0 0 0 4px rgba(22,136,255,.075),
+    0 8px 20px rgba(22,136,255,.06);
+}
+
+.composer button {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, #1178df 0%, #1688ff 55%, #35d4ff 100%);
+  box-shadow:
+    0 10px 23px rgba(22,136,255,.23),
+    inset 0 1px 0 rgba(255,255,255,.22);
+}
+
+.composer button:hover {
+  transform: translateY(-3px) rotate(-2deg);
+  box-shadow:
+    0 16px 31px rgba(22,136,255,.30),
+    0 0 0 4px rgba(53,212,255,.055);
+}
+
+.feedbackError {
+  border-color: rgba(196,61,72,.18);
+  border-radius: 13px;
+  background:
+    linear-gradient(135deg, rgba(196,61,72,.07), rgba(255,255,255,.7));
+  box-shadow: 0 8px 18px rgba(196,61,72,.055);
+}
+
+@keyframes chatPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(-7px) scale(.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes chatMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes chatOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes emptyIconFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (max-width: 1024px) {
+  .shell {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 820px) {
+  .page {
+    width: min(100% - 18px, 1380px);
+  }
+
+  .shell {
+    grid-template-columns: 1fr;
+    border-radius: 22px;
+  }
+
+  .sidebar {
+    max-height: 330px;
+  }
+
+  .emptyVisual {
+    width: 128px;
+    height: 128px;
+  }
+
+  .emptyIcon {
+    width: 72px;
+    height: 72px;
+    border-radius: 22px;
+  }
+}
+
+@media (max-width: 520px) {
+  .sidebarTop {
+    min-height: 82px;
+    padding: 16px 14px 11px;
+  }
+
+  .sidebarTop h2 {
+    font-size: 1.12rem;
+  }
+
+  .newChatButton {
+    width: 42px;
+    height: 42px;
+  }
+
+  .newConversation {
+    margin-inline: 10px;
+  }
+
+  .searchBox {
+    margin-inline: 10px;
+  }
+
+  .messages {
+    padding-inline: 14px;
+  }
+
+  .messageMine,
+  .messageOther {
+    max-width: 86%;
+  }
+
+  .emptyConversation {
+    padding: 28px 18px;
+  }
+
+  .emptyHints {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emptyIcon,
+  .emptyOrbit,
+  .emptyOrbitSecondary,
+  .newConversation,
+  .memberSelectMenu {
+    animation: none;
+  }
+}
+
+
+/* =========================================================
+   CHAT SIDEBAR V2 — INDEPENDENT SCROLL AREAS
+   Groups scroll separately from private conversations.
+   ========================================================= */
+
+.sidebar {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Keep header/search fixed while the two lists scroll independently. */
+.sidebarTop,
+.searchBox,
+.newConversation {
+  flex: 0 0 auto;
+}
+
+/* Groups block gets its own bounded scroll area. */
+.sidebarGroups {
+  flex: 0 1 43%;
+  min-height: 155px;
+  max-height: 43%;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 6px;
+  padding: 0 10px 9px;
+  border-bottom: 1px solid rgba(207, 224, 238, .9);
+}
+
+.sidebarSectionTitle {
+  position: relative;
+  z-index: 2;
+  padding: 7px 5px 5px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(248, 252, 255, .98),
+      rgba(248, 252, 255, .9)
+    );
+}
+
+.sidebarSectionTitleMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sidebarSectionCount,
+.sidebarPrivateCount {
+  min-width: 23px;
+  height: 23px;
+  padding: 0 6px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(22,136,255,.13);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, #edf7ff, #eafaff);
+  color: #1688ff;
+  font-size: .61rem;
+  font-weight: 900;
+}
+
+.sidebarGroupList {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 3px 8px 1px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #83bee9 transparent;
+}
+
+/* Private title is no longer trapped inside the groups section. */
+.sidebarPrivateHeader {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 8px 15px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #607890;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(248, 252, 255, .96),
+      rgba(247, 251, 255, .86)
+    );
+}
+
+.sidebarPrivateHeader strong {
+  color: #607890;
+  font-size: .69rem;
+  font-weight: 900;
+}
+
+.sidebarPrivateTitle {
+  display: none;
+}
+
+/* The private conversation list gets the remaining height and its own scroll. */
+.conversationList {
+  flex: 1 1 0;
+  min-height: 120px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 10px 14px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #83bee9 transparent;
+}
+
+/* Modern slim scrollbars */
+.sidebarGroupList::-webkit-scrollbar,
+.conversationList::-webkit-scrollbar,
+.memberSelectMenu::-webkit-scrollbar,
+.messages::-webkit-scrollbar {
+  width: 7px;
+}
+
+.sidebarGroupList::-webkit-scrollbar-track,
+.conversationList::-webkit-scrollbar-track,
+.memberSelectMenu::-webkit-scrollbar-track,
+.messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebarGroupList::-webkit-scrollbar-thumb,
+.conversationList::-webkit-scrollbar-thumb,
+.memberSelectMenu::-webkit-scrollbar-thumb,
+.messages::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, #78baf0, #35c7ed);
+  background-clip: padding-box;
+}
+
+.sidebarGroupList::-webkit-scrollbar-thumb:hover,
+.conversationList::-webkit-scrollbar-thumb:hover,
+.memberSelectMenu::-webkit-scrollbar-thumb:hover,
+.messages::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(180deg, #1688ff, #22bde9);
+  background-clip: padding-box;
+}
+
+/* Slightly more compact rows so more items remain visible before scrolling. */
+.sidebarGroupItem {
+  min-height: 60px;
+  margin-bottom: 2px;
+}
+
+.conversationRow {
+  min-height: 70px;
+}
+
+/* Fade hints make it visually obvious that more content can be scrolled to. */
+.sidebarGroups::after,
+.conversationList::after {
+  content: "";
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: block;
+  height: 15px;
+  margin-top: -15px;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to top,
+      rgba(247, 251, 255, .96),
+      transparent
+    );
+}
+
+/* Keep a scrollbar available on the full groups-directory viewport if that
+   page reuses the chat shell/content container. */
+.content {
+  min-height: 0;
+}
+
+/* Mobile: one shared sidebar scroll is more practical than two tiny panes. */
+@media (max-width: 820px) {
+  .sidebar {
+    max-height: 360px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #83bee9 transparent;
+  }
+
+  .sidebarGroups {
+    flex: none;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .sidebarGroupList,
+  .conversationList {
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .conversationList {
+    flex: none;
+  }
+}

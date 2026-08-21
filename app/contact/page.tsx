@@ -30,10 +30,7 @@ export default async function ContactPage() {
       <section className="page-hero contact-page-hero">
         <div className="shell">
 
-          <div className="eyebrow">
-            CONTACT PORTAL
-          </div>
-
+        
           <h1>
             بوابة التواصل
           </h1>

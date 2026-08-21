@@ -1,12 +1,15 @@
 import Link from "next/link";
-
 import {
   ArrowRight,
   ExternalLink,
-  ImageIcon,
+  Link2,
+  Save,
+  Sparkles,
   UserRound,
 } from "lucide-react";
 
+import AdminFeedback from "@/components/admin/AdminFeedback";
+import MemberProfileMediaManager from "@/components/member/MemberProfileMediaManager";
 import {
   PERMISSIONS,
   requirePermission,
@@ -26,13 +29,11 @@ export default async function MemberProfileEditorPage({
     success?: string;
   }>;
 }) {
-  const { user: authUser } =
-    await requirePermission(
-      PERMISSIONS.MEMBER_DASHBOARD,
-    );
+  const { user: authUser } = await requirePermission(
+    PERMISSIONS.MEMBER_DASHBOARD,
+  );
 
   const feedback = await searchParams;
-
   const user = await prisma.user.findUnique({
     where: { id: authUser.id },
     select: {
@@ -64,19 +65,24 @@ export default async function MemberProfileEditorPage({
 
   if (!user) return null;
 
-  const avatarVersion =
-    user.avatarUpdatedAt?.getTime() ?? 0;
-
-  const coverVersion =
-    user.profileCoverUpdatedAt?.getTime() ?? 0;
+  const avatarVersion = user.avatarUpdatedAt?.getTime() ?? 0;
+  const coverVersion = user.profileCoverUpdatedAt?.getTime() ?? 0;
+  const title =
+    user.structureItem?.title ?? user.position ?? "عضو في النادي الهندسي";
+  const departmentName = user.department?.nameAr ?? "الإدارة العامة";
+  const initials =
+    user.name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0))
+      .join("")
+      .toUpperCase() || "EC";
 
   return (
     <main className={styles.page}>
       <div className={styles.topBar}>
-        <Link
-          href="/member"
-          className={styles.backLink}
-        >
+        <Link href="/member" className={styles.backLink}>
           <ArrowRight size={18} />
           لوحة العضو
         </Link>
@@ -93,224 +99,135 @@ export default async function MemberProfileEditorPage({
       </div>
 
       <section className={styles.hero}>
+        <div className={styles.heroGlow} aria-hidden="true" />
+        <div className={styles.heroIcon}>
+          <UserRound size={24} />
+        </div>
         <div>
-          <span className={styles.eyebrow}>
-            Member Profile
-          </span>
           <h1>ملفي الشخصي</h1>
           <p>
-            عدّل النبذة والصور والمهارات والروابط التي ستظهر في صفحتك العامة داخل هيكلية النادي.
+            حدّث صورتك وغلافك ونبذتك ومهاراتك وروابطك لتظهر صفحتك العامة بصورة
+            احترافية ومتناسقة مع هوية النادي.
           </p>
         </div>
       </section>
 
-      {feedback.error && (
-        <div className={styles.error}>
-          {feedback.error}
-        </div>
-      )}
+      <AdminFeedback error={feedback.error} success={feedback.success} />
 
-      {feedback.success && (
-        <div className={styles.success}>
-          {feedback.success}
-        </div>
-      )}
-
-      <section className={styles.identityCard}>
-        <div
-          className={styles.coverPreview}
-          style={
-            user.profileCoverStoredName
-              ? {
-                  backgroundImage: `url(/members/${user.id}/cover?v=${coverVersion})`,
-                }
-              : undefined
+      <form action={updateMemberProfile} className={styles.form}>
+        <MemberProfileMediaManager
+          name={user.name}
+          title={title}
+          departmentName={departmentName}
+          initials={initials}
+          avatarUrl={
+            user.avatarStoredName
+              ? `/members/${user.id}/avatar?v=${avatarVersion}`
+              : null
           }
-        >
-          {!user.profileCoverStoredName && (
-            <ImageIcon size={34} />
-          )}
-        </div>
-
-        <div className={styles.identityBody}>
-          <div className={styles.avatarWrap}>
-            {user.avatarStoredName ? (
-              <img
-                src={`/members/${user.id}/avatar?v=${avatarVersion}`}
-                alt={`صورة ${user.name}`}
-              />
-            ) : (
-              <UserRound size={34} />
-            )}
-          </div>
-
-          <div>
-            <h2>{user.name}</h2>
-            <p>
-              {user.structureItem?.title ??
-                user.position ??
-                "عضو في النادي الهندسي"}
-            </p>
-            <span>
-              {user.department?.nameAr ??
-                "الإدارة العامة"}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <form
-        action={updateMemberProfile}
-        className={styles.form}
-      >
-        <section className={styles.card}>
-          <div className={styles.cardHead}>
-            <div>
-              <span>المحتوى</span>
-              <h2>نبذة عني</h2>
-            </div>
-          </div>
-
-          <label>
-            النبذة
-            <textarea
-              name="bio"
-              rows={7}
-              maxLength={1500}
-              defaultValue={user.profileBio ?? ""}
-              placeholder="اكتب نبذة مختصرة عنك، اهتماماتك ودورك في النادي..."
-            />
-          </label>
-
-          <label>
-            المهارات
-            <textarea
-              name="skills"
-              rows={4}
-              defaultValue={user.profileSkills.join(
-                "\n",
-              )}
-              placeholder={"React\nLeadership\nEmbedded Systems"}
-            />
-            <small>
-              اكتب كل مهارة في سطر أو افصل بينها بفاصلة.
-            </small>
-          </label>
-        </section>
+          coverUrl={
+            user.profileCoverStoredName
+              ? `/members/${user.id}/cover?v=${coverVersion}`
+              : null
+          }
+        />
 
         <section className={styles.card}>
           <div className={styles.cardHead}>
+            <div className={styles.cardHeadIcon}>
+              <Sparkles size={18} />
+            </div>
             <div>
-              <span>الصور</span>
-              <h2>الصورة الشخصية والغلاف</h2>
+              <span>المحتوى الشخصي</span>
+              <h2>نبذة عني والمهارات</h2>
+              <p>اكتب معلومات مختصرة وواضحة تعرّف الزائر عليك بسرعة.</p>
             </div>
           </div>
 
-          <div className={styles.twoColumns}>
-            <label>
-              الصورة الشخصية
-              <input
-                type="file"
-                name="avatar"
-                accept="image/jpeg,image/png,image/webp"
+          <div className={styles.contentGrid}>
+            <label className={styles.fieldCard}>
+              <span className={styles.fieldLabel}>النبذة</span>
+              <textarea
+                name="bio"
+                rows={8}
+                maxLength={1500}
+                defaultValue={user.profileBio ?? ""}
+                placeholder="اكتب نبذة مختصرة عنك، اهتماماتك ودورك في النادي..."
               />
-              <small>
-                JPG / PNG / WebP — حتى 5MB
-              </small>
+              <small>حتى 1500 حرف.</small>
             </label>
 
-            <label>
-              صورة الغلاف
-              <input
-                type="file"
-                name="cover"
-                accept="image/jpeg,image/png,image/webp"
+            <label className={styles.fieldCard}>
+              <span className={styles.fieldLabel}>المهارات</span>
+              <textarea
+                name="skills"
+                rows={8}
+                defaultValue={user.profileSkills.join("\n")}
+                placeholder={"React\nLeadership\nEmbedded Systems"}
               />
-              <small>
-                JPG / PNG / WebP — حتى 8MB
-              </small>
+              <small>اكتب كل مهارة في سطر أو افصل بينها بفاصلة.</small>
             </label>
-          </div>
-
-          <div className={styles.removeRow}>
-            {user.avatarStoredName && (
-              <label className={styles.checkLabel}>
-                <input
-                  type="checkbox"
-                  name="removeAvatar"
-                />
-                حذف الصورة الشخصية الحالية
-              </label>
-            )}
-
-            {user.profileCoverStoredName && (
-              <label className={styles.checkLabel}>
-                <input
-                  type="checkbox"
-                  name="removeCover"
-                />
-                حذف صورة الغلاف الحالية
-              </label>
-            )}
           </div>
         </section>
 
         <section className={styles.card}>
           <div className={styles.cardHead}>
+            <div className={styles.cardHeadIcon}>
+              <Link2 size={18} />
+            </div>
             <div>
               <span>التواصل</span>
               <h2>روابط اختيارية</h2>
+              <p>أضف حساباتك المهنية أو الاجتماعية التي تريد إظهارها للزوار.</p>
             </div>
           </div>
 
-          <div className={styles.twoColumns}>
-            <label>
-              LinkedIn
+          <div className={styles.linksGrid}>
+            <label className={styles.fieldCard}>
+              <span className={styles.fieldLabel}>LinkedIn</span>
               <input
                 type="url"
                 name="linkedIn"
                 dir="ltr"
-                defaultValue={
-                  user.profileLinkedIn ?? ""
-                }
+                defaultValue={user.profileLinkedIn ?? ""}
                 placeholder="https://linkedin.com/in/..."
               />
             </label>
 
-            <label>
-              GitHub
+            <label className={styles.fieldCard}>
+              <span className={styles.fieldLabel}>GitHub</span>
               <input
                 type="url"
                 name="github"
                 dir="ltr"
-                defaultValue={
-                  user.profileGithub ?? ""
-                }
+                defaultValue={user.profileGithub ?? ""}
                 placeholder="https://github.com/..."
               />
             </label>
 
-            <label>
-              Instagram
+            <label className={styles.fieldCard}>
+              <span className={styles.fieldLabel}>Instagram</span>
               <input
                 type="url"
                 name="instagram"
                 dir="ltr"
-                defaultValue={
-                  user.profileInstagram ?? ""
-                }
+                defaultValue={user.profileInstagram ?? ""}
                 placeholder="https://instagram.com/..."
               />
             </label>
           </div>
         </section>
 
-        <button
-          type="submit"
-          className={styles.saveButton}
-        >
-          حفظ الملف الشخصي
-        </button>
+        <div className={styles.saveBar}>
+          <div>
+            <strong>جاهز للحفظ؟</strong>
+            <span>سيتم تحديث صفحتك العامة مباشرة بعد حفظ التغييرات.</span>
+          </div>
+          <button type="submit" className={styles.saveButton}>
+            <Save size={18} />
+            حفظ الملف الشخصي
+          </button>
+        </div>
       </form>
     </main>
   );

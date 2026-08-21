@@ -1,5 +1,6 @@
 import {
   MessageCircleMore,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 
@@ -20,18 +21,32 @@ export default async function ChatHomePage({
         <div className={styles.feedbackError}>{feedback.error}</div>
       )}
 
-      <div className={styles.emptyIcon}>
-        <MessageCircleMore size={36} />
+      <div className={styles.emptyVisual} aria-hidden="true">
+        <span className={styles.emptyOrbit} />
+        <span className={styles.emptyOrbitSecondary} />
+
+        <div className={styles.emptyIcon}>
+          <MessageCircleMore size={38} />
+        </div>
       </div>
 
       <h1>محادثات أعضاء النادي</h1>
+
       <p>
-        اختر محادثة من القائمة أو ابدأ محادثة جديدة مع أحد أعضاء النادي.
+        اختر محادثة من القائمة، أو ابدأ محادثة جديدة مع أحد أعضاء
+        النادي والإدارة.
       </p>
 
-      <div className={styles.emptyHint}>
-        <Users size={17} />
-        الشات متاح للأعضاء والإدارة فقط
+      <div className={styles.emptyHints}>
+        <span className={styles.emptyHint}>
+          <Users size={17} />
+          تواصل مباشر بين الأعضاء
+        </span>
+
+        <span className={styles.emptyHint}>
+          <ShieldCheck size={17} />
+          متاح للأعضاء والإدارة فقط
+        </span>
       </div>
     </section>
   );

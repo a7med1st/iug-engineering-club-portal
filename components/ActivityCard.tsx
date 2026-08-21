@@ -59,12 +59,13 @@ export default function ActivityCard({
         </div>
       </div>
       {!past && (
-        <a
-          className="primary-btn activity-register"
-          href={`/activities/${activity.id}/register`}
-        >
-          التسجيل <ArrowUpLeft size={18} />
-        </a>
+<a
+  className="primary-btn activity-register fancy-primary-btn"
+  href={`/activities/${activity.id}/register`}
+>
+  <span>التسجيل</span>
+  <ArrowUpLeft size={18} />
+</a>
       )}
       {past && <span className="past-badge">نشاط منتهٍ</span>}
     </article>

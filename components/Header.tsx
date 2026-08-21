@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-
+import { ArrowLeft } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import MainNav from "@/components/MainNav";
 import MobileNavigation from "@/components/MobileNavigation";
@@ -78,30 +78,28 @@ export default async function Header() {
 )}
 
         <div className="header-actions desktop-header-actions">
-          {portal && (
-            <Link
-              className="ghost-btn"
-              href={portal.href}
-            >
-              {portal.label}
-            </Link>
-          )}
+{portal && (
+  <Link
+    className="ghost-btn fancy-outline-btn"
+    href={portal.href}
+  >
+    <span>{portal.label}</span>
+    <ArrowLeft size={16} />
+  </Link>
+)}
 
           {session ? (
             <form
               action="/api/auth/logout"
               method="post"
             >
-              <button
-                className="primary-btn small"
-                type="submit"
-              >
-                تسجيل الخروج
-              </button>
+<button className="primary-btn fancy-primary-btn">
+  <span>تسجيل الخروج</span>
+</button>
             </form>
           ) : (
             <Link
-              className="primary-btn small"
+              className="primary-btn fancy-primary-btn"
               href="/login"
             >
               تسجيل الدخول

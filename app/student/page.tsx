@@ -1,4 +1,9 @@
 import Link from "next/link";
+
+import {
+  Award,
+  Compass,
+} from "lucide-react";
 import StudentCancelRegistrationButton from "@/components/student/StudentCancelRegistrationButton";
 import StudentAvatarUploader from "@/components/student/StudentAvatarUploader";
 import StudentProfileEditor from "@/components/student/StudentProfileEditor";
@@ -9,7 +14,6 @@ import {
 import { prisma } from "@/lib/prisma";
 import StudentAcceptanceCard from "@/components/student/StudentAcceptanceCard";
 import styles from "./student.module.css";
-
 export const dynamic = "force-dynamic";
 
 const statusLabels = {
@@ -188,12 +192,6 @@ export default async function StudentDashboardPage({
         item.status === "APPROVED",
     ).length;
 
-  const rejectedCount =
-    submissions.filter(
-      (item) =>
-        item.status === "REJECTED",
-    ).length;
-
   const now = new Date();
 
   const activeCount =
@@ -261,32 +259,81 @@ export default async function StudentDashboardPage({
       ================================================== */}
 
       <section className={styles.hero}>
-        <div>
-          <span
-            className={styles.eyebrow}
-          >
-            لوحة الطالب
-          </span>
+        <div className={styles.heroContent}>
+          <h1 className={styles.heroTitle}>
+            <span className={styles.heroWelcome}>
+              مرحبًا،
+            </span>
 
-          <h1>
-            مرحبًا، {user.name}
+            <span className={styles.heroStudentName}>
+              {user.name}
+            </span>
           </h1>
 
-          <p>
-            تابع تسجيلاتك في الأنشطة،
-            حالة قبولك، وبيانات حسابك
-            من مكان واحد.
+          <p className={styles.heroDescription}>
+            تابع أنشطتك، واطّلع على معلومات حسابك وكل ما تحتاجه
+            في مكان واحد.
           </p>
+
+          <div className={styles.heroActions}>
+            <Link
+              href="/activities"
+              className={styles.activitiesLink}
+            >
+              <Compass
+                size={19}
+                strokeWidth={2}
+              />
+
+              <span>
+                استكشف الأنشطة
+              </span>
+            </Link>
+
+            <Link
+              href="/student/certificates"
+              className={styles.certificatesLink}
+            >
+              <Award
+                size={19}
+                strokeWidth={2}
+              />
+
+              <span>
+                شهاداتي
+              </span>
+            </Link>
+          </div>
         </div>
 
-        <Link
-          href="/activities"
-          className={
-            styles.activitiesLink
-          }
+        <div
+          className={styles.heroVisual}
+          aria-hidden="true"
         >
-          استكشف الأنشطة
-        </Link>
+          <img
+            src="/images/student/hero/engineering-1.png"
+            alt=""
+            className={`${styles.heroFloatingImage} ${styles.heroImageOne}`}
+          />
+
+          <img
+            src="/images/student/hero/engineering-2.png"
+            alt=""
+            className={`${styles.heroFloatingImage} ${styles.heroImageTwo}`}
+          />
+
+          <img
+            src="/images/student/hero/engineering-3.png"
+            alt=""
+            className={`${styles.heroFloatingImage} ${styles.heroImageThree}`}
+          />
+
+          <img
+            src="/images/student/hero/engineering-4.png"
+            alt=""
+            className={`${styles.heroFloatingImage} ${styles.heroImageFour}`}
+          />
+        </div>
       </section>
 
       {/* ==================================================
@@ -306,6 +353,11 @@ export default async function StudentDashboardPage({
           }
         >
           <StudentAvatarUploader
+            key={`${Boolean(
+              user.avatarStoredName,
+            )}-${user.avatarUpdatedAt
+              ?.getTime()
+              .toString() ?? "0"}`}
             name={user.name}
             initials={initials}
             hasAvatar={Boolean(
@@ -335,6 +387,15 @@ export default async function StudentDashboardPage({
             }
             createdAtLabel={
               createdAtLabel
+            }
+            initials={initials}
+            hasAvatar={Boolean(
+              user.avatarStoredName,
+            )}
+            avatarVersion={
+              user.avatarUpdatedAt
+                ?.getTime()
+                .toString() ?? "0"
             }
           />
         </aside>
@@ -444,7 +505,6 @@ export default async function StudentDashboardPage({
               }
             >
               <div>
-                <span>نشاطاتي</span>
 
                 <h2>
                   الأنشطة المسجل فيها

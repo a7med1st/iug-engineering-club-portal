@@ -1,0 +1,125 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f4f6f9;
+}
+
+.card {
+  width: min(100%, 620px);
+  padding: 34px;
+  border: 1px solid #dfe4ea;
+  border-radius: 22px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 16px 50px rgba(30, 45, 70, .08);
+}
+
+.icon {
+  width: 74px;
+  height: 74px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(64, 94, 172, .1);
+  color: #405eac;
+}
+
+.eyebrow {
+  color: #7a8590;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.card h1 {
+  margin: 7px 0 8px;
+}
+
+.card > p {
+  max-width: 470px;
+  margin: 0 auto 22px;
+  color: #6f7a84;
+  line-height: 1.8;
+}
+
+.card form {
+  display: grid;
+  gap: 9px;
+  text-align: right;
+}
+
+.card form label {
+  color: #56616d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 0 13px;
+  border: 1px solid #dfe4ea;
+  border-radius: 11px;
+}
+
+.inputRow svg {
+  flex: 0 0 auto;
+  color: #405eac;
+}
+
+.inputRow input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+}
+
+.card button,
+.card a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 10px;
+  background: #405eac;
+  color: #fff;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.card > small {
+  display: block;
+  margin-top: 14px;
+  color: #818b94;
+  line-height: 1.7;
+}
+
+.error {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(196, 61, 72, .09);
+  color: #c43d48;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+@media (max-width: 600px) {
+  .page {
+    padding: 12px;
+  }
+
+  .card {
+    padding: 26px 16px;
+  }
+}

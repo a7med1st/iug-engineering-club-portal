@@ -1,6 +1,4 @@
-import {
-  readFile,
-} from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { prisma } from "@/lib/prisma";
@@ -19,14 +17,13 @@ export async function GET(
 ) {
   const { id } = await params;
 
+  // لا نشترط وجود العضو داخل الهيكلية هنا؛ صفحة الملف الشخصي
+  // تحتاج عرض الصورة مباشرة بعد الحفظ حتى لو لم يكن للعضو StructureItem.
   const user = await prisma.user.findFirst({
     where: {
       id,
       role: {
         in: ["MEMBER", "ADMIN"],
-      },
-      structureItem: {
-        isNot: null,
       },
     },
     select: {
@@ -35,13 +32,8 @@ export async function GET(
     },
   });
 
-  if (
-    !user?.avatarStoredName ||
-    !user.avatarMime
-  ) {
-    return new Response("Not found", {
-      status: 404,
-    });
+  if (!user?.avatarStoredName || !user.avatarMime) {
+    return new Response("Not found", { status: 404 });
   }
 
   try {
@@ -50,22 +42,18 @@ export async function GET(
         process.cwd(),
         "storage",
         "avatars",
-        path.basename(
-          user.avatarStoredName,
-        ),
+        path.basename(user.avatarStoredName),
       ),
     );
 
     return new Response(file, {
       headers: {
         "Content-Type": user.avatarMime,
-        "Cache-Control":
-          "public, max-age=3600",
+        // الصفحة تضيف ?v=updatedAt، لذلك يمكن الكاش بدون إظهار نسخة قديمة.
+        "Cache-Control": "public, max-age=3600",
       },
     });
   } catch {
-    return new Response("Not found", {
-      status: 404,
-    });
+    return new Response("Not found", { status: 404 });
   }
 }

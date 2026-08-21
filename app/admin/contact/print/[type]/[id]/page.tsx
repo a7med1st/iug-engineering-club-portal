@@ -1,7 +1,5 @@
 import Image from "next/image";
-import {
-  notFound,
-} from "next/navigation";
+import { notFound } from "next/navigation";
 
 import PrintButton from "@/components/admin/PrintButton";
 
@@ -12,12 +10,27 @@ import {
 
 import { prisma } from "@/lib/prisma";
 
+import styles from "./print.module.css";
+
 type Props = {
   params: Promise<{
     type: string;
     id: string;
   }>;
 };
+
+type PrintRow = {
+  label: string;
+  value: string;
+  wide?: boolean;
+};
+
+function formatDate(value: Date) {
+  return new Intl.DateTimeFormat("ar-PS", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(value);
+}
 
 export default async function ContactPrintPage({
   params,
@@ -26,31 +39,21 @@ export default async function ContactPrintPage({
     PERMISSIONS.CONTACT_MANAGE,
   );
 
-  const {
-    type,
-    id,
-  } = await params;
+  const { type, id } = await params;
 
   let title = "";
-
-  let rows: {
-    label: string;
-    value: string;
-  }[] = [];
+  let subtitle = "";
+  let rows: PrintRow[] = [];
+  let createdAt: Date | null = null;
 
   /* =========================================================
      COMPLAINT
   ========================================================= */
 
-  if (
-    type === "complaint"
-  ) {
+  if (type === "complaint") {
     const item =
       await prisma.complaint.findUnique({
-        where: {
-          id,
-        },
-
+        where: { id },
         include: {
           department: true,
         },
@@ -60,55 +63,44 @@ export default async function ContactPrintPage({
       notFound();
     }
 
-    title =
-      "شكوى / ملاحظة";
+    title = "شكوى / ملاحظة";
+    subtitle =
+      "بيانات الشكوى أو الملاحظة المقدمة عبر بوابة التواصل في النادي الهندسي.";
+    createdAt = item.createdAt;
 
     rows = [
       {
         label: "اسم الطالب",
-
         value:
           item.studentName ||
           "غير مذكور",
       },
       {
-        label:
-          "وسيلة التواصل",
-
+        label: "وسيلة التواصل",
         value:
           item.contact ||
           "غير مذكورة",
       },
       {
         label: "التخصص",
-
         value:
           item.department.nameAr,
       },
       {
-        label:
-          "يرغب بالحصول على رد",
-
+        label: "يرغب بالحصول على رد",
         value:
           item.wantsReply
             ? "نعم"
             : "لا",
       },
       {
-        label:
-          "تفاصيل الشكوى",
-
-        value:
-          item.details,
+        label: "تفاصيل الشكوى",
+        value: item.details,
+        wide: true,
       },
       {
-        label:
-          "تاريخ الإرسال",
-
-        value:
-          item.createdAt.toLocaleString(
-            "ar-EG",
-          ),
+        label: "تاريخ الإرسال",
+        value: formatDate(item.createdAt),
       },
     ];
   }
@@ -117,15 +109,10 @@ export default async function ContactPrintPage({
      SUGGESTION
   ========================================================= */
 
-  else if (
-    type === "suggestion"
-  ) {
+  else if (type === "suggestion") {
     const item =
       await prisma.suggestion.findUnique({
-        where: {
-          id,
-        },
-
+        where: { id },
         include: {
           department: true,
         },
@@ -135,49 +122,40 @@ export default async function ContactPrintPage({
       notFound();
     }
 
-    title =
-      "اقتراح طالب";
+    title = "اقتراح طالب";
+    subtitle =
+      "تفاصيل الاقتراح المقدم من الطالب ومجالات الاهتمام والفكرة المقترحة.";
+    createdAt = item.createdAt;
 
     rows = [
       {
         label: "اسم الطالب",
-        value:
-          item.studentName,
+        value: item.studentName,
       },
       {
         label: "رقم الواتساب",
-        value:
-          item.whatsapp,
+        value: item.whatsapp,
       },
       {
         label: "التخصص",
-
         value:
           item.department.nameAr,
       },
       {
-        label:
-          "المواضيع المقترحة",
-
+        label: "المواضيع المقترحة",
         value:
           item.topics ||
           "غير مذكورة",
+        wide: true,
       },
       {
-        label:
-          "فكرة الفعالية أو المشروع",
-
-        value:
-          item.projectIdea,
+        label: "فكرة الفعالية أو المشروع",
+        value: item.projectIdea,
+        wide: true,
       },
       {
-        label:
-          "تاريخ الإرسال",
-
-        value:
-          item.createdAt.toLocaleString(
-            "ar-EG",
-          ),
+        label: "تاريخ الإرسال",
+        value: formatDate(item.createdAt),
       },
     ];
   }
@@ -186,89 +164,64 @@ export default async function ContactPrintPage({
      COLLABORATION
   ========================================================= */
 
-  else if (
-    type === "collaboration"
-  ) {
+  else if (type === "collaboration") {
     const item =
       await prisma.collaborationRequest.findUnique({
-        where: {
-          id,
-        },
+        where: { id },
       });
 
     if (!item) {
       notFound();
     }
 
-    title =
-      "طلب تعاون";
+    title = "طلب تعاون";
+    subtitle =
+      "بيانات طلب التعاون والجهة المتقدمة ومعلومات التواصل والتفاصيل المرفقة.";
+    createdAt = item.createdAt;
 
     rows = [
       {
         label:
           "اسم الشخص / المؤسسة / الجهة",
-
-        value:
-          item.entityName,
+        value: item.entityName,
       },
       {
-        label:
-          "مسؤول التواصل",
-
-        value:
-          item.contactPerson,
+        label: "مسؤول التواصل",
+        value: item.contactPerson,
       },
       {
-        label:
-          "رقم الهاتف",
-
-        value:
-          item.phone,
+        label: "رقم الهاتف",
+        value: item.phone,
       },
       {
-        label:
-          "البريد الإلكتروني",
-
-        value:
-          item.email,
+        label: "البريد الإلكتروني",
+        value: item.email,
       },
       {
         label:
           "الموقع / التواصل الاجتماعي",
-
-        value:
-          item.socialUrl,
+        value: item.socialUrl,
+        wide: true,
       },
       {
-        label:
-          "المجال",
-
-        value:
-          item.field,
+        label: "المجال",
+        value: item.field,
       },
       {
-        label:
-          "وصف التعاون",
-
-        value:
-          item.description,
+        label: "وصف التعاون",
+        value: item.description,
+        wide: true,
       },
       {
-        label:
-          "ملاحظات إضافية",
-
+        label: "ملاحظات إضافية",
         value:
           item.additionalNotes ||
           "لا يوجد",
+        wide: true,
       },
       {
-        label:
-          "تاريخ الإرسال",
-
-        value:
-          item.createdAt.toLocaleString(
-            "ar-EG",
-          ),
+        label: "تاريخ الإرسال",
+        value: formatDate(item.createdAt),
       },
     ];
   }
@@ -281,63 +234,129 @@ export default async function ContactPrintPage({
     notFound();
   }
 
+  const generatedAt = new Date();
+
   return (
-    <main className="official-print-page">
-      <div className="print-actions">
+    <main
+      className={styles.page}
+      dir="rtl"
+      data-contact-print-root
+    >
+      <style>{`
+        @media print {
+          html,
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+
+          body * {
+            visibility: hidden !important;
+          }
+
+          [data-contact-print-root],
+          [data-contact-print-root] * {
+            visibility: visible !important;
+          }
+
+          [data-contact-print-root] {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+          }
+        }
+      `}</style>
+
+      <div className={styles.toolbar}>
         <PrintButton />
       </div>
 
-      <article className="official-print-sheet">
-        <header className="official-print-header">
+      <article className={styles.sheet}>
+        <header className={styles.letterhead}>
           <Image
             src="/images/engineering-club-letterhead-header.png"
             alt="ترويسة النادي الهندسي الرسمية"
             width={2481}
             height={550}
-            className="official-letterhead"
+            className={styles.letterheadImage}
             priority
           />
         </header>
 
-        <div className="official-print-body">
-          <div className="official-print-title">
-            <span>
-              نموذج رسمي
-            </span>
+        <div className={styles.content}>
+          <section className={styles.documentHero}>
+            <div className={styles.documentHeroCopy}>
+              <h1>{title}</h1>
+              <p>{subtitle}</p>
+            </div>
 
-            <h2>
-              {title}
-            </h2>
-          </div>
+            <div className={styles.metaCard}>
+              <div>
+                <span>نوع المستند</span>
+                <strong>{title}</strong>
+              </div>
 
-          <div className="official-print-data">
-            {rows.map(
-              (row) => (
-                <div
-                  className="official-print-row"
+              <div>
+                <span>تاريخ الإرسال</span>
+                <strong>
+                  {createdAt
+                    ? formatDate(createdAt)
+                    : "—"}
+                </strong>
+              </div>
+
+              <div>
+                <span>تاريخ استخراج المستند</span>
+                <strong>
+                  {formatDate(generatedAt)}
+                </strong>
+              </div>
+            </div>
+          </section>
+
+          <div
+            className={styles.clubStripe}
+            aria-hidden="true"
+          />
+
+          <section className={styles.dataSection}>
+            <h2>بيانات الطلب</h2>
+
+            <div className={styles.dataGrid}>
+              {rows.map((row) => (
+                <article
                   key={row.label}
+                  className={`${styles.dataCard} ${
+                    row.wide
+                      ? styles.dataCardWide
+                      : ""
+                  }`}
                 >
-                  <strong>
-                    {row.label}
-                  </strong>
+                  <span>{row.label}</span>
+                  <p>{row.value}</p>
+                </article>
+              ))}
+            </div>
+          </section>
 
-                  <p>
-                    {row.value}
-                  </p>
-                </div>
-              ),
-            )}
-          </div>
+          <footer className={styles.footer}>
+            <div>
+              <strong>
+                النادي الهندسي للطلاب
+              </strong>
+              <span>
+                الجامعة الإسلامية بغزة
+              </span>
+            </div>
 
-          <footer className="official-print-footer">
-            <span>
-              النادي الهندسي للطلاب
-            </span>
-
-            <span>
-              تم استخراج هذا المستند
-              من النظام الإلكتروني
-            </span>
+            <p>
+              تم استخراج هذا المستند من النظام
+              الإلكتروني للنادي الهندسي، ويعكس
+              البيانات المسجلة وقت إنشاء النسخة.
+            </p>
           </footer>
         </div>
       </article>

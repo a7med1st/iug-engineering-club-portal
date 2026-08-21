@@ -168,9 +168,6 @@ export default async function DelegatesPage() {
         </div>
 
         <div>
-          <span className={styles.eyebrow}>
-            Engineering Club
-          </span>
           <h1>الهيكلية التنظيمية</h1>
           <p>
             تعرف على رئيس النادي، نائبه، العلاقات العامة، مناديب الأقسام وأعضاء النادي. اضغط على أي عضو لعرض ملفه الشخصي.

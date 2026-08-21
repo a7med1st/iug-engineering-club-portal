@@ -158,7 +158,6 @@ export default function NotificationsClient() {
         </div>
 
         <div>
-          <span>NOTIFICATIONS CENTER</span>
           <h1>الإشعارات</h1>
           <p>
             تابع الرسائل والتنبيهات المهمة من مكان واحد.

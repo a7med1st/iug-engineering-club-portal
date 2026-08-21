@@ -635,12 +635,6 @@ export default function NotificationBell() {
             className={styles.dropdownHeader}
           >
             <div>
-              <span
-                className={styles.eyebrow}
-              >
-                NOTIFICATIONS
-              </span>
-
               <h2>
                 الإشعارات
               </h2>

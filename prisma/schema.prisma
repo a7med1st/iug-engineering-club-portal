@@ -187,12 +187,13 @@ model User {
 // =========================================================
 
 model Department {
-  id         String @id @default(cuid())
-  nameAr     String
-  nameEn     String
-  slug       String @unique
-  coverImage String
-  sortOrder  Int    @default(0)
+  id          String  @id @default(cuid())
+  nameAr      String
+  nameEn      String
+  slug        String  @unique
+  coverImage  String
+  detailImage String?
+  sortOrder   Int     @default(0)
 
   users          User[]
   activities     ActivityDepartment[]
@@ -342,6 +343,8 @@ model ActivityFormSubmission {
   @@unique([formId, userId])
   @@index([formId, submittedAt])
   @@index([userId])
+
+  certificate Certificate?
 }
 
 // =========================================================
@@ -641,4 +644,20 @@ model Notification {
   @@unique([userId, chatMessageId])
   @@index([userId, readAt, createdAt])
   @@index([chatConversationId])
+}
+
+
+model Certificate {
+  id               String   @id @default(cuid())
+  submissionId     String   @unique
+  verificationCode String   @unique
+  issuedAt         DateTime @default(now())
+  revokedAt        DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  submission ActivityFormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([issuedAt])
+  @@index([revokedAt])
 }
