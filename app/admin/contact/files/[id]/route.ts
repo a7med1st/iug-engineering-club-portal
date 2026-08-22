@@ -4,10 +4,7 @@ import {
 
 import path from "path";
 
-import {
-  PERMISSIONS,
-  requirePermission,
-} from "@/lib/permissions";
+import { requireContactAccess } from "@/lib/permissions";
 
 import { prisma } from "@/lib/prisma";
 
@@ -24,17 +21,18 @@ export async function GET(
     }>;
   },
 ) {
-  await requirePermission(
-    PERMISSIONS.CONTACT_MANAGE,
-  );
+  const { user } = await requireContactAccess();
 
   const { id } =
     await params;
 
   const request =
-    await prisma.collaborationRequest.findUnique({
+    await prisma.collaborationRequest.findFirst({
       where: {
         id,
+        ...(user.role === "ADMIN"
+          ? {}
+          : { assignedToId: user.id }),
       },
     });
 

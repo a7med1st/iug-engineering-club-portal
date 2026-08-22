@@ -3,10 +3,7 @@ import { notFound } from "next/navigation";
 
 import PrintButton from "@/components/admin/PrintButton";
 
-import {
-  PERMISSIONS,
-  requirePermission,
-} from "@/lib/permissions";
+import { requireContactAccess } from "@/lib/permissions";
 
 import { prisma } from "@/lib/prisma";
 
@@ -35,9 +32,12 @@ function formatDate(value: Date) {
 export default async function ContactPrintPage({
   params,
 }: Props) {
-  await requirePermission(
-    PERMISSIONS.CONTACT_MANAGE,
-  );
+  const { user } = await requireContactAccess();
+
+  const assignmentScope =
+    user.role === "ADMIN"
+      ? {}
+      : { assignedToId: user.id };
 
   const { type, id } = await params;
 
@@ -52,8 +52,8 @@ export default async function ContactPrintPage({
 
   if (type === "complaint") {
     const item =
-      await prisma.complaint.findUnique({
-        where: { id },
+      await prisma.complaint.findFirst({
+        where: { id, ...assignmentScope },
         include: {
           department: true,
         },
@@ -111,8 +111,8 @@ export default async function ContactPrintPage({
 
   else if (type === "suggestion") {
     const item =
-      await prisma.suggestion.findUnique({
-        where: { id },
+      await prisma.suggestion.findFirst({
+        where: { id, ...assignmentScope },
         include: {
           department: true,
         },
@@ -166,8 +166,8 @@ export default async function ContactPrintPage({
 
   else if (type === "collaboration") {
     const item =
-      await prisma.collaborationRequest.findUnique({
-        where: { id },
+      await prisma.collaborationRequest.findFirst({
+        where: { id, ...assignmentScope },
       });
 
     if (!item) {

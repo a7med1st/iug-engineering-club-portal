@@ -1,10 +1,23 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
+import {
+  getEmailValidationMessage,
+  validateEmail,
+} from "@/lib/email-validation";
+import {
+  createInitialEmailVerificationCode,
+  invalidateUndeliveredVerificationCode,
+} from "@/lib/email-verification";
+import {
+  assertEmailDeliveryConfigured,
+  sendEmailVerificationCode,
+} from "@/lib/mail";
 import {
   PERMISSIONS,
   canAccessActivityDepartments,
@@ -423,7 +436,7 @@ export async function createMember(
 
   return runAdminAction(
     "/admin/members",
-    "تم إنشاء حساب العضو بنجاح.",
+    "تم إنشاء حساب العضو وإرسال رمز التحقق إلى بريده بنجاح.",
     "تعذر إنشاء حساب العضو. تحقق من البيانات وحاول مجددًا.",
 
     async () => {
@@ -433,11 +446,24 @@ export async function createMember(
         "الاسم",
       );
 
-      const email = requiredText(
-        formData,
-        "email",
-        "البريد الإلكتروني",
-      ).toLowerCase();
+      const emailResult = validateEmail(
+        requiredText(
+          formData,
+          "email",
+          "البريد الإلكتروني",
+        ),
+      );
+
+      if (!emailResult.valid) {
+        throw new AdminActionError(
+          getEmailValidationMessage(
+            emailResult,
+          ) ??
+            "يرجى إدخال بريد إلكتروني صحيح.",
+        );
+      }
+
+      const email = emailResult.email;
 
       const password = String(
         formData.get("password") ?? "",
@@ -476,16 +502,6 @@ export async function createMember(
         );
       }
 
-      if (
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-          email,
-        )
-      ) {
-        throw new AdminActionError(
-          "أدخل بريدًا إلكترونيًا صالحًا.",
-        );
-      }
-
       if (password.length < 8) {
         throw new AdminActionError(
           "يجب ألا تقل كلمة المرور عن 8 أحرف.",
@@ -510,9 +526,12 @@ export async function createMember(
       );
 
       const existingUser =
-        await prisma.user.findUnique({
+        await prisma.user.findFirst({
           where: {
-            email,
+            email: {
+              equals: email,
+              mode: "insensitive",
+            },
           },
 
           select: {
@@ -532,17 +551,92 @@ export async function createMember(
           12,
         );
 
-      await prisma.user.create({
-        data: {
-          name,
-          email,
-          passwordHash,
-          role: "MEMBER",
-          position,
-          departmentId,
-          memberPermissions,
-        },
-      });
+      try {
+        assertEmailDeliveryConfigured();
+      } catch {
+        throw new AdminActionError(
+          "خدمة إرسال البريد غير مهيأة. لم يتم إنشاء حساب العضو.",
+        );
+      }
+
+      let registration:
+        | {
+            user: {
+              id: string;
+              email: string;
+              name: string;
+            };
+            verification: {
+              code: string;
+              codeHash: string;
+            };
+          }
+        | undefined;
+
+      try {
+        registration =
+          await prisma.$transaction(
+            async (transaction) => {
+              const user =
+                await transaction.user.create({
+                  data: {
+                    name,
+                    email,
+                    emailVerifiedAt: null,
+                    passwordHash,
+                    role: "MEMBER",
+                    position,
+                    departmentId,
+                    memberPermissions,
+                  },
+                  select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                  },
+                });
+
+              const verification =
+                await createInitialEmailVerificationCode(
+                  transaction,
+                  user.id,
+                );
+
+              return { user, verification };
+            },
+          );
+      } catch (error) {
+        if (
+          error instanceof
+            Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          throw new AdminActionError(
+            "هذا البريد الإلكتروني مستخدم بالفعل.",
+          );
+        }
+
+        throw error;
+      }
+
+      try {
+        await sendEmailVerificationCode({
+          email: registration.user.email,
+          name: registration.user.name,
+          code: registration.verification.code,
+        });
+      } catch {
+        await invalidateUndeliveredVerificationCode(
+          registration.user.id,
+          registration.verification.codeHash,
+        );
+
+        revalidatePath("/admin/members");
+
+        throw new AdminActionError(
+          "تم إنشاء حساب العضو، لكن تعذر إرسال رمز التحقق. يمكن للعضو طلب رمز جديد عند محاولة تسجيل الدخول.",
+        );
+      }
 
       revalidatePath(
         "/admin/members",

@@ -230,7 +230,7 @@
     0 20px 42px rgba(0, 13, 29, .34),
     0 0 0 1px rgba(22, 136, 255, .12);
   color: inherit;
-  cursor: zoom-in;
+  cursor: pointer;
   transition:
     transform .28s cubic-bezier(.22, 1, .36, 1),
     box-shadow .28s ease,
@@ -746,7 +746,7 @@
   background: rgba(2, 12, 24, .76);
   backdrop-filter: blur(12px);
   opacity: 0;
-  cursor: zoom-out;
+  cursor: pointer;
   transition: opacity .42s ease;
 }
 

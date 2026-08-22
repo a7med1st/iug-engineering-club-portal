@@ -404,7 +404,7 @@ function dashboardForRole(
   return "/student";
 }
 
-async function getCurrentPermissionUser() {
+export async function getCurrentPermissionUser() {
   const session =
     await getSession();
 
@@ -444,6 +444,68 @@ async function getCurrentPermissionUser() {
   return {
     session,
     user,
+  };
+}
+
+export async function hasAssignedContactRequests(
+  userId: string,
+) {
+  const [complaint, suggestion, collaboration] =
+    await Promise.all([
+      prisma.complaint.findFirst({
+        where: { assignedToId: userId },
+        select: { id: true },
+      }),
+      prisma.suggestion.findFirst({
+        where: { assignedToId: userId },
+        select: { id: true },
+      }),
+      prisma.collaborationRequest.findFirst({
+        where: { assignedToId: userId },
+        select: { id: true },
+      }),
+    ]);
+
+  return Boolean(
+    complaint || suggestion || collaboration,
+  );
+}
+
+export async function requireContactAccess() {
+  const auth = await getCurrentPermissionUser();
+
+  if (
+    hasPermission(
+      auth.user.role,
+      PERMISSIONS.CONTACT_MANAGE,
+      auth.user.memberPermissions,
+    ) ||
+    (await hasAssignedContactRequests(auth.user.id))
+  ) {
+    return auth;
+  }
+
+  redirect(dashboardForRole(auth.user.role));
+}
+
+export async function requireAdminAreaAccess() {
+  const auth = await getCurrentPermissionUser();
+  const hasAdminPermission = hasAnyPermission(
+    auth.user.role,
+    ADMIN_AREA_PERMISSIONS,
+    auth.user.memberPermissions,
+  );
+  const hasContactAssignments = hasAdminPermission
+    ? false
+    : await hasAssignedContactRequests(auth.user.id);
+
+  if (!hasAdminPermission && !hasContactAssignments) {
+    redirect(dashboardForRole(auth.user.role));
+  }
+
+  return {
+    ...auth,
+    hasContactAssignments,
   };
 }
 

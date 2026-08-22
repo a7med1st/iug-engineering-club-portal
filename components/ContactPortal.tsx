@@ -1,12 +1,15 @@
 "use client";
 
 import {
+  CheckCircle2,
+  CircleAlert,
   Handshake,
   Lightbulb,
   MessageSquareWarning,
   Send,
   UploadCloud,
 } from "lucide-react";
+import Link from "next/link";
 
 import {
   useActionState,
@@ -55,8 +58,10 @@ const initialState: ContactFormState = {
 
 export default function ContactPortal({
   departments,
+  isSignedIn,
 }: {
   departments: Department[];
+  isSignedIn: boolean;
 }) {
   const [activeTab, setActiveTab] =
     useState<ContactTab>("complaint");
@@ -209,6 +214,7 @@ export default function ContactPortal({
             departments={
               departments
             }
+            isSignedIn={isSignedIn}
           />
         )}
 
@@ -238,8 +244,10 @@ export default function ContactPortal({
 
 function ComplaintForm({
   departments,
+  isSignedIn,
 }: {
   departments: Department[];
+  isSignedIn: boolean;
 }) {
   const [state, formAction] = useActionState(
     submitComplaint,
@@ -271,7 +279,7 @@ function ComplaintForm({
     <>
       <FormHeading
         title="صندوق الشكاوى"
-        description="شاركنا أي شكوى أو مشكلة أو ملاحظة. يمكنك الإرسال دون كتابة اسمك أو وسيلة التواصل."
+        description="شاركنا أي شكوى أو مشكلة أو ملاحظة. إذا طلبت ردًا، سيصلك داخل الموقع مع إشعار جديد."
       />
 
       <form
@@ -450,10 +458,13 @@ function ComplaintForm({
                   name="wantsReply"
                   value="yes"
                   required
+                  disabled={!isSignedIn}
                 />
 
                 <span>
-                  نعم
+                  {isSignedIn
+                    ? "نعم، أريد ردًا"
+                    : "نعم (يتطلب تسجيل الدخول)"}
                 </span>
               </label>
 
@@ -472,6 +483,15 @@ function ComplaintForm({
               </label>
 
             </div>
+
+            {!isSignedIn && (
+              <small className="contact-reply-login-hint">
+                <Link href="/login">
+                  سجّل الدخول
+                </Link>{" "}
+                أولًا إذا أردت استلام رد الإدارة داخل الموقع.
+              </small>
+            )}
 
           </div>
 
@@ -1210,14 +1230,24 @@ function FormState({
 
   return (
     <div
-      role="status"
+      role={state.success ? "status" : "alert"}
       className={`contact-message ${
         state.success
           ? "success"
           : "error"
       }`}
     >
-      {state.message}
+      {state.success ? (
+        <CheckCircle2 aria-hidden="true" />
+      ) : (
+        <CircleAlert aria-hidden="true" />
+      )}
+      <div>
+        {state.success && (
+          <strong>تم استلام طلبك بنجاح</strong>
+        )}
+        <span>{state.message}</span>
+      </div>
     </div>
   );
 }

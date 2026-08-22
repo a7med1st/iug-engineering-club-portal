@@ -10,32 +10,113 @@ import {
 } from "lucide-react";
 
 import ContactStatusSelect from "@/components/admin/ContactStatusSelect";
-import {
-  PERMISSIONS,
-  requirePermission,
-} from "@/lib/permissions";
+import ContactEscalationForm from "@/components/admin/ContactEscalationForm";
+import ComplaintReplyForm from "@/components/admin/ComplaintReplyForm";
+import { requireContactAccess } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { CONTACT_STATUS_LABELS } from "@/lib/contact-options";
 import { updateContactStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminContactPage() {
-  await requirePermission(PERMISSIONS.CONTACT_MANAGE);
+export default async function AdminContactPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ focus?: string }>;
+}) {
+  const { user } = await requireContactAccess();
+
+  const assignedWhere =
+    user.role === "ADMIN"
+      ? undefined
+      : { assignedToId: user.id };
+  const { focus } = await searchParams;
 
   const [complaints, suggestions, collaborations] = await Promise.all([
     prisma.complaint.findMany({
-      include: { department: true },
+      where: assignedWhere,
+      include: {
+        department: true,
+        assignedTo: {
+          select: { name: true },
+        },
+        assignedStructureItem: {
+          select: { title: true },
+        },
+        replies: {
+          include: {
+            author: {
+              select: { name: true },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
+      },
       orderBy: { createdAt: "desc" },
     }),
     prisma.suggestion.findMany({
-      include: { department: true },
+      where: assignedWhere,
+      include: {
+        department: true,
+        assignedTo: {
+          select: { name: true },
+        },
+        assignedStructureItem: {
+          select: { title: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     }),
     prisma.collaborationRequest.findMany({
+      where: assignedWhere,
+      include: {
+        assignedTo: {
+          select: { name: true },
+        },
+        assignedStructureItem: {
+          select: { title: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     }),
   ]);
+
+  const routingEvents =
+    await prisma.contactRoutingEvent.findMany({
+      where: {
+        OR: [
+          {
+            requestKind: "COMPLAINT",
+            requestId: {
+              in: complaints.map((item) => item.id),
+            },
+          },
+          {
+            requestKind: "SUGGESTION",
+            requestId: {
+              in: suggestions.map((item) => item.id),
+            },
+          },
+          {
+            requestKind: "COLLABORATION",
+            requestId: {
+              in: collaborations.map((item) => item.id),
+            },
+          },
+        ],
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+  const eventsFor = (
+    kind: "COMPLAINT" | "SUGGESTION" | "COLLABORATION",
+    id: string,
+  ) =>
+    routingEvents.filter(
+      (event) =>
+        event.requestKind === kind &&
+        event.requestId === id,
+    );
 
   const newComplaints = complaints.filter((item) => item.status === "NEW").length;
   const newSuggestions = suggestions.filter((item) => item.status === "NEW").length;
@@ -80,7 +161,12 @@ export default async function AdminContactPage() {
           <EmptyState text="لا توجد شكاوى حتى الآن." />
         ) : (
           complaints.map((item) => (
-            <details className="contact-admin-item contact-request-card" key={item.id}>
+            <details
+              id={`complaint-${item.id}`}
+              open={focus === `complaint-${item.id}`}
+              className="contact-admin-item contact-request-card"
+              key={item.id}
+            >
               <summary>
                 <div className="contact-admin-summary-copy">
                   <strong>{item.studentName || "طالب مجهول"}</strong>
@@ -99,6 +185,22 @@ export default async function AdminContactPage() {
                 <Info title="وسيلة التواصل" value={item.contact || "غير مذكورة"} />
                 <Info title="التخصص" value={item.department.nameAr} />
                 <Info title="يرغب بالحصول على رد" value={item.wantsReply ? "نعم" : "لا"} />
+                <Info
+                  title="حساب مرتبط بالطلب"
+                  value={item.submittedById ? "نعم" : "لا"}
+                />
+                <Info
+                  title="المسؤول الحالي"
+                  value={
+                    item.assignedTo
+                      ? `${item.assignedTo.name}${
+                          item.assignedStructureItem?.title
+                            ? ` — ${item.assignedStructureItem.title}`
+                            : ""
+                        }`
+                      : "غير موجّه"
+                  }
+                />
                 <Info title="تاريخ الإرسال" value={item.createdAt.toLocaleString("ar-EG")} />
 
                 <div className="contact-admin-description">
@@ -118,11 +220,47 @@ export default async function AdminContactPage() {
                   </Link>
                 </div>
 
+                {item.replies.length > 0 && (
+                  <div className="complaint-reply-history">
+                    <strong>الردود المرسلة</strong>
+                    {item.replies.map((reply) => (
+                      <article key={reply.id}>
+                        <div>
+                          <b>{reply.author?.name ?? "إدارة النادي"}</b>
+                          <time>
+                            {reply.createdAt.toLocaleString("ar-EG")}
+                          </time>
+                        </div>
+                        <p>{reply.message}</p>
+                      </article>
+                    ))}
+                  </div>
+                )}
+
+                {item.wantsReply && item.submittedById ? (
+                  <ComplaintReplyForm complaintId={item.id} />
+                ) : item.wantsReply ? (
+                  <div className="complaint-reply-unavailable">
+                    صاحب الشكوى طلب ردًا، لكن الطلب غير مرتبط بحساب؛ استخدم
+                    وسيلة التواصل المكتوبة إن وُجدت.
+                  </div>
+                ) : null}
+
+                <RoutingHistory
+                  events={eventsFor("COMPLAINT", item.id)}
+                />
+
+                <ContactEscalationForm
+                  id={item.id}
+                  kind="complaint"
+                  assignedName={item.assignedTo?.name ?? null}
+                />
+
                 <StatusForm
                   id={item.id}
                   kind="complaint"
                   currentStatus={item.status}
-                  statuses={["NEW", "IN_REVIEW", "RESOLVED"]}
+                  statuses={["NEW", "IN_REVIEW", "IN_PROGRESS", "RESOLVED"]}
                 />
               </div>
             </details>
@@ -139,7 +277,12 @@ export default async function AdminContactPage() {
           <EmptyState text="لا توجد اقتراحات حتى الآن." />
         ) : (
           suggestions.map((item) => (
-            <details className="contact-admin-item contact-request-card" key={item.id}>
+            <details
+              id={`suggestion-${item.id}`}
+              open={focus === `suggestion-${item.id}`}
+              className="contact-admin-item contact-request-card"
+              key={item.id}
+            >
               <summary>
                 <div className="contact-admin-summary-copy">
                   <strong>{item.studentName}</strong>
@@ -159,6 +302,18 @@ export default async function AdminContactPage() {
                 <Info title="التخصص" value={item.department.nameAr} />
                 <Info title="المواضيع المقترحة" value={item.topics || "غير مذكورة"} />
                 <Info title="فكرة الفعالية أو المشروع" value={item.projectIdea} />
+                <Info
+                  title="المسؤول الحالي"
+                  value={
+                    item.assignedTo
+                      ? `${item.assignedTo.name}${
+                          item.assignedStructureItem?.title
+                            ? ` — ${item.assignedStructureItem.title}`
+                            : ""
+                        }`
+                      : "غير موجّه"
+                  }
+                />
 
                 <div className="contact-admin-actions">
                   <Link
@@ -172,11 +327,21 @@ export default async function AdminContactPage() {
                   </Link>
                 </div>
 
+                <RoutingHistory
+                  events={eventsFor("SUGGESTION", item.id)}
+                />
+
+                <ContactEscalationForm
+                  id={item.id}
+                  kind="suggestion"
+                  assignedName={item.assignedTo?.name ?? null}
+                />
+
                 <StatusForm
                   id={item.id}
                   kind="suggestion"
                   currentStatus={item.status}
-                  statuses={["NEW", "IN_REVIEW", "RESOLVED"]}
+                  statuses={["NEW", "IN_REVIEW", "IN_PROGRESS", "RESOLVED"]}
                 />
               </div>
             </details>
@@ -193,7 +358,12 @@ export default async function AdminContactPage() {
           <EmptyState text="لا توجد طلبات تعاون حتى الآن." />
         ) : (
           collaborations.map((item) => (
-            <details className="contact-admin-item contact-request-card" key={item.id}>
+            <details
+              id={`collaboration-${item.id}`}
+              open={focus === `collaboration-${item.id}`}
+              className="contact-admin-item contact-request-card"
+              key={item.id}
+            >
               <summary>
                 <div className="contact-admin-summary-copy">
                   <strong>{item.entityName}</strong>
@@ -214,11 +384,33 @@ export default async function AdminContactPage() {
                 <Info title="البريد الإلكتروني" value={item.email} />
                 <Info title="المجال" value={item.field} />
                 <Info title="الرابط" value={item.socialUrl} />
+                <Info
+                  title="المسؤول الحالي"
+                  value={
+                    item.assignedTo
+                      ? `${item.assignedTo.name}${
+                          item.assignedStructureItem?.title
+                            ? ` — ${item.assignedStructureItem.title}`
+                            : ""
+                        }`
+                      : "غير موجّه"
+                  }
+                />
 
                 <div className="contact-admin-description">
                   <strong>وصف التعاون</strong>
                   <p>{item.description}</p>
                 </div>
+
+                <RoutingHistory
+                  events={eventsFor("COLLABORATION", item.id)}
+                />
+
+                <ContactEscalationForm
+                  id={item.id}
+                  kind="collaboration"
+                  assignedName={item.assignedTo?.name ?? null}
+                />
 
                 {item.attachmentStoredName && (
                   <div className="contact-admin-description">
@@ -258,7 +450,7 @@ export default async function AdminContactPage() {
                   id={item.id}
                   kind="collaboration"
                   currentStatus={item.status}
-                  statuses={["NEW", "IN_REVIEW", "CONTACTED", "ACCEPTED", "REJECTED"]}
+                  statuses={["NEW", "IN_REVIEW", "IN_PROGRESS", "CONTACTED", "ACCEPTED", "RESOLVED", "REJECTED"]}
                 />
               </div>
             </details>
@@ -532,6 +724,7 @@ export default async function AdminContactPage() {
 
         .contact-admin-polished .status-new { border-color: #cce6fb; }
         .contact-admin-polished .status-in_review { border-color: #efdcae; }
+        .contact-admin-polished .status-in_progress { border-color: #b9ddf6; }
         .contact-admin-polished .status-resolved,
         .contact-admin-polished .status-accepted { border-color: #c5e8d0; }
         .contact-admin-polished .status-contacted { border-color: #d4dcfb; }
@@ -764,6 +957,7 @@ export default async function AdminContactPage() {
 
         .status-dot-new { background: #1688ff; box-shadow: 0 0 0 3px rgba(22,136,255,.11); }
         .status-dot-in_review { background: #e8a521; box-shadow: 0 0 0 3px rgba(232,165,33,.11); }
+        .status-dot-in_progress { background: #159acb; box-shadow: 0 0 0 3px rgba(21,154,203,.11); }
         .status-dot-resolved,
         .status-dot-accepted { background: #27a45d; box-shadow: 0 0 0 3px rgba(39,164,93,.11); }
         .status-dot-contacted { background: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.11); }
@@ -910,6 +1104,43 @@ function Info({ title, value }: { title: string; value: string }) {
     <div className="contact-admin-info">
       <strong>{title}</strong>
       <span>{value}</span>
+    </div>
+  );
+}
+
+function RoutingHistory({
+  events,
+}: {
+  events: {
+    id: string;
+    fromName: string | null;
+    toName: string;
+    note: string | null;
+    createdAt: Date;
+  }[];
+}) {
+  if (events.length === 0) return null;
+
+  return (
+    <div className="contact-routing-history">
+      <strong>مسار توجيه الطلب</strong>
+      <ol>
+        {events.map((event) => (
+          <li key={event.id}>
+            <div>
+              <span>
+                {event.fromName
+                  ? `${event.fromName} ← ${event.toName}`
+                  : `وُجّه إلى ${event.toName}`}
+              </span>
+              <time>
+                {event.createdAt.toLocaleString("ar-EG")}
+              </time>
+            </div>
+            {event.note && <p>{event.note}</p>}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

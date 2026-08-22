@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:contact-routing": "node --env-file=.env scripts/run-contact-routing-test.mjs",
+    "test:email-verification": "node --env-file=.env scripts/run-email-verification-tests.mjs",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
@@ -22,12 +24,14 @@
     "jose": "^6.1.0",
     "lucide-react": "^0.468.0",
     "next": "^15.5.0",
+    "nodemailer": "^9.0.5",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "prisma": "^6.16.2",

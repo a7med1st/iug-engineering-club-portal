@@ -1352,6 +1352,28 @@ p {
     box-shadow: 0 0 0 3px rgba(22, 136, 255, .12)
 }
 
+.stack-form input[aria-invalid="true"] {
+    border-color: #dc5b5b;
+    background: #fffafa;
+    box-shadow: 0 0 0 3px rgba(220, 91, 91, .1)
+}
+
+.field-error,
+.field-hint {
+    display: block;
+    font-size: .68rem;
+    line-height: 1.65
+}
+
+.field-error {
+    color: #b83232;
+    font-weight: 700
+}
+
+.field-hint {
+    color: #70869b
+}
+
 .form-error {
     background: #fff0f0;
     color: #a72323;
@@ -2961,10 +2983,76 @@ p {
 ========================================================== */
 
 .contact-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
     padding: 13px 16px;
     border-radius: 14px;
     font-size: 0.88rem;
     line-height: 1.6;
+}
+
+.contact-message>svg {
+    flex: 0 0 auto;
+    width: 21px;
+    height: 21px;
+    margin-top: 2px;
+}
+
+.contact-message>div {
+    display: grid;
+    gap: 3px;
+}
+
+.contact-message strong,
+.contact-message span {
+    display: block;
+}
+
+.contact-reply-login-hint {
+    display: block;
+    margin-top: 10px;
+    color: #6c8093;
+    line-height: 1.7;
+}
+
+.contact-reply-login-hint a {
+    color: #0875d1;
+    font-weight: 750;
+    text-underline-offset: 3px;
+}
+
+.contact-tracking-notice {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px 14px;
+    margin-bottom: 22px;
+    border: 1px solid #c9e1f1;
+    border-radius: 17px;
+    padding: 15px 18px;
+    color: #47657e;
+    background: linear-gradient(135deg, #eff9ff, #f8fdff);
+    box-shadow: 0 10px 25px rgba(10, 92, 151, .07);
+}
+
+.contact-tracking-notice strong {
+    color: #123b5d;
+}
+
+.contact-tracking-notice span {
+    font-size: .84rem;
+    line-height: 1.7;
+}
+
+.contact-tracking-notice a {
+    border-radius: 11px;
+    padding: 8px 13px;
+    color: #fff;
+    background: linear-gradient(120deg, #0875df, #28b8ef);
+    font-size: .8rem;
+    font-weight: 750;
+    text-decoration: none;
 }
 
 .contact-message.success {
@@ -3446,6 +3534,11 @@ p {
     color: #a26600;
 }
 
+.status-in_progress {
+    background: #eaf9ff;
+    color: #08749c;
+}
+
 .status-resolved,
 .status-accepted {
     background: #eaf9ef;
@@ -3477,6 +3570,334 @@ p {
     padding: 7px 11px;
     background: #fff;
     color: var(--ink);
+}
+
+.complaint-reply-history,
+.complaint-reply-form,
+.complaint-reply-unavailable {
+    grid-column: 1 / -1;
+}
+
+.complaint-reply-history {
+    display: grid;
+    gap: 10px;
+    border: 1px solid #d2e5f2;
+    border-radius: 15px;
+    padding: 14px;
+    background: #f7fcff;
+}
+
+.complaint-reply-history>strong {
+    color: #145d91;
+}
+
+.complaint-reply-history article {
+    border: 1px solid #dceaf3;
+    border-radius: 12px;
+    padding: 11px 13px;
+    background: #fff;
+}
+
+.complaint-reply-history article>div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.complaint-reply-history b {
+    color: #1c496b;
+    font-size: .78rem;
+}
+
+.complaint-reply-history time {
+    color: #8798a7;
+    font-size: .68rem;
+}
+
+.complaint-reply-history p {
+    margin: 7px 0 0;
+    color: #49667d;
+    line-height: 1.75;
+    white-space: pre-wrap;
+}
+
+.complaint-reply-form {
+    display: grid;
+    gap: 10px;
+    border: 1px solid #c8e1f2;
+    border-radius: 16px;
+    padding: 15px;
+    background: linear-gradient(135deg, #eef9ff, #fbfeff);
+}
+
+.complaint-reply-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #0877cb;
+}
+
+.complaint-reply-heading>div {
+    display: grid;
+    gap: 3px;
+}
+
+.complaint-reply-heading small {
+    color: #70869a;
+    font-size: .72rem;
+}
+
+.complaint-reply-form label {
+    color: #294a65;
+    font-size: .77rem;
+    font-weight: 750;
+}
+
+.complaint-reply-form textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid #bdd6e7;
+    border-radius: 12px;
+    padding: 11px 13px;
+    outline: 0;
+    color: #183d59;
+    background: #fff;
+    font: inherit;
+    line-height: 1.7;
+}
+
+.complaint-reply-form textarea:focus-visible {
+    border-color: #1688ff;
+    box-shadow: 0 0 0 3px rgba(22, 136, 255, .12);
+}
+
+.complaint-reply-feedback {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid;
+    border-radius: 11px;
+    padding: 9px 11px;
+    font-size: .75rem;
+}
+
+.complaint-reply-feedback svg {
+    width: 17px;
+}
+
+.complaint-reply-feedback.is-success {
+    border-color: #bce2cd;
+    color: #1c7049;
+    background: #effaf4;
+}
+
+.complaint-reply-feedback.is-error,
+.complaint-reply-unavailable {
+    border-color: #edc9c9;
+    color: #953c3c;
+    background: #fff4f4;
+}
+
+.complaint-reply-unavailable {
+    border: 1px solid #edc9c9;
+    border-radius: 12px;
+    padding: 11px 13px;
+    font-size: .76rem;
+    line-height: 1.7;
+}
+
+.complaint-reply-submit {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.complaint-reply-spinner {
+    animation: contact-reply-spin .7s linear infinite;
+}
+
+@keyframes contact-reply-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 700px) {
+    .contact-tracking-notice {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-tracking-notice a {
+        justify-self: start;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .complaint-reply-spinner {
+        animation-duration: 1.5s;
+    }
+}
+
+.contact-routing-history,
+.contact-escalation-form {
+    grid-column: 1 / -1;
+}
+
+.contact-routing-history {
+    border: 1px solid #d8e5ee;
+    border-radius: 15px;
+    padding: 14px;
+    background: #fbfdff;
+}
+
+.contact-routing-history>strong {
+    color: #234b69;
+}
+
+.contact-routing-history ol {
+    display: grid;
+    gap: 9px;
+    margin: 11px 0 0;
+    padding: 0 20px 0 0;
+}
+
+.contact-routing-history li {
+    color: #4e6b80;
+}
+
+.contact-routing-history li>div {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.contact-routing-history time {
+    color: #8798a6;
+    font-size: .68rem;
+}
+
+.contact-routing-history p {
+    margin: 4px 0 0;
+    color: #748898;
+    font-size: .72rem;
+    line-height: 1.7;
+}
+
+.contact-escalation-form {
+    display: grid;
+    gap: 10px;
+    border: 1px solid #f0d5aa;
+    border-radius: 16px;
+    padding: 15px;
+    background: linear-gradient(135deg, #fff9ee, #fffdf9);
+}
+
+.contact-escalation-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #b66b0b;
+}
+
+.contact-escalation-heading>svg {
+    width: 22px;
+}
+
+.contact-escalation-heading>div {
+    display: grid;
+    gap: 3px;
+}
+
+.contact-escalation-heading small {
+    color: #8a785e;
+    font-size: .72rem;
+}
+
+.contact-escalation-form label {
+    color: #5c4933;
+    font-size: .76rem;
+    font-weight: 750;
+}
+
+.contact-escalation-form label span {
+    margin-inline-start: 7px;
+    color: #9a8b79;
+    font-size: .68rem;
+    font-weight: 500;
+}
+
+.contact-escalation-form textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid #dfc9aa;
+    border-radius: 12px;
+    padding: 10px 12px;
+    outline: 0;
+    color: #503e2c;
+    background: #fff;
+    font: inherit;
+    line-height: 1.7;
+}
+
+.contact-escalation-form textarea:focus-visible {
+    border-color: #e5962f;
+    box-shadow: 0 0 0 3px rgba(229, 150, 47, .13);
+}
+
+.contact-escalation-feedback {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid;
+    border-radius: 11px;
+    padding: 9px 11px;
+    font-size: .75rem;
+}
+
+.contact-escalation-feedback svg {
+    width: 17px;
+}
+
+.contact-escalation-feedback.is-success {
+    border-color: #bce2cd;
+    color: #1c7049;
+    background: #effaf4;
+}
+
+.contact-escalation-feedback.is-error {
+    border-color: #edc9c9;
+    color: #953c3c;
+    background: #fff4f4;
+}
+
+.contact-escalation-submit {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border-color: #e8c38e !important;
+    color: #a45e06 !important;
+    background: #fff !important;
+}
+
+.contact-escalation-submit svg {
+    width: 17px;
+}
+
+.contact-escalation-spinner {
+    animation: contact-reply-spin .7s linear infinite;
+}
+
+@media (max-width: 560px) {
+    .contact-routing-history li>div {
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .contact-escalation-submit {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 .contact-admin-empty {

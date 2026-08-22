@@ -1,7 +1,20 @@
-import { PrismaClient, Role, ActivityStatus } from "@prisma/client";
+import { Role, ActivityStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+import {
+  getEmailValidationMessage,
+  normalizeEmail,
+  validateEmail,
+} from "../lib/email-validation";
+import {
+  createInitialEmailVerificationCode,
+  invalidateUndeliveredVerificationCode,
+} from "../lib/email-verification";
+import {
+  assertEmailDeliveryConfigured,
+  sendEmailVerificationCode,
+} from "../lib/mail";
+import { prisma } from "../lib/prisma";
 
 const departments = [
   { slug: "computer-engineering", nameAr: "هندسة الحاسوب", nameEn: "Computer Engineering", coverImage: "/images/departments/computer.png", sortOrder: 1 },
@@ -28,7 +41,10 @@ async function main() {
     });
   }
 
-  const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
+  const adminEmailValue = process.env.SEED_ADMIN_EMAIL;
+  const adminEmail = adminEmailValue
+    ? normalizeEmail(adminEmailValue)
+    : undefined;
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
 
   if (Boolean(adminEmail) !== Boolean(adminPassword)) {
@@ -40,12 +56,88 @@ async function main() {
       throw new Error("SEED_ADMIN_PASSWORD must contain at least 12 characters.");
     }
 
-    const passwordHash = await bcrypt.hash(adminPassword, 12);
-    await prisma.user.upsert({
-      where: { email: adminEmail },
-      update: { role: Role.ADMIN, name: "مدير النادي الهندسي", passwordHash },
-      create: { name: "مدير النادي الهندسي", email: adminEmail, passwordHash, role: Role.ADMIN },
+    const existingAdmin = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: adminEmail,
+          mode: "insensitive",
+        },
+      },
+      select: { id: true },
     });
+
+    if (!existingAdmin) {
+      const emailResult = validateEmail(adminEmail);
+
+      if (!emailResult.valid) {
+        throw new Error(
+          getEmailValidationMessage(emailResult) ??
+            "Invalid SEED_ADMIN_EMAIL.",
+        );
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
+
+    if (existingAdmin) {
+      await prisma.user.update({
+        where: { id: existingAdmin.id },
+        data: {
+          role: Role.ADMIN,
+          name: "مدير النادي الهندسي",
+          passwordHash,
+        },
+      });
+    } else {
+      assertEmailDeliveryConfigured();
+
+      const registration =
+        await prisma.$transaction(
+          async (transaction) => {
+            const user =
+              await transaction.user.create({
+                data: {
+                  name: "مدير النادي الهندسي",
+                  email: adminEmail,
+                  emailVerifiedAt: null,
+                  passwordHash,
+                  role: Role.ADMIN,
+                },
+                select: {
+                  id: true,
+                  email: true,
+                  name: true,
+                },
+              });
+
+            const verification =
+              await createInitialEmailVerificationCode(
+                transaction,
+                user.id,
+              );
+
+            return { user, verification };
+          },
+        );
+
+      try {
+        await sendEmailVerificationCode({
+          email: registration.user.email,
+          name: registration.user.name,
+          code: registration.verification.code,
+        });
+      } catch (error) {
+        await invalidateUndeliveredVerificationCode(
+          registration.user.id,
+          registration.verification.codeHash,
+        );
+
+        throw new Error(
+          "Admin account was created, but its verification email could not be sent. Retry from the login flow after configuring SMTP.",
+          { cause: error },
+        );
+      }
+    }
   } else {
     console.log("Admin seed skipped: set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD to create one.");
   }

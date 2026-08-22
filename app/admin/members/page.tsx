@@ -65,7 +65,8 @@ export default async function MembersAdminPage({
           <h1>إدارة حسابات الأعضاء</h1>
           <p className="muted">
             أنشئ حساب عضو، اربطه بقسمه، ثم حدد صلاحياته بدقة. الصلاحيات
-            المرتبطة بقسم ستعمل فقط داخل قسم العضو.
+            المرتبطة بقسم ستعمل فقط داخل قسم العضو. سيصل رمز تحقق إلى
+            بريد العضو، ولن يتمكن من الدخول قبل تأكيده.
           </p>
         </div>
       </div>
@@ -96,7 +97,11 @@ export default async function MembersAdminPage({
                 required
                 autoComplete="email"
                 dir="ltr"
+                placeholder="name@gmail.com"
               />
+              <small className="field-hint">
+                استخدم بريدًا من Gmail أو Outlook أو مزود معتمد آخر.
+              </small>
             </label>
 
             <label>
@@ -209,6 +214,11 @@ export default async function MembersAdminPage({
                           <span>{member.position || "عضو"}</span>
                           <span>{member.department?.nameAr ?? "بدون قسم"}</span>
                           <span dir="ltr">{member.email}</span>
+                          <span>
+                            {member.emailVerifiedAt
+                              ? "البريد موثّق"
+                              : "بانتظار تحقق البريد"}
+                          </span>
                           <span>أضيف في {formatCreatedAt(member.createdAt)}</span>
                         </div>
                       </div>

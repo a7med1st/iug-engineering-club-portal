@@ -1,8 +1,11 @@
 import Link from "next/link";
-
 import {
+  BadgeCheck,
+  Crown,
   Network,
+  ShieldCheck,
   UserRound,
+  UsersRound,
 } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
@@ -11,191 +14,244 @@ import styles from "./structure.module.css";
 
 export const dynamic = "force-dynamic";
 
-type StructureNode = {
-  id: string;
-  name: string;
-  title: string;
-  level: number;
-  sortOrder: number;
-  parentId: string | null;
-  user: {
-    id: string;
-    name: string;
-    avatarStoredName: string | null;
-    avatarUpdatedAt: Date | null;
-  } | null;
-  department: {
-    nameAr: string;
-  } | null;
-};
+async function getStructureItems() {
+  return prisma.clubStructureItem.findMany({
+    include: {
+      department: {
+        select: {
+          nameAr: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: [
+      { level: "asc" },
+      { sortOrder: "asc" },
+      { createdAt: "asc" },
+    ],
+  });
+}
 
-function StructureBranch({
-  node,
-  childrenMap,
+type StructureItem = Awaited<ReturnType<typeof getStructureItems>>[number];
+
+function getNodeTone(title: string, isRoot: boolean) {
+  if (isRoot || title.includes("رئيس النادي")) {
+    return "root";
+  }
+
+  if (title.includes("نائب")) {
+    return "vice";
+  }
+
+  if (title.includes("علاقات")) {
+    return "relations";
+  }
+
+  if (title.includes("مندوب")) {
+    return "delegate";
+  }
+
+  return "member";
+}
+
+function RoleIcon({
+  title,
+  isRoot,
 }: {
-  node: StructureNode;
-  childrenMap: Map<
-    string,
-    StructureNode[]
-  >;
+  title: string;
+  isRoot: boolean;
 }) {
-  const children =
-    childrenMap.get(node.id) ?? [];
+  if (isRoot || title.includes("رئيس النادي")) {
+    return <Crown aria-hidden="true" />;
+  }
 
-  const card = (
-    <article className={styles.nodeCard}>
-      <div className={styles.avatar}>
-        {node.user?.avatarStoredName ? (
-          <img
-            src={`/members/${node.user.id}/avatar?v=${node.user.avatarUpdatedAt?.getTime() ?? 0}`}
-            alt=""
-          />
-        ) : (
-          <UserRound size={23} />
-        )}
-      </div>
+  if (title.includes("نائب")) {
+    return <ShieldCheck aria-hidden="true" />;
+  }
 
-      <div>
-        <span className={styles.title}>
-          {node.title}
+  if (title.includes("علاقات")) {
+    return <BadgeCheck aria-hidden="true" />;
+  }
+
+  if (title.includes("مندوب")) {
+    return <UsersRound aria-hidden="true" />;
+  }
+
+  return <UserRound aria-hidden="true" />;
+}
+
+function PersonNodeCard({
+  item,
+  isRoot,
+}: {
+  item: StructureItem;
+  isRoot: boolean;
+}) {
+  const displayName = item.user?.name ?? item.name;
+  const departmentName = item.department?.nameAr ?? "النادي الهندسي";
+  const tone = getNodeTone(item.title, isRoot);
+
+  const content = (
+    <>
+      <span className={styles.nodeGlow} aria-hidden="true" />
+
+      <span className={styles.avatarBox}>
+        <RoleIcon title={item.title} isRoot={isRoot} />
+      </span>
+
+      <span className={styles.nodeContent}>
+        <span className={styles.roleBadge}>{item.title}</span>
+        <strong>{displayName}</strong>
+        <small>{departmentName}</small>
+      </span>
+
+      {item.user?.id ? (
+        <span className={styles.profileHint} aria-hidden="true">
+          <span>عرض الملف</span>
+          <span>←</span>
         </span>
-        <strong>
-          {node.user?.name ?? node.name}
-        </strong>
-        <small>
-          {node.department?.nameAr ??
-            "النادي الهندسي"}
-        </small>
-      </div>
-    </article>
+      ) : null}
+    </>
   );
 
-  return (
-    <li className={styles.branch}>
-      {node.user ? (
-        <Link
-          href={`/members/${node.user.id}`}
-          className={styles.nodeLink}
-        >
-          {card}
-        </Link>
-      ) : (
-        card
-      )}
+  if (item.user?.id) {
+    return (
+      <Link
+        href={`/members/${item.user.id}`}
+        className={`${styles.nodeCard} ${isRoot ? styles.rootCard : ""}`}
+        data-tone={tone}
+        aria-label={`عرض ملف ${displayName}`}
+      >
+        {content}
+      </Link>
+    );
+  }
 
-      {children.length > 0 && (
+  return (
+    <div
+      className={`${styles.nodeCard} ${isRoot ? styles.rootCard : ""}`}
+      data-tone={tone}
+    >
+      {content}
+    </div>
+  );
+}
+
+function StructureNode({
+  item,
+  childrenByParent,
+  isRoot = false,
+}: {
+  item: StructureItem;
+  childrenByParent: Map<string | null, StructureItem[]>;
+  isRoot?: boolean;
+}) {
+  const children = childrenByParent.get(item.id) ?? [];
+
+  return (
+    <li className={`${styles.branch} ${isRoot ? styles.rootBranch : ""}`}>
+      <PersonNodeCard item={item} isRoot={isRoot} />
+
+      {children.length ? (
         <ul className={styles.children}>
           {children.map((child) => (
-            <StructureBranch
+            <StructureNode
               key={child.id}
-              node={child}
-              childrenMap={childrenMap}
+              item={child}
+              childrenByParent={childrenByParent}
             />
           ))}
         </ul>
-      )}
+      ) : null}
     </li>
   );
 }
 
 export default async function DelegatesPage() {
-  const items =
-    await prisma.clubStructureItem.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            avatarStoredName: true,
-            avatarUpdatedAt: true,
-          },
-        },
-        department: {
-          select: {
-            nameAr: true,
-          },
-        },
-      },
-      orderBy: [
-        { level: "asc" },
-        { sortOrder: "asc" },
-        { createdAt: "asc" },
-      ],
-    });
+  const items = await getStructureItems();
 
-  const nodes =
-    items as StructureNode[];
+  const childrenByParent = new Map<string | null, StructureItem[]>();
+  const itemIds = new Set(items.map((item) => item.id));
 
-  const idSet = new Set(
-    nodes.map((item) => item.id),
-  );
-
-  const roots = nodes.filter(
-    (item) =>
-      !item.parentId ||
-      !idSet.has(item.parentId),
-  );
-
-  const childrenMap = new Map<
-    string,
-    StructureNode[]
-  >();
-
-  for (const node of nodes) {
-    if (!node.parentId) continue;
-
-    const list =
-      childrenMap.get(node.parentId) ?? [];
-
-    list.push(node);
-
-    list.sort(
-      (a, b) =>
-        a.sortOrder - b.sortOrder,
-    );
-
-    childrenMap.set(
-      node.parentId,
-      list,
-    );
+  for (const item of items) {
+    // Treat an orphaned row as a root so a stale parent reference never makes
+    // an otherwise valid structure member disappear from the public tree.
+    const key = item.parentId && itemIds.has(item.parentId) ? item.parentId : null;
+    const current = childrenByParent.get(key) ?? [];
+    current.push(item);
+    childrenByParent.set(key, current);
   }
 
+  const roots = childrenByParent.get(null) ?? [];
+
   return (
-    <main className={styles.page}>
+    <main className={styles.page} dir="rtl">
       <section className={styles.hero}>
-        <div className={styles.heroIcon}>
-          <Network size={30} />
+        <span className={styles.heroGrid} aria-hidden="true" />
+        <span className={styles.heroOrbOne} aria-hidden="true" />
+        <span className={styles.heroOrbTwo} aria-hidden="true" />
+
+        <div className={styles.heroCopy}>
+          <div className={styles.heroIcon}>
+            <Network aria-hidden="true" />
+          </div>
+
+          <div>
+            <h1>الهيكلية التنظيمية</h1>
+            <p>
+              تعرّف على رئيس النادي ونائبه والعلاقات العامة ومندوبي الأقسام
+              وأعضاء النادي، واضغط على أي عضو لعرض ملفه الشخصي.
+            </p>
+          </div>
         </div>
 
-        <div>
-          <h1>الهيكلية التنظيمية</h1>
-          <p>
-            تعرف على رئيس النادي، نائبه، العلاقات العامة، مناديب الأقسام وأعضاء النادي. اضغط على أي عضو لعرض ملفه الشخصي.
-          </p>
+        <div className={styles.heroVisual} aria-hidden="true">
+          <span className={styles.heroVisualNode}>
+            <Crown />
+          </span>
+          <span className={styles.heroVisualLine} />
+          <span className={styles.heroVisualRow}>
+            <span><ShieldCheck /></span>
+            <span><UsersRound /></span>
+            <span><UserRound /></span>
+          </span>
         </div>
       </section>
 
-      {roots.length ? (
-        <div className={styles.treeScroll}>
-          <ul className={styles.tree}>
-            {roots.map((root) => (
-              <StructureBranch
-                key={root.id}
-                node={root}
-                childrenMap={childrenMap}
-              />
-            ))}
-          </ul>
-        </div>
-      ) : (
-        <section className={styles.empty}>
-          <Network size={34} />
-          <h2>الهيكلية قيد التجهيز</h2>
-          <p>
-            ستظهر هنا شجرة أعضاء النادي بعد إضافتها من لوحة الإدارة.
-          </p>
-        </section>
-      )}
+      <section className={styles.treePanel}>
+        <div className={styles.panelGlow} aria-hidden="true" />
+        <div className={styles.panelGrid} aria-hidden="true" />
+
+        {roots.length ? (
+          <div className={styles.treeViewport}>
+            <div className={styles.treeCanvas}>
+              <ul className={styles.tree}>
+                {roots.map((root) => (
+                  <StructureNode
+                    key={root.id}
+                    item={root}
+                    childrenByParent={childrenByParent}
+                    isRoot
+                  />
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.emptyState}>
+            <span>
+              <Network aria-hidden="true" />
+            </span>
+            <strong>الهيكلية غير متاحة حاليًا</strong>
+            <p>ستظهر أسماء أعضاء الهيكلية هنا بعد إضافتهم من لوحة الإدارة.</p>
+          </div>
+        )}
+      </section>
     </main>
   );
 }

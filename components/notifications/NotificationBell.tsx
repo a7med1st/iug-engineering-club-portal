@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  ArrowLeft,
   Bell,
   CalendarDays,
   CheckCheck,
@@ -585,6 +586,8 @@ export default function NotificationBell() {
             : "الإشعارات"
         }
         aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-controls="notifications-dropdown"
         onClick={() => {
           void unlockSound();
 
@@ -626,11 +629,14 @@ export default function NotificationBell() {
         </div>
       )}
 
-      {open && (
-        <section
-          className={styles.dropdown}
-          aria-label="قائمة الإشعارات"
-        >
+      <section
+        id="notifications-dropdown"
+        className={styles.dropdown}
+        data-state={open ? "open" : "closed"}
+        role="dialog"
+        aria-label="قائمة الإشعارات"
+        aria-hidden={!open}
+      >
           <div
             className={styles.dropdownHeader}
           >
@@ -772,10 +778,10 @@ export default function NotificationBell() {
               setOpen(false)
             }
           >
-            عرض كل الإشعارات
+            <span>عرض كل الإشعارات</span>
+            <ArrowLeft aria-hidden="true" />
           </Link>
-        </section>
-      )}
+      </section>
     </div>
   );
 }

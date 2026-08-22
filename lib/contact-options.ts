@@ -161,7 +161,8 @@ export const COOPERATION_TYPE_OPTIONS = [
 export const CONTACT_STATUS_LABELS = {
   NEW: "جديد",
   IN_REVIEW: "قيد المراجعة",
-  RESOLVED: "تم التعامل معه",
+  IN_PROGRESS: "قيد التنفيذ",
+  RESOLVED: "تم التنفيذ",
   CONTACTED: "تم التواصل",
   ACCEPTED: "مقبول",
   REJECTED: "مرفوض",

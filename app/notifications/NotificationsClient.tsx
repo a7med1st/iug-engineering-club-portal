@@ -219,7 +219,10 @@ export default function NotificationsClient() {
                   </span>
 
                   {!item.readAt && (
-                    <span className={styles.unreadDot} />
+                    <span
+                      className={styles.unreadDot}
+                      aria-label="غير مقروء"
+                    />
                   )}
                 </>
               );
