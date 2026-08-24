@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     );
     const password = String(body.password || "");
     const departmentId =
-      String(body.departmentId || "").trim() || null;
+      String(body.departmentId || "").trim();
 
     if (name.length < 2) {
       return NextResponse.json(
@@ -55,6 +55,32 @@ export async function POST(req: Request) {
         {
           error:
             "يجب ألا تقل كلمة المرور عن 8 أحرف.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!departmentId) {
+      return NextResponse.json(
+        {
+          error: "يرجى اختيار تخصصك.",
+          field: "departmentId",
+        },
+        { status: 400 },
+      );
+    }
+
+    const departmentExists =
+      await prisma.department.findUnique({
+        where: { id: departmentId },
+        select: { id: true },
+      });
+
+    if (!departmentExists) {
+      return NextResponse.json(
+        {
+          error: "التخصص المختار غير موجود.",
+          field: "departmentId",
         },
         { status: 400 },
       );
@@ -136,6 +162,11 @@ export async function POST(req: Request) {
       registration.user.id,
     );
 
+    const developmentVerificationCode =
+      process.env.NODE_ENV === "development"
+        ? registration.verification.code
+        : undefined;
+
     try {
       await sendEmailVerificationCode({
         email: registration.user.email,
@@ -143,6 +174,20 @@ export async function POST(req: Request) {
         code: registration.verification.code,
       });
     } catch {
+      if (developmentVerificationCode) {
+        return NextResponse.json(
+          {
+            ok: true,
+            verificationRequired: true,
+            deliveryFailed: true,
+            developmentVerificationCode,
+            redirect:
+              "/verify-email?delivery=failed",
+          },
+          { status: 202 },
+        );
+      }
+
       await invalidateUndeliveredVerificationCode(
         registration.user.id,
         registration.verification.codeHash,
@@ -164,6 +209,7 @@ export async function POST(req: Request) {
       {
         ok: true,
         verificationRequired: true,
+        developmentVerificationCode,
         redirect: "/verify-email",
       },
       { status: 201 },

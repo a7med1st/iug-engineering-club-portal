@@ -93,6 +93,28 @@
   font-weight: 750;
 }
 
+.developmentCode {
+  display: grid;
+  gap: 4px;
+  margin: -10px auto 22px;
+  border: 1px solid #b9dcf6;
+  border-radius: 14px;
+  padding: 11px 14px;
+  color: #17689f;
+  background: #eef8ff;
+}
+
+.developmentCode span,
+.developmentCode small {
+  font-size: 0.8rem;
+}
+
+.developmentCode strong {
+  color: #075ca2;
+  font: 800 1.35rem / 1.4 system-ui, sans-serif;
+  letter-spacing: 0.24em;
+}
+
 .label {
   display: block;
   margin-bottom: 9px;

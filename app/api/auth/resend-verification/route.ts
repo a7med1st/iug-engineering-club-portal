@@ -130,6 +130,18 @@ export async function POST() {
       code: issued.code,
     });
   } catch {
+    if (process.env.NODE_ENV === "development") {
+      return NextResponse.json({
+        ok: true,
+        message:
+          "تعذر تسليم البريد، ويمكنك استخدام رمز التطوير المحلي الظاهر في الصفحة.",
+        developmentVerificationCode:
+          issued.code,
+        retryAfterSeconds:
+          EMAIL_VERIFICATION_RESEND_SECONDS,
+      });
+    }
+
     await invalidateUndeliveredVerificationCode(
       context.id,
       issued.codeHash,
@@ -150,6 +162,10 @@ export async function POST() {
     ok: true,
     message:
       "تم إرسال رمز تحقق جديد إلى بريدك الإلكتروني.",
+    developmentVerificationCode:
+      process.env.NODE_ENV === "development"
+        ? issued.code
+        : undefined,
     retryAfterSeconds:
       EMAIL_VERIFICATION_RESEND_SECONDS,
   });

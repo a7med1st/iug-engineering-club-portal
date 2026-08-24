@@ -1,6 +1,6 @@
 import ContactPortal from "@/components/ContactPortal";
 import Link from "next/link";
-
+import styles from "./contact-requests.module.css";
 import ContactRequestTracker from "./ContactRequestTracker";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -66,7 +66,12 @@ export default async function ContactPage() {
                 سجّل الدخول قبل الإرسال لتصلك إشعارات عند المراجعة أو
                 التنفيذ، ولتستقبل رد الإدارة على الشكوى.
               </span>
-              <Link href="/login">تسجيل الدخول</Link>
+              <Link
+                className={styles.clubButton}
+                href="/login?returnTo=%2Fcontact%23complaint-form"
+              >
+                <span>تسجيل الدخول</span>
+              </Link>
             </div>
           )}
 

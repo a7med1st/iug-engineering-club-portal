@@ -1429,7 +1429,7 @@ p {
 
 .admin-side nav {
     display: grid;
-    gap: 7px
+    gap: 10px
 }
 
 .admin-side a,
@@ -1438,6 +1438,7 @@ p {
     padding: 9px 11px;
     display: flex;
     align-items: center;
+    gap: 9px;
     border-radius: 10px;
     color: #bfd0e7;
     font-family: "Alexandria";

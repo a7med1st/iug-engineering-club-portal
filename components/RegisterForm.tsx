@@ -24,6 +24,7 @@ type RegisterResponse = {
   field?: string;
   verificationRequired?: boolean;
   redirect?: string;
+  developmentVerificationCode?: string;
 };
 
 export default function RegisterForm({
@@ -106,8 +107,16 @@ export default function RegisterForm({
         return;
       }
 
+      const redirect =
+        data.redirect ?? "/verify-email";
+      const separator = redirect.includes("?")
+        ? "&"
+        : "?";
+
       router.push(
-        data.redirect ?? "/verify-email",
+        data.developmentVerificationCode
+          ? `${redirect}${separator}devCode=${encodeURIComponent(data.developmentVerificationCode)}`
+          : redirect,
       );
     } catch {
       setError(
@@ -186,8 +195,11 @@ export default function RegisterForm({
         <select
           name="departmentId"
           defaultValue=""
+          required
         >
-          <option value="">اختياري</option>
+          <option value="" disabled>
+            اختر تخصصك
+          </option>
           {departments.map((department) => (
             <option
               key={department.id}

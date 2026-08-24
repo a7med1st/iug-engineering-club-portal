@@ -2,10 +2,14 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { appendReturnTo, getSafeReturnTo } from "@/lib/safe-return-to";
 
 export default function AuthForm() {
   const search = useSearchParams();
   const router = useRouter();
+  const returnTo = useMemo(() => {
+    return getSafeReturnTo(search.get("returnTo"));
+  }, [search]);
   const initial = search.get("portal") === "member" ? "member" : "student";
   const [portal, setPortal] = useState<"student" | "member">(initial);
   const [error, setError] = useState("");
@@ -20,7 +24,7 @@ export default function AuthForm() {
       const data = await res.json().catch(() => ({}));
 
       if (data.verificationRequired && data.redirect) {
-        router.push(data.redirect);
+        router.push(appendReturnTo(data.redirect, returnTo));
         return;
       }
 
@@ -29,7 +33,7 @@ export default function AuthForm() {
         return;
       }
 
-      router.push(data.redirect || "/");
+      router.push(returnTo || data.redirect || "/");
       router.refresh();
     } catch {
       setError("تعذر الاتصال بالخادم. حاول مرة أخرى.");

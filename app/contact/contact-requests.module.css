@@ -206,3 +206,142 @@
     scroll-behavior: auto;
   }
 }
+.clubButton {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 13px 24px;
+  border: 1px solid rgba(22, 136, 255, 0.25);
+  border-radius: 13px;
+
+  background: linear-gradient(135deg, #0f72dc, #1688ff);
+  color: #fff;
+
+  font-family: "Alexandria", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 22px rgba(15, 114, 220, 0.2),
+    0 2px 5px rgba(8, 35, 63, 0.08);
+
+  transition:
+    transform 0.35s cubic-bezier(.22, 1, .36, 1),
+    box-shadow 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.clubButton span {
+  position: relative;
+  z-index: 3;
+}
+
+/* ألوان النادي */
+.clubButton::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  background:
+    linear-gradient(
+      110deg,
+      #0f72dc 0%,
+      #35d4ff 28%,
+      #43b86b 52%,
+      #82bd32 68%,
+      #f4a316 86%,
+      #1688ff 100%
+    );
+
+  background-size: 250% 250%;
+  opacity: 0;
+
+  transition: opacity 0.45s ease;
+}
+
+/* لمعة تمر فوق الزر */
+.clubButton::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  left: -45%;
+  width: 28%;
+  z-index: 2;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+
+  transform: skewX(-20deg);
+  opacity: 0;
+}
+
+/* Hover */
+.clubButton:hover {
+  transform: translateY(-4px);
+
+  border-color: rgba(53, 212, 255, 0.65);
+
+  box-shadow:
+    0 14px 30px rgba(15, 114, 220, 0.23),
+    0 0 0 4px rgba(53, 212, 255, 0.08);
+}
+
+.clubButton:hover::before {
+  opacity: 1;
+  animation: clubColorsMove 2.8s ease infinite;
+}
+
+.clubButton:hover::after {
+  opacity: 1;
+  animation: clubButtonShine 0.85s ease forwards;
+}
+
+.clubButton:active {
+  transform: translateY(-1px) scale(0.97);
+}
+
+/* حركة الألوان */
+@keyframes clubColorsMove {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* حركة اللمعة */
+@keyframes clubButtonShine {
+  from {
+    left: -45%;
+  }
+
+  to {
+    left: 125%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clubButton,
+  .clubButton::before,
+  .clubButton::after {
+    animation: none !important;
+    transition-duration: 0.01ms;
+  }
+}

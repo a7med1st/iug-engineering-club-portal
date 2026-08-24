@@ -7,7 +7,7 @@ import {
   type FormEvent,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
   LoaderCircle,
@@ -23,6 +23,7 @@ import {
   EMAIL_VERIFICATION_CODE_TTL_MINUTES,
   EMAIL_VERIFICATION_RESEND_SECONDS,
 } from "@/lib/email-verification-constants";
+import { appendReturnTo, getSafeReturnTo } from "@/lib/safe-return-to";
 
 type VerifyEmailClientProps = {
   maskedEmail: string;
@@ -34,6 +35,7 @@ type ApiResponse = {
   error?: string;
   message?: string;
   redirect?: string;
+  developmentVerificationCode?: string;
   retryAfterSeconds?: number;
   sessionExpired?: boolean;
 };
@@ -49,8 +51,22 @@ export default function VerifyEmailClient({
   initialDeliveryFailed,
 }: VerifyEmailClientProps) {
   const router = useRouter();
+  const search = useSearchParams();
+  const returnTo = getSafeReturnTo(
+    search.get("returnTo"),
+  );
+  const initialDevelopmentCode =
+    process.env.NODE_ENV === "development"
+      ? (search.get("devCode") ?? "")
+          .replace(/\D/g, "")
+          .slice(0, EMAIL_VERIFICATION_CODE_LENGTH)
+      : "";
   const inputRef = useRef<HTMLInputElement>(null);
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(
+    initialDevelopmentCode,
+  );
+  const [developmentCode, setDevelopmentCode] =
+    useState(initialDevelopmentCode);
   const [countdown, setCountdown] = useState(
     initialResendSeconds,
   );
@@ -156,7 +172,10 @@ export default function VerifyEmailClient({
       window.setTimeout(
         () =>
           router.replace(
-            data.redirect ?? "/login?verified=1",
+            appendReturnTo(
+              data.redirect ?? "/login?verified=1",
+              returnTo,
+            ),
           ),
         reduceMotion ? 0 : 900,
       );
@@ -205,11 +224,19 @@ export default function VerifyEmailClient({
       }
 
       if (data.redirect) {
-        router.replace(data.redirect);
+        router.replace(
+          appendReturnTo(data.redirect, returnTo),
+        );
         return;
       }
 
       setCode("");
+      if (data.developmentVerificationCode) {
+        setDevelopmentCode(
+          data.developmentVerificationCode,
+        );
+        setCode(data.developmentVerificationCode);
+      }
       setCountdown(
         data.retryAfterSeconds ??
           EMAIL_VERIFICATION_RESEND_SECONDS,
@@ -260,6 +287,21 @@ export default function VerifyEmailClient({
           أرسلنا رمز تحقق مكوّنًا من 6 أرقام إلى
           <strong dir="ltr">{maskedEmail}</strong>
         </p>
+
+        {developmentCode && (
+          <div
+            className={styles.developmentCode}
+            role="status"
+          >
+            <span>رمز التحقق للّوكال</span>
+            <strong dir="ltr">
+              {developmentCode}
+            </strong>
+            <small>
+              يظهر هذا الرمز في وضع التطوير المحلي فقط.
+            </small>
+          </div>
+        )}
 
         <form onSubmit={verify}>
           <label
@@ -386,7 +428,7 @@ export default function VerifyEmailClient({
 
         <Link
           className={styles.loginLink}
-          href="/login"
+          href={appendReturnTo("/login", returnTo)}
         >
           العودة إلى تسجيل الدخول
         </Link>

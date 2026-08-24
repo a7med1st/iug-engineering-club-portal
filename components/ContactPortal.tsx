@@ -10,6 +10,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   useActionState,
@@ -249,6 +250,7 @@ function ComplaintForm({
   departments: Department[];
   isSignedIn: boolean;
 }) {
+  const router = useRouter();
   const [state, formAction] = useActionState(
     submitComplaint,
     initialState
@@ -283,6 +285,7 @@ function ComplaintForm({
       />
 
       <form
+        id="complaint-form"
         onSubmit={handleSubmit}
         className="contact-form"
       >
@@ -458,7 +461,13 @@ function ComplaintForm({
                   name="wantsReply"
                   value="yes"
                   required
-                  disabled={!isSignedIn}
+                  onChange={() => {
+                    if (!isSignedIn) {
+                      router.push(
+                        "/login?returnTo=%2Fcontact%23complaint-form"
+                      );
+                    }
+                  }}
                 />
 
                 <span>
@@ -486,7 +495,7 @@ function ComplaintForm({
 
             {!isSignedIn && (
               <small className="contact-reply-login-hint">
-                <Link href="/login">
+                <Link href="/login?returnTo=%2Fcontact%23complaint-form">
                   سجّل الدخول
                 </Link>{" "}
                 أولًا إذا أردت استلام رد الإدارة داخل الموقع.

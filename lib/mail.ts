@@ -89,6 +89,9 @@ function getTransporter() {
     host: configuration.host,
     port: configuration.port,
     secure: configuration.secure,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
     auth: {
       user: configuration.user,
       pass: configuration.pass,
