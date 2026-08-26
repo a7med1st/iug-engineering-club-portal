@@ -76,7 +76,12 @@ function NotificationIcon({
   type: string;
 }) {
   if (type === "CHAT_MESSAGE") {
-    return <MessageCircle aria-hidden="true" />;
+    return (
+      <MessageCircle
+        className={styles.notificationIcon}
+        aria-hidden="true"
+      />
+    );
   }
 
   if (
@@ -85,10 +90,20 @@ function NotificationIcon({
     type === "ACTIVITY_NEW" ||
     type === "ACTIVITY_REMINDER"
   ) {
-    return <CalendarDays aria-hidden="true" />;
+    return (
+      <CalendarDays
+        className={styles.notificationIcon}
+        aria-hidden="true"
+      />
+    );
   }
 
-  return <Info aria-hidden="true" />;
+  return (
+    <Info
+      className={styles.notificationIcon}
+      aria-hidden="true"
+    />
+  );
 }
 
 export default function NotificationBell() {

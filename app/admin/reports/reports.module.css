@@ -706,42 +706,38 @@
 }
 
 .statusBadge {
-  min-width: 70px;
-  padding: 0 10px;
-  border: 1px solid #cfe0ef;
-  background: #f3f8fc;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #60758c;
 }
 
 .statusBadge[data-status="PUBLISHED"] {
-  border-color: #bcebd3;
-  background: #ecfbf3;
   color: #13845a;
 }
 
 .statusBadge[data-status="DRAFT"] {
-  border-color: #f2d7a5;
-  background: #fff8e9;
   color: #9a6a14;
 }
 
 .statusBadge[data-status="ARCHIVED"] {
-  border-color: #d8e0e8;
-  background: #f2f5f8;
   color: #657384;
 }
 
 .numberPill {
-  min-width: 34px;
-  padding: 0 9px;
-  background: #f0f7fd;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #2d5d88;
 }
 
 .rateBadge {
-  min-width: 58px;
-  padding: 0 10px;
-  background: linear-gradient(135deg, #eaf6ff, #e8fcff);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #0878d9;
 }
 
@@ -1154,4 +1150,178 @@
   .reset svg {
     transition: none;
   }
+}
+
+:global(html[data-theme="dark"]) .page {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .hero,
+:global(html[data-theme="dark"]) .filters,
+:global(html[data-theme="dark"]) .panel {
+  border-color: var(--line);
+  background:
+    radial-gradient(circle at 94% 2%, rgb(22 136 255 / 15%), transparent 30%),
+    linear-gradient(145deg, var(--surface), #0a2942) !important;
+  box-shadow: var(--theme-shadow);
+}
+
+:global(html[data-theme="dark"]) .filterTrigger,
+:global(html[data-theme="dark"]) .filterMenu,
+:global(html[data-theme="dark"]) .filterOptionMark,
+:global(html[data-theme="dark"]) .reset,
+:global(html[data-theme="dark"]) .summaryCard,
+:global(html[data-theme="dark"]) .tableWrap,
+:global(html[data-theme="dark"]) .tableWrap tbody tr,
+:global(html[data-theme="dark"]) .printButton {
+  border-color: var(--line);
+  background: var(--surface-2) !important;
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .filterOption {
+  color: #dcecf8 !important;
+}
+
+:global(html[data-theme="dark"]) .filterOption strong {
+  color: inherit !important;
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1.55;
+  opacity: 1;
+}
+
+:global(html[data-theme="dark"]) .filterOption small {
+  color: #a8c0d3 !important;
+  font-size: 0.62rem;
+  font-weight: 650;
+  line-height: 1.55;
+  opacity: 1;
+}
+
+:global(html[data-theme="dark"]) .filterOption:not(.filterOptionActive):hover {
+  color: #ffffff !important;
+}
+
+:global(html[data-theme="dark"]) .tableWrap th,
+:global(html[data-theme="dark"]) .tableWrap tbody tr:hover,
+:global(html[data-theme="dark"]) .filterOption:hover,
+:global(html[data-theme="dark"]) .filterOptionActive {
+  border-color: var(--line);
+  background: var(--surface-3) !important;
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .filtersIntroIcon,
+:global(html[data-theme="dark"]) .summaryIcon,
+:global(html[data-theme="dark"]) .panelIcon,
+:global(html[data-theme="dark"]) .filterTriggerIcon,
+:global(html[data-theme="dark"]) .filterChevron,
+:global(html[data-theme="dark"]) .statusBadge,
+:global(html[data-theme="dark"]) .numberPill,
+:global(html[data-theme="dark"]) .rateBadge {
+  border-color: var(--line);
+  background: var(--surface-3) !important;
+}
+
+:global(html[data-theme="dark"]) .page :where(h1, h2, h3, strong, label, th, td) {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .page :where(p, small) {
+  color: var(--muted);
+}
+
+:global(html[data-theme="dark"]) .tableWrap {
+  scrollbar-color: #4d94c7 #061a2b;
+}
+
+:global(html[data-theme="dark"]) .tableWrap th,
+:global(html[data-theme="dark"]) .tableWrap td {
+  border-bottom-color: rgba(111, 164, 202, 0.28);
+}
+
+:global(html[data-theme="dark"]) .tableWrap th {
+  background: #0d3452 !important;
+  color: #d9edf9 !important;
+}
+
+:global(html[data-theme="dark"]) .tableWrap tbody tr {
+  background: #09243a !important;
+}
+
+:global(html[data-theme="dark"]) .tableWrap tbody tr:hover {
+  background: linear-gradient(90deg, #0d2d47, #103550) !important;
+  box-shadow: inset -4px 0 0 #35b8ff;
+}
+
+:global(html[data-theme="dark"]) .activityLink {
+  color: #b9e3ff;
+}
+
+:global(html[data-theme="dark"]) .activityLink:hover {
+  color: #ffffff;
+}
+
+:global(html[data-theme="dark"]) .dateCell {
+  color: #d1e5f3 !important;
+  font-weight: 700;
+}
+
+:global(html[data-theme="dark"]) .tableWrap td small {
+  color: #9db6ca !important;
+}
+
+:global(html[data-theme="dark"]) .numberPill {
+  border: 0;
+  background: transparent !important;
+  color: #8fdcff !important;
+  font-weight: 900;
+  opacity: 1;
+}
+
+:global(html[data-theme="dark"]) .rateBadge {
+  border: 0;
+  background: transparent !important;
+  color: #9ee8ff !important;
+  font-weight: 900;
+}
+
+:global(html[data-theme="dark"]) .statusBadge {
+  border: 0;
+  background: transparent !important;
+  color: #c5d8e7 !important;
+}
+
+:global(html[data-theme="dark"]) .statusBadge[data-status="PUBLISHED"] {
+  background: transparent !important;
+  color: #74e6aa !important;
+}
+
+:global(html[data-theme="dark"]) .statusBadge[data-status="DRAFT"] {
+  background: transparent !important;
+  color: #ffd080 !important;
+}
+
+:global(html[data-theme="dark"]) .statusBadge[data-status="ARCHIVED"] {
+  background: transparent !important;
+  color: #cadbe7 !important;
+}
+
+:global(html[data-theme="dark"]) .tableWrap::-webkit-scrollbar {
+  height: 10px;
+}
+
+:global(html[data-theme="dark"]) .tableWrap::-webkit-scrollbar-track {
+  background: #061a2b;
+}
+
+:global(html[data-theme="dark"]) .tableWrap::-webkit-scrollbar-thumb {
+  border: 2px solid #061a2b;
+  border-radius: 999px;
+  background: #4d94c7;
+}
+
+:global(html[data-theme="dark"]) .tableWrap::-webkit-scrollbar-thumb:hover {
+  background: #67c7ff;
 }

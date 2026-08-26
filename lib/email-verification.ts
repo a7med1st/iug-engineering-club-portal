@@ -12,8 +12,8 @@ import {
   EMAIL_VERIFICATION_MAX_ATTEMPTS,
   EMAIL_VERIFICATION_MAX_SENDS_PER_HOUR,
   EMAIL_VERIFICATION_RESEND_SECONDS,
-} from "@/lib/email-verification-constants";
-import { prisma } from "@/lib/prisma";
+} from "./email-verification-constants.ts";
+import { prisma } from "./prisma.ts";
 
 export {
   EMAIL_VERIFICATION_CODE_LENGTH,
@@ -21,7 +21,7 @@ export {
   EMAIL_VERIFICATION_MAX_ATTEMPTS,
   EMAIL_VERIFICATION_MAX_SENDS_PER_HOUR,
   EMAIL_VERIFICATION_RESEND_SECONDS,
-} from "@/lib/email-verification-constants";
+} from "./email-verification-constants.ts";
 
 const EMAIL_VERIFICATION_SEND_WINDOW_MS =
   60 * 60 * 1000;

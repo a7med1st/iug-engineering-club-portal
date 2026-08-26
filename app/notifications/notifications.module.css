@@ -4,6 +4,71 @@
   padding: 34px 0 72px;
 }
 
+:global(html[data-theme="dark"]) .page {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .hero,
+:global(html[data-theme="dark"]) .panel,
+:global(html[data-theme="dark"]) .panelHead,
+:global(html[data-theme="dark"]) .item {
+  border-color: var(--line);
+  background:
+    radial-gradient(circle at 94% 3%, rgb(53 212 255 / 10%), transparent 28%),
+    var(--surface) !important;
+  color: var(--ink);
+  box-shadow: var(--theme-shadow);
+}
+
+:global(html[data-theme="dark"]) .page :where(h1, h2, h3, strong) {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .page :where(p, small, time) {
+  color: var(--muted);
+}
+
+:global(html[data-theme="dark"]) .iconBox {
+  border-color: rgb(8 125 232 / 48%);
+  background: #eaf7ff;
+  color: #087de8;
+  box-shadow: 0 5px 16px rgb(0 7 18 / 24%);
+}
+
+:global(html[data-theme="dark"]) .chatIcon {
+  border-color: rgb(21 153 87 / 44%);
+  background: #edfff4;
+  color: #159957;
+}
+
+:global(html[data-theme="dark"]) .iconBox .notificationIcon,
+:global(html[data-theme="dark"]) .iconBox .notificationIcon * {
+  color: #087de8 !important;
+  stroke: #087de8 !important;
+  stroke-width: 2.8 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+}
+
+:global(html[data-theme="dark"]) .chatIcon .notificationIcon,
+:global(html[data-theme="dark"]) .chatIcon .notificationIcon * {
+  color: #159957 !important;
+  stroke: #159957 !important;
+}
+
+:global(html[data-theme="dark"]) .item:hover .iconBox {
+  border-color: rgb(8 125 232 / 70%);
+  background: #ffffff;
+  color: #006dcc;
+}
+
+:global(html[data-theme="dark"]) .item:hover .chatIcon {
+  border-color: rgb(21 153 87 / 68%);
+  background: #f7fffa;
+  color: #087a41;
+}
+
 .hero {
   position: relative;
   isolation: isolate;

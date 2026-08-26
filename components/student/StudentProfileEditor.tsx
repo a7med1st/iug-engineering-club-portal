@@ -169,9 +169,7 @@ export default function StudentProfileEditor({
 
           <button
             type="button"
-            className={
-              styles.editProfileButton
-            }
+            className={`${styles.editProfileButton} ${styles.dashboardActionButton}`}
             onClick={() =>
               setEditing(true)
             }

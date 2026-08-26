@@ -4,12 +4,14 @@ import { redirect } from "next/navigation";
 import {
   Check,
   CheckCheck,
+  ArrowRight,
   ExternalLink,
   MessagesSquare,
 } from "lucide-react";
 
 import ChatComposer from "@/components/member/ChatComposer";
 import ChatConversationView from "@/components/member/ChatConversationView";
+import ChatMessageContent from "@/components/member/ChatMessageContent";
 import ChatPresenceStatus from "@/components/member/ChatPresenceStatus";
 
 import {
@@ -99,6 +101,20 @@ export default async function ConversationPage({
                     readAt: true,
                   },
                 },
+                attachments: {
+                  select: {
+                    id: true,
+                    originalName: true,
+                    mime: true,
+                    size: true,
+                  },
+                },
+                pollVotes: {
+                  select: {
+                    userId: true,
+                    optionIndex: true,
+                  },
+                },
               },
             },
           },
@@ -141,6 +157,16 @@ export default async function ConversationPage({
     return {
       id: message.id,
       body: message.body,
+      kind: message.kind,
+      attachments: message.attachments,
+      pollQuestion: message.pollQuestion,
+      pollOptions: message.pollOptions,
+      pollVotes: message.pollVotes,
+      imageOnly:
+        message.body === "صورة" &&
+        message.attachments.some((attachment) =>
+          /^image\/(jpeg|png|gif|webp)$/i.test(attachment.mime),
+        ),
       mine,
       senderName: message.sender.name,
       time: formatMessageTime(message.createdAt),
@@ -180,6 +206,15 @@ export default async function ConversationPage({
           </p>
         </div>
 
+        <Link
+          href="/member/chat"
+          className={styles.mobileChatBack}
+          aria-label="العودة إلى قائمة المحادثات"
+          title="العودة إلى المحادثات"
+        >
+          <ArrowRight aria-hidden="true" />
+        </Link>
+
         {partner.structureItem && (
           <Link
             href={`/members/${partner.id}`}
@@ -213,9 +248,19 @@ export default async function ConversationPage({
 
                 <article
                   className={
-                    message.mine
-                      ? styles.messageMine
-                      : styles.messageOther
+                    `${
+                      message.mine
+                        ? styles.messageMine
+                        : styles.messageOther
+                    } ${
+                      message.attachments.length
+                        ? styles.messageWithAttachment
+                        : ""
+                    } ${
+                      message.imageOnly
+                        ? styles.messageImageOnly
+                        : ""
+                    }`
                   }
                 >
                   {!message.mine && (
@@ -224,7 +269,16 @@ export default async function ConversationPage({
                     </small>
                   )}
 
-                  <p>{message.body}</p>
+                  <ChatMessageContent
+                    messageId={message.id}
+                    kind={message.kind}
+                    body={message.body}
+                    attachments={message.attachments}
+                    pollQuestion={message.pollQuestion}
+                    pollOptions={message.pollOptions}
+                    pollVotes={message.pollVotes}
+                    currentUserId={user.id}
+                  />
 
                   <div className={styles.messageFooter}>
                     <time>{message.time}</time>

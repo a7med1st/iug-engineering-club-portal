@@ -544,7 +544,7 @@
   border: 1px solid #cddbea;
   border-radius: 13px;
   background: rgba(250, 252, 255, .96);
-  color: #16324f;
+  color: var(--theme-strong-text);
   font: inherit;
   transition: border-color .22s ease, background .22s ease, box-shadow .22s ease, transform .22s ease;
 }
@@ -1119,4 +1119,55 @@
     animation: none;
     transition: none;
   }
+}
+
+:global(html[data-theme="dark"]) .page {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .hero,
+:global(html[data-theme="dark"]) .mediaCard,
+:global(html[data-theme="dark"]) .card,
+:global(html[data-theme="dark"]) .saveBar {
+  border-color: var(--line);
+  background:
+    radial-gradient(circle at 94% 2%, rgb(22 136 255 / 13%), transparent 30%),
+    linear-gradient(145deg, var(--surface), #0a2942) !important;
+  color: var(--ink);
+  box-shadow: var(--theme-shadow);
+}
+
+:global(html[data-theme="dark"]) .mediaControlCard,
+:global(html[data-theme="dark"]) .fieldCard,
+:global(html[data-theme="dark"]) .cameraPanel {
+  border-color: var(--line);
+  background: var(--surface) !important;
+  color: var(--ink);
+  box-shadow: var(--theme-shadow);
+}
+
+:global(html[data-theme="dark"]) .backLink,
+:global(html[data-theme="dark"]) .mediaSecondaryAction,
+:global(html[data-theme="dark"]) .cameraClose,
+:global(html[data-theme="dark"]) .cameraCancelButton,
+:global(html[data-theme="dark"]) .fieldCard textarea,
+:global(html[data-theme="dark"]) .fieldCard input {
+  border-color: var(--line);
+  background: var(--surface-2) !important;
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .previewLink,
+:global(html[data-theme="dark"]) .mediaStatus {
+  border-color: var(--line);
+  background: var(--surface-2) !important;
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .page :where(h1, h2, h3, strong, label) {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .page :where(p, small) {
+  color: var(--muted);
 }

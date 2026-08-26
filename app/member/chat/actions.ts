@@ -21,6 +21,12 @@ import {
   prisma,
 } from "@/lib/prisma";
 
+import {
+  ChatAttachmentStorageError,
+  deleteChatAttachment,
+  uploadChatAttachment,
+} from "@/lib/chat-attachment-storage";
+
 function text(
   formData: FormData,
   field: string,
@@ -253,9 +259,16 @@ export async function startDirectConversation(
   );
 }
 
+export type ChatComposerState = {
+  status: "idle" | "success" | "error";
+  message?: string;
+  submissionId?: string;
+};
+
 export async function sendChatMessage(
+  _previousState: ChatComposerState,
   formData: FormData,
-) {
+): Promise<ChatComposerState> {
   const {
     user,
   } =
@@ -275,12 +288,22 @@ export async function sendChatMessage(
       "body",
     );
 
+  const pollQuestion = text(formData, "pollQuestion");
+  const pollOptions = formData
+    .getAll("pollOption")
+    .map((value) => String(value).trim())
+    .filter(Boolean);
+  const attachmentValue = formData.get("attachment");
+  const attachment =
+    attachmentValue instanceof File && attachmentValue.size > 0
+      ? attachmentValue
+      : null;
+  const isVoiceNote = text(formData, "isVoiceNote") === "true";
+
   if (
     !conversationId
   ) {
-    chatError(
-      "المحادثة غير صالحة.",
-    );
+    return { status: "error", message: "المحادثة غير صالحة." };
   }
 
   const participant =
@@ -313,9 +336,7 @@ export async function sendChatMessage(
   if (
     !participant
   ) {
-    redirect(
-      "/member/chat",
-    );
+    return { status: "error", message: "لا يمكنك الإرسال إلى هذه المحادثة." };
   }
 
   const isGroup =
@@ -329,26 +350,69 @@ export async function sendChatMessage(
       ? `/member/chat/groups/${conversationId}`
       : `/member/chat/${conversationId}`;
 
-  if (
-    !body
-  ) {
-    redirect(
-      `${chatHref}?error=${encodeURIComponent(
-        "اكتب رسالة أولًا.",
-      )}`,
-    );
+  if (!body && !attachment && !pollQuestion) {
+    return { status: "error", message: "اكتب رسالة أو أضف مرفقًا أو تصويتًا." };
   }
 
   if (
     body.length >
     3000
   ) {
-    redirect(
-      `${chatHref}?error=${encodeURIComponent(
-        "الرسالة طويلة جدًا. الحد الأقصى 3000 حرف.",
-      )}`,
-    );
+    return {
+      status: "error",
+      message: "الرسالة طويلة جدًا. الحد الأقصى 3000 حرف.",
+    };
   }
+
+  if (pollQuestion) {
+    if (attachment) {
+      return { status: "error", message: "أرسل التصويت والمرفق كرسالتين منفصلتين." };
+    }
+
+    if (pollQuestion.length > 180) {
+      return { status: "error", message: "سؤال التصويت أطول من 180 حرفًا." };
+    }
+
+    if (pollOptions.length < 2 || pollOptions.length > 6) {
+      return { status: "error", message: "أضف من خيارين إلى 6 خيارات للتصويت." };
+    }
+
+    if (pollOptions.some((option) => option.length > 120)) {
+      return { status: "error", message: "خيار التصويت أطول من 120 حرفًا." };
+    }
+  }
+
+  let storedAttachment = null;
+
+  if (attachment) {
+    try {
+      storedAttachment = await uploadChatAttachment(attachment, conversationId);
+    } catch (error) {
+      return {
+        status: "error",
+        message:
+          error instanceof ChatAttachmentStorageError
+            ? error.message
+            : "تعذر رفع الملف. حاول مرة أخرى.",
+      };
+    }
+  }
+
+  const kind = pollQuestion ? "POLL" : storedAttachment ? "ATTACHMENT" : "TEXT";
+  const fallbackBody = pollQuestion
+    ? `تصويت: ${pollQuestion}`
+    : isVoiceNote
+      ? "رسالة صوتية"
+      : storedAttachment?.mime.startsWith("image/")
+        ? "صورة"
+        : storedAttachment?.mime.startsWith("video/")
+          ? "فيديو"
+          : storedAttachment?.mime.startsWith("audio/")
+            ? "ملف صوتي"
+            : storedAttachment
+              ? `ملف: ${storedAttachment.originalName}`
+              : "";
+  const messageBody = body || fallbackBody;
 
   const [
     recipients,
@@ -387,18 +451,17 @@ export async function sendChatMessage(
   if (
     !sender
   ) {
-    redirect(
-      "/member/chat",
-    );
+    if (storedAttachment) await deleteChatAttachment(storedAttachment);
+    return { status: "error", message: "تعذر العثور على بيانات المرسل." };
   }
 
   const now =
     new Date();
 
-  await prisma.$transaction(
-    async (
-      tx,
-    ) => {
+  let createdMessageId = "";
+
+  try {
+    await prisma.$transaction(async (tx) => {
       const message =
         await tx.chatMessage.create({
           data: {
@@ -407,13 +470,29 @@ export async function sendChatMessage(
             senderId:
               user.id,
 
-            body,
+            body: messageBody,
+            kind,
+            pollQuestion: pollQuestion || null,
+            pollOptions: pollQuestion ? pollOptions : [],
+            attachments: storedAttachment
+              ? {
+                  create: {
+                    url: storedAttachment.url,
+                    pathname: storedAttachment.pathname,
+                    originalName: storedAttachment.originalName,
+                    mime: storedAttachment.mime,
+                    size: storedAttachment.size,
+                  },
+                }
+              : undefined,
           },
 
           select: {
             id: true,
           },
         });
+
+      createdMessageId = message.id;
 
       if (
         recipients.length
@@ -455,8 +534,8 @@ export async function sendChatMessage(
 
                 body:
                   isGroup
-                    ? `${sender.name}: ${messagePreview(body)}`
-                    : messagePreview(body),
+                    ? `${sender.name}: ${messagePreview(messageBody)}`
+                    : messagePreview(messageBody),
 
                 href:
                   chatHref,
@@ -510,8 +589,11 @@ export async function sendChatMessage(
             user.id,
         },
       });
-    },
-  );
+    });
+  } catch {
+    if (storedAttachment) await deleteChatAttachment(storedAttachment);
+    return { status: "error", message: "تعذر إرسال الرسالة. حاول مرة أخرى." };
+  }
 
   revalidatePath(
     "/member/chat",
@@ -524,4 +606,44 @@ export async function sendChatMessage(
   revalidatePath(
     "/notifications",
   );
+
+  return {
+    status: "success",
+    submissionId: createdMessageId,
+  };
+}
+
+export async function voteOnChatPoll(formData: FormData) {
+  const { user } = await requirePermission(PERMISSIONS.MEMBER_DASHBOARD);
+  const messageId = text(formData, "messageId");
+  const optionIndex = Number(text(formData, "optionIndex"));
+
+  if (!messageId || !Number.isInteger(optionIndex)) return;
+
+  const message = await prisma.chatMessage.findFirst({
+    where: {
+      id: messageId,
+      kind: "POLL",
+      conversation: { participants: { some: { userId: user.id } } },
+    },
+    select: {
+      conversationId: true,
+      pollOptions: true,
+      conversation: { select: { type: true } },
+    },
+  });
+
+  if (!message || optionIndex < 0 || optionIndex >= message.pollOptions.length) return;
+
+  await prisma.chatPollVote.upsert({
+    where: { messageId_userId: { messageId, userId: user.id } },
+    create: { messageId, userId: user.id, optionIndex },
+    update: { optionIndex },
+  });
+
+  const href =
+    message.conversation.type === "GROUP"
+      ? `/member/chat/groups/${message.conversationId}`
+      : `/member/chat/${message.conversationId}`;
+  revalidatePath(href);
 }

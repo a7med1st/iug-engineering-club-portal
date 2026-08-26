@@ -12,7 +12,11 @@
 }
 
 .certificate {
+  --ink: #17202a;
+  --muted: #56616d;
+
   position: relative;
+  color-scheme: light;
   width: min(100%, 1120px);
   min-height: 720px;
   margin: 0 auto;
@@ -126,7 +130,7 @@
 
 .footer {
   display: flex;
-  align-items: end;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 25px;
   padding: 20px 54px 38px;
@@ -190,6 +194,44 @@
   font-size: 54px;
   font-weight: 900;
   opacity: .72;
+}
+
+@media screen {
+  :global(html[data-theme="dark"]) .shell {
+    background: #061a2b;
+  }
+
+  :global(html[data-theme="dark"]) .certificate {
+    background: #ffffff;
+    color: #17202a;
+  }
+
+  :global(html[data-theme="dark"]) .certificate :where(.body h1, .body h3) {
+    color: #163f70 !important;
+  }
+
+  :global(html[data-theme="dark"]) .certificate :where(
+    .header strong,
+    .body h2,
+    .verify strong,
+    .issued strong
+  ) {
+    color: #17202a !important;
+  }
+
+  :global(html[data-theme="dark"]) .certificate :where(
+    .body p,
+    .details span,
+    .verify span,
+    .verify small,
+    .issued span
+  ) {
+    color: #56616d !important;
+  }
+
+  :global(html[data-theme="dark"]) .certificate .department {
+    color: #61778e !important;
+  }
 }
 
 @media print {

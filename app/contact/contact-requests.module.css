@@ -189,6 +189,52 @@
   white-space: pre-wrap;
 }
 
+:global(html[data-theme="dark"]) .tracker {
+  border-color: var(--line);
+  background:
+    radial-gradient(circle at 90% 0, rgba(33, 167, 245, 0.1), transparent 32%),
+    var(--surface);
+  box-shadow: var(--theme-shadow);
+}
+
+:global(html[data-theme="dark"]) .headingIcon {
+  color: #67c2ff;
+  background: #123a58;
+}
+
+:global(html[data-theme="dark"]) .heading h2,
+:global(html[data-theme="dark"]) .requestHead strong {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .heading p,
+:global(html[data-theme="dark"]) .summary,
+:global(html[data-theme="dark"]) .requestHead time,
+:global(html[data-theme="dark"]) .reply time {
+  color: var(--muted);
+}
+
+:global(html[data-theme="dark"]) .empty,
+:global(html[data-theme="dark"]) .request {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: #b5c8da;
+}
+
+:global(html[data-theme="dark"]) .replies {
+  border-color: var(--line);
+}
+
+:global(html[data-theme="dark"]) .reply {
+  border-color: #22577c;
+  background: #0e3049;
+}
+
+:global(html[data-theme="dark"]) .reply b,
+:global(html[data-theme="dark"]) .reply p {
+  color: #bfe3fb;
+}
+
 @media (max-width: 560px) {
   .requestHead,
   .reply > div {

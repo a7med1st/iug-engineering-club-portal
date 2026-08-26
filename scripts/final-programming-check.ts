@@ -1,10 +1,10 @@
 import {
   prisma,
-} from "@/lib/prisma";
+} from "../lib/prisma.ts";
 
 import {
   syncSystemChatGroups,
-} from "@/lib/chat-groups";
+} from "../lib/chat-groups.ts";
 
 type Check = {
   name: string;

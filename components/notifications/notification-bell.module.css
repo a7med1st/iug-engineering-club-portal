@@ -523,9 +523,10 @@
   .dropdown {
     position: fixed;
     top: 78px;
-    right: 10px;
+    right: auto;
     left: 10px;
-    width: calc(100vw - 20px);
+    width: calc(100dvw - 20px);
+    max-width: none;
     max-height: calc(100dvh - 90px);
     transform-origin: top center;
   }
@@ -592,6 +593,19 @@
   }
 }
 
+@media (max-width: 420px) {
+  .bellButton {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+
+  .bellButton svg {
+    width: 19px;
+    height: 19px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bellButton,
   .bellButton svg,
@@ -608,4 +622,85 @@
   .toast {
     animation: none;
   }
+}
+
+:global(html[data-theme="dark"]) .bellButton,
+:global(html[data-theme="dark"]) .dropdown,
+:global(html[data-theme="dark"]) .dropdownHeader,
+:global(html[data-theme="dark"]) .item,
+:global(html[data-theme="dark"]) .allLink {
+  border-color: var(--line);
+  background: var(--surface) !important;
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .dropdown {
+  box-shadow: 0 30px 80px rgb(0 5 10 / 52%);
+}
+
+:global(html[data-theme="dark"]) .dropdown::before {
+  border-color: var(--line);
+  background: var(--surface);
+}
+
+:global(html[data-theme="dark"]) .dropdownHeader h2 {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .content strong {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .body {
+  color: #acc2d6;
+}
+
+:global(html[data-theme="dark"]) .content small {
+  color: var(--muted);
+}
+
+:global(html[data-theme="dark"]) .iconBox {
+  border-color: rgba(21, 132, 232, 0.34);
+  background: #eaf7ff;
+  color: #087de8;
+  box-shadow: 0 5px 16px rgba(0, 7, 18, 0.22);
+}
+
+:global(html[data-theme="dark"]) .iconChat {
+  border-color: rgba(21, 153, 87, 0.32);
+  background: #edfff4;
+  color: #159957;
+}
+
+:global(html[data-theme="dark"]) .item:hover .iconBox {
+  border-color: rgba(8, 125, 232, 0.52);
+  background: #ffffff;
+  color: #006dcc;
+}
+
+:global(html[data-theme="dark"]) .item:hover .iconChat {
+  border-color: rgba(21, 153, 87, 0.5);
+  background: #f7fffa;
+  color: #087a41;
+}
+
+:global(html[data-theme="dark"]) .notificationIcon,
+:global(html[data-theme="dark"]) .notificationIcon * {
+  color: inherit !important;
+  stroke: currentColor !important;
+  stroke-width: 2.6 !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+:global(html[data-theme="dark"]) .iconBox .notificationIcon,
+:global(html[data-theme="dark"]) .iconBox .notificationIcon * {
+  color: #087de8 !important;
+  stroke: #087de8 !important;
+}
+
+:global(html[data-theme="dark"]) .iconChat .notificationIcon,
+:global(html[data-theme="dark"]) .iconChat .notificationIcon * {
+  color: #159957 !important;
+  stroke: #159957 !important;
 }

@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Check, CheckCheck, UsersRound } from "lucide-react";
+import { ArrowRight, Check, CheckCheck, UsersRound } from "lucide-react";
 import ChatComposer from "@/components/member/ChatComposer";
 import ChatConversationView from "@/components/member/ChatConversationView";
 import ChatGroupTypingStatus from "@/components/member/ChatGroupTypingStatus";
+import ChatMessageContent from "@/components/member/ChatMessageContent";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { getSystemGroupMembership } from "@/lib/chat-groups";
 import chatStyles from "../../chat.module.css";
@@ -30,7 +32,25 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
       : receipts.length && receipts.every((r) => r.deliveredAt)
         ? "DELIVERED"
         : "SENT";
-    return { id: m.id, body: m.body, mine, senderName: m.sender.name, time: fmtTime(m.createdAt), day: showDay ? day : null, state };
+    return {
+      id: m.id,
+      body: m.body,
+      kind: m.kind,
+      attachments: m.attachments,
+      pollQuestion: m.pollQuestion,
+      pollOptions: m.pollOptions,
+      pollVotes: m.pollVotes,
+      imageOnly:
+        m.body === "صورة" &&
+        m.attachments.some((attachment) =>
+          /^image\/(jpeg|png|gif|webp)$/i.test(attachment.mime),
+        ),
+      mine,
+      senderName: m.sender.name,
+      time: fmtTime(m.createdAt),
+      day: showDay ? day : null,
+      state,
+    };
   });
   const lastMessageId = conversation.messages.at(-1)?.id ?? "";
   return (
@@ -42,15 +62,34 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
             <h1>{conversation.name ?? "مجموعة"}</h1>
             <p><ChatGroupTypingStatus conversationId={id} participantCount={conversation.participants.length} /></p>
           </div>
+          <Link
+            href="/member/chat"
+            className={chatStyles.mobileChatBack}
+            aria-label="العودة إلى قائمة المحادثات"
+            title="العودة إلى المحادثات"
+          >
+            <ArrowRight aria-hidden="true" />
+          </Link>
         </header>
         <ChatConversationView conversationId={id} lastMessageId={lastMessageId}>
           <div className={chatStyles.messages}>
             {rows.map((m) => (
               <div key={m.id}>
                 {m.day && <div className={chatStyles.dayDivider}><span>{m.day}</span></div>}
-                <article className={m.mine ? chatStyles.messageMine : chatStyles.messageOther}>
+                <article
+                  className={`${m.mine ? chatStyles.messageMine : chatStyles.messageOther} ${m.attachments.length ? chatStyles.messageWithAttachment : ""} ${m.imageOnly ? chatStyles.messageImageOnly : ""}`}
+                >
                   {!m.mine && <small className={chatStyles.senderName}>{m.senderName}</small>}
-                  <p>{m.body}</p>
+                  <ChatMessageContent
+                    messageId={m.id}
+                    kind={m.kind}
+                    body={m.body}
+                    attachments={m.attachments}
+                    pollQuestion={m.pollQuestion}
+                    pollOptions={m.pollOptions}
+                    pollVotes={m.pollVotes}
+                    currentUserId={user.id}
+                  />
                   <div className={chatStyles.messageFooter}>
                     <time>{m.time}</time>
                     {m.mine && m.state === "SENT" && <Check size={15} className={chatStyles.deliverySent} />}

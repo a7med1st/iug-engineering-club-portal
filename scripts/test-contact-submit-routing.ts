@@ -6,8 +6,8 @@ import {
 import {
   createInitialRoutingRecords,
   findInitialContactAssignee,
-} from "../lib/contact-routing";
-import { prisma } from "../lib/prisma";
+} from "../lib/contact-routing.ts";
+import { prisma } from "../lib/prisma.ts";
 
 async function main() {
   const department = await prisma.department.findFirst({

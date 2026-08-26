@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "./prisma.ts";
 
 const GENERAL_KEY = "group:general";
 const deptKey = (id: string) => `group:department:${id}`;
@@ -137,6 +137,10 @@ export async function getSystemGroupMembership(userId: string, conversationId: s
             include: {
               sender: { select: { id: true, name: true } },
               receipts: { select: { userId: true, deliveredAt: true, readAt: true } },
+              attachments: {
+                select: { id: true, originalName: true, mime: true, size: true },
+              },
+              pollVotes: { select: { userId: true, optionIndex: true } },
             },
           },
         },

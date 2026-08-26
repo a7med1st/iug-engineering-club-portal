@@ -16,6 +16,21 @@
   box-shadow: 0 16px 50px rgba(30, 45, 70, .08);
 }
 
+:global(html[data-theme="dark"]) .card {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--theme-shadow);
+}
+
+:global(html[data-theme="dark"]) .card :where(h1, h2, strong, label) {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .card :where(p, small) {
+  color: var(--muted);
+}
+
 .statusIcon {
   width: 76px;
   height: 76px;

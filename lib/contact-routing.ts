@@ -4,7 +4,7 @@ import type {
   Role,
 } from "@prisma/client";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "./prisma.ts";
 
 export type ContactAssignment = {
   userId: string;

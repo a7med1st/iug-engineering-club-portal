@@ -9,6 +9,7 @@ import {
   requireActivityPermission,
 } from "@/lib/permissions";
 
+import { activityDateTimeFromInput } from "@/lib/activities";
 import { prisma } from "@/lib/prisma";
 
 const allowedStatuses = [
@@ -47,6 +48,174 @@ function revalidateRegistrationPages(
   revalidatePath("/admin/activities");
   revalidatePath("/student");
   revalidatePath("/notifications");
+}
+
+function revalidateActivityDetailsPages(activityId: string) {
+  revalidatePath(`/admin/activities/${activityId}/registrations`);
+  revalidatePath(`/admin/activities/${activityId}/check-in`);
+  revalidatePath(`/activities/${activityId}/register`);
+  revalidatePath(`/activities/${activityId}`);
+  revalidatePath("/activities");
+  revalidatePath("/admin/activities");
+  revalidatePath("/student");
+  revalidatePath("/");
+}
+
+export type UpdateActivityLocationState = {
+  success: boolean;
+  message: string;
+  location?: string;
+};
+
+export async function updateActivityLocation(
+  _previousState: UpdateActivityLocationState,
+  formData: FormData,
+): Promise<UpdateActivityLocationState> {
+  const activityId = String(formData.get("activityId") ?? "").trim();
+  const location = String(formData.get("activityLocation") ?? "").trim();
+
+  if (!activityId) {
+    return {
+      success: false,
+      message: "معرّف النشاط غير صالح.",
+    };
+  }
+
+  if (!location) {
+    return {
+      success: false,
+      message: "يرجى إدخال موقع النشاط.",
+    };
+  }
+
+  if (location.length > 250) {
+    return {
+      success: false,
+      message: "موقع النشاط طويل جدًا. الحد الأقصى 250 حرفًا.",
+    };
+  }
+
+  await requireActivityPermission(
+    PERMISSIONS.ACTIVITY_MANAGE,
+    activityId,
+  );
+
+  try {
+    const activity = await prisma.activity.update({
+      where: { id: activityId },
+      data: { location },
+      select: { location: true },
+    });
+
+    revalidateActivityDetailsPages(activityId);
+
+    return {
+      success: true,
+      message: "تم تحديث موقع النشاط بنجاح.",
+      location: activity.location,
+    };
+  } catch (error) {
+    console.error("Failed to update activity location", {
+      activityId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+
+    return {
+      success: false,
+      message: "تعذر حفظ الموقع الآن. يرجى المحاولة مرة أخرى.",
+    };
+  }
+}
+
+export type UpdateActivityDateState = {
+  success: boolean;
+  message: string;
+  startsAt?: string;
+  endsAt?: string | null;
+};
+
+export async function updateActivityDate(
+  _previousState: UpdateActivityDateState,
+  formData: FormData,
+): Promise<UpdateActivityDateState> {
+  const activityId = String(formData.get("activityId") ?? "").trim();
+  const dateValue = String(formData.get("startDate") ?? "").trim();
+  const timeValue = String(formData.get("startTime") ?? "").trim();
+  const endDateValue = String(formData.get("endDate") ?? "").trim();
+  const endTimeValue = String(formData.get("endTime") ?? "").trim();
+
+  if (!activityId) {
+    return {
+      success: false,
+      message: "معرّف النشاط غير صالح.",
+    };
+  }
+
+  const startsAt = activityDateTimeFromInput(dateValue, timeValue);
+
+  if (!startsAt) {
+    return {
+      success: false,
+      message: "يرجى إدخال تاريخ ووقت صالحين.",
+    };
+  }
+
+  if (Boolean(endDateValue) !== Boolean(endTimeValue)) {
+    return {
+      success: false,
+      message: "أدخل تاريخ ووقت نهاية النشاط معًا، أو اترك الحقلين فارغين.",
+    };
+  }
+
+  const endsAt = endDateValue && endTimeValue
+    ? activityDateTimeFromInput(endDateValue, endTimeValue)
+    : null;
+
+  if (endDateValue && endTimeValue && !endsAt) {
+    return {
+      success: false,
+      message: "يرجى إدخال تاريخ ووقت نهاية صالحين.",
+    };
+  }
+
+  if (endsAt && endsAt.getTime() <= startsAt.getTime()) {
+    return {
+      success: false,
+      message: "يجب أن يكون موعد نهاية النشاط بعد موعد البداية.",
+    };
+  }
+
+  await requireActivityPermission(
+    PERMISSIONS.ACTIVITY_MANAGE,
+    activityId,
+  );
+
+  try {
+    const activity = await prisma.activity.update({
+      where: { id: activityId },
+      data: { startsAt, endsAt },
+      select: { startsAt: true, endsAt: true },
+    });
+
+    revalidateActivityDetailsPages(activityId);
+
+    return {
+      success: true,
+      message: "تم تحديث تاريخ ووقت النشاط بنجاح.",
+      startsAt: activity.startsAt.toISOString(),
+      endsAt: activity.endsAt?.toISOString() ?? null,
+    };
+  } catch (error) {
+    console.error("Failed to update activity date", {
+      activityId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+
+    return {
+      success: false,
+      message: "تعذر حفظ التعديل الآن. يرجى المحاولة مرة أخرى.",
+    };
+  }
 }
 
 /* =========================================================

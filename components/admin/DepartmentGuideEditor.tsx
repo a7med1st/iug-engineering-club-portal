@@ -95,7 +95,6 @@ export default function DepartmentGuideEditor({
     <div className="guide-redesign">
       <div className="guide-toolbar">
         <div className="guide-toolbar-copy">
-          <span className="guide-toolbar-kicker">اختيار القسم</span>
           <strong>حدد القسم الذي تريد تحديث دليله</strong>
         </div>
 
@@ -229,7 +228,7 @@ export default function DepartmentGuideEditor({
         }
 
         .guide-toolbar-copy strong {
-          color: #17324f;
+          color: var(--theme-strong-text);
           font-family: "Alexandria", sans-serif;
           font-size: .82rem;
         }

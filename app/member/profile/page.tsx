@@ -138,7 +138,6 @@ export default async function MemberProfileEditorPage({
               <Sparkles size={18} />
             </div>
             <div>
-              <span>المحتوى الشخصي</span>
               <h2>نبذة عني والمهارات</h2>
               <p>اكتب معلومات مختصرة وواضحة تعرّف الزائر عليك بسرعة.</p>
             </div>
@@ -176,7 +175,6 @@ export default async function MemberProfileEditorPage({
               <Link2 size={18} />
             </div>
             <div>
-              <span>التواصل</span>
               <h2>روابط اختيارية</h2>
               <p>أضف حساباتك المهنية أو الاجتماعية التي تريد إظهارها للزوار.</p>
             </div>

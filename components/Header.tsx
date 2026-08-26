@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessagesSquare } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import MainNav from "@/components/MainNav";
 import MobileNavigation from "@/components/MobileNavigation";
 import MemberPresenceHeartbeat from "@/components/member/MemberPresenceHeartbeat";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import ThemeToggle from "@/components/theme/ThemeToggle";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 const navigationLinks = [
   { href: "/", label: "الرئيسية" },
@@ -72,12 +74,24 @@ export default async function Header() {
         <MainNav />
 
         {session && (
-  <div className="header-notification-slot">
-    <NotificationBell />
-  </div>
-)}
+          <div className="header-notification-slot">
+            <NotificationBell />
+
+            {(session.role === "MEMBER" || session.role === "ADMIN") && (
+              <Link
+                className="header-messages-link"
+                href="/member/chat"
+                aria-label="رسائلي"
+                title="رسائلي"
+              >
+                <MessagesSquare aria-hidden="true" />
+              </Link>
+            )}
+          </div>
+        )}
 
         <div className="header-actions desktop-header-actions">
+<ThemeToggle />
 {portal && (
   <Link
     className="ghost-btn fancy-outline-btn"
@@ -89,14 +103,7 @@ export default async function Header() {
 )}
 
           {session ? (
-            <form
-              action="/api/auth/logout"
-              method="post"
-            >
-<button className="primary-btn fancy-primary-btn">
-  <span>تسجيل الخروج</span>
-</button>
-            </form>
+            <LogoutButton />
           ) : (
             <Link
               className="primary-btn fancy-primary-btn"

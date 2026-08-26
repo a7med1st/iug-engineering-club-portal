@@ -2317,3 +2317,1040 @@
     flex: none;
   }
 }
+
+:global(html[data-theme="dark"]) .page {
+  color: var(--ink);
+  background: var(--paper);
+}
+
+:global(html[data-theme="dark"]) .sidebar,
+:global(html[data-theme="dark"]) .newConversation,
+:global(html[data-theme="dark"]) .searchBox,
+:global(html[data-theme="dark"]) .conversationHeader,
+:global(html[data-theme="dark"]) .composer,
+:global(html[data-theme="dark"]) .messageOther,
+:global(html[data-theme="dark"]) .memberSelectTrigger,
+:global(html[data-theme="dark"]) .memberSelectMenu,
+:global(html[data-theme="dark"]) .sidebarGroupItem,
+:global(html[data-theme="dark"]) .conversationRow,
+:global(html[data-theme="dark"]) .emptyHint,
+:global(html[data-theme="dark"]) .profileLink,
+:global(html[data-theme="dark"]) .dayDivider span {
+  border-color: var(--line);
+  background: var(--surface) !important;
+  color: var(--ink);
+  box-shadow: none;
+}
+
+:global(html[data-theme="dark"]) .composer textarea,
+:global(html[data-theme="dark"]) .searchBox input,
+:global(html[data-theme="dark"]) .newConversation select {
+  border-color: var(--line);
+  background: var(--field-bg);
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .page :where(h1, h2, h3, strong, label) {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .page :where(p, small, time) {
+  color: var(--muted);
+}
+
+:global(html[data-theme="dark"]) .shell {
+  border-color: var(--line);
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(0, 7, 14, .36);
+}
+
+:global(html[data-theme="dark"]) .content {
+  background:
+    radial-gradient(circle at 84% 4%, rgba(22,136,255,.08), transparent 24%),
+    radial-gradient(circle at 10% 95%, rgba(53,212,255,.06), transparent 24%),
+    linear-gradient(180deg, #081f33 0%, #071a2a 100%);
+}
+
+:global(html[data-theme="dark"]) .content::before {
+  background-image:
+    linear-gradient(rgba(103,194,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(103,194,255,.025) 1px, transparent 1px);
+}
+
+:global(html[data-theme="dark"]) .emptyConversation h1 {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .emptyConversation p {
+  color: var(--muted);
+}
+
+:global(html[data-theme="dark"]) .emptyIcon,
+:global(html[data-theme="dark"]) .sidebarGroupIcon,
+:global(html[data-theme="dark"]) .rowAvatar,
+:global(html[data-theme="dark"]) .partnerAvatar {
+  border-color: #285d84;
+  background: linear-gradient(135deg, #102f4b, #0d3543);
+  color: #67c2ff;
+  box-shadow: none;
+}
+
+:global(html[data-theme="dark"]) .emptyIcon {
+  box-shadow:
+    0 17px 36px rgba(0, 7, 14, .28),
+    inset 0 1px 0 rgba(143, 211, 255, .08);
+}
+
+:global(html[data-theme="dark"]) .emptyOrbit,
+:global(html[data-theme="dark"]) .emptyOrbitSecondary {
+  border-color: rgba(103,194,255,.2);
+}
+
+:global(html[data-theme="dark"]) .sidebarGroups {
+  border-bottom-color: var(--line);
+}
+
+:global(html[data-theme="dark"]) .sidebarSectionTitle,
+:global(html[data-theme="dark"]) .sidebarPrivateHeader {
+  color: var(--muted);
+  background: linear-gradient(180deg, var(--surface-2), #0a2237);
+}
+
+:global(html[data-theme="dark"]) .sidebarPrivateHeader strong {
+  color: var(--muted);
+}
+
+:global(html[data-theme="dark"]) .sidebarSectionCount,
+:global(html[data-theme="dark"]) .sidebarPrivateCount {
+  border-color: #285d84;
+  background: #102f4b;
+  color: #67c2ff;
+}
+
+:global(html[data-theme="dark"]) .sidebarGroups::after,
+:global(html[data-theme="dark"]) .conversationList::after {
+  background: linear-gradient(to top, var(--surface), transparent);
+}
+
+:global(html[data-theme="dark"]) .conversationRowActive {
+  border-color: rgba(103,194,255,.28);
+  box-shadow: inset 0 1px 0 rgba(143,211,255,.05);
+}
+
+/* Rich message composer */
+.composerEnhanced {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 9px;
+  padding: 11px 16px 13px;
+}
+
+.composerBar {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(90px, 1fr) 48px;
+  align-items: end;
+  gap: 9px;
+}
+
+.composerEnhanced textarea {
+  min-height: 48px;
+  max-height: 150px;
+  padding: 11px 15px;
+  border-radius: 15px;
+  line-height: 1.55;
+}
+
+.composerTools {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.composerEnhanced .composerToolButton,
+.composerEnhanced .composerCloseButton,
+.composerEnhanced .addPollOption {
+  position: static;
+  min-width: 0;
+  padding: 0;
+  overflow: visible;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--muted);
+  box-shadow: none;
+  cursor: pointer;
+  transform: none;
+}
+
+.composerEnhanced .composerToolButton {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 40px;
+  border-radius: 11px;
+  transition: border-color .18s ease, background .18s ease, color .18s ease;
+}
+
+.composerEnhanced .composerToolButton:hover {
+  border-color: rgba(22,136,255,.38);
+  background: rgba(22,136,255,.09);
+  color: var(--blue);
+  box-shadow: none;
+  transform: none;
+}
+
+.composerEnhanced .composerToolButtonActive {
+  border-color: rgba(22,136,255,.45);
+  background: rgba(22,136,255,.13);
+  color: var(--blue);
+}
+
+.composerEnhanced .composerToolButton svg,
+.composerEnhanced .composerCloseButton svg,
+.composerEnhanced .addPollOption svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.2;
+}
+
+.composerToolButton input[type="file"] {
+  display: none;
+}
+
+.composerEnhanced .sendButton {
+  position: static;
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  align-self: end;
+  border-radius: 14px;
+  overflow: hidden;
+  transform: none;
+}
+
+.composerEnhanced .sendButton:hover {
+  transform: translateY(-1px);
+}
+
+.composerEnhanced .sendButton:disabled {
+  cursor: wait;
+  opacity: .72;
+}
+
+.composerSpinner {
+  animation: composerSpin .8s linear infinite;
+}
+
+.attachmentPreview {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.attachmentPreview > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--blue);
+}
+
+.attachmentPreview span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+.recordingPreview {
+  border-color: rgba(220,38,38,.25);
+  background: rgba(220,38,38,.07);
+}
+
+.recordingPreview > svg {
+  color: #dc2626;
+  animation: recordingPulse 1.25s ease-in-out infinite;
+}
+
+.composerEnhanced .composerCloseButton {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 28px;
+  border-radius: 8px;
+}
+
+.composerEnhanced .composerCloseButton:hover {
+  border-color: rgba(220,38,38,.25);
+  background: rgba(220,38,38,.08);
+  color: #dc2626;
+  box-shadow: none;
+  transform: none;
+}
+
+.composerError {
+  margin: 0;
+  color: #b91c1c;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.pollEditor {
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface-2);
+}
+
+.pollEditorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pollEditorHeader strong {
+  font-size: .82rem;
+}
+
+.pollEditor > input,
+.pollOptionInput > input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 11px;
+  outline: none;
+  background: var(--field-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: .76rem;
+}
+
+.pollEditor > input:focus,
+.pollOptionInput > input:focus {
+  border-color: rgba(22,136,255,.5);
+  box-shadow: 0 0 0 3px rgba(22,136,255,.08);
+}
+
+.pollOptionEditor {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.pollOptionInput {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.composerEnhanced .addPollOption {
+  width: fit-content;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-radius: 9px;
+  color: var(--blue);
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 850;
+}
+
+.composerEnhanced .addPollOption:hover {
+  border-color: rgba(22,136,255,.35);
+  background: rgba(22,136,255,.08);
+  box-shadow: none;
+  transform: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Attachments and polls inside message bubbles */
+.messageContent {
+  min-width: min(290px, 62vw);
+  display: grid;
+  gap: 8px;
+}
+
+.messageCaption {
+  min-width: 0;
+}
+
+.messageImageLink {
+  display: block;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(0,0,0,.08);
+}
+
+.messageImage {
+  display: block;
+  width: min(360px, 100%);
+  max-height: 360px;
+  object-fit: contain;
+}
+
+.messageMedia {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.messageMedia audio,
+.messageMedia video {
+  display: block;
+  width: min(360px, 100%);
+  max-width: 100%;
+}
+
+.messageMedia video {
+  max-height: 360px;
+  border-radius: 11px;
+  background: #06121d;
+}
+
+.messageMedia span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .66rem;
+  opacity: .78;
+}
+
+.messageFile {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border: 1px solid currentColor;
+  border-radius: 11px;
+  color: inherit;
+  text-decoration: none;
+  background: rgba(255,255,255,.09);
+}
+
+.messageFileIcon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  border-radius: 9px;
+  background: rgba(255,255,255,.14);
+}
+
+.messageFileIcon svg,
+.messageFile > svg {
+  width: 18px;
+  height: 18px;
+}
+
+.messageFileInfo {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.messageFileInfo strong,
+.messageFileInfo small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+}
+
+.messageFileInfo strong {
+  font-size: .74rem;
+}
+
+.messageFileInfo small {
+  font-size: .62rem;
+  opacity: .74;
+}
+
+.messagePoll {
+  display: grid;
+  gap: 9px;
+}
+
+.messagePollTitle {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.messagePollTitle svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.messagePollTitle strong {
+  color: inherit;
+  font-size: .86rem;
+  line-height: 1.6;
+}
+
+.messagePollOptions {
+  display: grid;
+  gap: 6px;
+}
+
+.pollVoteButton {
+  position: relative;
+  width: 100%;
+  min-height: 39px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  padding: 0 10px;
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 9px;
+  background: rgba(255,255,255,.10);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.messageOther .pollVoteButton {
+  border-color: var(--line);
+  background: rgba(22,136,255,.045);
+}
+
+.pollVoteProgress {
+  position: absolute;
+  z-index: 0;
+  inset-block: 0;
+  inset-inline-start: 0;
+  background: rgba(255,255,255,.15);
+  transition: width .25s ease;
+}
+
+.messageOther .pollVoteProgress {
+  background: rgba(22,136,255,.12);
+}
+
+.pollVoteLabel,
+.pollVotePercent {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.pollVoteLabel svg {
+  width: 14px;
+  height: 14px;
+}
+
+.pollVotePercent {
+  direction: ltr;
+  font-size: .64rem;
+}
+
+.pollVoteButtonSelected {
+  border-color: currentColor;
+}
+
+.pollVoteCount {
+  color: inherit;
+  font-size: .63rem;
+  opacity: .74;
+}
+
+:global(html[data-theme="dark"]) .composerEnhanced,
+:global(html[data-theme="dark"]) .pollEditor,
+:global(html[data-theme="dark"]) .attachmentPreview {
+  border-color: var(--line);
+  background: var(--surface);
+}
+
+:global(html[data-theme="dark"]) .composerEnhanced textarea,
+:global(html[data-theme="dark"]) .pollEditor > input,
+:global(html[data-theme="dark"]) .pollOptionInput > input {
+  border-color: var(--line);
+  background: var(--field-bg);
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .composerEnhanced .composerToolButton,
+:global(html[data-theme="dark"]) .composerEnhanced .composerCloseButton,
+:global(html[data-theme="dark"]) .composerEnhanced .addPollOption {
+  border-color: var(--line);
+  background: var(--surface-2);
+}
+
+@keyframes composerSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes recordingPulse {
+  50% { opacity: .35; }
+}
+
+@media (max-width: 620px) {
+  .composerEnhanced {
+    padding: 9px 10px 11px;
+  }
+
+  .composerBar {
+    grid-template-columns: auto minmax(72px, 1fr) 44px;
+    gap: 6px;
+  }
+
+  .composerTools {
+    gap: 3px;
+  }
+
+  .composerEnhanced .composerToolButton {
+    width: 36px;
+    height: 40px;
+    flex-basis: 36px;
+  }
+
+  .composerEnhanced .sendButton {
+    width: 44px;
+    min-width: 44px;
+    height: 48px;
+  }
+
+  .pollOptionEditor {
+    grid-template-columns: 1fr;
+  }
+
+  .messageContent {
+    min-width: min(240px, 70vw);
+  }
+}
+
+/* Keep outgoing messages readable over their blue bubble in dark mode. */
+:global(html[data-theme="dark"]) .messageMine {
+  background: linear-gradient(135deg, #075da8 0%, #0876c9 100%) !important;
+  color: #fff !important;
+}
+
+:global(html[data-theme="dark"]) .messageMine .messageCaption {
+  color: #fff !important;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.8;
+  opacity: 1 !important;
+}
+
+:global(html[data-theme="dark"]) .messageMine :where(
+  .messagePollTitle strong,
+  .pollVoteLabel,
+  .pollVotePercent,
+  .messageFileInfo strong
+) {
+  color: #fff !important;
+  opacity: 1 !important;
+}
+
+:global(html[data-theme="dark"]) .messageMine :where(
+  .messageFooter time,
+  .messageMedia span,
+  .messageFileInfo small,
+  .pollVoteCount
+) {
+  color: #e6f4ff !important;
+  opacity: 1 !important;
+}
+
+:global(html[data-theme="dark"]) .messageMine .messageFooter svg {
+  color: #f0f8ff !important;
+  opacity: 1 !important;
+}
+
+/* Media messages use a compact frame without redundant generated labels. */
+.messageWithAttachment {
+  padding: 6px 6px 8px;
+}
+
+.messageWithAttachment .messageCaption {
+  padding: 4px 8px 1px;
+}
+
+.messageWithAttachment .messageFooter {
+  padding-inline: 7px;
+}
+
+.messageWithAttachment .messageImageLink {
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 14px;
+}
+
+.messageWithAttachment .messageImage {
+  width: min(390px, 100%);
+  max-height: 420px;
+}
+
+.messageImageOnly,
+:global(html[data-theme="dark"]) .messageMine.messageImageOnly,
+:global(html[data-theme="dark"]) .messageOther.messageImageOnly {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.messageImageOnly:hover {
+  box-shadow: none;
+}
+
+.messageImageOnly .messageContent {
+  gap: 0;
+}
+
+.messageImageOnly .messageImageLink {
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+}
+
+.messageImageOnly .messageImage {
+  border-radius: 14px;
+}
+
+.messageImageOnly .messageFooter {
+  position: absolute;
+  z-index: 2;
+  inset-inline-end: 8px;
+  bottom: 7px;
+  width: auto;
+  margin: 0;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(3, 18, 31, .7);
+  color: #fff;
+  backdrop-filter: blur(7px);
+  pointer-events: none;
+}
+
+.messageImageOnly .messageFooter time,
+:global(html[data-theme="dark"]) .messageImageOnly .messageFooter time,
+.messageImageOnly .messageFooter svg {
+  margin: 0;
+  color: #fff !important;
+  opacity: .92 !important;
+}
+
+.messageImageOnly .senderName {
+  position: absolute;
+  z-index: 2;
+  inset-inline-start: 8px;
+  top: 8px;
+  margin: 0;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(3, 18, 31, .7);
+  color: #fff;
+  backdrop-filter: blur(7px);
+}
+
+/* Custom voice-note player */
+.voicePlayer {
+  position: relative;
+  width: min(350px, 68vw);
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 38px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 9px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 14px;
+  background: rgba(2, 35, 66, .22);
+  direction: rtl;
+}
+
+.voicePlayer audio {
+  display: none;
+}
+
+.voicePlayButton,
+.voiceSpeedButton {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.voicePlayButton {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #0870c2;
+  box-shadow: 0 5px 14px rgba(0, 26, 52, .18);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.voicePlayButton:hover {
+  transform: scale(1.04);
+  box-shadow: 0 7px 18px rgba(0, 26, 52, .24);
+}
+
+.voicePlayButton:active {
+  transform: scale(.96);
+}
+
+.voicePlayButton svg {
+  width: 19px;
+  height: 19px;
+  fill: currentColor;
+}
+
+.voiceTrack {
+  position: relative;
+  min-width: 0;
+  height: 45px;
+  display: grid;
+  grid-template-rows: 27px 15px;
+  align-items: center;
+}
+
+.voiceWaveform {
+  height: 25px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  direction: ltr;
+}
+
+.voiceWaveform span {
+  width: 3px;
+  min-height: 4px;
+  flex: 1 1 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .35);
+  transition: background .12s ease;
+}
+
+.voiceWaveform .voiceWaveActive {
+  background: #fff;
+}
+
+.voiceTrack input[type="range"] {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 15px;
+  width: 100%;
+  height: 27px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.voiceTime {
+  align-self: end;
+  color: rgba(255, 255, 255, .82);
+  font-size: .61rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.voiceSpeedButton {
+  width: 36px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .24);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .10);
+  color: #fff;
+  font-size: .64rem;
+  font-weight: 900;
+}
+
+.voiceSpeedButton:hover {
+  background: rgba(255, 255, 255, .18);
+}
+
+.voiceIcon {
+  position: absolute;
+  inset-inline-end: 57px;
+  top: 8px;
+  width: 18px;
+  height: 18px;
+  color: #fff;
+  opacity: .12;
+  pointer-events: none;
+}
+
+.messageOther .voicePlayer {
+  border-color: rgba(22, 136, 255, .17);
+  background: rgba(22, 136, 255, .06);
+}
+
+.messageOther .voicePlayButton {
+  background: var(--blue);
+  color: #fff;
+}
+
+.messageOther .voiceWaveform span {
+  background: rgba(73, 110, 141, .28);
+}
+
+.messageOther .voiceWaveform .voiceWaveActive {
+  background: var(--blue);
+}
+
+.messageOther .voiceTime {
+  color: var(--muted);
+}
+
+.messageOther .voiceSpeedButton {
+  border-color: rgba(22, 136, 255, .18);
+  background: rgba(22, 136, 255, .07);
+  color: var(--blue);
+}
+
+.messageOther .voiceIcon {
+  color: var(--blue);
+}
+
+:global(html[data-theme="dark"]) .messageOther .voicePlayer {
+  border-color: rgba(103, 194, 255, .2);
+  background: rgba(3, 29, 50, .42);
+}
+
+:global(html[data-theme="dark"]) .messageOther .voiceWaveform span {
+  background: rgba(143, 211, 255, .26);
+}
+
+:global(html[data-theme="dark"]) .messageOther .voiceWaveform .voiceWaveActive {
+  background: #67c2ff;
+}
+
+:global(html[data-theme="dark"]) .messageOther .voiceTime {
+  color: #b8d2e8;
+}
+
+@media (max-width: 520px) {
+  .voicePlayer {
+    width: min(310px, 72vw);
+    grid-template-columns: 40px minmax(0, 1fr) 34px;
+    gap: 7px;
+  }
+
+  .voicePlayButton {
+    width: 39px;
+    height: 39px;
+  }
+
+  .voiceSpeedButton {
+    width: 32px;
+  }
+
+  .voiceWaveform {
+    gap: 1px;
+  }
+}
+
+/* On mobile, the conversation replaces the list and gets its own back action. */
+.mobileChatBack {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .page:has(.conversation) {
+    width: 100%;
+    height: calc(100dvh - 70px);
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .shell:has(.conversation) {
+    height: 100%;
+    min-height: 0;
+    display: block;
+    overflow: hidden;
+    border-inline: 0;
+    border-radius: 0;
+  }
+
+  .shell:has(.conversation) .sidebar {
+    display: none;
+  }
+
+  .shell:has(.conversation) .content {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .mobileChatBack {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 40px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--surface-2);
+    color: var(--blue);
+    text-decoration: none;
+  }
+
+  .mobileChatBack svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .conversationHeader {
+    min-height: 74px;
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .shell:has(.conversation) .profileLink {
+    display: none;
+  }
+}

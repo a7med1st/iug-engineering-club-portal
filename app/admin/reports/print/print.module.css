@@ -23,6 +23,10 @@
 }
 
 .sheet {
+  --ink: var(--print-ink);
+  --muted: var(--print-muted);
+
+  color-scheme: light;
   width: min(210mm, 100%);
   min-height: 297mm;
   margin: 0 auto;
@@ -344,37 +348,32 @@
 }
 
 .statusBadge {
-  min-width: 56px;
-  padding: 0 8px;
-  border: 1px solid #cfe0ed;
-  background: #f3f7fa;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #65788a;
   font-size: 0.57rem;
   font-weight: 900;
 }
 
 .statusBadge[data-status="PUBLISHED"] {
-  border-color: #bce9d1;
-  background: #ecfaf3;
   color: #168257;
 }
 
 .statusBadge[data-status="DRAFT"] {
-  border-color: #f1d39d;
-  background: #fff8e9;
   color: #956510;
 }
 
 .statusBadge[data-status="ARCHIVED"] {
-  border-color: #d7e0e7;
-  background: #f3f5f7;
   color: #6d7a87;
 }
 
 .numberPill {
-  min-width: 28px;
-  padding: 0 7px;
-  background: #eef6fd;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #2e638e;
   font-weight: 900;
 }

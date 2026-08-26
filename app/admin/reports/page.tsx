@@ -156,6 +156,7 @@ export default async function AdminReportsPage({
           <Link
             href={`/admin/reports/export${suffix}`}
             className={styles.exportButton}
+            data-no-page-transition
           >
             <Download size={18} />
             <span>تصدير Excel</span>

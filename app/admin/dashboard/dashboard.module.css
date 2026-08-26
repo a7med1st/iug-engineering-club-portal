@@ -924,6 +924,13 @@
   font-weight: 700;
 }
 
+.departmentHeader > span:not(:first-child),
+.departmentRow > span {
+  width: 100%;
+  text-align: center;
+  justify-self: stretch;
+}
+
 .departmentRow {
   border-top: 1px solid #e1e9f1;
   color: #526b84;
@@ -947,6 +954,19 @@
   color: #173452;
   font-family: "Alexandria", sans-serif;
   font-size: 0.69rem;
+}
+
+.departmentRow > span {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #315675;
+  font-family: "Sora", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .empty {
@@ -1375,4 +1395,197 @@
   .departmentRow:hover {
     transform: none !important;
   }
+}
+
+:global(html[data-theme="dark"]) .page {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .hero,
+:global(html[data-theme="dark"]) .filters,
+:global(html[data-theme="dark"]) .panel,
+:global(html[data-theme="dark"]) .metricCard {
+  border-color: var(--line);
+  background:
+    radial-gradient(circle at 92% 2%, rgb(22 136 255 / 16%), transparent 31%),
+    linear-gradient(145deg, var(--surface), #0a2942) !important;
+  box-shadow: var(--theme-shadow);
+}
+
+:global(html[data-theme="dark"]) .heroMeta > div,
+:global(html[data-theme="dark"]) .dropdownTrigger,
+:global(html[data-theme="dark"]) .dropdownMenu,
+:global(html[data-theme="dark"]) .reset,
+:global(html[data-theme="dark"]) .statusRow,
+:global(html[data-theme="dark"]) .rankRow,
+:global(html[data-theme="dark"]) .registrationRow,
+:global(html[data-theme="dark"]) .upcomingCard,
+:global(html[data-theme="dark"]) .departmentTable,
+:global(html[data-theme="dark"]) .empty {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .page :where(h1, h2, h3, strong, label) {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .filterLabel {
+  color: #d7eaff;
+}
+
+:global(html[data-theme="dark"]) .page :where(p, small, time) {
+  color: var(--muted);
+}
+
+:global(html[data-theme="dark"]) .filterHeadingIcon,
+:global(html[data-theme="dark"]) .dropdownLeadIcon,
+:global(html[data-theme="dark"]) .dropdownChevron {
+  border: 1px solid rgba(8, 125, 232, 0.34);
+  background: #eaf7ff !important;
+  color: #087de8 !important;
+  box-shadow: 0 5px 16px rgba(0, 7, 18, 0.22);
+}
+
+:global(html[data-theme="dark"]) .filterHeadingIcon svg,
+:global(html[data-theme="dark"]) .filterHeadingIcon svg *,
+:global(html[data-theme="dark"]) .dropdownLeadIcon svg,
+:global(html[data-theme="dark"]) .dropdownLeadIcon svg *,
+:global(html[data-theme="dark"]) .dropdownChevron svg,
+:global(html[data-theme="dark"]) .dropdownChevron svg * {
+  display: block;
+  color: #087de8 !important;
+  stroke: #087de8 !important;
+  stroke-width: 2.6 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+}
+
+:global(html[data-theme="dark"]) .dropdownTriggerOpen .dropdownChevron {
+  border-color: transparent;
+  background: linear-gradient(135deg, #1688ff, #35d4ff) !important;
+  color: #ffffff !important;
+}
+
+:global(html[data-theme="dark"]) .dropdownTriggerOpen .dropdownChevron svg,
+:global(html[data-theme="dark"]) .dropdownTriggerOpen .dropdownChevron svg * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+:global(html[data-theme="dark"]) .dropdownOptionMark svg,
+:global(html[data-theme="dark"]) .dropdownOptionMark svg * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  stroke-width: 2.6 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+:global(html[data-theme="dark"]) .departmentRow > span {
+  color: #9fdcff !important;
+  font-weight: 850;
+  opacity: 1;
+}
+
+:global(html[data-theme="dark"]) .departmentRow:hover > span {
+  color: #d9f2ff !important;
+}
+
+:global(html[data-theme="dark"]) .departmentRow:hover {
+  border-color: rgba(103, 199, 255, 0.42);
+  background: linear-gradient(90deg, #0d2d47, #103550) !important;
+  color: #eef8ff;
+  box-shadow: 0 10px 24px rgba(0, 7, 18, 0.28);
+}
+
+:global(html[data-theme="dark"]) .departmentRow:hover strong {
+  color: #f4faff !important;
+}
+
+:global(html[data-theme="dark"]) .departmentRow:hover .bar {
+  background: #061a2b;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.42);
+}
+
+:global(html[data-theme="dark"]) .capacityBox,
+:global(html[data-theme="dark"]) .upcomingCard:hover .capacityBox {
+  border-color: rgba(91, 169, 224, 0.36);
+  background: #081f33 !important;
+  color: #eaf4fb;
+  box-shadow:
+    inset 0 1px 0 rgba(157, 211, 248, 0.06),
+    0 8px 20px rgba(0, 7, 18, 0.22);
+}
+
+:global(html[data-theme="dark"]) .capacityBox strong {
+  color: #8fdcff !important;
+  font-size: 0.95rem;
+  font-weight: 850;
+  opacity: 1;
+}
+
+:global(html[data-theme="dark"]) .capacityBox small {
+  color: #b3cadc !important;
+  font-weight: 700;
+  opacity: 1;
+}
+
+:global(html[data-theme="dark"]) .capacityBar {
+  background: #041522;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.46);
+}
+
+:global(html[data-theme="dark"]) .capacityBox a {
+  border-color: rgba(103, 199, 255, 0.38);
+  background: #0d3452;
+  color: #9fddff;
+  box-shadow: none;
+}
+
+:global(html[data-theme="dark"]) .capacityBox a:hover {
+  border-color: rgba(103, 199, 255, 0.66);
+  background: #124464;
+  color: #ffffff;
+}
+
+:global(html[data-theme="dark"]) .statusBadge {
+  border-color: rgba(148, 175, 197, 0.3);
+  background: #152f43;
+  color: #c5d8e7;
+  font-weight: 800;
+  opacity: 1;
+}
+
+:global(html[data-theme="dark"]) .statusBadge[data-status="APPROVED"] {
+  border-color: rgba(86, 220, 151, 0.38);
+  background: rgba(36, 156, 104, 0.2);
+  color: #74e6aa;
+}
+
+:global(html[data-theme="dark"]) .statusBadge[data-status="SUBMITTED"] {
+  border-color: rgba(255, 195, 110, 0.4);
+  background: rgba(181, 112, 18, 0.22);
+  color: #ffd080;
+}
+
+:global(html[data-theme="dark"]) .statusBadge[data-status="REJECTED"] {
+  border-color: rgba(255, 132, 143, 0.4);
+  background: rgba(170, 48, 58, 0.22);
+  color: #ff9fa8;
+}
+
+:global(html[data-theme="dark"]) .registrationRow:hover,
+:global(html[data-theme="dark"]) .upcomingCard:hover {
+  border-color: rgba(103, 199, 255, 0.4);
+  background: #0d2d47 !important;
+  box-shadow: 0 12px 28px rgba(0, 7, 18, 0.3);
+}
+
+:global(html[data-theme="dark"]) .upcomingMain span,
+:global(html[data-theme="dark"]) .registrationRow span:not(.statusBadge),
+:global(html[data-theme="dark"]) .registrationRow small {
+  color: #a9c1d4;
 }

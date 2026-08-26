@@ -61,7 +61,6 @@ export default async function MembersAdminPage({
     <section className="admin-page members-admin-page">
       <div className="admin-page-head members-page-head">
         <div>
-          <span className="members-page-kicker">إدارة الفريق والصلاحيات</span>
           <h1>إدارة حسابات الأعضاء</h1>
           <p className="muted">
             أنشئ حساب عضو، اربطه بقسمه، ثم حدد صلاحياته بدقة. الصلاحيات
@@ -77,7 +76,6 @@ export default async function MembersAdminPage({
       <div className="admin-card admin-form-card members-surface members-create-card">
         <div className="members-card-headline">
           <div>
-            <span className="members-mini-label">حساب جديد</span>
             <h2>عضو جديد</h2>
           </div>
         </div>
@@ -181,7 +179,6 @@ export default async function MembersAdminPage({
       <div className="admin-card members-list-card members-surface members-existing-card">
         <div className="admin-card-head members-list-head">
           <div>
-            <span className="members-mini-label">الفريق الحالي</span>
             <h2>الأعضاء الموجودون</h2>
           </div>
 
@@ -556,7 +553,7 @@ export default async function MembersAdminPage({
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          color: #16314f;
+          color: var(--theme-strong-text);
           font-family: "Alexandria", sans-serif;
           font-size: .73rem;
           font-weight: 700;

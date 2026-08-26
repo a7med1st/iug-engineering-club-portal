@@ -407,6 +407,116 @@
   padding: 18px;
 }
 
+/* Public member profile — dark surfaces must come after the light card rules. */
+:global(html[data-theme="dark"]) .page {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .backButton {
+  border-color: #2a4b65;
+  background: #0b263d;
+  color: #e9f4ff;
+  box-shadow: 0 9px 24px rgb(0 7 14 / 22%);
+}
+
+:global(html[data-theme="dark"]) .backButton:hover {
+  border-color: #3679a8;
+  background: #12324d;
+  color: #ffffff;
+  box-shadow: 0 13px 30px rgb(0 7 14 / 30%);
+}
+
+:global(html[data-theme="dark"]) .hero {
+  border-color: #2b5775;
+  box-shadow: 0 24px 58px rgb(0 7 14 / 34%);
+}
+
+:global(html[data-theme="dark"]) .heroOverlay {
+  background:
+    linear-gradient(to top, rgb(4 21 35 / 90%), rgb(6 29 51 / 34%)),
+    linear-gradient(to left, rgb(6 29 51 / 38%), rgb(6 29 51 / 12%));
+}
+
+:global(html[data-theme="dark"]) .identityText h1 {
+  color: #ffffff !important;
+}
+
+:global(html[data-theme="dark"]) .identityText .role {
+  color: #d1e5f6 !important;
+}
+
+:global(html[data-theme="dark"]) .metaPill {
+  border-color: rgb(167 220 255 / 24%);
+  background: rgb(7 30 49 / 72%);
+  color: #e7f5ff;
+}
+
+:global(html[data-theme="dark"]) .infoCard {
+  border-color: #294a65;
+  background:
+    radial-gradient(circle at top right, rgb(53 168 255 / 11%), transparent 32%),
+    linear-gradient(180deg, #0d2941, #0a2135);
+  color: var(--ink);
+  box-shadow:
+    0 16px 38px rgb(0 7 14 / 25%),
+    inset 0 1px 0 rgb(255 255 255 / 4%);
+}
+
+:global(html[data-theme="dark"]) .infoCard:hover {
+  border-color: #3679a8;
+  box-shadow:
+    0 22px 46px rgb(0 7 14 / 34%),
+    0 0 0 3px rgb(53 168 255 / 6%);
+}
+
+:global(html[data-theme="dark"]) .infoCard::before {
+  background: rgb(53 168 255 / 8%);
+}
+
+:global(html[data-theme="dark"]) .cardIcon {
+  border: 1px solid rgb(83 181 255 / 20%);
+  background: #123552;
+  color: #69c7ff;
+}
+
+:global(html[data-theme="dark"]) .cardHead h2 {
+  color: #edf7ff !important;
+}
+
+:global(html[data-theme="dark"]) .cardHead p {
+  color: #b9ccdf !important;
+}
+
+:global(html[data-theme="dark"]) .bodyText {
+  color: #dceaf7 !important;
+}
+
+:global(html[data-theme="dark"]) .emptyState {
+  border-color: #2f668c;
+  background: rgb(10 36 58 / 78%);
+  color: #b9ccdf !important;
+}
+
+:global(html[data-theme="dark"]) .linkItem {
+  border-color: #294a65;
+  background: #091f33;
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .linkItem:hover {
+  border-color: #3679a8;
+  background: #12324d;
+  box-shadow: 0 11px 26px rgb(0 7 14 / 24%);
+}
+
+:global(html[data-theme="dark"]) .linkItem span {
+  color: #e9f4ff !important;
+}
+
+:global(html[data-theme="dark"]) .linkItem small {
+  color: #aebfd0 !important;
+}
+
 @media (max-width: 980px) {
   .cardsGrid {
     grid-template-columns: 1fr;

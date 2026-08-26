@@ -2,7 +2,11 @@ import Link from "next/link";
 
 import {
   Award,
+  CalendarClock,
+  CircleCheckBig,
+  ClipboardList,
   Compass,
+  TimerReset,
 } from "lucide-react";
 import StudentCancelRegistrationButton from "@/components/student/StudentCancelRegistrationButton";
 import StudentAvatarUploader from "@/components/student/StudentAvatarUploader";
@@ -278,7 +282,7 @@ export default async function StudentDashboardPage({
           <div className={styles.heroActions}>
             <Link
               href="/activities"
-              className={styles.activitiesLink}
+              className={`${styles.activitiesLink} ${styles.dashboardActionButton}`}
             >
               <Compass
                 size={19}
@@ -292,7 +296,7 @@ export default async function StudentDashboardPage({
 
             <Link
               href="/student/certificates"
-              className={styles.certificatesLink}
+              className={`${styles.certificatesLink} ${styles.dashboardActionButton}`}
             >
               <Award
                 size={19}
@@ -421,9 +425,13 @@ export default async function StudentDashboardPage({
                 styles.statCard
               }
             >
-              <span>
-                إجمالي تسجيلاتي
-              </span>
+              <div className={styles.statTop}>
+                <span>
+                  إجمالي تسجيلاتي
+                </span>
+
+                <ClipboardList aria-hidden="true" />
+              </div>
 
               <strong>
                 {submissions.length}
@@ -440,9 +448,13 @@ export default async function StudentDashboardPage({
                 styles.statCard
               }
             >
-              <span>
-                قيد المراجعة
-              </span>
+              <div className={styles.statTop}>
+                <span>
+                  قيد المراجعة
+                </span>
+
+                <TimerReset aria-hidden="true" />
+              </div>
 
               <strong>
                 {pendingCount}
@@ -458,7 +470,11 @@ export default async function StudentDashboardPage({
                 styles.statCard
               }
             >
-              <span>مقبول</span>
+              <div className={styles.statTop}>
+                <span>مقبول</span>
+
+                <CircleCheckBig aria-hidden="true" />
+              </div>
 
               <strong>
                 {approvedCount}
@@ -474,9 +490,13 @@ export default async function StudentDashboardPage({
                 styles.statCard
               }
             >
-              <span>
-                أنشطة قادمة
-              </span>
+              <div className={styles.statTop}>
+                <span>
+                  أنشطة قادمة
+                </span>
+
+                <CalendarClock aria-hidden="true" />
+              </div>
 
               <strong>
                 {activeCount}
@@ -932,20 +952,23 @@ export default async function StudentDashboardPage({
                     styles.emptyIcon
                   }
                 >
-                  +
+                  <Compass
+                    size={25}
+                    aria-hidden="true"
+                  />
                 </div>
 
                 <h3>
                   {activityTab ===
                     "upcoming"
-                    ? "ما عندك أنشطة قادمة"
+                    ? "لا يوجد لديك أنشطة قادمة"
                     : activityTab ===
                       "past"
-                      ? "ما عندك أنشطة سابقة"
+                      ? "لا يوجد لديك أنشطة سابقة"
                       : activityTab ===
                         "rejected"
-                        ? "ما عندك تسجيلات مرفوضة"
-                        : "لسا ما سجلت بأي نشاط"}
+                        ? "لا يوجد لديك تسجيلات مرفوضة"
+                        : "لم تسجل بأي نشاط"}
                 </h3>
 
                 <p>

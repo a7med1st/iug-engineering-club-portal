@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
+import { activityDateTimeFromInput } from "@/lib/activities";
+import { deleteActivityImages } from "@/lib/activity-image-storage";
 import {
   getEmailValidationMessage,
   validateEmail,
@@ -789,13 +791,35 @@ export async function createActivity(
         "مكان النشاط",
       );
 
-      const startsAt = new Date(
-        requiredText(
-          formData,
-          "startsAt",
-          "تاريخ ووقت النشاط",
-        ),
+      const startDate = requiredText(
+        formData,
+        "startDate",
+        "تاريخ بداية النشاط",
       );
+
+      const startTime = requiredText(
+        formData,
+        "startTime",
+        "وقت بداية النشاط",
+      );
+
+      const startsAt = activityDateTimeFromInput(
+        startDate,
+        startTime,
+      );
+
+      const endDate = String(formData.get("endDate") ?? "").trim();
+      const endTime = String(formData.get("endTime") ?? "").trim();
+
+      if (Boolean(endDate) !== Boolean(endTime)) {
+        throw new AdminActionError(
+          "أدخل تاريخ ووقت نهاية النشاط معًا، أو اترك الحقلين فارغين.",
+        );
+      }
+
+      const endsAt = endDate && endTime
+        ? activityDateTimeFromInput(endDate, endTime)
+        : null;
 
       const capacity = Number(
         formData.get("capacity"),
@@ -882,13 +906,21 @@ export async function createActivity(
         );
       }
 
-      if (
-        Number.isNaN(
-          startsAt.getTime(),
-        )
-      ) {
+      if (!startsAt) {
         throw new AdminActionError(
-          "تاريخ النشاط غير صالح.",
+          "تاريخ أو وقت بداية النشاط غير صالح.",
+        );
+      }
+
+      if (endDate && endTime && !endsAt) {
+        throw new AdminActionError(
+          "تاريخ أو وقت نهاية النشاط غير صالح.",
+        );
+      }
+
+      if (endsAt && endsAt.getTime() <= startsAt.getTime()) {
+        throw new AdminActionError(
+          "يجب أن يكون موعد نهاية النشاط بعد موعد البداية.",
         );
       }
 
@@ -1029,6 +1061,7 @@ export async function createActivity(
           description,
           location,
           startsAt,
+          endsAt,
           capacity,
 
           /*
@@ -1238,6 +1271,14 @@ export async function deleteActivity(
           },
 
           select: {
+            coverImagePathname: true,
+
+            images: {
+              select: {
+                pathname: true,
+              },
+            },
+
             departments: {
               select: {
                 departmentId:
@@ -1261,6 +1302,11 @@ export async function deleteActivity(
           "ليس لديك صلاحية لحذف هذا النشاط.",
         );
       }
+
+      await deleteActivityImages([
+        activity.coverImagePathname,
+        ...activity.images.map(({ pathname }) => pathname),
+      ]);
 
       await prisma.activity.delete({
         where: {

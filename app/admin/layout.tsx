@@ -96,7 +96,7 @@ export default async function AdminLayout({
         }
       />
 
-      <div className="admin-main">
+      <div className="admin-main" data-page-transition-content>
         {children}
       </div>
     </div>

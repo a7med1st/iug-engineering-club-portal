@@ -419,6 +419,7 @@ export default async function AdminContactPage({
                       <Link
                         href={`/admin/contact/files/${item.id}`}
                         className="ghost-btn contact-print-btn"
+                        data-no-page-transition
                       >
                         <Download size={16} />
                         تحميل الملف المرفق
@@ -760,11 +761,29 @@ export default async function AdminContactPage({
         }
 
         .contact-admin-polished .contact-admin-info span {
-          color: #17324f;
+          color: var(--theme-strong-text);
         }
 
         .contact-admin-polished .contact-admin-description p {
           color: #4c6178;
+          max-width: 100%;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
+
+        .contact-admin-polished .contact-admin-details,
+        .contact-admin-polished .contact-admin-details > *,
+        .contact-admin-polished .contact-admin-description,
+        .contact-admin-polished .contact-admin-description p {
+          min-width: 0;
+        }
+
+        .contact-admin-polished .complaint-reply-history article,
+        .contact-admin-polished .complaint-reply-history p {
+          min-width: 0;
+          max-width: 100%;
+          overflow-wrap: anywhere;
+          word-break: break-word;
         }
 
         .contact-admin-actions {
@@ -1083,7 +1102,11 @@ function AdminSection({
         </div>
 
         {exportHref && (
-          <Link href={exportHref} className="ghost-btn contact-export-btn">
+          <Link
+            href={exportHref}
+            className="ghost-btn contact-export-btn"
+            data-no-page-transition
+          >
             <Download size={17} strokeWidth={1.8} />
             تصدير Excel
           </Link>

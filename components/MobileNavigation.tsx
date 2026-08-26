@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
+import ThemeToggle from "@/components/theme/ThemeToggle";
 
 type NavigationItem = {
   href: string;
@@ -86,6 +87,7 @@ export default function MobileNavigation({
 
   return (
     <div className="mobile-navigation">
+      <ThemeToggle className="mobile-theme-toggle" />
       <button
         ref={toggleRef}
         className="mobile-menu-toggle"

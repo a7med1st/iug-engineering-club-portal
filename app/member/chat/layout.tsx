@@ -139,7 +139,9 @@ export default async function ChatLayout({
           }))}
         />
 
-        <div className={styles.content}>{children}</div>
+        <div className={styles.content} data-page-transition-content>
+          {children}
+        </div>
       </section>
     </main>
   );

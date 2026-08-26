@@ -11,18 +11,41 @@ import {
 
 import { prisma } from "@/lib/prisma";
 import { departmentFontClass } from "@/lib/departments";
+import { currentActivityWhere, pastActivityWhere } from "@/lib/activities";
+import PastActivityCard from "@/components/PastActivityCard";
 
 export default async function HomePage() {
-  const departments = await prisma.department.findMany({
-    orderBy: { sortOrder: "asc" },
-  });
-
-  const upcoming = await prisma.activity.count({
-    where: {
-      status: "PUBLISHED",
-      startsAt: { gte: new Date() },
-    },
-  });
+  const now = new Date();
+  const [departments, upcoming, pastActivities, departmentCount] =
+    await Promise.all([
+      prisma.department.findMany({
+        orderBy: { sortOrder: "asc" },
+      }),
+      prisma.activity.count({
+        where: currentActivityWhere(now),
+      }),
+      prisma.activity.findMany({
+        where: pastActivityWhere(now),
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          location: true,
+          startsAt: true,
+          coverImageUrl: true,
+          departments: {
+            select: {
+              department: {
+                select: { nameAr: true, sortOrder: true },
+              },
+            },
+          },
+        },
+        orderBy: { startsAt: "desc" },
+        take: 3,
+      }),
+      prisma.department.count(),
+    ]);
 
   return (
     <>
@@ -198,6 +221,40 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {pastActivities.length > 0 && (
+        <section className="section past-activities-home">
+          <div className="shell">
+            <div className="section-head past-activities-section-head">
+              <div>
+                <h2>من أنشطتنا السابقة</h2>
+                <p>
+                  محطات أنجزها طلبة الهندسة، وتجارب صنعت أثرًا يستمر بعد انتهاء
+                  النشاط.
+                </p>
+              </div>
+
+              <Link
+                className="primary-btn fancy-primary-btn past-activities-all-btn"
+                href="/activities?view=past"
+              >
+                <span>عرض جميع الأنشطة السابقة</span>
+                <ArrowLeft size={18} />
+              </Link>
+            </div>
+
+            <div className="past-activities-grid">
+              {pastActivities.map((activity) => (
+                <PastActivityCard
+                  key={activity.id}
+                  activity={activity}
+                  departmentCount={departmentCount}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }

@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:contact-routing": "node --env-file=.env scripts/run-contact-routing-test.mjs",
-    "test:email-verification": "node --env-file=.env scripts/run-email-verification-tests.mjs",
+    "test:contact-routing": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env scripts/run-contact-routing-test.mjs",
+    "test:email-verification": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env scripts/run-email-verification-tests.mjs",
+    "test:integrity": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env scripts/run-final-programming-check.mjs",
+    "test:routes": "node --env-file=.env scripts/test-role-routes.mjs",
+    "test:all": "tsc --noEmit --incremental false && prisma validate && npm run test:email-verification && npm run test:contact-routing && npm run test:integrity && npm run test:routes",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
@@ -18,15 +21,18 @@
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
+    "@vercel/blob": "^2.8.0",
     "bcryptjs": "^3.0.2",
+    "date-fns": "^4.4.0",
     "exceljs": "^4.4.0",
     "html5-qrcode": "^2.3.8",
     "jose": "^6.1.0",
     "lucide-react": "^0.468.0",
-    "next": "^15.5.0",
+    "next": "^15.5.24",
     "nodemailer": "^9.0.5",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
+    "react-day-picker": "^10.0.1",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
@@ -40,5 +46,8 @@
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
-  }
+  },
+  "overrides": {
+  "postcss": "8.5.23"
+}
 }

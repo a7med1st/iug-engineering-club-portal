@@ -10,7 +10,6 @@ import {
   MessagesSquare,
   Network,
   QrCode,
-  ShieldCheck,
   UserRound,
 } from "lucide-react";
 
@@ -127,7 +126,7 @@ export default async function Member() {
   const title =
     structureItem?.title ||
     user.position ||
-    "عضو في النادي الهندسي";
+    null;
 
   return (
     <main className={styles.page}>
@@ -143,8 +142,12 @@ export default async function Member() {
             <div className={styles.identityCopy}>
               <h1>{user.name}</h1>
               <p>
-                {title}
-                <span className={styles.identityDot}>•</span>
+                {title && (
+                  <>
+                    {title}
+                    <span className={styles.identityDot}>•</span>
+                  </>
+                )}
                 {user.department?.nameAr || "الإدارة العامة"}
               </p>
             </div>
@@ -169,11 +172,6 @@ export default async function Member() {
         </div>
 
         <div className={styles.metaBar}>
-          <span className={styles.metaPill}>
-            <ShieldCheck size={15} />
-            صلاحيات مخصصة للحساب
-          </span>
-
           {user.department?.nameAr && (
             <span className={styles.metaPill}>
               <Network size={15} />

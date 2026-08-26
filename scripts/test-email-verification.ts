@@ -2,12 +2,12 @@ import {
   createInitialEmailVerificationCode,
   issueEmailVerificationCode,
   verifyEmailCode,
-} from "../lib/email-verification";
+} from "../lib/email-verification.ts";
 import {
   normalizeEmail,
   validateEmail,
-} from "../lib/email-validation";
-import { prisma } from "../lib/prisma";
+} from "../lib/email-validation.ts";
+import { prisma } from "../lib/prisma.ts";
 
 function assert(
   condition: unknown,

@@ -1,42 +1,27 @@
-import type {
-  Activity,
-  ActivityDepartment,
-  Department,
-} from "@prisma/client";
 import { CalendarDays, MapPin, Users, ArrowUpLeft } from "lucide-react";
 
-type ActivityWithDepartments = Activity & {
-  departments: Array<ActivityDepartment & { department: Department }>;
-};
+import {
+  activityDepartmentLabel,
+  formatActivitySchedule,
+  isPastActivity,
+  type PublicActivity,
+} from "@/lib/activities";
 
 export default function ActivityCard({
   activity,
   departmentCount,
   past = false,
 }: {
-  activity: ActivityWithDepartments;
+  activity: PublicActivity;
   departmentCount: number;
   past?: boolean;
 }) {
-  const date = new Intl.DateTimeFormat("ar-PS", {
-    dateStyle: "full",
-    timeStyle: "short",
-  }).format(activity.startsAt);
-  const isGeneral =
-    activity.departments.length === 0 ||
-    (departmentCount > 0 && activity.departments.length === departmentCount);
-  const departmentLabel = isGeneral
-    ? "عام · جميع الأقسام"
-    : [...activity.departments]
-        .sort(
-          (first, second) =>
-            first.department.sortOrder - second.department.sortOrder,
-        )
-        .map(({ department }) => department.nameAr)
-        .join("، ");
+  const isPast = past || isPastActivity(activity);
+  const date = formatActivitySchedule(activity.startsAt, activity.endsAt);
+  const departmentLabel = activityDepartmentLabel(activity, departmentCount);
 
   return (
-    <article className={`activity-card ${past ? "is-past" : ""}`}>
+    <article className={`activity-card ${isPast ? "is-past" : ""}`}>
       <div className="activity-tag">{departmentLabel}</div>
       <div className="activity-copy">
         <div>
@@ -58,7 +43,7 @@ export default function ActivityCard({
           </span>
         </div>
       </div>
-      {!past && (
+      {!isPast && (
 <a
   className="primary-btn activity-register fancy-primary-btn"
   href={`/activities/${activity.id}/register`}
@@ -67,7 +52,7 @@ export default function ActivityCard({
   <ArrowUpLeft size={18} />
 </a>
       )}
-      {past && <span className="past-badge">نشاط منتهٍ</span>}
+      {isPast && <span className="past-badge">نشاط منتهٍ</span>}
     </article>
   );
 }

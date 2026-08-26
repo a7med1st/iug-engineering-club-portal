@@ -4,6 +4,7 @@ import ActivityFormBuilder from "@/components/admin/ActivityFormBuilder";
 import AdminFeedback from "@/components/admin/AdminFeedback";
 import DeleteActivityForm from "@/components/admin/DeleteActivityForm";
 import DepartmentChecklist from "@/components/admin/DepartmentChecklist";
+import ActivitySchedulePicker from "@/components/admin/ActivitySchedulePicker";
 
 import {
   ACTIVITY_ADMIN_PERMISSIONS,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/permissions";
 
 import { prisma } from "@/lib/prisma";
+import { formatActivitySchedule } from "@/lib/activities";
 
 import { createActivity } from "../actions";
 
@@ -156,12 +158,9 @@ export default async function ActivitiesAdminPage({
                 />
               </label>
 
-              <div className="form-grid">
-                <label>
-                  تاريخ ووقت النشاط
+              <ActivitySchedulePicker />
 
-                  <input type="datetime-local" name="startsAt" required />
-                </label>
+              <div className="form-grid">
 
                 <label>
                   مكان النشاط
@@ -239,7 +238,6 @@ export default async function ActivitiesAdminPage({
 
           <div className="activities-panel-head">
             <div className="activities-panel-title">
-              <span className="activities-panel-kicker">لوحة المتابعة</span>
               <h2>الأنشطة الحالية</h2>
               <p>
                 استعرض الأنشطة بسرعة، وتابع النموذج والتسجيلات من نفس المكان.
@@ -290,10 +288,10 @@ export default async function ActivitiesAdminPage({
 
                           <span className="activity-info-item">
                             <span className="activity-info-dot" aria-hidden="true" />
-                            {new Intl.DateTimeFormat("ar-PS", {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            }).format(activity.startsAt)}
+                            {formatActivitySchedule(
+                              activity.startsAt,
+                              activity.endsAt,
+                            )}
                           </span>
                         </div>
 
@@ -327,6 +325,15 @@ export default async function ActivitiesAdminPage({
                     </div>
 
                     <div className="activity-admin-row-actions">
+                      {canManageActivities && (
+                        <Link
+                          href={`/admin/activities/${activity.id}/documentation`}
+                          className="ghost-btn activity-manage-btn"
+                        >
+                          توثيق النشاط
+                        </Link>
+                      )}
+
                       {activity.registrationForm &&
                         canReviewRegistrations && (
                           <Link
@@ -549,6 +556,31 @@ export default async function ActivitiesAdminPage({
           line-height: 1.5;
         }
 
+        html[data-theme="dark"] .activities-admin-page .activity-builder-open-toggle {
+          border-color: rgba(91, 169, 224, 0.42) !important;
+          background: #0c2a43 !important;
+          box-shadow: inset 0 1px 0 rgba(157, 211, 248, 0.07) !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-open-toggle:hover {
+          border-color: rgba(103, 199, 255, 0.62) !important;
+          background: #103550 !important;
+          box-shadow: 0 8px 20px rgba(0, 7, 18, 0.24) !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-open-toggle > span {
+          color: #e7f2fb !important;
+          font-weight: 800;
+          opacity: 1 !important;
+          text-shadow: none;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-open-toggle > input[type="checkbox"] {
+          accent-color: #1688ff;
+          opacity: 1 !important;
+          filter: none !important;
+        }
+
         /* Question cards use the same soft club background language as the rest of the panel */
         .activities-admin-page .activity-builder-question {
           position: relative;
@@ -657,6 +689,126 @@ export default async function ActivitiesAdminPage({
           color: #19314d;
           font-weight: 700;
           line-height: 1.5;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question {
+          border-color: rgba(91, 169, 224, 0.38) !important;
+          background:
+            radial-gradient(circle at 92% 4%, rgba(22, 136, 255, 0.14), transparent 32%),
+            radial-gradient(circle at 8% 96%, rgba(53, 212, 255, 0.08), transparent 30%),
+            linear-gradient(180deg, #0d2b43 0%, #092238 100%) !important;
+          color: #eaf4fb !important;
+          box-shadow:
+            0 16px 36px rgba(0, 7, 18, 0.3),
+            inset 0 1px 0 rgba(157, 211, 248, 0.08) !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question::before {
+          background-image:
+            linear-gradient(rgba(103, 199, 255, 0.045) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(103, 199, 255, 0.045) 1px, transparent 1px);
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question::after {
+          border-color: rgba(103, 199, 255, 0.07);
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question:hover {
+          border-color: rgba(103, 199, 255, 0.58) !important;
+          box-shadow:
+            0 18px 42px rgba(0, 7, 18, 0.36),
+            inset 0 1px 0 rgba(157, 211, 248, 0.11) !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question .field > label {
+          color: #d8e8f4 !important;
+          font-weight: 800;
+          opacity: 1 !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question .field > input,
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question .field > textarea {
+          border-color: rgba(91, 169, 224, 0.4) !important;
+          background: #071e31 !important;
+          color: #f2f8fc !important;
+          box-shadow: inset 0 1px 0 rgba(157, 211, 248, 0.04) !important;
+          caret-color: #67c7ff;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question .field > input:hover,
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question .field > textarea:hover {
+          border-color: rgba(103, 199, 255, 0.62) !important;
+          background: #09263d !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question .field > input:focus,
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question .field > textarea:focus {
+          border-color: #36aef7 !important;
+          box-shadow: 0 0 0 3px rgba(54, 174, 247, 0.16) !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question .field > input::placeholder,
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question .field > textarea::placeholder {
+          color: #91a9bd !important;
+          opacity: 1;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question-number {
+          border-color: rgba(91, 169, 224, 0.4) !important;
+          background: #0b263d !important;
+          color: #dcebf6 !important;
+          box-shadow: 0 8px 20px rgba(0, 7, 18, 0.24) !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question-number-label {
+          color: #b9d9ef !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question-actions button {
+          border-color: rgba(91, 169, 224, 0.38) !important;
+          background: #0b2a43 !important;
+          color: #8fd3ff !important;
+          box-shadow: none !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question-actions button:hover:not(:disabled) {
+          border-color: rgba(103, 199, 255, 0.65) !important;
+          background: #123b59 !important;
+          color: #dff4ff !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question-actions button:disabled {
+          color: #7891a5 !important;
+          opacity: 0.52;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-question-actions button.danger {
+          border-color: rgba(255, 126, 139, 0.42) !important;
+          background: rgba(135, 37, 45, 0.24) !important;
+          color: #ff9da6 !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-required {
+          border-color: rgba(91, 169, 224, 0.35) !important;
+          background: #0a263d !important;
+          color: #e7f2fb !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-required:hover {
+          border-color: rgba(103, 199, 255, 0.56) !important;
+          background: #103550 !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-required > span {
+          color: #e7f2fb !important;
+          font-weight: 800;
+          opacity: 1 !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-builder-required > input[type="checkbox"] {
+          accent-color: #1688ff;
+          opacity: 1 !important;
+          filter: none !important;
         }
 
         .activities-admin-page .activity-builder-empty {
@@ -1112,6 +1264,12 @@ export default async function ActivitiesAdminPage({
           margin-top: 7px;
           padding-top: 7px;
           border-top: 1px solid rgba(214, 225, 237, 0.86);
+          flex-wrap: nowrap;
+        }
+
+        .activities-admin-page .activity-info-form-row .activity-info-item {
+          flex: 0 1 auto;
+          white-space: nowrap;
         }
 
         .activities-admin-page .activity-info-item {
@@ -1160,23 +1318,86 @@ export default async function ActivitiesAdminPage({
           color: #77869a;
         }
 
+        html[data-theme="dark"] .activities-admin-page .activity-info-box {
+          border-color: rgba(91, 169, 224, 0.34) !important;
+          background: #0a263d !important;
+          color: #d7e6f3 !important;
+          box-shadow:
+            inset 0 1px 0 rgba(157, 211, 248, 0.08),
+            0 8px 20px rgba(0, 7, 18, 0.2) !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-visual-card:hover .activity-info-box {
+          border-color: rgba(99, 190, 255, 0.52) !important;
+          background: #0d2d47 !important;
+          box-shadow:
+            inset 0 1px 0 rgba(157, 211, 248, 0.1),
+            0 10px 24px rgba(0, 7, 18, 0.26) !important;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-info-row,
+        html[data-theme="dark"] .activities-admin-page .activity-info-item {
+          color: #c6d9e9 !important;
+          font-size: 0.74rem;
+          font-weight: 600;
+          line-height: 1.8;
+          text-shadow: none;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-info-form-row {
+          border-top-color: rgba(153, 195, 226, 0.34);
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-info-item + .activity-info-item::before {
+          background: rgba(164, 205, 234, 0.48);
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-info-dot {
+          background: #67c7ff;
+          box-shadow: 0 0 0 3px rgba(103, 199, 255, 0.18);
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-info-box .registration-state.is-open {
+          color: #58e092 !important;
+          font-weight: 800;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-info-box .registration-state.is-closed {
+          color: #ff8f99 !important;
+          font-weight: 800;
+        }
+
+        html[data-theme="dark"] .activities-admin-page .activity-info-box .registration-state.is-empty {
+          color: #b5c8d9 !important;
+        }
+
         .activities-admin-page .activity-admin-row-actions {
           position: relative;
           z-index: 2;
           flex: 0 0 auto;
           display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          gap: 8px;
+          flex-direction: column;
+          align-items: stretch;
+          justify-content: center;
+          gap: 9px;
         }
 
         .activities-admin-page .activity-admin-row-actions form {
+          width: 100%;
+          min-width: 0;
           margin: 0;
         }
 
         .activities-admin-page .activity-admin-row-actions .ghost-btn,
         .activities-admin-page .activity-admin-row-actions .danger-btn {
-          min-height: 40px;
+          width: 100%;
+          min-width: 0;
+          min-height: 46px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          white-space: nowrap;
           border-radius: 11px;
           transition:
             transform 0.22s cubic-bezier(.22, 1, .36, 1),
@@ -1275,17 +1496,6 @@ export default async function ActivitiesAdminPage({
             width: 100%;
             justify-content: flex-start;
           }
-
-          .activities-admin-page .activity-admin-row-actions .ghost-btn,
-          .activities-admin-page .activity-admin-row-actions form,
-          .activities-admin-page .activity-admin-row-actions .danger-btn {
-            flex: 1 1 auto;
-          }
-
-          .activities-admin-page .activity-admin-row-actions .ghost-btn,
-          .activities-admin-page .activity-admin-row-actions .danger-btn {
-            width: 100%;
-          }
         }
 
         @media (max-width: 560px) {
@@ -1321,6 +1531,29 @@ export default async function ActivitiesAdminPage({
             gap: 5px;
           }
 
+          .activities-admin-page .activity-info-form-row {
+            display: flex;
+            align-items: center;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 0;
+          }
+
+          .activities-admin-page .activity-info-form-row .activity-info-item {
+            width: auto;
+            flex: 0 1 auto;
+            padding-inline: 6px;
+            white-space: nowrap;
+          }
+
+          .activities-admin-page .activity-info-form-row .activity-info-item:first-child {
+            padding-inline-start: 0;
+          }
+
+          .activities-admin-page .activity-info-form-row .activity-info-item + .activity-info-item::before {
+            display: block;
+          }
+
           .activities-admin-page .activity-info-item {
             width: 100%;
             padding-inline: 0;
@@ -1330,11 +1563,7 @@ export default async function ActivitiesAdminPage({
             display: none;
           }
 
-          .activities-admin-page .activity-admin-row-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-          }
-        }
+خ        }
 
         @media (max-width: 560px) {
           .activities-admin-page .activity-form-builder {
