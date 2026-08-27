@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
 import {
+  rateLimitResponse,
+  resendVerificationRateLimitRules,
+} from "@/lib/auth-rate-limit";
+import {
   clearEmailVerificationSession,
   getEmailVerificationSession,
 } from "@/lib/email-verification-session";
@@ -14,8 +18,16 @@ import {
   assertEmailDeliveryConfigured,
   sendEmailVerificationCode,
 } from "@/lib/mail";
+import { consumeRateLimits } from "@/lib/rate-limit";
+import { rejectCrossOriginRequest } from "@/lib/request-security";
 
-export async function POST() {
+export async function POST(request: Request) {
+  const crossOriginResponse = rejectCrossOriginRequest(request);
+
+  if (crossOriginResponse) {
+    return crossOriginResponse;
+  }
+
   const session =
     await getEmailVerificationSession();
 
@@ -28,6 +40,14 @@ export async function POST() {
       },
       { status: 401 },
     );
+  }
+
+  const networkRateLimit = await consumeRateLimits(
+    resendVerificationRateLimitRules(request, session.sub),
+  );
+
+  if (!networkRateLimit.allowed) {
+    return rateLimitResponse(networkRateLimit.retryAfterSeconds);
   }
 
   const context =
@@ -82,7 +102,13 @@ export async function POST() {
         retryAfterSeconds:
           issued.retryAfterSeconds,
       },
-      { status: 429 },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(issued.retryAfterSeconds),
+          "Cache-Control": "no-store",
+        },
+      },
     );
   }
 
@@ -94,7 +120,13 @@ export async function POST() {
         retryAfterSeconds:
           issued.retryAfterSeconds,
       },
-      { status: 429 },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(issued.retryAfterSeconds),
+          "Cache-Control": "no-store",
+        },
+      },
     );
   }
 

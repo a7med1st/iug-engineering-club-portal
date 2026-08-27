@@ -3,6 +3,10 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
 import {
+  rateLimitResponse,
+  registrationRateLimitRules,
+} from "@/lib/auth-rate-limit";
+import {
   getEmailValidationMessage,
   validateEmail,
 } from "@/lib/email-validation";
@@ -16,9 +20,25 @@ import {
   sendEmailVerificationCode,
 } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimits } from "@/lib/rate-limit";
+import { rejectCrossOriginRequest } from "@/lib/request-security";
 
 export async function POST(req: Request) {
+  const crossOriginResponse = rejectCrossOriginRequest(req);
+
+  if (crossOriginResponse) {
+    return crossOriginResponse;
+  }
+
   try {
+    const rateLimit = await consumeRateLimits(
+      registrationRateLimitRules(req),
+    );
+
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.retryAfterSeconds);
+    }
+
     const body = await req.json();
     const name = String(body.name || "").trim();
     const emailResult = validateEmail(

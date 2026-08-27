@@ -2,6 +2,10 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
 import { createSession } from "@/lib/auth";
+import {
+  loginRateLimitRules,
+  rateLimitResponse,
+} from "@/lib/auth-rate-limit";
 import { normalizeEmail } from "@/lib/email-validation";
 import {
   invalidateUndeliveredVerificationCode,
@@ -14,8 +18,20 @@ import {
   sendEmailVerificationCode,
 } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
+import {
+  checkRateLimits,
+  consumeRateLimits,
+  resetRateLimits,
+} from "@/lib/rate-limit";
+import { rejectCrossOriginRequest } from "@/lib/request-security";
 
 export async function POST(req: Request) {
+  const crossOriginResponse = rejectCrossOriginRequest(req);
+
+  if (crossOriginResponse) {
+    return crossOriginResponse;
+  }
+
   try {
     const body = await req.json();
     const email = normalizeEmail(
@@ -26,6 +42,12 @@ export async function POST(req: Request) {
       body.portal === "member"
         ? "member"
         : "student";
+    const rateLimitRules = loginRateLimitRules(req, email);
+    const rateLimitStatus = await checkRateLimits(rateLimitRules);
+
+    if (!rateLimitStatus.allowed) {
+      return rateLimitResponse(rateLimitStatus.retryAfterSeconds);
+    }
 
     const user = await prisma.user.findFirst({
       where: {
@@ -43,6 +65,12 @@ export async function POST(req: Request) {
         user.passwordHash,
       ))
     ) {
+      const failedAttempt = await consumeRateLimits(rateLimitRules);
+
+      if (!failedAttempt.allowed) {
+        return rateLimitResponse(failedAttempt.retryAfterSeconds);
+      }
+
       return NextResponse.json(
         {
           error:
@@ -51,6 +79,8 @@ export async function POST(req: Request) {
         { status: 401 },
       );
     }
+
+    await resetRateLimits(rateLimitRules);
 
     if (
       portal === "student" &&
@@ -137,6 +167,7 @@ export async function POST(req: Request) {
       email: user.email,
       name: user.name,
       role: user.role,
+      sessionVersion: user.sessionVersion,
     });
 
     return NextResponse.json({

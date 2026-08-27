@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { authorizeApiPermission } from "@/lib/api-auth";
+import { PERMISSIONS } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 const ONLINE_MS = 30_000;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ ok: false }, { status: 401 });
+  const auth = await authorizeApiPermission(PERMISSIONS.MEMBER_DASHBOARD);
+  if (!auth.authorized) return auth.response;
   const { id } = await params;
   const membership = await prisma.chatParticipant.findUnique({
-    where: { conversationId_userId: { conversationId: id, userId: session.sub } },
+    where: { conversationId_userId: { conversationId: id, userId: auth.user.id } },
     select: {
       conversation: {
         select: {
@@ -29,7 +30,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const typing = await prisma.chatTyping.findMany({
     where: {
       conversationId: id,
-      userId: { not: session.sub },
+      userId: { not: auth.user.id },
       expiresAt: { gt: now },
     },
     include: { user: { select: { name: true } } },

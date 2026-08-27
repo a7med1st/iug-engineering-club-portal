@@ -2,53 +2,28 @@ import {
   NextResponse,
 } from "next/server";
 
-import {
-  getSession,
-} from "@/lib/auth";
+import { authorizeApiPermission } from "@/lib/api-auth";
 
 import {
   getSystemGroupsForUser,
 } from "@/lib/chat-groups";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export const dynamic =
   "force-dynamic";
 
 export async function GET() {
-  const session =
-    await getSession();
+  const auth = await authorizeApiPermission(
+    PERMISSIONS.MEMBER_DASHBOARD,
+  );
 
-  if (
-    !session
-  ) {
-    return NextResponse.json(
-      {
-        ok: false,
-      },
-      {
-        status: 401,
-      },
-    );
-  }
-
-  if (
-    session.role !==
-      "MEMBER" &&
-    session.role !==
-      "ADMIN"
-  ) {
-    return NextResponse.json(
-      {
-        ok: false,
-      },
-      {
-        status: 403,
-      },
-    );
+  if (!auth.authorized) {
+    return auth.response;
   }
 
   const groups =
     await getSystemGroupsForUser(
-      session.sub,
+      auth.user.id,
     );
 
   return NextResponse.json({

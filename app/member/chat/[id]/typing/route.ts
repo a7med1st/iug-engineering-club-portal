@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { getSession } from "@/lib/auth";
+import { authorizeApiPermission } from "@/lib/api-auth";
+import { PERMISSIONS } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { rejectCrossOriginRequest } from "@/lib/request-security";
 
 export const dynamic = "force-dynamic";
 
@@ -9,10 +11,18 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await getSession();
+  const crossOriginResponse = rejectCrossOriginRequest(request);
 
-  if (!session) {
-    return NextResponse.json({ ok: false }, { status: 401 });
+  if (crossOriginResponse) {
+    return crossOriginResponse;
+  }
+
+  const auth = await authorizeApiPermission(
+    PERMISSIONS.MEMBER_DASHBOARD,
+  );
+
+  if (!auth.authorized) {
+    return auth.response;
   }
 
   const { id } = await params;
@@ -21,7 +31,7 @@ export async function POST(
     where: {
       conversationId_userId: {
         conversationId: id,
-        userId: session.sub,
+        userId: auth.user.id,
       },
     },
     select: { userId: true },
@@ -41,7 +51,7 @@ export async function POST(
     await prisma.chatTyping.deleteMany({
       where: {
         conversationId: id,
-        userId: session.sub,
+        userId: auth.user.id,
       },
     });
 
@@ -54,12 +64,12 @@ export async function POST(
     where: {
       conversationId_userId: {
         conversationId: id,
-        userId: session.sub,
+        userId: auth.user.id,
       },
     },
     create: {
       conversationId: id,
-      userId: session.sub,
+      userId: auth.user.id,
       expiresAt,
     },
     update: { expiresAt },

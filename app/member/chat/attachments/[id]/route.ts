@@ -3,7 +3,8 @@ import path from "node:path";
 
 import { NextResponse } from "next/server";
 
-import { getSession } from "@/lib/auth";
+import { authorizeApiPermission } from "@/lib/api-auth";
+import { PERMISSIONS } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -40,8 +41,8 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await getSession();
-  if (!session) return new NextResponse("Unauthorized", { status: 401 });
+  const auth = await authorizeApiPermission(PERMISSIONS.MEMBER_DASHBOARD);
+  if (!auth.authorized) return auth.response;
 
   const { id } = await params;
   const attachment = await prisma.chatAttachment.findFirst({
@@ -49,7 +50,7 @@ export async function GET(
       id,
       message: {
         conversation: {
-          participants: { some: { userId: session.sub } },
+          participants: { some: { userId: auth.user.id } },
         },
       },
     },

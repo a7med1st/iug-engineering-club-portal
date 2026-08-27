@@ -26,12 +26,15 @@ function record(name, ok, detail) {
 
 async function createToken(user) {
   return new SignJWT({
-    sub: user.id,
     email: user.email,
     name: user.name,
     role: user.role,
+    sessionVersion: user.sessionVersion,
   })
     .setProtectedHeader({ alg: "HS256" })
+    .setSubject(user.id)
+    .setIssuer("iug-engineering-club-portal")
+    .setAudience("iug-engineering-club-web")
     .setIssuedAt()
     .setExpirationTime("10m")
     .sign(secret);
@@ -50,6 +53,9 @@ async function request(name, path, options = {}) {
   const response = await fetch(new URL(path, baseUrl), {
     method,
     headers: {
+      ...(!["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase())
+        ? { origin: new URL(baseUrl).origin }
+        : {}),
       ...headers,
       ...(token ? { cookie: `ec_session=${token}` } : {}),
     },
@@ -104,15 +110,15 @@ async function main() {
     await Promise.all([
       prisma.user.findFirst({
         where: { role: "STUDENT" },
-        select: { id: true, email: true, name: true, role: true, avatarStoredName: true },
+        select: { id: true, email: true, name: true, role: true, sessionVersion: true, avatarStoredName: true },
       }),
       prisma.user.findFirst({
         where: { role: "ADMIN" },
-        select: { id: true, email: true, name: true, role: true },
+        select: { id: true, email: true, name: true, role: true, sessionVersion: true },
       }),
       prisma.user.findFirst({
         where: { role: "MEMBER" },
-        select: { id: true, email: true, name: true, role: true },
+        select: { id: true, email: true, name: true, role: true, sessionVersion: true },
       }),
       prisma.department.findFirst({ select: { slug: true } }),
       prisma.activity.findFirst({
@@ -189,14 +195,20 @@ async function main() {
   await request("Unauthenticated notifications API", "/api/notifications", { expected: [401] });
   await request("Invalid login rejection", "/api/auth/login", {
     method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email: "missing-user@gmail.com", password: "invalid-password", portal: "student" }),
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": `192.0.2.${Math.floor(Math.random() * 250) + 1}`,
+    },
+    body: JSON.stringify({ email: `missing-user-${Date.now()}@gmail.com`, password: "invalid-password", portal: "student" }),
     expected: [401],
   });
   await request("Protected cron rejection", "/api/cron/activity-reminders", { expected: [401] });
   await request("Invalid student registration rejection", "/api/auth/register-student", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": `198.51.100.${Math.floor(Math.random() * 250) + 1}`,
+    },
     body: JSON.stringify({}),
     expected: [400],
   });

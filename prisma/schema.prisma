@@ -132,6 +132,7 @@ model User {
   emailVerifiedAt   DateTime?
   passwordHash      String
   role              Role      @default(STUDENT)
+  sessionVersion    Int       @default(0)
   position          String?
   memberPermissions String[]  @default([])
   chatLastSeenAt    DateTime?
@@ -201,6 +202,17 @@ model User {
   assignedCollaborations CollaborationRequest[] @relation("CollaborationAssignee")
 }
 
+// Distributed fixed-window counters shared by all server instances.
+// Keys are HMAC digests; raw IP addresses and email addresses are never stored.
+model RateLimitCounter {
+  key       String   @id @db.VarChar(64)
+  count     Int
+  resetAt   DateTime
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+}
+
 // =========================================================
 // EMAIL VERIFICATION
 // =========================================================
@@ -252,7 +264,7 @@ model Department {
 // =========================================================
 
 model Activity {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   title            String
   description      String
   location         String

@@ -2,13 +2,20 @@ import { NextResponse } from "next/server";
 
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { rejectCrossOriginRequest } from "@/lib/request-security";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const crossOriginResponse = rejectCrossOriginRequest(request);
+
+  if (crossOriginResponse) {
+    return crossOriginResponse;
+  }
+
   const session = await getSession();
 
   if (!session) {

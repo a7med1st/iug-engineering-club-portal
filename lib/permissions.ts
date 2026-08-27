@@ -1,7 +1,7 @@
 import type { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
 
-import { getSession } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /*
@@ -405,46 +405,13 @@ function dashboardForRole(
 }
 
 export async function getCurrentPermissionUser() {
-  const session =
-    await getSession();
+  const auth = await getCurrentUser();
 
-  if (!session) {
+  if (!auth) {
     redirect("/login");
   }
 
-  const user =
-    await prisma.user.findUnique({
-      where: {
-        id: session.sub,
-      },
-
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        position: true,
-        departmentId: true,
-        memberPermissions: true,
-
-        department: {
-          select: {
-            id: true,
-            nameAr: true,
-            nameEn: true,
-          },
-        },
-      },
-    });
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  return {
-    session,
-    user,
-  };
+  return auth;
 }
 
 export async function hasAssignedContactRequests(

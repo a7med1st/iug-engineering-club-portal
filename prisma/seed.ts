@@ -86,6 +86,7 @@ async function main() {
           role: Role.ADMIN,
           name: "مدير النادي الهندسي",
           passwordHash,
+          sessionVersion: { increment: 1 },
         },
       });
     } else {

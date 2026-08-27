@@ -709,6 +709,8 @@ export async function updateMemberAccess(
           select: {
             id: true,
             role: true,
+            departmentId: true,
+            memberPermissions: true,
           },
         });
 
@@ -721,6 +723,15 @@ export async function updateMemberAccess(
         );
       }
 
+      const previousPermissions = [...member.memberPermissions].sort();
+      const nextPermissions = [...memberPermissions].sort();
+      const accessChanged =
+        member.departmentId !== departmentId ||
+        previousPermissions.length !== nextPermissions.length ||
+        previousPermissions.some(
+          (permission, index) => permission !== nextPermissions[index],
+        );
+
       await prisma.user.update({
         where: {
           id: memberId,
@@ -730,6 +741,9 @@ export async function updateMemberAccess(
           position,
           departmentId,
           memberPermissions,
+          ...(accessChanged
+            ? { sessionVersion: { increment: 1 } }
+            : {}),
         },
       });
 

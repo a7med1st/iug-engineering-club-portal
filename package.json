@@ -11,6 +11,7 @@
     "test:email-verification": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env scripts/run-email-verification-tests.mjs",
     "test:integrity": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env scripts/run-final-programming-check.mjs",
     "test:routes": "node --env-file=.env scripts/test-role-routes.mjs",
+    "test:auth-security": "node --env-file=.env scripts/test-auth-security.mjs",
     "test:all": "tsc --noEmit --incremental false && prisma validate && npm run test:email-verification && npm run test:contact-routing && npm run test:integrity && npm run test:routes",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "db:generate": "prisma generate",

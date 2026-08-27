@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
 import {
+  rateLimitResponse,
+  verifyEmailRateLimitRules,
+} from "@/lib/auth-rate-limit";
+import {
   clearEmailVerificationSession,
   getEmailVerificationSession,
 } from "@/lib/email-verification-session";
@@ -8,8 +12,16 @@ import {
   EMAIL_VERIFICATION_CODE_LENGTH,
   verifyEmailCode,
 } from "@/lib/email-verification";
+import { consumeRateLimits } from "@/lib/rate-limit";
+import { rejectCrossOriginRequest } from "@/lib/request-security";
 
 export async function POST(request: Request) {
+  const crossOriginResponse = rejectCrossOriginRequest(request);
+
+  if (crossOriginResponse) {
+    return crossOriginResponse;
+  }
+
   const session =
     await getEmailVerificationSession();
 
@@ -22,6 +34,14 @@ export async function POST(request: Request) {
       },
       { status: 401 },
     );
+  }
+
+  const networkRateLimit = await consumeRateLimits(
+    verifyEmailRateLimitRules(request, session.sub),
+  );
+
+  if (!networkRateLimit.allowed) {
+    return rateLimitResponse(networkRateLimit.retryAfterSeconds);
   }
 
   let body: unknown;
