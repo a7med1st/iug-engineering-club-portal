@@ -19,6 +19,7 @@ export type RateLimitRule = {
   key: string;
   limit: number;
   windowSeconds: number;
+  cost?: number;
 };
 
 export type RateLimitResult = {
@@ -100,15 +101,16 @@ async function consumeRateLimit(
   rule: RateLimitRule,
 ): Promise<RateLimitResult> {
   const resetAt = new Date(Date.now() + rule.windowSeconds * 1000);
+  const cost = Math.max(1, Math.floor(rule.cost ?? 1));
   const rows = await prisma.$queryRaw<
     Array<{ count: number; resetAt: Date }>
   >`
     INSERT INTO "RateLimitCounter" ("key", "count", "resetAt", "updatedAt")
-    VALUES (${rule.key}, 1, ${resetAt}, CURRENT_TIMESTAMP)
+    VALUES (${rule.key}, ${cost}, ${resetAt}, CURRENT_TIMESTAMP)
     ON CONFLICT ("key") DO UPDATE SET
       "count" = CASE
-        WHEN "RateLimitCounter"."resetAt" <= CURRENT_TIMESTAMP THEN 1
-        ELSE "RateLimitCounter"."count" + 1
+        WHEN "RateLimitCounter"."resetAt" <= CURRENT_TIMESTAMP THEN ${cost}
+        ELSE "RateLimitCounter"."count" + ${cost}
       END,
       "resetAt" = CASE
         WHEN "RateLimitCounter"."resetAt" <= CURRENT_TIMESTAMP THEN ${resetAt}

@@ -12,13 +12,15 @@
     "test:integrity": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env scripts/run-final-programming-check.mjs",
     "test:routes": "node --env-file=.env scripts/test-role-routes.mjs",
     "test:auth-security": "node --env-file=.env scripts/test-auth-security.mjs",
-    "test:all": "tsc --noEmit --incremental false && prisma validate && npm run test:email-verification && npm run test:contact-routing && npm run test:integrity && npm run test:routes",
+    "test:file-security": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --import tsx scripts/test-file-upload-security.ts",
+    "test:all": "tsc --noEmit --incremental false && prisma validate && npm run test:file-security && npm run test:email-verification && npm run test:contact-routing && npm run test:integrity && npm run test:routes",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "migrate:private-files": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --env-file-if-exists=.env.local --import tsx scripts/migrate-files-to-private-blob.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
@@ -34,7 +36,8 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
     "react-day-picker": "^10.0.1",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
@@ -49,6 +52,6 @@
     "seed": "tsx prisma/seed.ts"
   },
   "overrides": {
-  "postcss": "8.5.23"
-}
+    "postcss": "8.5.23"
+  }
 }

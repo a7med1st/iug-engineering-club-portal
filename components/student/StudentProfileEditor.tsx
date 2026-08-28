@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 
 import StudentAvatarEditor from "@/components/student/StudentAvatarEditor";
 
@@ -277,8 +278,10 @@ export default function StudentProfileEditor({
           EDIT CARD
       ================================================== */}
 
-      {editing && (
-        <div
+      {editing &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
           className={
             styles.profileEditLayer
           }
@@ -288,6 +291,7 @@ export default function StudentProfileEditor({
               styles.profileEditCard
             }
             role="dialog"
+            aria-modal="true"
             aria-labelledby="student-profile-edit-title"
           >
             {/* HEADER */}
@@ -652,8 +656,9 @@ export default function StudentProfileEditor({
               </div>
             </form>
           </section>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

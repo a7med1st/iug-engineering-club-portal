@@ -79,6 +79,8 @@ export default async function ActivityDetailsPage({ params }: Props) {
   const past = isPastActivity(activity);
   const date = formatActivitySchedule(activity.startsAt, activity.endsAt);
   const departmentLabel = activityDepartmentLabel(activity, departmentCount);
+  const showDepartmentBadge =
+    !past || departmentLabel !== "عام · جميع الأقسام";
   const backHref = past ? "/activities?view=past" : "/activities";
 
   return (
@@ -98,15 +100,11 @@ export default async function ActivityDetailsPage({ params }: Props) {
           </div>
 
           <div className={styles.heroContent}>
-            <div className={styles.badges}>
-              {past && (
-                <span className={styles.completedBadge}>
-                  <CheckCircle2 aria-hidden="true" />
-                  تم التنفيذ
-                </span>
-              )}
-              <span className={styles.departmentBadge}>{departmentLabel}</span>
-            </div>
+            {showDepartmentBadge && (
+              <div className={styles.badges}>
+                <span className={styles.departmentBadge}>{departmentLabel}</span>
+              </div>
+            )}
             <h1>{activity.title}</h1>
             <p>{activity.description}</p>
 
@@ -117,7 +115,6 @@ export default async function ActivityDetailsPage({ params }: Props) {
       <div className={`shell ${styles.content}`}>
         <section className={styles.aboutSection}>
           <div className={styles.sectionTitle}>
-            <span>{past ? "توثيق الفعالية" : "معلومات النشاط"}</span>
             <h2>{past ? "عن الفعالية" : "تفاصيل النشاط"}</h2>
           </div>
           <p>{
@@ -153,7 +150,6 @@ export default async function ActivityDetailsPage({ params }: Props) {
         {past && activity.images.length > 0 && (
           <section className={styles.gallerySection}>
             <div className={styles.sectionTitle}>
-              <span>لحظات موثقة</span>
               <h2>صور من الفعالية</h2>
             </div>
             <ActivityGallery

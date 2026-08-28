@@ -4,7 +4,15 @@ import {
 
 import path from "path";
 
+import {
+  getPrivateBlob,
+  logPrivateBlobReadError,
+} from "@/lib/blob-storage";
 import { requireContactAccess } from "@/lib/permissions";
+import {
+  privateFileResponse,
+  safeContentDisposition,
+} from "@/lib/private-file-response";
 
 import { prisma } from "@/lib/prisma";
 
@@ -54,9 +62,41 @@ export async function GET(
       process.cwd(),
       "storage",
       "collaboration",
-      request.attachmentStoredName,
+      path.basename(request.attachmentStoredName),
     );
 
+  const responseHeaders = {
+      "Content-Type":
+        request.attachmentMime ||
+        "application/octet-stream",
+      "Content-Disposition":
+        safeContentDisposition(request.attachmentOriginalName, "attachment"),
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+  };
+
+  if (request.attachmentStoredName.startsWith("collaboration/")) {
+    try {
+      const blob = await getPrivateBlob(request.attachmentStoredName);
+      return (
+        privateFileResponse(blob, {
+          fallbackMime: request.attachmentMime || "application/octet-stream",
+          originalName: request.attachmentOriginalName,
+          disposition: "attachment",
+          cacheControl: "private, no-store",
+        }) ?? new Response("File not found", { status: 404 })
+      );
+    } catch (error) {
+      logPrivateBlobReadError({
+        route: "/admin/contact/files/[id]",
+        pathname: request.attachmentStoredName,
+        error,
+      });
+      return new Response("File unavailable", { status: 500 });
+    }
+  }
+
+  // Read-only compatibility for files created before the Blob migration.
   try {
     const file =
       await readFile(
@@ -66,19 +106,7 @@ export async function GET(
     return new Response(
       file,
       {
-        headers: {
-          "Content-Type":
-            request.attachmentMime ||
-            "application/octet-stream",
-
-          "Content-Disposition":
-            `attachment; filename*=UTF-8''${encodeURIComponent(
-              request.attachmentOriginalName,
-            )}`,
-
-          "Cache-Control":
-            "private, no-store",
-        },
+        headers: responseHeaders,
       },
     );
   } catch {

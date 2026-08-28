@@ -10,6 +10,7 @@ import {
 } from "@prisma/client";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { getSession } from "@/lib/auth";
 import {
@@ -17,10 +18,20 @@ import {
   findInitialContactAssignee,
 } from "@/lib/contact-routing";
 import { prisma } from "@/lib/prisma";
+import { putPrivateBlob, tryDeletePrivateBlobs } from "@/lib/blob-storage";
+import {
+  UploadValidationError,
+  logUploadRejection,
+  validateCollaborationDocument,
+} from "@/lib/upload-security";
+import {
+  UploadRateLimitError,
+  clientIpFromHeaders,
+  enforceCollaborationUploadLimit,
+  uploadRateLimitMessage,
+} from "@/lib/upload-rate-limit";
 
 import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 
 /* =========================================================
    TYPES
@@ -524,6 +535,8 @@ export async function submitCollaboration(
   _previousState: ContactFormState,
   formData: FormData
 ): Promise<ContactFormState> {
+  let uploadedAttachmentPathname: string | null = null;
+
   try {
     if (getString(formData, "website")) {
       return {
@@ -660,96 +673,41 @@ export async function submitCollaboration(
       const MAX_FILE_SIZE =
         5 * 1024 * 1024;
 
-      if (
-        attachment.size >
-        MAX_FILE_SIZE
-      ) {
-        return errorState(
-          "حجم الملف يجب ألا يتجاوز 5MB."
-        );
-      }
-
-      const extension =
-        path
-          .extname(attachment.name)
-          .toLowerCase();
-
-      const allowedMimeTypes: Record<
-        string,
-        string[]
-      > = {
-        ".pdf": [
-          "application/pdf",
-        ],
-
-        ".doc": [
-          "application/msword",
-        ],
-
-        ".docx": [
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ],
-      };
-
-      const allowedMimes =
-        allowedMimeTypes[extension];
-
-      if (
-        !allowedMimes ||
-        !allowedMimes.includes(
-          attachment.type
-        )
-      ) {
-        return errorState(
-          "يسمح فقط برفع ملفات PDF أو DOC أو DOCX."
-        );
-      }
-
-      /*
-        نخزن الملفات خارج public
-        حتى لا تصبح متاحة مباشرة لأي شخص.
-      */
-
-      const storageDirectory =
-        path.join(
-          process.cwd(),
-          "storage",
-          "collaboration"
+      try {
+        const requestHeaders = await headers();
+        await enforceCollaborationUploadLimit(
+          clientIpFromHeaders(requestHeaders),
+          attachment.size,
         );
 
-      await mkdir(
-        storageDirectory,
-        {
-          recursive: true,
+        const validated = await validateCollaborationDocument(
+          attachment,
+          MAX_FILE_SIZE,
+        );
+        const pathname = `collaboration/${randomUUID()}${validated.extension}`;
+        const blob = await putPrivateBlob(pathname, validated.buffer, validated.mime);
+
+        uploadedAttachmentPathname = blob.pathname;
+        attachmentStoredName = blob.pathname;
+        attachmentOriginalName = validated.originalName;
+        attachmentMime = validated.mime;
+        attachmentSize = validated.size;
+      } catch (error) {
+        logUploadRejection("collaboration", error, {
+          size: attachment.size,
+          mime: attachment.type,
+        });
+
+        if (error instanceof UploadRateLimitError) {
+          return errorState(uploadRateLimitMessage(error));
         }
-      );
 
-      attachmentStoredName =
-        `${randomUUID()}${extension}`;
+        if (error instanceof UploadValidationError) {
+          return errorState(error.message);
+        }
 
-      attachmentOriginalName =
-        path.basename(
-          attachment.name
-        );
-
-      attachmentMime =
-        attachment.type;
-
-      attachmentSize =
-        attachment.size;
-
-      const buffer =
-        Buffer.from(
-          await attachment.arrayBuffer()
-        );
-
-      await writeFile(
-        path.join(
-          storageDirectory,
-          attachmentStoredName
-        ),
-        buffer
-      );
+        throw error;
+      }
     }
 
     /* ========================
@@ -822,6 +780,13 @@ export async function submitCollaboration(
       message: receivedMessage,
     };
   } catch (error) {
+    if (uploadedAttachmentPathname) {
+      await tryDeletePrivateBlobs(
+        [uploadedAttachmentPathname],
+        "collaboration-db-failure",
+      );
+    }
+
     console.error(
       "submitCollaboration error:",
       error

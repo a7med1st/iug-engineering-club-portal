@@ -1061,6 +1061,10 @@ html[data-theme="dark"] main :where(
   color: var(--ink) !important;
 }
 
+html[data-theme="dark"] main .contact-message :where(strong, span) {
+  color: inherit !important;
+}
+
 html[data-theme="dark"] main :where(
   [class*="title" i],
   [class*="heading" i],

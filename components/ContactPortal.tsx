@@ -1098,7 +1098,7 @@ function CollaborationForm() {
                 </small>
               ) : (
                 <small>
-                  PDF أو DOC أو DOCX —
+                  PDF أو DOCX —
                   الحد الأقصى 5MB
                 </small>
               )}
@@ -1106,7 +1106,7 @@ function CollaborationForm() {
               <input
                 type="file"
                 name="attachment"
-                accept=".pdf,.doc,.docx"
+                accept=".pdf,.docx"
                 onChange={
                   handleFileChange
                 }

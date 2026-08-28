@@ -3,7 +3,12 @@ import { SignJWT } from "jose";
 
 const prisma = new PrismaClient();
 const baseUrl = process.env.TEST_BASE_URL || "http://127.0.0.1:3000";
+const serverNodeEnv = process.env.TEST_SERVER_NODE_ENV || "development";
 const secretValue = process.env.SESSION_SECRET;
+
+if (!["development", "production"].includes(serverNodeEnv)) {
+  throw new Error("TEST_SERVER_NODE_ENV must be either development or production.");
+}
 
 if (!secretValue || secretValue.length < 32) {
   throw new Error("SESSION_SECRET must be configured for route tests.");
@@ -202,7 +207,11 @@ async function main() {
     body: JSON.stringify({ email: `missing-user-${Date.now()}@gmail.com`, password: "invalid-password", portal: "student" }),
     expected: [401],
   });
-  await request("Protected cron rejection", "/api/cron/activity-reminders", { expected: [401] });
+  await request(
+    serverNodeEnv === "production" ? "Protected cron rejection" : "Development cron bypass",
+    "/api/cron/activity-reminders",
+    { expected: serverNodeEnv === "production" ? [401] : [200] },
+  );
   await request("Invalid student registration rejection", "/api/auth/register-student", {
     method: "POST",
     headers: {

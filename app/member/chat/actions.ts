@@ -23,9 +23,14 @@ import {
 
 import {
   ChatAttachmentStorageError,
-  deleteChatAttachment,
+  tryDeleteChatAttachment,
   uploadChatAttachment,
 } from "@/lib/chat-attachment-storage";
+import {
+  UploadRateLimitError,
+  enforceChatUploadLimit,
+  uploadRateLimitMessage,
+} from "@/lib/upload-rate-limit";
 
 function text(
   formData: FormData,
@@ -298,8 +303,6 @@ export async function sendChatMessage(
     attachmentValue instanceof File && attachmentValue.size > 0
       ? attachmentValue
       : null;
-  const isVoiceNote = text(formData, "isVoiceNote") === "true";
-
   if (
     !conversationId
   ) {
@@ -386,12 +389,15 @@ export async function sendChatMessage(
 
   if (attachment) {
     try {
+      await enforceChatUploadLimit(user.id, conversationId, attachment.size);
       storedAttachment = await uploadChatAttachment(attachment, conversationId);
     } catch (error) {
       return {
         status: "error",
         message:
-          error instanceof ChatAttachmentStorageError
+          error instanceof UploadRateLimitError
+            ? uploadRateLimitMessage(error)
+            : error instanceof ChatAttachmentStorageError
             ? error.message
             : "تعذر رفع الملف. حاول مرة أخرى.",
       };
@@ -401,7 +407,7 @@ export async function sendChatMessage(
   const kind = pollQuestion ? "POLL" : storedAttachment ? "ATTACHMENT" : "TEXT";
   const fallbackBody = pollQuestion
     ? `تصويت: ${pollQuestion}`
-    : isVoiceNote
+    : storedAttachment?.category === "audio"
       ? "رسالة صوتية"
       : storedAttachment?.mime.startsWith("image/")
         ? "صورة"
@@ -451,7 +457,9 @@ export async function sendChatMessage(
   if (
     !sender
   ) {
-    if (storedAttachment) await deleteChatAttachment(storedAttachment);
+    if (storedAttachment) {
+      await tryDeleteChatAttachment(storedAttachment, "missing-chat-sender");
+    }
     return { status: "error", message: "تعذر العثور على بيانات المرسل." };
   }
 
@@ -591,7 +599,9 @@ export async function sendChatMessage(
       });
     });
   } catch {
-    if (storedAttachment) await deleteChatAttachment(storedAttachment);
+    if (storedAttachment) {
+      await tryDeleteChatAttachment(storedAttachment, "chat-db-failure");
+    }
     return { status: "error", message: "تعذر إرسال الرسالة. حاول مرة أخرى." };
   }
 

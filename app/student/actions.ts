@@ -1,13 +1,5 @@
 "use server";
 
-import {
-  mkdir,
-  unlink,
-  writeFile,
-} from "node:fs/promises";
-import path from "node:path";
-import { randomUUID } from "node:crypto";
-
 import { Prisma } from "@prisma/client";
 import type { StudyLevel } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -17,6 +9,16 @@ import {
   requirePermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import {
+  UploadRateLimitError,
+  enforceProfileUploadLimit,
+  uploadRateLimitMessage,
+} from "@/lib/upload-rate-limit";
+import {
+  UserMediaStorageError,
+  tryDeleteUserImage,
+  uploadUserImage,
+} from "@/lib/user-media-storage";
 
 export type StudentProfileState = {
   success: boolean;
@@ -49,18 +51,6 @@ const STUDY_LEVELS = new Set([
 
 const MAX_AVATAR_SIZE =
   5 * 1024 * 1024;
-
-const ALLOWED_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
-
-const EXTENSIONS: Record<string, string> = {
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/webp": ".webp",
-};
 
 function normalizeName(value: string) {
   return value
@@ -274,76 +264,10 @@ export async function updateStudentProfile(
    AVATAR
 ========================================================= */
 
-function isValidImageSignature(
-  bytes: Uint8Array,
-  mime: string,
-) {
-  if (mime === "image/jpeg") {
-    return (
-      bytes.length >= 3 &&
-      bytes[0] === 0xff &&
-      bytes[1] === 0xd8 &&
-      bytes[2] === 0xff
-    );
-  }
-
-  if (mime === "image/png") {
-    return (
-      bytes.length >= 8 &&
-      bytes[0] === 0x89 &&
-      bytes[1] === 0x50 &&
-      bytes[2] === 0x4e &&
-      bytes[3] === 0x47 &&
-      bytes[4] === 0x0d &&
-      bytes[5] === 0x0a &&
-      bytes[6] === 0x1a &&
-      bytes[7] === 0x0a
-    );
-  }
-
-  if (mime === "image/webp") {
-    return (
-      bytes.length >= 12 &&
-      String.fromCharCode(
-        ...bytes.slice(0, 4),
-      ) === "RIFF" &&
-      String.fromCharCode(
-        ...bytes.slice(8, 12),
-      ) === "WEBP"
-    );
-  }
-
-  return false;
-}
-
-function avatarDirectory() {
-  return path.join(
-    process.cwd(),
-    "storage",
-    "avatars",
-  );
-}
-
 async function safeDeleteAvatar(
   storedName: string | null,
 ) {
-  if (!storedName) {
-    return;
-  }
-
-  const safeName =
-    path.basename(storedName);
-
-  try {
-    await unlink(
-      path.join(
-        avatarDirectory(),
-        safeName,
-      ),
-    );
-  } catch {
-    // عدم وجود الملف القديم لا يفشل العملية.
-  }
+  await tryDeleteUserImage(storedName, "avatars", "student-avatar");
 }
 
 export async function updateStudentAvatar(
@@ -369,59 +293,6 @@ export async function updateStudentAvatar(
     };
   }
 
-  if (
-    file.size >
-    MAX_AVATAR_SIZE
-  ) {
-    return {
-      success: false,
-      message:
-        "حجم الصورة يجب ألا يتجاوز 5MB.",
-    };
-  }
-
-  if (
-    !ALLOWED_MIME_TYPES.has(
-      file.type,
-    )
-  ) {
-    return {
-      success: false,
-      message:
-        "الصيغ المسموحة هي JPG وPNG وWebP فقط.",
-    };
-  }
-
-  const buffer = Buffer.from(
-    await file.arrayBuffer(),
-  );
-
-  if (
-    !isValidImageSignature(
-      new Uint8Array(buffer),
-      file.type,
-    )
-  ) {
-    return {
-      success: false,
-      message:
-        "الملف المحدد لا يبدو كصورة صالحة.",
-    };
-  }
-
-  const extension =
-    EXTENSIONS[file.type];
-
-  const storedName =
-    `${randomUUID()}${extension}`;
-
-  const directory =
-    avatarDirectory();
-
-  await mkdir(directory, {
-    recursive: true,
-  });
-
   const previous =
     await prisma.user.findUnique({
       where: {
@@ -433,17 +304,11 @@ export async function updateStudentAvatar(
       },
     });
 
+  let uploaded: Awaited<ReturnType<typeof uploadUserImage>> | null = null;
+
   try {
-    await writeFile(
-      path.join(
-        directory,
-        storedName,
-      ),
-      buffer,
-      {
-        flag: "wx",
-      },
-    );
+    await enforceProfileUploadLimit(user.id, file.size);
+    uploaded = await uploadUserImage(file, user.id, "avatar", MAX_AVATAR_SIZE);
 
     const updatedAt =
       new Date();
@@ -455,16 +320,16 @@ export async function updateStudentAvatar(
 
       data: {
         avatarStoredName:
-          storedName,
+          uploaded.storedName,
 
         avatarOriginalName:
-          file.name.slice(0, 255),
+          uploaded.originalName,
 
         avatarMime:
-          file.type,
+          uploaded.mime,
 
         avatarSize:
-          file.size,
+          uploaded.size,
 
         avatarUpdatedAt:
           updatedAt,
@@ -488,9 +353,15 @@ export async function updateStudentAvatar(
           .toString(),
     };
   } catch (error) {
-    await safeDeleteAvatar(
-      storedName,
-    );
+    if (uploaded) await safeDeleteAvatar(uploaded.storedName);
+
+    if (error instanceof UploadRateLimitError) {
+      return { success: false, message: uploadRateLimitMessage(error) };
+    }
+
+    if (error instanceof UserMediaStorageError) {
+      return { success: false, message: error.message };
+    }
 
     console.error(
       "Student avatar upload error:",

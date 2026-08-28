@@ -1,7 +1,8 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-
+import { getCurrentUser } from "@/lib/auth";
+import { logPrivateBlobReadError } from "@/lib/blob-storage";
 import { prisma } from "@/lib/prisma";
+import { resolveMemberMediaAccess } from "@/lib/user-media-access";
+import { userImageResponse } from "@/lib/user-media-response";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ export async function GET(
     select: {
       profileCoverStoredName: true,
       profileCoverMime: true,
+      structureItem: { select: { id: true } },
     },
   });
 
@@ -36,23 +38,32 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
 
-  try {
-    const file = await readFile(
-      path.join(
-        process.cwd(),
-        "storage",
-        "member-covers",
-        path.basename(user.profileCoverStoredName),
-      ),
-    );
+  const viewer = user.structureItem ? null : (await getCurrentUser())?.user ?? null;
+  const access = resolveMemberMediaAccess({
+    targetUserId: id,
+    isPublished: Boolean(user.structureItem),
+    viewer,
+  });
 
-    return new Response(file, {
-      headers: {
-        "Content-Type": user.profileCoverMime,
-        "Cache-Control": "public, max-age=3600",
-      },
-    });
-  } catch {
+  if (!access) {
     return new Response("Not found", { status: 404 });
+  }
+
+  try {
+    return (
+      (await userImageResponse({
+        storedName: user.profileCoverStoredName,
+        mime: user.profileCoverMime,
+        legacyFolder: "member-covers",
+        cacheControl: access.cacheControl,
+      })) ?? new Response("Not found", { status: 404 })
+    );
+  } catch (error) {
+    logPrivateBlobReadError({
+      route: "/members/[id]/cover",
+      pathname: user.profileCoverStoredName,
+      error,
+    });
+    return new Response("File unavailable", { status: 500 });
   }
 }

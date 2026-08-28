@@ -1,13 +1,10 @@
 import {
-  readFile,
-} from "node:fs/promises";
-import path from "node:path";
-
-import {
   PERMISSIONS,
   requirePermission,
 } from "@/lib/permissions";
+import { logPrivateBlobReadError } from "@/lib/blob-storage";
 import { prisma } from "@/lib/prisma";
+import { userImageResponse } from "@/lib/user-media-response";
 
 export const dynamic = "force-dynamic";
 
@@ -41,41 +38,25 @@ export async function GET() {
     );
   }
 
-  const safeName =
-    path.basename(
-      user.avatarStoredName,
-    );
-
   try {
-    const file =
-      await readFile(
-        path.join(
-          process.cwd(),
-          "storage",
-          "avatars",
-          safeName,
-        ),
-      );
-
-    return new Response(file, {
-      status: 200,
-
-      headers: {
-        "Content-Type":
-          user.avatarMime,
-
-        "Content-Disposition":
-          'inline; filename="avatar"',
-
-        "Cache-Control":
-          "private, no-store",
-      },
+    return (
+      (await userImageResponse({
+        storedName: user.avatarStoredName,
+        mime: user.avatarMime,
+        legacyFolder: "avatars",
+        cacheControl: "private, no-store",
+      })) ?? new Response("Avatar not found", { status: 404 })
+    );
+  } catch (error) {
+    logPrivateBlobReadError({
+      route: "/student/avatar",
+      pathname: user.avatarStoredName,
+      error,
     });
-  } catch {
     return new Response(
-      "Avatar not found",
+      "File unavailable",
       {
-        status: 404,
+        status: 500,
       },
     );
   }

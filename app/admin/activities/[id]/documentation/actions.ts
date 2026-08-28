@@ -5,11 +5,16 @@ import { redirect } from "next/navigation";
 
 import {
   ActivityImageStorageError,
-  deleteActivityImages,
+  tryDeleteActivityImages,
   uploadActivityImage,
 } from "@/lib/activity-image-storage";
 import { PERMISSIONS, requireActivityPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import {
+  UploadRateLimitError,
+  enforceActivityUploadLimit,
+  uploadRateLimitMessage,
+} from "@/lib/upload-rate-limit";
 
 class ActivityDocumentationError extends Error {}
 
@@ -89,7 +94,7 @@ export async function savePostEventSummary(formData: FormData) {
 
 export async function uploadActivityCover(formData: FormData) {
   const activityId = requiredValue(formData, "activityId");
-  await requireActivityPermission(PERMISSIONS.ACTIVITY_MANAGE, activityId);
+  const { user } = await requireActivityPermission(PERMISSIONS.ACTIVITY_MANAGE, activityId);
 
   return runDocumentationAction(
     activityId,
@@ -100,6 +105,15 @@ export async function uploadActivityCover(formData: FormData) {
 
       if (!(file instanceof File)) {
         throw new ActivityDocumentationError("اختر صورة غلاف صالحة.");
+      }
+
+      try {
+        await enforceActivityUploadLimit(user.id, file.size);
+      } catch (error) {
+        if (error instanceof UploadRateLimitError) {
+          throw new ActivityDocumentationError(uploadRateLimitMessage(error));
+        }
+        throw error;
       }
 
       const previous = await prisma.activity.findUnique({
@@ -131,21 +145,15 @@ export async function uploadActivityCover(formData: FormData) {
           },
         });
       } catch (error) {
-        await deleteActivityImages([uploaded.pathname]).catch(() => undefined);
+        await tryDeleteActivityImages([uploaded.pathname], "cover-db-failure");
         throw error;
       }
 
       if (previous.coverImagePathname) {
-        try {
-          await deleteActivityImages([previous.coverImagePathname]);
-        } catch (error) {
-          await prisma.activity.update({
-            where: { id: activityId },
-            data: previous,
-          });
-          await deleteActivityImages([uploaded.pathname]).catch(() => undefined);
-          throw error;
-        }
+        await tryDeleteActivityImages(
+          [previous.coverImagePathname],
+          "replace-activity-cover",
+        );
       }
 
       revalidateActivityPages(activityId);
@@ -188,15 +196,10 @@ export async function removeActivityCover(formData: FormData) {
         },
       });
 
-      try {
-        await deleteActivityImages([previous.coverImagePathname]);
-      } catch (error) {
-        await prisma.activity.update({
-          where: { id: activityId },
-          data: previous,
-        });
-        throw error;
-      }
+      await tryDeleteActivityImages(
+        [previous.coverImagePathname],
+        "remove-activity-cover",
+      );
 
       revalidateActivityPages(activityId);
     },
@@ -205,7 +208,7 @@ export async function removeActivityCover(formData: FormData) {
 
 export async function uploadActivityGalleryImage(formData: FormData) {
   const activityId = requiredValue(formData, "activityId");
-  await requireActivityPermission(PERMISSIONS.ACTIVITY_MANAGE, activityId);
+  const { user } = await requireActivityPermission(PERMISSIONS.ACTIVITY_MANAGE, activityId);
 
   return runDocumentationAction(
     activityId,
@@ -218,31 +221,46 @@ export async function uploadActivityGalleryImage(formData: FormData) {
         throw new ActivityDocumentationError("اختر صورة صالحة للمعرض.");
       }
 
-      const [lastImage, imageCount] = await Promise.all([
-        prisma.activityImage.aggregate({
-          where: { activityId },
-          _max: { sortOrder: true },
-        }),
-        prisma.activityImage.count({ where: { activityId } }),
-      ]);
-
-      if (imageCount >= 30) {
-        throw new ActivityDocumentationError(
-          "وصل معرض الفعالية إلى الحد الأقصى وهو 30 صورة.",
-        );
+      try {
+        await enforceActivityUploadLimit(user.id, file.size);
+      } catch (error) {
+        if (error instanceof UploadRateLimitError) {
+          throw new ActivityDocumentationError(uploadRateLimitMessage(error));
+        }
+        throw error;
       }
       const uploaded = await uploadActivityImage(file, activityId, "gallery");
 
       try {
-        await prisma.activityImage.create({
-          data: {
-            activityId,
-            ...uploaded,
-            sortOrder: (lastImage._max.sortOrder ?? -1) + 1,
-          },
+        await prisma.$transaction(async (tx) => {
+          await tx.$queryRaw`
+            SELECT pg_advisory_xact_lock(hashtextextended(${activityId}, 0))::text AS "lock"
+          `;
+
+          const [lastImage, imageCount] = await Promise.all([
+            tx.activityImage.aggregate({
+              where: { activityId },
+              _max: { sortOrder: true },
+            }),
+            tx.activityImage.count({ where: { activityId } }),
+          ]);
+
+          if (imageCount >= 30) {
+            throw new ActivityDocumentationError(
+              "وصل معرض الفعالية إلى الحد الأقصى وهو 30 صورة.",
+            );
+          }
+
+          await tx.activityImage.create({
+            data: {
+              activityId,
+              ...uploaded,
+              sortOrder: (lastImage._max.sortOrder ?? -1) + 1,
+            },
+          });
         });
       } catch (error) {
-        await deleteActivityImages([uploaded.pathname]).catch(() => undefined);
+        await tryDeleteActivityImages([uploaded.pathname], "gallery-db-failure");
         throw error;
       }
 
@@ -271,12 +289,7 @@ export async function removeActivityGalleryImage(formData: FormData) {
 
       await prisma.activityImage.delete({ where: { id: image.id } });
 
-      try {
-        await deleteActivityImages([image.pathname]);
-      } catch (error) {
-        await prisma.activityImage.create({ data: image });
-        throw error;
-      }
+      await tryDeleteActivityImages([image.pathname], "remove-gallery-image");
 
       revalidateActivityPages(activityId);
     },

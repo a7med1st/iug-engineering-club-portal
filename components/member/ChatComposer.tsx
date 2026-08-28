@@ -241,7 +241,13 @@ export default function ChatComposer({ conversationId, className }: { conversati
           <label className={styles.composerToolButton} title="إرفاق ملف">
             <Paperclip aria-hidden="true" />
             <span className={styles.srOnly}>إرفاق ملف</span>
-            <input ref={fileInputRef} type="file" name="attachment" onChange={(event) => selectFile(event.target.files?.[0] ?? null)} />
+            <input
+              ref={fileInputRef}
+              type="file"
+              name="attachment"
+              accept=".jpg,.jpeg,.jfif,.png,.webp,.webm,.ogg,.oga,.ogv,.m4a,.mp4,.m4v,.mp3,.wav,.pdf,.docx"
+              onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
+            />
           </label>
           <button type="button" className={`${styles.composerToolButton} ${recording ? styles.composerToolButtonActive : ""}`} onClick={startRecording} aria-label={recording ? "إنهاء التسجيل" : "تسجيل رسالة صوتية"} title={recording ? "إنهاء التسجيل" : "رسالة صوتية"}>
             {recording ? <Square aria-hidden="true" /> : <Mic aria-hidden="true" />}

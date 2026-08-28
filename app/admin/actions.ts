@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
 import { activityDateTimeFromInput } from "@/lib/activities";
-import { deleteActivityImages } from "@/lib/activity-image-storage";
+import { tryDeleteActivityImages } from "@/lib/activity-image-storage";
 import {
   getEmailValidationMessage,
   validateEmail,
@@ -1317,16 +1317,19 @@ export async function deleteActivity(
         );
       }
 
-      await deleteActivityImages([
-        activity.coverImagePathname,
-        ...activity.images.map(({ pathname }) => pathname),
-      ]);
-
       await prisma.activity.delete({
         where: {
           id,
         },
       });
+
+      await tryDeleteActivityImages(
+        [
+          activity.coverImagePathname,
+          ...activity.images.map(({ pathname }) => pathname),
+        ],
+        "delete-activity",
+      );
 
       revalidatePath("/");
       revalidatePath(

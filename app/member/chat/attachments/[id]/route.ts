@@ -4,20 +4,26 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 
 import { authorizeApiPermission } from "@/lib/api-auth";
+import {
+  getPrivateBlob,
+  isVercelBlobUrl,
+  logPrivateBlobReadError,
+} from "@/lib/blob-storage";
 import { PERMISSIONS } from "@/lib/permissions";
+import {
+  isSafeInlineMime,
+  privateFileResponse,
+  safeContentDisposition,
+} from "@/lib/private-file-response";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-const previewable = (mime: string) =>
-  /^(image\/(jpeg|png|gif|webp)|audio\/(mpeg|mp4|ogg|wav|webm)|video\/(mp4|webm|ogg))$/i.test(
-    mime,
-  );
-
 function contentDisposition(name: string, mime: string) {
-  const fallback = name.replace(/[^a-zA-Z0-9._-]/g, "_") || "attachment";
-  const mode = previewable(mime) ? "inline" : "attachment";
-  return `${mode}; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+  return safeContentDisposition(
+    name,
+    isSafeInlineMime(mime) ? "inline" : "attachment",
+  );
 }
 
 function responseHeaders(
@@ -68,6 +74,35 @@ export async function GET(
   const range = request.headers.get("range");
 
   if (attachment.url) {
+    if (!isVercelBlobUrl(attachment.url)) {
+      return new NextResponse("File unavailable", { status: 502 });
+    }
+
+    if (new URL(attachment.url).hostname.includes(".private.")) {
+      try {
+        // Resolve by pathname so the configured private storeId, rather than a
+        // provider URL persisted by the legacy model, selects the store.
+        const privateBlob = await getPrivateBlob(attachment.pathname);
+        return (
+          privateFileResponse(privateBlob, {
+            fallbackMime: attachment.mime,
+            originalName: attachment.originalName,
+            disposition: "auto",
+            cacheControl: "private, no-store",
+          }) ?? new NextResponse("Not found", { status: 404 })
+        );
+      } catch (error) {
+        logPrivateBlobReadError({
+          route: "/member/chat/attachments/[id]",
+          pathname: attachment.pathname,
+          error,
+        });
+        return new NextResponse("File unavailable", { status: 500 });
+      }
+    }
+
+    // Backward-compatible read path for legacy public chat blobs. New uploads
+    // never persist or expose a provider URL.
     const upstream = await fetch(attachment.url, {
       headers: range ? { Range: range } : undefined,
       cache: "no-store",
@@ -83,6 +118,26 @@ export async function GET(
     headers.set("Cache-Control", "private, max-age=3600");
     headers.set("X-Content-Type-Options", "nosniff");
     return new NextResponse(upstream.body, { status: upstream.status, headers });
+  }
+
+  try {
+    const privateBlob = await getPrivateBlob(attachment.pathname);
+    const response = privateFileResponse(privateBlob, {
+      fallbackMime: attachment.mime,
+      originalName: attachment.originalName,
+      disposition: "auto",
+      cacheControl: "private, no-store",
+    });
+    if (response) return response;
+  } catch (error) {
+    // A storage/OIDC failure is not proof that this is a legacy local file.
+    // Only a confirmed Blob 404 is allowed to proceed to the compatibility path.
+    logPrivateBlobReadError({
+      route: "/member/chat/attachments/[id]",
+      pathname: attachment.pathname,
+      error,
+    });
+    return new NextResponse("File unavailable", { status: 500 });
   }
 
   if (!attachment.pathname.startsWith("chat-attachments/")) {

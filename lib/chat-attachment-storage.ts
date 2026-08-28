@@ -1,7 +1,18 @@
-import { del, put } from "@vercel/blob";
 import { randomUUID } from "node:crypto";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { unlink } from "node:fs/promises";
 import path from "node:path";
+
+import {
+  deletePrivateBlobs,
+  deletePublicBlobs,
+  putPrivateBlob,
+} from "@/lib/blob-storage";
+import {
+  UploadValidationError,
+  type UploadCategory,
+  logUploadRejection,
+  validateChatUpload,
+} from "@/lib/upload-security";
 
 export const CHAT_ATTACHMENT_MAX_BYTES = 12 * 1024 * 1024;
 
@@ -13,49 +24,47 @@ export type StoredChatAttachment = {
   originalName: string;
   mime: string;
   size: number;
+  category: UploadCategory;
 };
-
-const safeOriginalName = (name: string) =>
-  name.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 180) || "attachment";
 
 export async function uploadChatAttachment(
   file: File,
   conversationId: string,
 ): Promise<StoredChatAttachment> {
-  if (!(file instanceof File) || file.size === 0) {
-    throw new ChatAttachmentStorageError("اختر ملفًا صالحًا للرفع.");
+  let validated;
+
+  try {
+    validated = await validateChatUpload(file, CHAT_ATTACHMENT_MAX_BYTES);
+  } catch (error) {
+    logUploadRejection("chat", error, { size: file.size, mime: file.type });
+    throw new ChatAttachmentStorageError(
+      error instanceof UploadValidationError
+        ? error.message
+        : "تعذر التحقق من الملف المرفق.",
+    );
   }
 
-  if (file.size > CHAT_ATTACHMENT_MAX_BYTES) {
-    throw new ChatAttachmentStorageError("حجم الملف أكبر من الحد المسموح وهو 12 ميجابايت.");
-  }
+  const pathname =
+    `chat-attachments/${conversationId}/${randomUUID()}${validated.extension}`;
 
-  const originalName = safeOriginalName(file.name);
-  const mime = file.type.slice(0, 120) || "application/octet-stream";
-  const key = `${randomUUID()}-${originalName.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-  const pathname = `chat-attachments/${conversationId}/${key}`;
-
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    const blob = await put(pathname, file, {
-      access: "public",
-      addRandomSuffix: false,
-      contentType: mime,
-    });
+  try {
+    const blob = await putPrivateBlob(pathname, validated.buffer, validated.mime);
 
     return {
-      url: blob.url,
+      url: null,
       pathname: blob.pathname,
-      originalName,
-      mime,
-      size: file.size,
+      originalName: validated.originalName,
+      mime: validated.mime,
+      size: validated.size,
+      category: validated.category,
     };
+  } catch (error) {
+    console.error("Chat attachment storage failed", {
+      conversationId,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
+    throw new ChatAttachmentStorageError("تخزين المرفقات الخاصة غير مهيأ أو غير متاح.");
   }
-
-  const target = path.join(process.cwd(), "storage", pathname);
-  await mkdir(path.dirname(target), { recursive: true });
-  await writeFile(target, Buffer.from(await file.arrayBuffer()));
-
-  return { url: null, pathname, originalName, mime, size: file.size };
 }
 
 export async function deleteChatAttachment(
@@ -63,11 +72,35 @@ export async function deleteChatAttachment(
 ) {
   if (!attachment.pathname.startsWith("chat-attachments/")) return;
 
-  if (attachment.url && process.env.BLOB_READ_WRITE_TOKEN) {
-    await del(attachment.pathname);
+  if (attachment.url) {
+    await deletePublicBlobs([attachment.pathname]);
     return;
   }
 
-  const target = path.join(process.cwd(), "storage", attachment.pathname);
-  await unlink(target).catch(() => undefined);
+  try {
+    await deletePrivateBlobs([attachment.pathname]);
+    return;
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
+  }
+
+  const storageRoot = path.resolve(process.cwd(), "storage");
+  const target = path.resolve(storageRoot, attachment.pathname);
+  if (target.startsWith(`${storageRoot}${path.sep}`)) {
+    await unlink(target).catch(() => undefined);
+  }
+}
+
+export async function tryDeleteChatAttachment(
+  attachment: Pick<StoredChatAttachment, "url" | "pathname">,
+  context: string,
+) {
+  try {
+    await deleteChatAttachment(attachment);
+  } catch (error) {
+    console.error("Chat attachment cleanup failed", {
+      context,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
+  }
 }

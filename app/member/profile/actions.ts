@@ -1,13 +1,5 @@
 "use server";
 
-import {
-  mkdir,
-  unlink,
-  writeFile,
-} from "node:fs/promises";
-import { randomUUID } from "node:crypto";
-import path from "node:path";
-
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -16,21 +8,19 @@ import {
   requirePermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import {
+  UploadRateLimitError,
+  enforceProfileUploadLimit,
+  uploadRateLimitMessage,
+} from "@/lib/upload-rate-limit";
+import {
+  UserMediaStorageError,
+  tryDeleteUserImage,
+  uploadUserImage,
+} from "@/lib/user-media-storage";
 
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 const MAX_COVER_SIZE = 8 * 1024 * 1024;
-
-const ALLOWED_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
-
-const EXTENSIONS: Record<string, string> = {
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/webp": ".webp",
-};
 
 function fail(message: string): never {
   redirect(
@@ -38,123 +28,33 @@ function fail(message: string): never {
   );
 }
 
-function validImageSignature(
-  bytes: Uint8Array,
-  mime: string,
-) {
-  if (mime === "image/jpeg") {
-    return (
-      bytes.length >= 3 &&
-      bytes[0] === 0xff &&
-      bytes[1] === 0xd8 &&
-      bytes[2] === 0xff
-    );
-  }
-
-  if (mime === "image/png") {
-    return (
-      bytes.length >= 8 &&
-      bytes[0] === 0x89 &&
-      bytes[1] === 0x50 &&
-      bytes[2] === 0x4e &&
-      bytes[3] === 0x47 &&
-      bytes[4] === 0x0d &&
-      bytes[5] === 0x0a &&
-      bytes[6] === 0x1a &&
-      bytes[7] === 0x0a
-    );
-  }
-
-  if (mime === "image/webp") {
-    return (
-      bytes.length >= 12 &&
-      String.fromCharCode(
-        ...bytes.slice(0, 4),
-      ) === "RIFF" &&
-      String.fromCharCode(
-        ...bytes.slice(8, 12),
-      ) === "WEBP"
-    );
-  }
-
-  return false;
-}
-
 async function saveImage(
   file: File,
   folder: "avatars" | "member-covers",
   maxSize: number,
+  userId: string,
 ) {
-  if (file.size > maxSize) {
+  try {
+    return await uploadUserImage(
+      file,
+      userId,
+      folder === "avatars" ? "avatar" : "member-cover",
+      maxSize,
+    );
+  } catch (error) {
     fail(
-      folder === "avatars"
-        ? "حجم الصورة الشخصية يجب ألا يتجاوز 5MB."
-        : "حجم صورة الغلاف يجب ألا يتجاوز 8MB.",
+      error instanceof UserMediaStorageError
+        ? error.message
+        : "تعذر حفظ الصورة المرفوعة.",
     );
   }
-
-  if (!ALLOWED_MIME_TYPES.has(file.type)) {
-    fail("الصيغ المسموحة للصور هي JPG وPNG وWebP فقط.");
-  }
-
-  const buffer = Buffer.from(
-    await file.arrayBuffer(),
-  );
-
-  if (
-    !validImageSignature(
-      new Uint8Array(buffer),
-      file.type,
-    )
-  ) {
-    fail("الملف المرفوع لا يبدو كصورة صالحة.");
-  }
-
-  const storedName =
-    `${randomUUID()}${EXTENSIONS[file.type]}`;
-
-  const directory = path.join(
-    process.cwd(),
-    "storage",
-    folder,
-  );
-
-  await mkdir(directory, {
-    recursive: true,
-  });
-
-  await writeFile(
-    path.join(directory, storedName),
-    buffer,
-    { flag: "wx" },
-  );
-
-  return {
-    storedName,
-    originalName: file.name.slice(0, 255),
-    mime: file.type,
-    size: file.size,
-  };
 }
 
 async function safeDelete(
   folder: "avatars" | "member-covers",
   storedName: string | null,
 ) {
-  if (!storedName) return;
-
-  try {
-    await unlink(
-      path.join(
-        process.cwd(),
-        "storage",
-        folder,
-        path.basename(storedName),
-      ),
-    );
-  } catch {
-    // Missing old file must not fail profile update.
-  }
+  await tryDeleteUserImage(storedName, folder, "member-profile");
 }
 
 function normalizeUrl(
@@ -257,26 +157,46 @@ export async function updateMemberProfile(
     | Awaited<ReturnType<typeof saveImage>>
     | null = null;
 
-  if (
-    avatarEntry instanceof File &&
-    avatarEntry.size > 0
-  ) {
-    newAvatar = await saveImage(
-      avatarEntry,
-      "avatars",
-      MAX_AVATAR_SIZE,
-    );
+  const uploadBytes =
+    (avatarEntry instanceof File ? avatarEntry.size : 0) +
+    (coverEntry instanceof File ? coverEntry.size : 0);
+
+  if (uploadBytes > 0) {
+    try {
+      await enforceProfileUploadLimit(user.id, uploadBytes);
+    } catch (error) {
+      if (error instanceof UploadRateLimitError) fail(uploadRateLimitMessage(error));
+      throw error;
+    }
   }
 
-  if (
-    coverEntry instanceof File &&
-    coverEntry.size > 0
-  ) {
-    newCover = await saveImage(
-      coverEntry,
-      "member-covers",
-      MAX_COVER_SIZE,
-    );
+  try {
+    if (
+      avatarEntry instanceof File &&
+      avatarEntry.size > 0
+    ) {
+      newAvatar = await saveImage(
+        avatarEntry,
+        "avatars",
+        MAX_AVATAR_SIZE,
+        user.id,
+      );
+    }
+
+    if (
+      coverEntry instanceof File &&
+      coverEntry.size > 0
+    ) {
+      newCover = await saveImage(
+        coverEntry,
+        "member-covers",
+        MAX_COVER_SIZE,
+        user.id,
+      );
+    }
+  } catch (error) {
+    if (newAvatar) await safeDelete("avatars", newAvatar.storedName);
+    throw error;
   }
 
   try {

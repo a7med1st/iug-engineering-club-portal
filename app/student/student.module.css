@@ -1266,12 +1266,9 @@
 .profileEditLayer {
   position: fixed;
 
-  top: 88px;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
 
-  z-index: 999999;
+  z-index: 10000000;
 
   display: flex;
   align-items: flex-start;
@@ -1280,7 +1277,7 @@
   /* مهم */
   overflow: hidden;
 
-  padding: 24px 20px 32px;
+  padding: 112px 20px 32px;
 
   box-sizing: border-box;
 
@@ -1292,10 +1289,9 @@
 
   position: fixed;
 
-  top: 88px;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
+
+  z-index: 0;
 
   background:
     rgba(6, 24, 44, 0.42);
@@ -1826,13 +1822,13 @@
 
 @media (max-width: 700px) {
   .profileEditLayer {
-    top: 74px;
-    padding: 12px 10px 20px;
+    inset: 0;
+    padding: 86px 10px 20px;
     overflow: hidden;
   }
 
   .profileEditLayer::before {
-    top: 74px;
+    inset: 0;
   }
 
   .profileEditCard {
