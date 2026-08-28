@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import "./theme.css";
 import Header from "@/components/Header";
@@ -23,14 +24,16 @@ const themeBootScript = `
   })();
 `;
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/images/club-logo.png" type="image/png" />
         <link rel="shortcut icon" href="/images/club-logo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/images/club-logo.png" />
-        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body>
         <IntroGate />
