@@ -302,6 +302,7 @@ async function main() {
     contactDownload,
     contactAction,
     activityStorage,
+    privateFileMigration,
   ] =
     await Promise.all([
       source("lib/blob-storage.ts"),
@@ -316,6 +317,7 @@ async function main() {
       source("app/admin/contact/files/[id]/route.ts"),
       source("app/contact/actions.ts"),
       source("lib/activity-image-storage.ts"),
+      source("scripts/migrate-files-to-private-blob.ts"),
     ]);
 
   assert.match(blobStorage, /requirePrivateBlobReadAuth/);
@@ -353,6 +355,10 @@ async function main() {
   assert.match(contactDownload, /File unavailable["'],\s*\{ status: 500 \}/);
   assert.match(contactAction, /tryDeletePrivateBlobs/);
   assert.match(activityStorage, /putPublicBlob/);
+  assert.match(
+    privateFileMigration,
+    /body = await readFile\(sourcePath\);[\s\S]*?totals\.localChat \+= 1;[\s\S]*?catch \{[\s\S]*?totals\.skippedMissing \+= 1;/,
+  );
 
   console.log("File upload and storage security tests passed.");
 }

@@ -188,7 +188,7 @@ async function migrateChatAttachments() {
         body = await readFile(sourcePath);
         totals.localChat += 1;
       } catch {
-        // It may already be a private Blob created by the new architecture.
+        totals.skippedMissing += 1;
         continue;
       }
     }
