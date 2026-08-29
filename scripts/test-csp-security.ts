@@ -4,9 +4,10 @@ import { readFile } from "node:fs/promises";
 import { NextRequest } from "next/server";
 
 import {
-  buildCspReportOnly,
+  buildCspPolicy,
   configuredPublicBlobOrigin,
   createCspNonce,
+  CSP_HEADER,
   CSP_REPORT_ONLY_HEADER,
   normalizePublicBlobOrigin,
 } from "../lib/csp";
@@ -47,7 +48,7 @@ async function main() {
   assert.match(firstNonce, /^[0-9a-f-]{36}$/i);
   assert.notEqual(firstNonce, secondNonce);
 
-  const previewPolicy = buildCspReportOnly(firstNonce, {
+  const previewPolicy = buildCspPolicy(firstNonce, {
     development: false,
     publicBlobOrigin: VERIFIED_PUBLIC_BLOB_ORIGIN,
   });
@@ -57,6 +58,7 @@ async function main() {
   const previewStyleAttributes = directive(previewPolicy, "style-src-attr");
 
   assert.equal(CSP_REPORT_ONLY_HEADER, "Content-Security-Policy-Report-Only");
+  assert.equal(CSP_HEADER, "Content-Security-Policy");
   assert.ok(previewScript?.includes(`'nonce-${firstNonce}'`));
   assert.ok(previewScript?.includes("'strict-dynamic'"));
   assert.ok(!previewScript?.includes("'unsafe-inline'"));
@@ -81,7 +83,7 @@ async function main() {
   assert.ok(previewPolicy.includes("object-src 'none'"));
   assert.ok(previewPolicy.includes("base-uri 'none'"));
 
-  const developmentPolicy = buildCspReportOnly(secondNonce, {
+  const developmentPolicy = buildCspPolicy(secondNonce, {
     development: true,
     publicBlobOrigin: VERIFIED_PUBLIC_BLOB_ORIGIN,
   });
@@ -103,7 +105,7 @@ async function main() {
     assert.equal(normalizePublicBlobOrigin(invalidOrigin), null);
   }
 
-  const failClosedPolicy = buildCspReportOnly(firstNonce, {
+  const failClosedPolicy = buildCspPolicy(firstNonce, {
     development: false,
     publicBlobOrigin:
       "https://store_invalid.public.blob.vercel-storage.com",
@@ -120,18 +122,18 @@ async function main() {
   try {
     const firstResponse = middleware(new NextRequest("https://preview.example/"));
     const secondResponse = middleware(new NextRequest("https://preview.example/"));
-    const firstHeader = firstResponse.headers.get(CSP_REPORT_ONLY_HEADER);
-    const secondHeader = secondResponse.headers.get(CSP_REPORT_ONLY_HEADER);
+    const firstHeader = firstResponse.headers.get(CSP_HEADER);
+    const secondHeader = secondResponse.headers.get(CSP_HEADER);
 
     assert.equal(configuredPublicBlobOrigin(), VERIFIED_PUBLIC_BLOB_ORIGIN);
     assert.ok(firstHeader);
     assert.ok(secondHeader);
     assert.notEqual(firstHeader, secondHeader);
-    assert.equal(firstResponse.headers.get("content-security-policy"), null);
+    assert.equal(firstResponse.headers.get(CSP_REPORT_ONLY_HEADER), null);
     assert.ok(firstResponse.headers.get("x-middleware-request-x-nonce"));
     assert.ok(
       firstResponse.headers.get(
-        "x-middleware-request-content-security-policy-report-only",
+        "x-middleware-request-content-security-policy",
       ),
     );
 
@@ -140,10 +142,7 @@ async function main() {
       new NextRequest("https://production.example/"),
     );
     assert.equal(productionResponse.headers.get(CSP_REPORT_ONLY_HEADER), null);
-    assert.equal(
-      productionResponse.headers.get("content-security-policy"),
-      null,
-    );
+    assert.equal(productionResponse.headers.get(CSP_HEADER), null);
 
     Reflect.set(process.env, "NODE_ENV", "development");
     const localDevelopmentResponse = middleware(
@@ -152,6 +151,7 @@ async function main() {
     const localDevelopmentPolicy = localDevelopmentResponse.headers.get(
       CSP_REPORT_ONLY_HEADER,
     );
+    assert.equal(localDevelopmentResponse.headers.get(CSP_HEADER), null);
     assert.ok(localDevelopmentPolicy?.includes("'unsafe-eval'"));
     assert.ok(localDevelopmentPolicy?.includes("ws://localhost:*"));
   } finally {
@@ -219,7 +219,7 @@ async function main() {
   );
   assert.match(nonceComponent, /return <style nonce=\{nonce\}>/);
 
-  console.log("CSP Report-Only security tests passed.");
+  console.log("CSP preview enforcement security tests passed.");
 }
 
 main().catch((error) => {

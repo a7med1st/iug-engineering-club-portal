@@ -1,3 +1,6 @@
+export const CSP_HEADER =
+  "Content-Security-Policy";
+
 export const CSP_REPORT_ONLY_HEADER =
   "Content-Security-Policy-Report-Only";
 
@@ -36,7 +39,7 @@ export function createCspNonce() {
   return crypto.randomUUID();
 }
 
-export function buildCspReportOnly(
+export function buildCspPolicy(
   nonce: string,
   options: {
     development: boolean;
@@ -84,12 +87,18 @@ export function buildCspReportOnly(
   ].join("; ");
 }
 
-export function cspReportOnlyEnvironment() {
+export function cspEnvironment() {
   if (process.env.NODE_ENV === "development") {
-    return { development: true };
+    return {
+      development: true,
+      header: CSP_REPORT_ONLY_HEADER,
+    };
   }
   if (process.env.VERCEL_ENV === "preview") {
-    return { development: false };
+    return {
+      development: false,
+      header: CSP_HEADER,
+    };
   }
   return null;
 }
