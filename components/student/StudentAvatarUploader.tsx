@@ -68,6 +68,9 @@ export default function StudentAvatarUploader({
   const [version, setVersion] =
     useState(initialVersion);
 
+  const [localPreviewUrl, setLocalPreviewUrl] =
+    useState<string | null>(null);
+
   const [menuOpen, setMenuOpen] =
     useState(false);
 
@@ -117,6 +120,8 @@ export default function StudentAvatarUploader({
         uploadState.version,
       );
 
+      setLocalPreviewUrl(null);
+
       setMenuOpen(false);
       closeCamera();
     }
@@ -127,10 +132,23 @@ export default function StudentAvatarUploader({
 
   useEffect(() => {
     if (
+      uploadState.message &&
+      !uploadState.success
+    ) {
+      setLocalPreviewUrl(null);
+    }
+  }, [
+    uploadState.message,
+    uploadState.success,
+  ]);
+
+  useEffect(() => {
+    if (
       removeState.success &&
       removeState.removed
     ) {
       setAvatarVisible(false);
+      setLocalPreviewUrl(null);
 
       if (removeState.version) {
         setVersion(
@@ -148,6 +166,16 @@ export default function StudentAvatarUploader({
 
   useEffect(() => {
     return () => {
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(
+          localPreviewUrl,
+        );
+      }
+    };
+  }, [localPreviewUrl]);
+
+  useEffect(() => {
+    return () => {
       stopCamera();
     };
   }, []);
@@ -156,6 +184,10 @@ export default function StudentAvatarUploader({
     if (pending) {
       return;
     }
+
+    setLocalPreviewUrl(
+      URL.createObjectURL(file),
+    );
 
     const formData =
       new FormData();
@@ -427,10 +459,12 @@ export default function StudentAvatarUploader({
           styles.avatarFrameButton
         }
 onClick={(event) => {
-  if (
-    pending ||
-    !avatarVisible
-  ) {
+  if (pending) {
+    return;
+  }
+
+  if (!avatarVisible) {
+    setMenuOpen(true);
     return;
   }
 
@@ -484,12 +518,18 @@ onClick={(event) => {
             styles.avatarFrame
           }
         >
-          {avatarVisible ? (
+          {localPreviewUrl || avatarVisible ? (
             <img
-              key={version}
-              src={`/student/avatar?v=${encodeURIComponent(
-                version,
-              )}`}
+              key={
+                localPreviewUrl ??
+                version
+              }
+              src={
+                localPreviewUrl ??
+                `/student/avatar?v=${encodeURIComponent(
+                  version,
+                )}`
+              }
               alt={`الصورة الشخصية لـ ${name}`}
               className={
                 styles.avatarImage
@@ -507,6 +547,43 @@ onClick={(event) => {
           
         </div>
       </button>
+
+      <div
+        className={
+          styles.avatarActions
+        }
+      >
+        <button
+          type="button"
+          className={
+            styles.avatarActionButton
+          }
+          data-testid="student-avatar-upload-trigger"
+          data-avatar-state={
+            avatarVisible
+              ? "existing"
+              : "empty"
+          }
+          onClick={() =>
+            setMenuOpen(true)
+          }
+          disabled={pending}
+        >
+          <ImageUp size={16} />
+
+          {avatarVisible
+            ? "تغيير الصورة"
+            : "إضافة صورة"}
+        </button>
+      </div>
+
+      <span
+        className={
+          styles.avatarHint
+        }
+      >
+        JPG أو PNG أو WebP — بحد أقصى 5MB
+      </span>
 
       {pending && (
         <div

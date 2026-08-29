@@ -299,6 +299,7 @@ async function main() {
     memberProfile,
     studentAvatar,
     studentAvatarRoute,
+    studentAvatarUploader,
     contactDownload,
     contactAction,
     activityStorage,
@@ -314,6 +315,7 @@ async function main() {
       source("app/member/profile/actions.ts"),
       source("app/student/actions.ts"),
       source("app/student/avatar/route.ts"),
+      source("components/student/StudentAvatarUploader.tsx"),
       source("app/admin/contact/files/[id]/route.ts"),
       source("app/contact/actions.ts"),
       source("lib/activity-image-storage.ts"),
@@ -350,6 +352,23 @@ async function main() {
   assert.match(studentAvatarRoute, /requirePermission\([\s\S]*PERMISSIONS\.STUDENT_DASHBOARD/);
   assert.match(studentAvatarRoute, /cacheControl:\s*["']private, no-store["']/);
   assert.match(studentAvatarRoute, /status:\s*500/);
+  assert.match(
+    studentAvatarUploader,
+    /data-testid="student-avatar-upload-trigger"/,
+  );
+  assert.match(
+    studentAvatarUploader,
+    /data-avatar-state=\{[\s\S]*?avatarVisible[\s\S]*?"existing"[\s\S]*?"empty"[\s\S]*?\}/,
+  );
+  assert.doesNotMatch(
+    studentAvatarUploader,
+    /\{avatarVisible\s*&&\s*\([\s\S]{0,240}data-testid="student-avatar-upload-trigger"/,
+  );
+  assert.match(studentAvatarUploader, /URL\.createObjectURL\(file\)/);
+  assert.match(
+    studentAvatarUploader,
+    /type="file"[\s\S]{0,160}name="avatar"[\s\S]{0,160}accept="image\/jpeg,image\/png,image\/webp"/,
+  );
   assert.match(contactDownload, /assignedToId:\s*user\.id/);
   assert.match(contactDownload, /privateFileResponse\(blob/);
   assert.match(contactDownload, /File unavailable["'],\s*\{ status: 500 \}/);
