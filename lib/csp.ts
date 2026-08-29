@@ -73,7 +73,7 @@ export function buildCspReportOnly(
     `img-src ${imageSources.join(" ")}`,
     "font-src 'self' https://fonts.gstatic.com",
     `connect-src ${connectSources.join(" ")}`,
-    "media-src 'self'",
+    "media-src 'self' blob:",
     "worker-src 'none'",
     "frame-src 'none'",
     "frame-ancestors 'none'",

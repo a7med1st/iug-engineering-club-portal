@@ -53,6 +53,7 @@ async function main() {
   });
   const previewScript = directive(previewPolicy, "script-src");
   const previewImages = directive(previewPolicy, "img-src");
+  const previewMedia = directive(previewPolicy, "media-src");
   const previewStyleAttributes = directive(previewPolicy, "style-src-attr");
 
   assert.equal(CSP_REPORT_ONLY_HEADER, "Content-Security-Policy-Report-Only");
@@ -64,6 +65,7 @@ async function main() {
     previewImages,
     `img-src 'self' data: blob: ${VERIFIED_PUBLIC_BLOB_ORIGIN}`,
   );
+  assert.equal(previewMedia, "media-src 'self' blob:");
   assert.ok(!new URL(VERIFIED_PUBLIC_BLOB_ORIGIN).hostname.includes("_"));
   assert.match(
     new URL(VERIFIED_PUBLIC_BLOB_ORIGIN).hostname,
@@ -71,6 +73,7 @@ async function main() {
   );
   assert.ok(!previewPolicy.includes("*.vercel.app"));
   assert.ok(!previewPolicy.includes("*.blob.vercel-storage.com"));
+  assert.ok(!previewMedia?.includes("*.blob.vercel-storage.com"));
   assert.ok(!previewPolicy.includes("store_"));
   assert.equal(previewStyleAttributes, "style-src-attr 'unsafe-inline'");
   assert.equal(previewPolicy.match(/'unsafe-inline'/g)?.length, 1);
