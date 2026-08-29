@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Building2, Check, ChevronDown } from "lucide-react";
 
+import { useCspNonce } from "@/components/security/CspNonce";
+
 type DepartmentOption = {
   id: string;
   nameAr: string;
@@ -21,6 +23,7 @@ export default function DepartmentSelect({
   defaultValue = "",
   placeholder = "بدون قسم",
 }: DepartmentSelectProps) {
+  const nonce = useCspNonce();
   const [value, setValue] = useState(defaultValue);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -137,7 +140,7 @@ export default function DepartmentSelect({
         </div>
       )}
 
-      <style>{`
+      <style nonce={nonce}>{`
         .members-department-select {
           position: relative;
           width: 100%;

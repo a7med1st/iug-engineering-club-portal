@@ -2,6 +2,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import PrintButton from "@/components/admin/PrintButton";
+import { NonceStyle } from "@/components/security/CspNonce";
 
 import { requireContactAccess } from "@/lib/permissions";
 
@@ -242,7 +243,7 @@ export default async function ContactPrintPage({
       dir="rtl"
       data-contact-print-root
     >
-      <style>{`
+      <NonceStyle>{`
         @media print {
           html,
           body {
@@ -268,7 +269,7 @@ export default async function ContactPrintPage({
             width: 100% !important;
           }
         }
-      `}</style>
+      `}</NonceStyle>
 
       <div className={styles.toolbar}>
         <PrintButton />

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
+import { useCspNonce } from "@/components/security/CspNonce";
+
 export default function AdminFeedback({
   error,
   success,
@@ -10,6 +12,7 @@ export default function AdminFeedback({
   error?: string;
   success?: string;
 }) {
+  const nonce = useCspNonce();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -92,7 +95,7 @@ export default function AdminFeedback({
 
       <span className="auto-dismiss-feedback-progress" aria-hidden="true" />
 
-      <style jsx>{`
+      <style jsx nonce={nonce}>{`
         .auto-dismiss-feedback {
           position: relative;
           overflow: hidden;

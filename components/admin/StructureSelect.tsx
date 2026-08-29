@@ -3,6 +3,8 @@
 import { Check, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useCspNonce } from "@/components/security/CspNonce";
+
 type StructureSelectOption = {
   value: string;
   label: string;
@@ -31,6 +33,7 @@ export default function StructureSelect({
   emptyLabel,
   emptyHint,
 }: StructureSelectProps) {
+  const nonce = useCspNonce();
   const [value, setValue] = useState(defaultValue);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -137,7 +140,7 @@ export default function StructureSelect({
         </div>
       )}
 
-      <style jsx>{`
+      <style jsx nonce={nonce}>{`
         .structure-select {
           position: relative;
           width: 100%;

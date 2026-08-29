@@ -1,5 +1,6 @@
 import AdminFeedback from "@/components/admin/AdminFeedback";
 import StructureSelect from "@/components/admin/StructureSelect";
+import { NonceStyle } from "@/components/security/CspNonce";
 
 import {
   PERMISSIONS,
@@ -385,7 +386,7 @@ export default async function StructureAdminPage({
         </div>
       </div>
 
-      <style>{`
+      <NonceStyle>{`
         .structure-admin-page {
           --structure-blue: #1688ff;
           --structure-cyan: #35d4ff;
@@ -862,7 +863,7 @@ export default async function StructureAdminPage({
             transition: none;
           }
         }
-      `}</style>
+      `}</NonceStyle>
     </section>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Save } from "lucide-react";
 
 import { saveGuide } from "@/app/admin/actions";
+import { useCspNonce } from "@/components/security/CspNonce";
 
 type Guide = {
   overview: string;
@@ -58,6 +59,7 @@ export default function DepartmentGuideEditor({
 }: {
   departments: GuideDepartment[];
 }) {
+  const nonce = useCspNonce();
   const [selectedId, setSelectedId] = useState(departments[0]?.id ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -190,7 +192,7 @@ export default function DepartmentGuideEditor({
         </form>
       )}
 
-      <style>{`
+      <style nonce={nonce}>{`
         .guide-redesign {
           position: relative;
           isolation: isolate;

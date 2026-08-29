@@ -1,5 +1,6 @@
 import DepartmentGuideEditor from "@/components/admin/DepartmentGuideEditor";
 import AdminFeedback from "@/components/admin/AdminFeedback";
+import { NonceStyle } from "@/components/security/CspNonce";
 
 import {
   PERMISSIONS,
@@ -63,7 +64,7 @@ export default async function GuidesAdminPage({
         )}
       </div>
 
-      <style>{`
+      <NonceStyle>{`
         .guide-admin-page .guide-editor-shell {
           position: relative;
           isolation: isolate;
@@ -119,7 +120,7 @@ export default async function GuidesAdminPage({
           position: relative;
           z-index: 1;
         }
-      `}</style>
+      `}</NonceStyle>
     </section>
   );
 }

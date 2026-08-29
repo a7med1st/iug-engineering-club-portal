@@ -5,6 +5,7 @@ import AdminFeedback from "@/components/admin/AdminFeedback";
 import DeleteActivityForm from "@/components/admin/DeleteActivityForm";
 import DepartmentChecklist from "@/components/admin/DepartmentChecklist";
 import ActivitySchedulePicker from "@/components/admin/ActivitySchedulePicker";
+import { NonceStyle } from "@/components/security/CspNonce";
 
 import {
   ACTIVITY_ADMIN_PERMISSIONS,
@@ -367,7 +368,7 @@ export default async function ActivitiesAdminPage({
         </div>
       </div>
 
-      <style>{`
+      <NonceStyle>{`
         .activities-admin-page .activity-form-panel {
           position: relative;
           isolation: isolate;
@@ -1601,7 +1602,7 @@ export default async function ActivitiesAdminPage({
             transform: none;
           }
         }
-      `}</style>
+      `}</NonceStyle>
     </section>
   );
 }

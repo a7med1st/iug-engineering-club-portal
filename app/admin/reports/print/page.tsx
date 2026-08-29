@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 import PrintButton from "@/components/admin/PrintButton";
+import { NonceStyle } from "@/components/security/CspNonce";
 
 import {
   PERMISSIONS,
@@ -116,7 +117,7 @@ export default async function PrintReportsPage({
 
   return (
     <main className={styles.page} dir="rtl" data-report-print-root>
-      <style>{`
+      <NonceStyle>{`
         @media print {
           html,
           body {
@@ -142,7 +143,7 @@ export default async function PrintReportsPage({
             width: 100% !important;
           }
         }
-      `}</style>
+      `}</NonceStyle>
 
       <div className={styles.toolbar}>
         <PrintButton />

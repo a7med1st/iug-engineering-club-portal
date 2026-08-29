@@ -1,5 +1,6 @@
 import AdminFeedback from "@/components/admin/AdminFeedback";
 import DepartmentSelect from "@/components/admin/DepartmentSelect";
+import { NonceStyle } from "@/components/security/CspNonce";
 
 import {
   MEMBER_PERMISSION_OPTIONS,
@@ -320,7 +321,7 @@ export default async function MembersAdminPage({
         )}
       </div>
 
-      <style>{`
+      <NonceStyle>{`
         .members-admin-page {
           --members-blue: #1688ff;
           --members-cyan: #35d4ff;
@@ -938,7 +939,7 @@ export default async function MembersAdminPage({
             transform: none;
           }
         }
-      `}</style>
+      `}</NonceStyle>
     </section>
   );
 }

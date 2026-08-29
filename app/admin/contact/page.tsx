@@ -12,6 +12,7 @@ import {
 import ContactStatusSelect from "@/components/admin/ContactStatusSelect";
 import ContactEscalationForm from "@/components/admin/ContactEscalationForm";
 import ComplaintReplyForm from "@/components/admin/ComplaintReplyForm";
+import { NonceStyle } from "@/components/security/CspNonce";
 import { requireContactAccess } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { CONTACT_STATUS_LABELS } from "@/lib/contact-options";
@@ -459,7 +460,7 @@ export default async function AdminContactPage({
         )}
       </AdminSection>
 
-      <style>{`
+      <NonceStyle>{`
         .contact-admin-polished {
           --contact-blue: #1688ff;
           --contact-cyan: #35d4ff;
@@ -1053,7 +1054,7 @@ export default async function AdminContactPage({
             animation: none !important;
           }
         }
-      `}</style>
+      `}</NonceStyle>
     </main>
   );
 }

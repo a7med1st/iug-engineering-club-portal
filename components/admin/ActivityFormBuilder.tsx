@@ -9,6 +9,8 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { useCspNonce } from "@/components/security/CspNonce";
+
 type QuestionType =
   | "SHORT_TEXT"
   | "LONG_TEXT"
@@ -61,6 +63,7 @@ function needsOptions(type: QuestionType) {
 }
 
 export default function ActivityFormBuilder() {
+  const nonce = useCspNonce();
   const [questions, setQuestions] = useState<BuilderQuestion[]>([]);
   const [openTypeMenuId, setOpenTypeMenuId] = useState<string | null>(null);
 
@@ -529,7 +532,7 @@ export default function ActivityFormBuilder() {
         </button>
       )}
 
-      <style>{`
+      <style nonce={nonce}>{`
 
         .activity-builder-question-top {
           display: flex;

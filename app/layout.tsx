@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import "./globals.css";
 import "./theme.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import IntroGate from "@/components/IntroGate";
 import NavigationTransitionProvider from "@/components/navigation/NavigationTransitionProvider";
+import { CspNonceProvider } from "@/components/security/CspNonce";
+import { getCspNonce } from "@/lib/csp-nonce";
 
 export const metadata: Metadata = { title: "النادي الهندسي للطلاب | الجامعة الإسلامية بغزة", description: "بوابة النادي الهندسي للطلاب والأنشطة والأقسام." };
 
@@ -25,7 +26,7 @@ const themeBootScript = `
 `;
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const nonce = await getCspNonce();
 
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
@@ -36,12 +37,14 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body>
-        <IntroGate />
-        <NavigationTransitionProvider />
-        <Header />
-        <main data-page-transition-content>{children}</main>
-        <Footer />
-        <div id="app-portal-root" />
+        <CspNonceProvider nonce={nonce}>
+          <IntroGate />
+          <NavigationTransitionProvider />
+          <Header />
+          <main data-page-transition-content>{children}</main>
+          <Footer />
+          <div id="app-portal-root" />
+        </CspNonceProvider>
       </body>
     </html>
   );

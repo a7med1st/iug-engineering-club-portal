@@ -1,8 +1,36 @@
 export const CSP_REPORT_ONLY_HEADER =
   "Content-Security-Policy-Report-Only";
 
-export const PUBLIC_ACTIVITY_BLOB_ORIGIN =
-  "https://store_RdgeYZDnESPZowZe.public.blob.vercel-storage.com";
+const PUBLIC_BLOB_HOSTNAME_PATTERN =
+  /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.public\.blob\.vercel-storage\.com$/;
+
+export function normalizePublicBlobOrigin(value: string | null | undefined) {
+  const configured = value?.trim();
+  if (!configured) return null;
+
+  try {
+    const url = new URL(configured);
+
+    if (
+      url.protocol !== "https:" ||
+      url.origin !== configured ||
+      url.username ||
+      url.password ||
+      url.port ||
+      !PUBLIC_BLOB_HOSTNAME_PATTERN.test(url.hostname)
+    ) {
+      return null;
+    }
+
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+export function configuredPublicBlobOrigin() {
+  return normalizePublicBlobOrigin(process.env.BLOB_PUBLIC_ORIGIN);
+}
 
 export function createCspNonce() {
   return crypto.randomUUID();
@@ -10,7 +38,10 @@ export function createCspNonce() {
 
 export function buildCspReportOnly(
   nonce: string,
-  options: { development: boolean },
+  options: {
+    development: boolean;
+    publicBlobOrigin?: string | null;
+  },
 ) {
   const scriptSources = [
     "'self'",
@@ -24,13 +55,22 @@ export function buildCspReportOnly(
       ? ["ws://localhost:*", "ws://127.0.0.1:*"]
       : []),
   ];
+  const publicBlobOrigin = normalizePublicBlobOrigin(
+    options.publicBlobOrigin,
+  );
+  const imageSources = [
+    "'self'",
+    "data:",
+    "blob:",
+    ...(publicBlobOrigin ? [publicBlobOrigin] : []),
+  ];
 
   return [
     "default-src 'self'",
     `script-src ${scriptSources.join(" ")}`,
     `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
     "style-src-attr 'unsafe-inline'",
-    `img-src 'self' data: blob: ${PUBLIC_ACTIVITY_BLOB_ORIGIN}`,
+    `img-src ${imageSources.join(" ")}`,
     "font-src 'self' https://fonts.gstatic.com",
     `connect-src ${connectSources.join(" ")}`,
     "media-src 'self'",
