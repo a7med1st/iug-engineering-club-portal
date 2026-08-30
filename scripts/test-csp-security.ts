@@ -140,8 +140,30 @@ async function main() {
     const productionResponse = middleware(
       new NextRequest("https://production.example/"),
     );
+    const productionPolicy = productionResponse.headers.get(CSP_HEADER);
     assert.equal(productionResponse.headers.get(CSP_REPORT_ONLY_HEADER), null);
-    assert.equal(productionResponse.headers.get(CSP_HEADER), null);
+    assert.ok(productionPolicy);
+    assert.equal(
+      directive(productionPolicy, "img-src"),
+      `img-src 'self' data: blob: ${VERIFIED_PUBLIC_BLOB_ORIGIN}`,
+    );
+    assert.equal(
+      directive(productionPolicy, "media-src"),
+      "media-src 'self' blob:",
+    );
+    assert.ok(
+      !directive(productionPolicy, "script-src")?.includes("'unsafe-inline'"),
+    );
+    assert.ok(
+      !directive(productionPolicy, "script-src")?.includes("'unsafe-eval'"),
+    );
+    assert.ok(!productionPolicy.includes("*.blob.vercel-storage.com"));
+    assert.ok(!productionPolicy.includes("store_"));
+    assert.ok(
+      productionResponse.headers.get(
+        "x-middleware-request-content-security-policy",
+      ),
+    );
 
     Reflect.set(process.env, "NODE_ENV", "development");
     const localDevelopmentResponse = middleware(
