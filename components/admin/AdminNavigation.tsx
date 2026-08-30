@@ -13,9 +13,27 @@ import {
   UserRound,
   Users,
   X,
+  LayoutDashboard,
+  FileSpreadsheet,
+  Award,
 } from "lucide-react";
 
 const adminLinks = [
+  {
+    href: "/admin/certificates",
+    label: "الشهادات",
+    icon: Award,
+  },
+  {
+    href: "/admin/reports",
+    label: "التقارير",
+    icon: FileSpreadsheet,
+  },
+  {
+    href: "/admin/dashboard",
+    label: "الإحصائيات",
+    icon: LayoutDashboard,
+  },
   {
     href: "/member/profile",
     label: "ملفي الشخصي",
@@ -63,6 +81,12 @@ function AdminLinks({
         .filter(
           ({ href }) =>
             href === "/member/profile" ||
+            (href === "/admin/certificates" &&
+              allowedHrefs.includes("/admin/members")) ||
+            (href === "/admin/reports" &&
+              allowedHrefs.includes("/admin/activities")) ||
+            (href === "/admin/dashboard" &&
+              allowedHrefs.includes("/admin/members")) ||
             allowedHrefs.includes(href),
         )
         .map(({ href, label, icon: Icon }) => {

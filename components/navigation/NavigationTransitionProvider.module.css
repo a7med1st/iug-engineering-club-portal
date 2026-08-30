@@ -1,0 +1,194 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 82% 18%, rgb(53 212 255 / 9%), transparent 34%),
+    radial-gradient(circle at 24% 76%, rgb(15 114 220 / 7%), transparent 38%);
+  transition: opacity 110ms ease;
+}
+
+.overlayVisible {
+  opacity: 1;
+}
+
+.overlaySettling {
+  opacity: 0;
+  transition-duration: 180ms;
+}
+
+.sweep {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: -48vw;
+  width: min(44vw, 580px);
+  opacity: 0;
+  transform: translate3d(0, 0, 0) skewX(-8deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(15 114 220 / 8%) 22%,
+    rgb(53 212 255 / 16%) 49%,
+    rgb(67 184 107 / 7%) 68%,
+    rgb(244 163 22 / 5%) 78%,
+    transparent
+  );
+}
+
+.overlayVisible:not(.overlaySettling) .sweep {
+  animation: clubSweep 360ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.progress {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 180;
+  height: 3px;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+
+.progressVisible {
+  opacity: 1;
+}
+
+.progressBar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: right center;
+  background: linear-gradient(
+    90deg,
+    #f4a316,
+    #43b86b 24%,
+    #35d4ff 58%,
+    #0f72dc
+  );
+  box-shadow: 0 0 9px rgb(53 212 255 / 55%);
+}
+
+.progressVisible:not(.progressComplete) .progressBar {
+  animation: routeProgress 1.2s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+.progressComplete .progressBar {
+  transform: scaleX(1);
+  transition: transform 130ms ease-out;
+}
+
+.contentExit {
+  opacity: .66;
+  transform: translate3d(0, -5px, 0);
+  transition:
+    opacity 175ms ease,
+    transform 175ms cubic-bezier(.22, 1, .36, 1);
+  will-change: opacity, transform;
+}
+
+.contentEntry {
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+  will-change: opacity, transform;
+}
+
+.contentEntry.contentEntryActive {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition:
+    opacity 330ms cubic-bezier(.22, 1, .36, 1),
+    transform 330ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.triggered {
+  opacity: .86;
+  transform: translate3d(0, 1px, 0) scale(.99);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+@keyframes clubSweep {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) skewX(-8deg);
+  }
+
+  24% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(-155vw, 0, 0) skewX(-8deg);
+  }
+}
+
+@keyframes routeProgress {
+  0% {
+    transform: scaleX(.02);
+  }
+
+  36% {
+    transform: scaleX(.58);
+  }
+
+  100% {
+    transform: scaleX(.79);
+  }
+}
+
+@media (max-width: 768px) {
+  .overlay {
+    background:
+      radial-gradient(circle at 82% 20%, rgb(53 212 255 / 7%), transparent 42%),
+      radial-gradient(circle at 18% 74%, rgb(15 114 220 / 5%), transparent 44%);
+  }
+
+  .overlayVisible:not(.overlaySettling) .sweep {
+    animation-duration: 300ms;
+  }
+
+  .contentExit {
+    transition-duration: 150ms;
+  }
+
+  .contentEntry.contentEntryActive {
+    transition-duration: 280ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .sweep,
+  .progress,
+  .progressBar,
+  .contentExit,
+  .contentEntry,
+  .contentEntry.contentEntryActive,
+  .triggered {
+    animation: none !important;
+    transition-duration: .01ms !important;
+    transform: none !important;
+  }
+
+  .overlay,
+  .progress {
+    display: none;
+  }
+
+  .contentExit {
+    opacity: .92;
+  }
+
+  .contentEntry,
+  .contentEntry.contentEntryActive {
+    opacity: 1;
+  }
+}

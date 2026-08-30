@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import ActivityRegistrationForm from "@/components/activities/ActivityRegistrationForm";
+import { formatActivitySchedule } from "@/lib/activities";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -91,10 +92,6 @@ const isCapacityFull =
                         ← العودة إلى الأنشطة
                     </Link>
 
-                    <div className="activity-registration-badge">
-                        التسجيل في النشاط
-                    </div>
-
                     <h1>
                         {activity.title}
                     </h1>
@@ -115,12 +112,9 @@ const isCapacityFull =
                         <div>
                             <span>التاريخ والوقت</span>
                             <strong>
-                                {activity.startsAt.toLocaleString(
-                                    "ar-EG",
-                                    {
-                                        dateStyle: "medium",
-                                        timeStyle: "short",
-                                    }
+                                {formatActivitySchedule(
+                                    activity.startsAt,
+                                    activity.endsAt,
                                 )}
                             </strong>
                         </div>

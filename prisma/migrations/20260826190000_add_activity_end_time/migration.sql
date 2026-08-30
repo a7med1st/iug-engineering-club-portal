@@ -1,0 +1,2 @@
+ALTER TABLE "Activity"
+ADD COLUMN "endsAt" TIMESTAMP(3);

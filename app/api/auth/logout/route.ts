@@ -1,3 +1,15 @@
-import { clearSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
-export async function POST(req:Request){await clearSession();return NextResponse.redirect(new URL("/",req.url),303)}
+
+import { clearSession } from "@/lib/auth";
+import { rejectCrossOriginRequest } from "@/lib/request-security";
+
+export async function POST(request: Request) {
+  const crossOriginResponse = rejectCrossOriginRequest(request);
+
+  if (crossOriginResponse) {
+    return crossOriginResponse;
+  }
+
+  await clearSession();
+  return NextResponse.redirect(new URL("/", request.url), 303);
+}

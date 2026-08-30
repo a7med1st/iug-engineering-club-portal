@@ -9,11 +9,29 @@ import {
   StudyLevel,
 } from "@prisma/client";
 
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+
+import { getSession } from "@/lib/auth";
+import {
+  createInitialRoutingRecords,
+  findInitialContactAssignee,
+} from "@/lib/contact-routing";
 import { prisma } from "@/lib/prisma";
+import { putPrivateBlob, tryDeletePrivateBlobs } from "@/lib/blob-storage";
+import {
+  UploadValidationError,
+  logUploadRejection,
+  validateCollaborationDocument,
+} from "@/lib/upload-security";
+import {
+  UploadRateLimitError,
+  clientIpFromHeaders,
+  enforceCollaborationUploadLimit,
+  uploadRateLimitMessage,
+} from "@/lib/upload-rate-limit";
 
 import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 
 /* =========================================================
    TYPES
@@ -106,6 +124,22 @@ function isCooperationType(
   );
 }
 
+async function getSubmitterId() {
+  const session = await getSession();
+
+  if (!session) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.sub },
+    select: { id: true },
+  });
+
+  return user?.id ?? null;
+}
+
+const receivedMessage =
+  "سيقوم فريقنا بمراجعة طلبك، وسنرد عليك في أقرب فرصة.";
+
 /* =========================================================
    COMPLAINT
 ========================================================= */
@@ -147,6 +181,9 @@ export async function submitComplaint(
     const wantsReply =
       getString(formData, "wantsReply");
 
+    const submitterId =
+      await getSubmitterId();
+
     /* ========================
        VALIDATION
     ======================== */
@@ -184,6 +221,15 @@ export async function submitComplaint(
       );
     }
 
+    if (
+      wantsReply === "yes" &&
+      !submitterId
+    ) {
+      return errorState(
+        "للحصول على رد داخل الموقع، سجّل الدخول إلى حسابك أولًا ثم أرسل الشكوى."
+      );
+    }
+
     const department =
       await prisma.department.findUnique({
         where: {
@@ -191,6 +237,7 @@ export async function submitComplaint(
         },
         select: {
           id: true,
+          nameAr: true,
         },
       });
 
@@ -200,31 +247,69 @@ export async function submitComplaint(
       );
     }
 
+    const assignment =
+      await findInitialContactAssignee(
+        department.id,
+      );
+
     /* ========================
        SAVE
     ======================== */
 
-    await prisma.complaint.create({
-      data: {
-        studentName,
-        contact,
+    await prisma.$transaction(
+      async (transaction) => {
+        const request =
+          await transaction.complaint.create({
+          data: {
+            studentName,
+            contact,
+            departmentId,
+            studyLevel,
+            type,
+            details,
+            wantsReply:
+              wantsReply === "yes",
+            submittedById: submitterId,
+            assignedToId:
+              assignment?.userId ?? null,
+            assignedStructureItemId:
+              assignment?.structureItemId ?? null,
+            assignedAt: assignment
+              ? new Date()
+              : null,
+          },
+          select: { id: true },
+        });
 
-        departmentId,
+        if (submitterId) {
+          await transaction.notification.create({
+            data: {
+              userId: submitterId,
+              type: "SYSTEM",
+              title: "تم استلام شكواك",
+              body:
+                "طلبك الآن بانتظار المراجعة، وسنرسل لك إشعارًا عند تحديث حالته.",
+              href:
+                "/contact#my-contact-requests",
+            },
+          });
+        }
 
-        studyLevel,
-        type,
+        await createInitialRoutingRecords(
+          transaction,
+          assignment,
+          "COMPLAINT",
+          request.id,
+          `شكوى أو ملاحظة جديدة مرتبطة بقسم ${department.nameAr}.`,
+        );
+      }
+    );
 
-        details,
-
-        wantsReply:
-          wantsReply === "yes",
-      },
-    });
+    revalidatePath("/contact");
 
     return {
       success: true,
-      message:
-        "تم إرسال الشكوى أو الملاحظة بنجاح. شكرًا لتواصلك معنا.",
+      message: receivedMessage,
     };
   } catch (error) {
     console.error(
@@ -280,6 +365,9 @@ export async function submitSuggestion(
 
     const experienceLevel =
       getString(formData, "experienceLevel");
+
+    const submitterId =
+      await getSubmitterId();
 
     /* ========================
        VALIDATION
@@ -352,6 +440,7 @@ export async function submitSuggestion(
         },
         select: {
           id: true,
+          nameAr: true,
         },
       });
 
@@ -361,34 +450,70 @@ export async function submitSuggestion(
       );
     }
 
+    const assignment =
+      await findInitialContactAssignee(
+        department.id,
+      );
+
     /* ========================
        SAVE
     ======================== */
 
-    await prisma.suggestion.create({
-      data: {
-        studentName,
-        whatsapp,
+    await prisma.$transaction(
+      async (transaction) => {
+        const request =
+          await transaction.suggestion.create({
+          data: {
+            studentName,
+            whatsapp,
+            departmentId,
+            studyLevel,
+            topics,
+            activityType,
+            activityLevel,
+            projectIdea,
+            experienceLevel,
+            submittedById: submitterId,
+            assignedToId:
+              assignment?.userId ?? null,
+            assignedStructureItemId:
+              assignment?.structureItemId ?? null,
+            assignedAt: assignment
+              ? new Date()
+              : null,
+          },
+          select: { id: true },
+        });
 
-        departmentId,
+        if (submitterId) {
+          await transaction.notification.create({
+            data: {
+              userId: submitterId,
+              type: "SYSTEM",
+              title: "تم استلام اقتراحك",
+              body:
+                "اقتراحك الآن بانتظار المراجعة، وسنرسل لك إشعارًا عند تحديث حالته.",
+              href:
+                "/contact#my-contact-requests",
+            },
+          });
+        }
 
-        studyLevel,
+        await createInitialRoutingRecords(
+          transaction,
+          assignment,
+          "SUGGESTION",
+          request.id,
+          `اقتراح جديد مرتبط بقسم ${department.nameAr}.`,
+        );
+      }
+    );
 
-        topics,
-
-        activityType,
-        activityLevel,
-
-        projectIdea,
-
-        experienceLevel,
-      },
-    });
+    revalidatePath("/contact");
 
     return {
       success: true,
-      message:
-        "تم إرسال اقتراحك بنجاح. شكرًا لمساهمتك في تطوير أنشطة النادي.",
+      message: receivedMessage,
     };
   } catch (error) {
     console.error(
@@ -410,6 +535,8 @@ export async function submitCollaboration(
   _previousState: ContactFormState,
   formData: FormData
 ): Promise<ContactFormState> {
+  let uploadedAttachmentPathname: string | null = null;
+
   try {
     if (getString(formData, "website")) {
       return {
@@ -450,6 +577,9 @@ export async function submitCollaboration(
         formData,
         "additionalNotes"
       ) || null;
+
+    const submitterId =
+      await getSubmitterId();
 
     /* ========================
        VALIDATION
@@ -543,132 +673,120 @@ export async function submitCollaboration(
       const MAX_FILE_SIZE =
         5 * 1024 * 1024;
 
-      if (
-        attachment.size >
-        MAX_FILE_SIZE
-      ) {
-        return errorState(
-          "حجم الملف يجب ألا يتجاوز 5MB."
-        );
-      }
-
-      const extension =
-        path
-          .extname(attachment.name)
-          .toLowerCase();
-
-      const allowedMimeTypes: Record<
-        string,
-        string[]
-      > = {
-        ".pdf": [
-          "application/pdf",
-        ],
-
-        ".doc": [
-          "application/msword",
-        ],
-
-        ".docx": [
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ],
-      };
-
-      const allowedMimes =
-        allowedMimeTypes[extension];
-
-      if (
-        !allowedMimes ||
-        !allowedMimes.includes(
-          attachment.type
-        )
-      ) {
-        return errorState(
-          "يسمح فقط برفع ملفات PDF أو DOC أو DOCX."
-        );
-      }
-
-      /*
-        نخزن الملفات خارج public
-        حتى لا تصبح متاحة مباشرة لأي شخص.
-      */
-
-      const storageDirectory =
-        path.join(
-          process.cwd(),
-          "storage",
-          "collaboration"
+      try {
+        const requestHeaders = await headers();
+        await enforceCollaborationUploadLimit(
+          clientIpFromHeaders(requestHeaders),
+          attachment.size,
         );
 
-      await mkdir(
-        storageDirectory,
-        {
-          recursive: true,
+        const validated = await validateCollaborationDocument(
+          attachment,
+          MAX_FILE_SIZE,
+        );
+        const pathname = `collaboration/${randomUUID()}${validated.extension}`;
+        const blob = await putPrivateBlob(pathname, validated.buffer, validated.mime);
+
+        uploadedAttachmentPathname = blob.pathname;
+        attachmentStoredName = blob.pathname;
+        attachmentOriginalName = validated.originalName;
+        attachmentMime = validated.mime;
+        attachmentSize = validated.size;
+      } catch (error) {
+        logUploadRejection("collaboration", error, {
+          size: attachment.size,
+          mime: attachment.type,
+        });
+
+        if (error instanceof UploadRateLimitError) {
+          return errorState(uploadRateLimitMessage(error));
         }
-      );
 
-      attachmentStoredName =
-        `${randomUUID()}${extension}`;
+        if (error instanceof UploadValidationError) {
+          return errorState(error.message);
+        }
 
-      attachmentOriginalName =
-        path.basename(
-          attachment.name
-        );
-
-      attachmentMime =
-        attachment.type;
-
-      attachmentSize =
-        attachment.size;
-
-      const buffer =
-        Buffer.from(
-          await attachment.arrayBuffer()
-        );
-
-      await writeFile(
-        path.join(
-          storageDirectory,
-          attachmentStoredName
-        ),
-        buffer
-      );
+        throw error;
+      }
     }
 
     /* ========================
        SAVE
     ======================== */
 
-    await prisma.collaborationRequest.create({
-      data: {
-        entityName,
-        entityType,
+    const assignment =
+      await findInitialContactAssignee(null);
 
-        contactPerson,
-        phone,
-        email,
-        socialUrl,
+    await prisma.$transaction(
+      async (transaction) => {
+        const request =
+          await transaction.collaborationRequest.create({
+          data: {
+            entityName,
+            entityType,
+            contactPerson,
+            phone,
+            email,
+            socialUrl,
+            cooperationType,
+            description,
+            field,
+            attachmentStoredName,
+            attachmentOriginalName,
+            attachmentMime,
+            attachmentSize,
+            additionalNotes,
+            submittedById: submitterId,
+            assignedToId:
+              assignment?.userId ?? null,
+            assignedStructureItemId:
+              assignment?.structureItemId ?? null,
+            assignedAt: assignment
+              ? new Date()
+              : null,
+          },
+          select: { id: true },
+        });
 
-        cooperationType,
+        if (submitterId) {
+          await transaction.notification.create({
+            data: {
+              userId: submitterId,
+              type: "SYSTEM",
+              title:
+                "تم استلام طلب التعاون",
+              body:
+                "طلب التعاون الآن بانتظار المراجعة، وسنرسل لك إشعارًا عند تحديث حالته.",
+              href:
+                "/contact#my-contact-requests",
+            },
+          });
+        }
 
-        description,
-        field,
+        await createInitialRoutingRecords(
+          transaction,
+          assignment,
+          "COLLABORATION",
+          request.id,
+          `طلب تعاون جديد من ${entityName}.`,
+        );
+      }
+    );
 
-        attachmentStoredName,
-        attachmentOriginalName,
-        attachmentMime,
-        attachmentSize,
-
-        additionalNotes,
-      },
-    });
+    revalidatePath("/contact");
 
     return {
       success: true,
-      message:
-        "تم إرسال طلب التعاون بنجاح. سيتواصل معكم النادي بعد مراجعته.",
+      message: receivedMessage,
     };
   } catch (error) {
+    if (uploadedAttachmentPathname) {
+      await tryDeletePrivateBlobs(
+        [uploadedAttachmentPathname],
+        "collaboration-db-failure",
+      );
+    }
+
     console.error(
       "submitCollaboration error:",
       error

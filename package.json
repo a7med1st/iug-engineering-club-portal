@@ -7,34 +7,52 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:contact-routing": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env scripts/run-contact-routing-test.mjs",
+    "test:email-verification": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env scripts/run-email-verification-tests.mjs",
+    "test:integrity": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env scripts/run-final-programming-check.mjs",
+    "test:routes": "node --env-file=.env scripts/test-role-routes.mjs",
+    "test:auth-security": "node --env-file=.env scripts/test-auth-security.mjs",
+    "test:file-security": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --import tsx scripts/test-file-upload-security.ts",
+    "test:csp-security": "node --require ./scripts/node-platform-fallback.cjs --import tsx scripts/test-csp-security.ts",
+    "test:all": "tsc --noEmit --incremental false && prisma validate && npm run test:csp-security && npm run test:file-security && npm run test:email-verification && npm run test:contact-routing && npm run test:integrity && npm run test:routes",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "migrate:private-files": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --env-file-if-exists=.env.local --import tsx scripts/migrate-files-to-private-blob.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
+    "@vercel/blob": "^2.8.0",
     "bcryptjs": "^3.0.2",
+    "date-fns": "^4.4.0",
     "exceljs": "^4.4.0",
     "html5-qrcode": "^2.3.8",
     "jose": "^6.1.0",
     "lucide-react": "^0.468.0",
-    "next": "^15.5.0",
+    "next": "^15.5.24",
+    "nodemailer": "^9.0.5",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-day-picker": "^10.0.1",
+    "react-dom": "^19.1.0",
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/nodemailer": "^8.0.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "prisma": "^6.16.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
+  },
+  "overrides": {
+    "postcss": "8.5.23"
   }
 }

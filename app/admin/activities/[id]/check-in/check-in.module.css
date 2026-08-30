@@ -418,3 +418,24 @@
     min-height: 330px;
   }
 }
+
+:global(html[data-theme="dark"]) .page {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .stats article,
+:global(html[data-theme="dark"]) .scannerPanel,
+:global(html[data-theme="dark"]) .resultCard {
+  border-color: var(--line);
+  background: var(--surface) !important;
+  color: var(--ink);
+  box-shadow: var(--theme-shadow);
+}
+
+:global(html[data-theme="dark"]) .page :where(h1, h2, h3, strong, label) {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .page :where(p, small) {
+  color: var(--muted);
+}

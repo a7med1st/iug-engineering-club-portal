@@ -1,0 +1,298 @@
+.shell {
+  min-height: 100vh;
+  padding: 24px;
+  background: #f3f5f8;
+}
+
+.toolbar {
+  width: min(100%, 1120px);
+  margin: 0 auto 12px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.certificate {
+  --ink: #17202a;
+  --muted: #56616d;
+
+  position: relative;
+  color-scheme: light;
+  width: min(100%, 1120px);
+  min-height: 720px;
+  margin: 0 auto;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  border: 12px solid #163f70;
+  outline: 2px solid #d9aa45;
+  outline-offset: -20px;
+  background: #fff;
+  color: #17202a;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 38px 54px 20px;
+}
+
+.brandMark {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #163f70;
+  color: #fff;
+}
+
+.header > div:nth-child(2) {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.header span {
+  font-size: 13px;
+}
+
+.header strong {
+  font-size: 20px;
+}
+
+.validity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #168a57;
+  font-weight: 800;
+}
+
+.body {
+  padding: 30px 70px 42px;
+  text-align: center;
+}
+
+.kicker {
+  color: #9a7625;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.body h1 {
+  margin: 10px 0 24px;
+  font-size: 42px;
+  color: #163f70;
+}
+
+.body p {
+  margin: 8px 0;
+  color: #56616d;
+  font-size: 17px;
+  line-height: 1.9;
+}
+
+.body h2 {
+  display: inline-block;
+  margin: 10px 0 16px;
+  padding: 0 25px 8px;
+  border-bottom: 2px solid #d9aa45;
+  font-size: 34px;
+}
+
+.body h3 {
+  margin: 12px 0 18px;
+  font-size: 25px;
+  color: #163f70;
+}
+
+.details {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 18px;
+}
+
+.details span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #56616d;
+}
+
+.department {
+  font-size: 14px !important;
+}
+
+.footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 25px;
+  padding: 20px 54px 38px;
+}
+
+.verify {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.verify > div:last-child {
+  display: grid;
+  gap: 4px;
+}
+
+.verify span,
+.issued span {
+  color: #68737e;
+  font-size: 11px;
+}
+
+.verify strong {
+  font-family: monospace;
+  font-size: 14px;
+  letter-spacing: .05em;
+}
+
+.verify small {
+  max-width: 260px;
+  color: #7c8791;
+  font-size: 10px;
+}
+
+.issued {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.issued svg {
+  color: #163f70;
+}
+
+.revokedCertificate {
+  filter: grayscale(.15);
+}
+
+.revokedCertificate .validity {
+  color: #c43d48;
+}
+
+.revokedStamp {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  padding: 16px 28px;
+  border: 5px solid #c43d48;
+  border-radius: 12px;
+  color: #c43d48;
+  font-size: 54px;
+  font-weight: 900;
+  opacity: .72;
+}
+
+@media screen {
+  :global(html[data-theme="dark"]) .shell {
+    background: #061a2b;
+  }
+
+  :global(html[data-theme="dark"]) .certificate {
+    background: #ffffff;
+    color: #17202a;
+  }
+
+  :global(html[data-theme="dark"]) .certificate :where(.body h1, .body h3) {
+    color: #163f70 !important;
+  }
+
+  :global(html[data-theme="dark"]) .certificate :where(
+    .header strong,
+    .body h2,
+    .verify strong,
+    .issued strong
+  ) {
+    color: #17202a !important;
+  }
+
+  :global(html[data-theme="dark"]) .certificate :where(
+    .body p,
+    .details span,
+    .verify span,
+    .verify small,
+    .issued span
+  ) {
+    color: #56616d !important;
+  }
+
+  :global(html[data-theme="dark"]) .certificate .department {
+    color: #61778e !important;
+  }
+}
+
+@media print {
+  .shell {
+    min-height: auto;
+    padding: 0;
+    background: #fff;
+  }
+
+  .toolbar {
+    display: none !important;
+  }
+
+  .certificate {
+    width: 100%;
+    min-height: 190mm;
+    border-width: 8px;
+    outline-offset: -15px;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+}
+
+@media (max-width: 700px) {
+  .shell {
+    padding: 8px;
+  }
+
+  .certificate {
+    min-height: 680px;
+    border-width: 7px;
+  }
+
+  .header,
+  .footer {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .body {
+    padding-left: 26px;
+    padding-right: 26px;
+  }
+
+  .body h1 {
+    font-size: 32px;
+  }
+
+  .body h2 {
+    font-size: 26px;
+  }
+
+  .footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .issued {
+    justify-items: start;
+  }
+}

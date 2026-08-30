@@ -78,10 +78,17 @@ enum CooperationType {
 enum ContactRequestStatus {
   NEW
   IN_REVIEW
+  IN_PROGRESS
   RESOLVED
   CONTACTED
   ACCEPTED
   REJECTED
+}
+
+enum ContactRequestKind {
+  COMPLAINT
+  SUGGESTION
+  COLLABORATION
 }
 
 // =========================================================
@@ -122,8 +129,10 @@ model User {
   id                String    @id @default(cuid())
   name              String
   email             String    @unique
+  emailVerifiedAt   DateTime?
   passwordHash      String
   role              Role      @default(STUDENT)
+  sessionVersion    Int       @default(0)
   position          String?
   memberPermissions String[]  @default([])
   chatLastSeenAt    DateTime?
@@ -176,9 +185,53 @@ model User {
   sentChatMessages    ChatMessage[]        @relation("ChatMessageSender")
   chatMessageReceipts ChatMessageReceipt[]
   chatTyping          ChatTyping[]
+  chatPollVotes       ChatPollVote[]
 
-  createdAt DateTime @default(now())
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  notifications         Notification[]
+  emailVerificationCode EmailVerificationCode?
+
+  submittedComplaints      Complaint[]            @relation("ComplaintSubmitter")
+  submittedSuggestions     Suggestion[]           @relation("SuggestionSubmitter")
+  submittedCollaborations  CollaborationRequest[] @relation("CollaborationSubmitter")
+  authoredComplaintReplies ComplaintReply[]       @relation("ComplaintReplyAuthor")
+
+  assignedComplaints     Complaint[]            @relation("ComplaintAssignee")
+  assignedSuggestions    Suggestion[]           @relation("SuggestionAssignee")
+  assignedCollaborations CollaborationRequest[] @relation("CollaborationAssignee")
+}
+
+// Distributed fixed-window counters shared by all server instances.
+// Keys are HMAC digests; raw IP addresses and email addresses are never stored.
+model RateLimitCounter {
+  key       String   @id @db.VarChar(64)
+  count     Int
+  resetAt   DateTime
   updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+}
+
+// =========================================================
+// EMAIL VERIFICATION
+// =========================================================
+
+model EmailVerificationCode {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  codeHash        String
+  expiresAt       DateTime
+  attempts        Int      @default(0)
+  lastSentAt      DateTime @default(now())
+  windowStartedAt DateTime @default(now())
+  sendCount       Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
 }
 
 // =========================================================
@@ -186,12 +239,13 @@ model User {
 // =========================================================
 
 model Department {
-  id         String @id @default(cuid())
-  nameAr     String
-  nameEn     String
-  slug       String @unique
-  coverImage String
-  sortOrder  Int    @default(0)
+  id          String  @id @default(cuid())
+  nameAr      String
+  nameEn      String
+  slug        String  @unique
+  coverImage  String
+  detailImage String?
+  sortOrder   Int     @default(0)
 
   users          User[]
   activities     ActivityDepartment[]
@@ -210,26 +264,51 @@ model Department {
 // =========================================================
 
 model Activity {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  location    String
-  startsAt    DateTime
-  capacity    Int
+  id               String    @id @default(cuid())
+  title            String
+  description      String
+  location         String
+  startsAt         DateTime
+  endsAt           DateTime?
+  capacity         Int
+  postEventSummary String?
 
-  // ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬â€چط·آ·ط¢آ£ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ´ط·آ·ط¢آ·ط·آ·ط¢آ© ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬ع‘ط·آ·ط¢آ¯ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ© ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ¸ط¸آ¹ ط·آ¸ط¦â€™ط·آ·ط¢آ§ط·آ¸أ¢â‚¬آ ط·آ·ط¹آ¾ ط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ·ط¢آ®ط·آ·ط¢آ¯ط·آ¸أ¢â‚¬آ¦ Google Forms
-  // ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ£ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ´ط·آ·ط¢آ·ط·آ·ط¢آ© ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¬ط·آ·ط¢آ¯ط·آ¸ط¸آ¹ط·آ·ط¢آ¯ط·آ·ط¢آ© ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ  ط·آ·ط¹آ¾ط·آ·ط¢آ­ط·آ·ط¹آ¾ط·آ·ط¢آ§ط·آ·ط¢آ¬ط·آ¸أ¢â‚¬طŒ
+  coverImageUrl          String?
+  coverImagePathname     String?
+  coverImageOriginalName String?
+  coverImageMime         String?
+  coverImageSize         Int?
+
+  // ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ£ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ·ط·آ¢ط¢آ´ط·آ·ط¢آ·ط·آ¢ط¢آ·ط·آ·ط¢آ·ط·آ¢ط¢آ© ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¹â€کط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ© ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ ط·آ·ط¢آ¸ط·آ¦أ¢â‚¬â„¢ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ·ط·آ¹ط¢آ¾ ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ®ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ Google Forms
+  // ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ£ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ·ط·آ¢ط¢آ´ط·آ·ط¢آ·ط·آ¢ط¢آ·ط·آ·ط¢آ·ط·آ¢ط¢آ© ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ·ط·آ¢ط¢آ© ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ  ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ­ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط·إ’
   formUrl String?
 
   status ActivityStatus @default(PUBLISHED)
 
   departments ActivityDepartment[]
+  images      ActivityImage[]
 
-  // ط·آ¸أ¢â‚¬آ ط·آ¸أ¢â‚¬آ¦ط·آ¸ط«â€ ط·آ·ط¢آ°ط·آ·ط¢آ¬ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬â€چ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¯ط·آ·ط¢آ§ط·آ·ط¢آ®ط·آ¸أ¢â‚¬â€چط·آ¸ط¸آ¹
+  // ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ·ط·آ¢ط¢آ°ط·آ·ط¢آ·ط·آ¢ط¢آ¬ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع† ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ·ط·آ¢ط¢آ®ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط·آ¸ط¢آ¹
   registrationForm ActivityRegistrationForm?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ActivityImage {
+  id           String   @id @default(cuid())
+  activityId   String
+  url          String
+  pathname     String   @unique
+  originalName String
+  mime         String
+  size         Int
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId, sortOrder])
 }
 
 model ActivityDepartment {
@@ -253,10 +332,10 @@ model ActivityRegistrationForm {
   activityId String   @unique
   activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
-  title       String @default("ط·آ¸أ¢â‚¬آ ط·آ¸أ¢â‚¬آ¦ط·آ¸ط«â€ ط·آ·ط¢آ°ط·آ·ط¢آ¬ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬â€چ")
+  title       String @default("ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ·ط·آ¢ط¢آ°ط·آ·ط¢آ·ط·آ¢ط¢آ¬ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†")
   description String @default("")
 
-  // ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ£ط·آ·ط¢آ¯ط·آ¸أ¢â‚¬آ¦ط·آ¸أ¢â‚¬آ  ط·آ¸ط¸آ¹ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ·ط¢آ·ط·آ¸ط¸آ¹ط·آ·ط¢آ¹ ط·آ¸ط¸آ¾ط·آ·ط¹آ¾ط·آ·ط¢آ­ ط·آ¸ط«â€ ط·آ·ط¢آ¥ط·آ·ط·â€؛ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ§ط·آ¸أ¢â‚¬ع‘ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬â€چ
+  // ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ£ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ  ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ·ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ¹ ط·آ·ط¢آ¸ط·آ¸ط¢آ¾ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ­ ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ·ط·آ¢ط¢آ¥ط·آ·ط¢آ·ط·آ·أ¢â‚¬ط›ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¹â€ک ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†
   isOpen Boolean @default(true)
 
   questions   ActivityFormQuestion[]
@@ -276,7 +355,7 @@ model ActivityFormQuestion {
   formId String
   form   ActivityRegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
 
-  // ط·آ¸أ¢â‚¬آ ط·آ·ط¢آµ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ³ط·آ·ط¢آ¤ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چ
+  // ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ·ط·آ¢ط¢آµ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¢ط¢آ¤ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†
   label String
 
   // SHORT_TEXT / RADIO / CHECKBOX ...
@@ -287,13 +366,13 @@ model ActivityFormQuestion {
   placeholder String?
   helpText    String?
 
-  // ط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ·ط¢آ®ط·آ·ط¢آ¯ط·آ¸أ¢â‚¬آ¦ ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ¹:
+  // ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ®ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ¹:
   // SELECT
   // RADIO
   // CHECKBOX
   //
-  // ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ«ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چ:
-  // ["ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ¸ط«â€ ط·آ¸أ¢â‚¬آ° ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ£ط·آ¸ط«â€ ط·آ¸أ¢â‚¬â€چ", "ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ¸ط«â€ ط·آ¸أ¢â‚¬آ° ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ«ط·آ·ط¢آ§ط·آ¸أ¢â‚¬آ ط·آ¸ط¸آ¹"]
+  // ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ«ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†:
+  // ["ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ° ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ£ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†", "ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ° ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ«ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ¸ط·آ¸ط¢آ¹"]
   options Json?
 
   sortOrder Int @default(0)
@@ -316,12 +395,12 @@ model ActivityFormSubmission {
   formId String
   form   ActivityRegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
 
-  // ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ·ط¢آ®ط·آ·ط¢آ¯ط·آ¸أ¢â‚¬آ¦ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸أ¢â‚¬â€چ
-  // Optional ط·آ·ط¢آ­ط·آ·ط¹آ¾ط·آ¸أ¢â‚¬آ° ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ­ط·آ·ط¢آ§ط·آ¸ط¸آ¾ط·آ·ط¢آ¸ ط·آ·ط¢آ¹ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ° ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬â€چ ط·آ¸أ¢â‚¬â€چط·آ¸ط«â€  ط·آ·ط¢آ­ط·آ¸ط¹ث†ط·آ·ط¢آ°ط·آ¸ط¸آ¾ ط·آ·ط¢آ­ط·آ·ط¢آ³ط·آ·ط¢آ§ط·آ·ط¢آ¨ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ·ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¨ ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ³ط·آ·ط¹آ¾ط·آ¸أ¢â‚¬ع‘ط·آ·ط¢آ¨ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ¹ط·آ·ط¢آ§
+  // ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ®ط·آ·ط¢آ·ط·آ¢ط¢آ¯ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†
+  // Optional ط·آ·ط¢آ·ط·آ¢ط¢آ­ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ° ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ·ط·آ¢ط¢آ­ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط·آ¸ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ¸ ط·آ·ط¢آ·ط·آ¢ط¢آ¹ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ° ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع† ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ  ط·آ·ط¢آ·ط·آ¢ط¢آ­ط·آ·ط¢آ¸ط·آ¹ط«â€ ط·آ·ط¢آ·ط·آ¢ط¢آ°ط·آ·ط¢آ¸ط·آ¸ط¢آ¾ ط·آ·ط¢آ·ط·آ¢ط¢آ­ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ·ط·آ¢ط¢آ¨ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ·ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ¨ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¹â€کط·آ·ط¢آ·ط·آ¢ط¢آ¨ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ§
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  // Snapshot ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¨ط·آ¸ط¸آ¹ط·آ·ط¢آ§ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ§ط·آ·ط¹آ¾ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ·ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¨ ط·آ¸ط«â€ ط·آ¸أ¢â‚¬ع‘ط·آ·ط¹آ¾ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¹آ¾ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬â€چ
+  // Snapshot ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ¨ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ·ط·آ¹ط¢آ¾ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ·ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ¨ ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¹â€کط·آ·ط¢آ·ط·آ¹ط¢آ¾ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†
   studentName       String
   studentEmail      String
   studentDepartment String?
@@ -337,7 +416,9 @@ model ActivityFormSubmission {
   submittedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ·ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ¨ ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ§ ط·آ¸ط¸آ¹ط·آ·ط¢آ³ط·آ·ط¢آ¬ط·آ¸أ¢â‚¬â€چ ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ±ط·آ·ط¹آ¾ط·آ¸ط¸آ¹ط·آ¸أ¢â‚¬آ  ط·آ·ط¢آ¨ط·آ¸أ¢â‚¬آ ط·آ¸ط¸آ¾ط·آ·ط¢آ³ ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸أ¢â‚¬آ ط·آ·ط¢آ´ط·آ·ط¢آ§ط·آ·ط¢آ·/ط·آ·ط¢آ§ط·آ¸أ¢â‚¬â€چط·آ¸ط¸آ¾ط·آ¸ط«â€ ط·آ·ط¢آ±ط·آ¸أ¢â‚¬آ¦
+  certificate Certificate?
+
+  // ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ·ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ¨ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ§ ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ·ط·آ¢ط¢آ³ط·آ·ط¢آ·ط·آ¢ط¢آ¬ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع† ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ±ط·آ·ط¢آ·ط·آ¹ط¢آ¾ط·آ·ط¢آ¸ط·آ¸ط¢آ¹ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ  ط·آ·ط¢آ·ط·آ¢ط¢آ¨ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ¸ط·آ¸ط¢آ¾ط·آ·ط¢آ·ط·آ¢ط¢آ³ ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ·ط·آ¢ط¢آ´ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ·ط·آ¢ط¢آ·/ط·آ·ط¢آ·ط·آ¢ط¢آ§ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ¸ط·آ¸ط¢آ¾ط·آ·ط¢آ¸ط·آ«أ¢â‚¬آ ط·آ·ط¢آ·ط·آ¢ط¢آ±ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦
   @@unique([formId, userId])
   @@index([formId, submittedAt])
   @@index([userId])
@@ -357,13 +438,13 @@ model ActivityFormAnswer {
 
   question ActivityFormQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
 
-  // ط·آ·ط¢آ£ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ«ط·آ¸أ¢â‚¬â€چط·آ·ط¢آ©:
+  // ط·آ·ط¢آ·ط·آ¢ط¢آ£ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ«ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬أ¢â‚¬ع†ط·آ·ط¢آ·ط·آ¢ط¢آ©:
   //
   // Text:
-  // "ط·آ·ط¢آ£ط·آ·ط¢آ­ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ¯ ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ­ط·آ¸أ¢â‚¬آ¦ط·آ·ط¢آ¯"
+  // "ط·آ·ط¢آ·ط·آ¢ط¢آ£ط·آ·ط¢آ·ط·آ¢ط¢آ­ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ¯ ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ­ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦ط·آ·ط¢آ·ط·آ¢ط¢آ¯"
   //
   // Radio:
-  // "ط·آ¸أ¢â‚¬آ ط·آ·ط¢آ¹ط·آ¸أ¢â‚¬آ¦"
+  // "ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ ط·آ·ط¢آ·ط·آ¢ط¢آ¹ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¦"
   //
   // Checkbox:
   // ["AI", "Web", "Embedded"]
@@ -415,6 +496,10 @@ model ClubStructureItem {
   parent   ClubStructureItem?  @relation("ClubStructureTree", fields: [parentId], references: [id], onDelete: SetNull)
   children ClubStructureItem[] @relation("ClubStructureTree")
 
+  assignedComplaints     Complaint[]            @relation("ComplaintAssignedStructure")
+  assignedSuggestions    Suggestion[]           @relation("SuggestionAssignedStructure")
+  assignedCollaborations CollaborationRequest[] @relation("CollaborationAssignedStructure")
+
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
@@ -444,6 +529,17 @@ model Complaint {
   details    String
   wantsReply Boolean
 
+  submittedById String?
+  submittedBy   User?            @relation("ComplaintSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+  replies       ComplaintReply[]
+
+  assignedToId String?
+  assignedTo   User?   @relation("ComplaintAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  assignedStructureItemId String?
+  assignedStructureItem   ClubStructureItem? @relation("ComplaintAssignedStructure", fields: [assignedStructureItemId], references: [id], onDelete: SetNull)
+  assignedAt              DateTime?
+
   status ContactRequestStatus @default(NEW)
 
   createdAt DateTime @default(now())
@@ -451,6 +547,25 @@ model Complaint {
 
   @@index([status, createdAt])
   @@index([departmentId, createdAt])
+  @@index([submittedById, createdAt])
+  @@index([assignedToId, status, createdAt])
+  @@index([assignedStructureItemId])
+}
+
+model ComplaintReply {
+  id String @id @default(cuid())
+
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  authorId String?
+  author   User?   @relation("ComplaintReplyAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([complaintId, createdAt])
+  @@index([authorId])
 }
 
 // =========================================================
@@ -477,6 +592,16 @@ model Suggestion {
 
   experienceLevel ExperienceLevel
 
+  submittedById String?
+  submittedBy   User?   @relation("SuggestionSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+
+  assignedToId String?
+  assignedTo   User?   @relation("SuggestionAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  assignedStructureItemId String?
+  assignedStructureItem   ClubStructureItem? @relation("SuggestionAssignedStructure", fields: [assignedStructureItemId], references: [id], onDelete: SetNull)
+  assignedAt              DateTime?
+
   status ContactRequestStatus @default(NEW)
 
   createdAt DateTime @default(now())
@@ -484,6 +609,9 @@ model Suggestion {
 
   @@index([status, createdAt])
   @@index([departmentId, createdAt])
+  @@index([submittedById, createdAt])
+  @@index([assignedToId, status, createdAt])
+  @@index([assignedStructureItemId])
 }
 
 // =========================================================
@@ -512,12 +640,43 @@ model CollaborationRequest {
 
   additionalNotes String?
 
+  submittedById String?
+  submittedBy   User?   @relation("CollaborationSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+
+  assignedToId String?
+  assignedTo   User?   @relation("CollaborationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  assignedStructureItemId String?
+  assignedStructureItem   ClubStructureItem? @relation("CollaborationAssignedStructure", fields: [assignedStructureItemId], references: [id], onDelete: SetNull)
+  assignedAt              DateTime?
+
   status ContactRequestStatus @default(NEW)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status, createdAt])
+  @@index([submittedById, createdAt])
+  @@index([assignedToId, status, createdAt])
+  @@index([assignedStructureItemId])
+}
+
+model ContactRoutingEvent {
+  id String @id @default(cuid())
+
+  requestKind ContactRequestKind
+  requestId   String
+
+  fromUserId String?
+  fromName   String?
+  toUserId   String
+  toName     String
+  note       String?
+
+  createdAt DateTime @default(now())
+
+  @@index([requestKind, requestId, createdAt])
+  @@index([toUserId, createdAt])
 }
 
 // =========================================================
@@ -565,15 +724,56 @@ model ChatMessage {
   senderId String
   sender   User   @relation("ChatMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
-  body String
+  body String @default("")
+  kind String @default("TEXT")
 
-  receipts ChatMessageReceipt[]
+  pollQuestion String?
+  pollOptions  String[] @default([])
+
+  attachments ChatAttachment[]
+  receipts    ChatMessageReceipt[]
+  pollVotes   ChatPollVote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([conversationId, createdAt])
   @@index([senderId, createdAt])
+}
+
+model ChatAttachment {
+  id String @id @default(cuid())
+
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  url          String?
+  pathname     String
+  originalName String
+  mime         String
+  size         Int
+
+  createdAt DateTime @default(now())
+
+  @@index([messageId])
+}
+
+model ChatPollVote {
+  id String @id @default(cuid())
+
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  optionIndex Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([messageId, userId])
+  @@index([messageId, optionIndex])
+  @@index([userId])
 }
 
 // =========================================================
@@ -607,4 +807,52 @@ model ChatTyping {
 
   @@id([conversationId, userId])
   @@index([expiresAt])
+}
+
+enum NotificationType {
+  CHAT_MESSAGE
+  ACTIVITY_APPROVED
+  ACTIVITY_REJECTED
+  ACTIVITY_NEW
+  ACTIVITY_REMINDER
+  SYSTEM
+}
+
+model Notification {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type  NotificationType
+  title String
+  body  String?
+  href  String?
+
+  chatConversationId String?
+  chatMessageId      String?
+
+  reminderKey String? @unique
+
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, chatMessageId])
+  @@index([userId, readAt, createdAt])
+  @@index([chatConversationId])
+}
+
+model Certificate {
+  id               String    @id @default(cuid())
+  submissionId     String    @unique
+  verificationCode String    @unique
+  issuedAt         DateTime  @default(now())
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  submission ActivityFormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([issuedAt])
+  @@index([revokedAt])
 }

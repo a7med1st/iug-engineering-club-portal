@@ -1,9 +1,6 @@
 import ExcelJS from "exceljs";
 
-import {
-  PERMISSIONS,
-  requirePermission,
-} from "@/lib/permissions";
+import { requireContactAccess } from "@/lib/permissions";
 
 import { prisma } from "@/lib/prisma";
 
@@ -11,12 +8,14 @@ export const runtime =
   "nodejs";
 
 export async function GET() {
-  await requirePermission(
-    PERMISSIONS.CONTACT_MANAGE,
-  );
+  const { user } = await requireContactAccess();
 
   const collaborations =
     await prisma.collaborationRequest.findMany({
+      where:
+        user.role === "ADMIN"
+          ? undefined
+          : { assignedToId: user.id },
       orderBy: {
         createdAt: "desc",
       },

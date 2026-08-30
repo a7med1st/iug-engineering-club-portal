@@ -1,10 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-
+import { ArrowLeft, MessagesSquare } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import MainNav from "@/components/MainNav";
 import MobileNavigation from "@/components/MobileNavigation";
 import MemberPresenceHeartbeat from "@/components/member/MemberPresenceHeartbeat";
+import NotificationBell from "@/components/notifications/NotificationBell";
+import ThemeToggle from "@/components/theme/ThemeToggle";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 const navigationLinks = [
   { href: "/", label: "الرئيسية" },
@@ -70,31 +73,40 @@ export default async function Header() {
 
         <MainNav />
 
+        {session && (
+          <div className="header-notification-slot">
+            <NotificationBell />
+
+            {(session.role === "MEMBER" || session.role === "ADMIN") && (
+              <Link
+                className="header-messages-link"
+                href="/member/chat"
+                aria-label="رسائلي"
+                title="رسائلي"
+              >
+                <MessagesSquare aria-hidden="true" />
+              </Link>
+            )}
+          </div>
+        )}
+
         <div className="header-actions desktop-header-actions">
-          {portal && (
-            <Link
-              className="ghost-btn"
-              href={portal.href}
-            >
-              {portal.label}
-            </Link>
-          )}
+<ThemeToggle />
+{portal && (
+  <Link
+    className="ghost-btn fancy-outline-btn"
+    href={portal.href}
+  >
+    <span>{portal.label}</span>
+    <ArrowLeft size={16} />
+  </Link>
+)}
 
           {session ? (
-            <form
-              action="/api/auth/logout"
-              method="post"
-            >
-              <button
-                className="primary-btn small"
-                type="submit"
-              >
-                تسجيل الخروج
-              </button>
-            </form>
+            <LogoutButton />
           ) : (
             <Link
-              className="primary-btn small"
+              className="primary-btn fancy-primary-btn"
               href="/login"
             >
               تسجيل الدخول

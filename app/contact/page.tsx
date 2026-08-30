@@ -1,4 +1,8 @@
 import ContactPortal from "@/components/ContactPortal";
+import Link from "next/link";
+import styles from "./contact-requests.module.css";
+import ContactRequestTracker from "./ContactRequestTracker";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +14,9 @@ export const metadata = {
 };
 
 export default async function ContactPage() {
-  const departments =
-    await prisma.department.findMany({
+  const [departments, session] =
+    await Promise.all([
+      prisma.department.findMany({
       select: {
         id: true,
         nameAr: true,
@@ -19,7 +24,9 @@ export default async function ContactPage() {
       orderBy: {
         sortOrder: "asc",
       },
-    });
+      }),
+      getSession(),
+    ]);
 
   return (
     <>
@@ -30,10 +37,7 @@ export default async function ContactPage() {
       <section className="page-hero contact-page-hero">
         <div className="shell">
 
-          <div className="eyebrow">
-            CONTACT PORTAL
-          </div>
-
+        
           <h1>
             بوابة التواصل
           </h1>
@@ -55,9 +59,30 @@ export default async function ContactPage() {
       <section className="section contact-page">
         <div className="shell">
 
+          {!session && (
+            <div className="contact-tracking-notice">
+              <strong>هل تريد متابعة حالة طلبك داخل الموقع؟</strong>
+              <span>
+                سجّل الدخول قبل الإرسال لتصلك إشعارات عند المراجعة أو
+                التنفيذ، ولتستقبل رد الإدارة على الشكوى.
+              </span>
+              <Link
+                className={styles.clubButton}
+                href="/login?returnTo=%2Fcontact%23complaint-form"
+              >
+                <span>تسجيل الدخول</span>
+              </Link>
+            </div>
+          )}
+
           <ContactPortal
             departments={departments}
+            isSignedIn={Boolean(session)}
           />
+
+          {session && (
+            <ContactRequestTracker userId={session.sub} />
+          )}
 
         </div>
       </section>

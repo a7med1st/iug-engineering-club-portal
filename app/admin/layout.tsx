@@ -6,11 +6,10 @@ import AdminNavigation from "@/components/admin/AdminNavigation";
 
 import {
   ACTIVITY_ADMIN_PERMISSIONS,
-  ADMIN_AREA_PERMISSIONS,
   PERMISSIONS,
   hasAnyPermission,
   hasPermission,
-  requireAnyPermission,
+  requireAdminAreaAccess,
 } from "@/lib/permissions";
 
 export default async function AdminLayout({
@@ -18,10 +17,8 @@ export default async function AdminLayout({
 }: {
   children: ReactNode;
 }) {
-  const { user } =
-    await requireAnyPermission(
-      ADMIN_AREA_PERMISSIONS,
-    );
+  const { user, hasContactAssignments } =
+    await requireAdminAreaAccess();
 
   const allowedHrefs: string[] =
     [];
@@ -79,7 +76,7 @@ export default async function AdminLayout({
       user.role,
       PERMISSIONS.CONTACT_MANAGE,
       user.memberPermissions,
-    )
+    ) || hasContactAssignments
   ) {
     allowedHrefs.push(
       "/admin/contact",
@@ -99,7 +96,7 @@ export default async function AdminLayout({
         }
       />
 
-      <div className="admin-main">
+      <div className="admin-main" data-page-transition-content>
         {children}
       </div>
     </div>

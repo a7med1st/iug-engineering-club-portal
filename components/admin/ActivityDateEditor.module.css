@@ -1,0 +1,390 @@
+.editButton {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  flex: 0 0 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(22, 136, 255, 0.2);
+  border-radius: 10px;
+  background: rgba(22, 136, 255, 0.07);
+  color: #0875df;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.editButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(22, 136, 255, 0.38);
+  background: rgba(22, 136, 255, 0.12);
+}
+
+.overlay {
+  position: fixed;
+  z-index: 1700;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 3vw, 28px);
+  overflow-y: auto;
+  background: rgba(4, 18, 32, 0.68);
+  backdrop-filter: blur(9px);
+  animation: overlayIn 200ms ease both;
+}
+
+.dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-width: 100%;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: clamp(20px, 3vw, 28px);
+  border: 1px solid rgba(183, 211, 236, 0.9);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(38, 205, 238, 0.1), transparent 32%),
+    #fff;
+  box-shadow: 0 28px 80px rgba(4, 25, 48, 0.24);
+  color: var(--theme-strong-text);
+  text-align: right;
+  direction: rtl;
+  animation: dialogIn 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.overlayClosing {
+  animation: overlayOut 180ms ease both;
+}
+
+.overlayClosing .dialog {
+  animation: dialogOut 180ms ease both;
+}
+
+.dialogHead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.dialogIcon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #e6f5ff, #ebfbff);
+  color: #1688ff;
+  box-shadow: inset 0 0 0 1px rgba(22, 136, 255, 0.09);
+}
+
+.dialogHead span {
+  display: block;
+  margin-bottom: 2px;
+  color: #1688ff;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.dialogHead h2 {
+  margin: 0;
+  color: var(--theme-strong-text);
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.closeButton {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #d7e4ef;
+  border-radius: 11px;
+  background: #f8fbfd;
+  color: #60758a;
+  cursor: pointer;
+}
+
+.closeButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.description {
+  margin: 16px 0 19px;
+  color: #6d8093;
+  font-size: 0.77rem;
+  line-height: 1.8;
+}
+
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.singleField {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.fields label {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.fields label > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #304c68;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.fields label > span svg {
+  color: #1688ff;
+}
+
+.optionalLabel {
+  margin-inline-start: auto;
+  padding: 2px 7px;
+  border-radius: 7px;
+  background: rgba(22, 136, 255, 0.08);
+  color: #1674cb;
+  font-size: 0.6rem;
+  font-weight: 850;
+}
+
+.fields input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid #cbdceb;
+  border-radius: 12px;
+  outline: none;
+  background: #fbfdff;
+  color: var(--theme-strong-text);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 750;
+  direction: ltr;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.fields input:focus {
+  border-color: #1688ff;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(22, 136, 255, 0.1);
+}
+
+:global(html[data-theme="dark"]) .dialog {
+  border-color: var(--line);
+  background:
+    radial-gradient(circle at 90% 0%, rgb(38 205 238 / 10%), transparent 32%),
+    var(--surface);
+  color: var(--ink);
+  box-shadow: 0 28px 80px rgb(0 5 10 / 48%);
+}
+
+:global(html[data-theme="dark"]) .dialog :where(h2, label, strong) {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .description {
+  color: var(--muted);
+}
+
+:global(html[data-theme="dark"]) .closeButton,
+:global(html[data-theme="dark"]) .cancelButton,
+:global(html[data-theme="dark"]) .fields input,
+:global(html[data-theme="dark"]) .fields input:focus {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+:global(html[data-theme="dark"]) .optionalLabel {
+  background: rgba(53, 168, 255, 0.15);
+  color: #8ed6ff;
+}
+
+.fields .textInput {
+  direction: rtl;
+  text-align: right;
+}
+
+.errorMessage {
+  margin: -4px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(190, 48, 48, 0.17);
+  border-radius: 11px;
+  background: rgba(190, 48, 48, 0.06);
+  color: #a52b2b;
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.7;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.saveButton,
+.cancelButton {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.saveButton {
+  border: 1px solid #1688ff;
+  background: linear-gradient(135deg, #1688ff, #13b9e8);
+  color: #fff;
+  box-shadow: 0 9px 22px rgba(22, 136, 255, 0.2);
+}
+
+.cancelButton {
+  border: 1px solid #cfdeeb;
+  background: #f7fafc;
+  color: #4c647b;
+}
+
+.saveButton:hover:not(:disabled),
+.cancelButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.saveButton:disabled,
+.cancelButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.toast {
+  position: fixed;
+  z-index: 1300;
+  inset-inline-start: 22px;
+  bottom: 22px;
+  max-width: calc(100vw - 44px);
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 15px;
+  border: 1px solid rgba(21, 115, 71, 0.2);
+  border-radius: 14px;
+  background: #f0fbf5;
+  box-shadow: 0 16px 42px rgba(7, 42, 26, 0.16);
+  color: #157347;
+  font-size: 0.78rem;
+  font-weight: 900;
+  direction: rtl;
+  animation: toastIn 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (max-width: 560px) {
+  .overlay {
+    padding: 12px;
+  }
+
+  .dialog {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 19px 16px;
+    border-radius: 18px;
+  }
+
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 360px) {
+  .dialogHead {
+    gap: 9px;
+  }
+
+  .dialogIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .dialogHead h2 {
+    font-size: 1rem;
+  }
+
+  .actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editButton,
+  .saveButton,
+  .cancelButton,
+  .overlay,
+  .dialog,
+  .toast {
+    animation: none;
+    transition: none;
+  }
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes overlayOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes dialogIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dialogOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

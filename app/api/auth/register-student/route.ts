@@ -1,4 +1,261 @@
-import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
+
+import {
+  rateLimitResponse,
+  registrationRateLimitRules,
+} from "@/lib/auth-rate-limit";
+import {
+  getEmailValidationMessage,
+  validateEmail,
+} from "@/lib/email-validation";
+import {
+  createInitialEmailVerificationCode,
+  invalidateUndeliveredVerificationCode,
+} from "@/lib/email-verification";
+import { createEmailVerificationSession } from "@/lib/email-verification-session";
+import {
+  assertEmailDeliveryConfigured,
+  sendEmailVerificationCode,
+} from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
-export async function POST(req:Request){try{const body=await req.json();const name=String(body.name||"").trim();const email=String(body.email||"").trim().toLowerCase();const password=String(body.password||"");const departmentId=String(body.departmentId||"")||null;const validEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);if(name.length<2||!validEmail||password.length<8)return NextResponse.json({error:"تحقق من الاسم والبريد وكلمة المرور (8 أحرف على الأقل)."},{status:400});const exists=await prisma.user.findUnique({where:{email}});if(exists)return NextResponse.json({error:"هذا البريد مستخدم بالفعل."},{status:409});const passwordHash=await bcrypt.hash(password,12);await prisma.user.create({data:{name,email,passwordHash,role:"STUDENT",departmentId}});return NextResponse.json({ok:true});}catch{return NextResponse.json({error:"تعذر إنشاء حساب الطالب."},{status:500})}}
+import { consumeRateLimits } from "@/lib/rate-limit";
+import { rejectCrossOriginRequest } from "@/lib/request-security";
+
+export async function POST(req: Request) {
+  const crossOriginResponse = rejectCrossOriginRequest(req);
+
+  if (crossOriginResponse) {
+    return crossOriginResponse;
+  }
+
+  try {
+    const rateLimit = await consumeRateLimits(
+      registrationRateLimitRules(req),
+    );
+
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.retryAfterSeconds);
+    }
+
+    const body = await req.json();
+    const name = String(body.name || "").trim();
+    const emailResult = validateEmail(
+      String(body.email || ""),
+    );
+    const password = String(body.password || "");
+    const departmentId =
+      String(body.departmentId || "").trim();
+
+    if (name.length < 2) {
+      return NextResponse.json(
+        {
+          error:
+            "يرجى إدخال اسم صحيح يتكون من حرفين على الأقل.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!emailResult.valid) {
+      return NextResponse.json(
+        {
+          error:
+            getEmailValidationMessage(emailResult),
+          field: "email",
+          reason: emailResult.reason,
+        },
+        { status: 400 },
+      );
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json(
+        {
+          error:
+            "يجب ألا تقل كلمة المرور عن 8 أحرف.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!departmentId) {
+      return NextResponse.json(
+        {
+          error: "يرجى اختيار تخصصك.",
+          field: "departmentId",
+        },
+        { status: 400 },
+      );
+    }
+
+    const departmentExists =
+      await prisma.department.findUnique({
+        where: { id: departmentId },
+        select: { id: true },
+      });
+
+    if (!departmentExists) {
+      return NextResponse.json(
+        {
+          error: "التخصص المختار غير موجود.",
+          field: "departmentId",
+        },
+        { status: 400 },
+      );
+    }
+
+    try {
+      assertEmailDeliveryConfigured();
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "خدمة إرسال البريد غير متاحة حاليًا. حاول لاحقًا.",
+        },
+        { status: 503 },
+      );
+    }
+
+    const email = emailResult.email;
+
+    const exists = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: "insensitive",
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (exists) {
+      return NextResponse.json(
+        {
+          error:
+            "هذا البريد الإلكتروني مستخدم بالفعل.",
+          field: "email",
+        },
+        { status: 409 },
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(
+      password,
+      12,
+    );
+
+    const registration =
+      await prisma.$transaction(
+        async (transaction) => {
+          const user =
+            await transaction.user.create({
+              data: {
+                name,
+                email,
+                emailVerifiedAt: null,
+                passwordHash,
+                role: "STUDENT",
+                departmentId,
+              },
+              select: {
+                id: true,
+                email: true,
+                name: true,
+              },
+            });
+
+          const verification =
+            await createInitialEmailVerificationCode(
+              transaction,
+              user.id,
+            );
+
+          return { user, verification };
+        },
+      );
+
+    await createEmailVerificationSession(
+      registration.user.id,
+    );
+
+    const developmentVerificationCode =
+      process.env.NODE_ENV === "development"
+        ? registration.verification.code
+        : undefined;
+
+    try {
+      await sendEmailVerificationCode({
+        email: registration.user.email,
+        name: registration.user.name,
+        code: registration.verification.code,
+      });
+    } catch {
+      if (developmentVerificationCode) {
+        return NextResponse.json(
+          {
+            ok: true,
+            verificationRequired: true,
+            deliveryFailed: true,
+            developmentVerificationCode,
+            redirect:
+              "/verify-email?delivery=failed",
+          },
+          { status: 202 },
+        );
+      }
+
+      await invalidateUndeliveredVerificationCode(
+        registration.user.id,
+        registration.verification.codeHash,
+      );
+
+      return NextResponse.json(
+        {
+          ok: true,
+          verificationRequired: true,
+          deliveryFailed: true,
+          redirect:
+            "/verify-email?delivery=failed",
+        },
+        { status: 202 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        ok: true,
+        verificationRequired: true,
+        developmentVerificationCode,
+        redirect: "/verify-email",
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    if (
+      error instanceof
+        Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "هذا البريد الإلكتروني مستخدم بالفعل.",
+          field: "email",
+        },
+        { status: 409 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        error:
+          "تعذر إنشاء حساب الطالب.",
+      },
+      { status: 500 },
+    );
+  }
+}

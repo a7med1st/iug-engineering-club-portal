@@ -1,9 +1,8 @@
-import {
-  readFile,
-} from "node:fs/promises";
-import path from "node:path";
-
+import { getCurrentUser } from "@/lib/auth";
+import { logPrivateBlobReadError } from "@/lib/blob-storage";
 import { prisma } from "@/lib/prisma";
+import { resolveMemberMediaAccess } from "@/lib/user-media-access";
+import { userImageResponse } from "@/lib/user-media-response";
 
 export const dynamic = "force-dynamic";
 
@@ -19,54 +18,52 @@ export async function GET(
 ) {
   const { id } = await params;
 
+  // لا نشترط وجود العضو داخل الهيكلية هنا؛ صفحة الملف الشخصي
+  // تحتاج عرض الغلاف مباشرة بعد الحفظ حتى لو لم يكن للعضو StructureItem.
   const user = await prisma.user.findFirst({
     where: {
       id,
       role: {
         in: ["MEMBER", "ADMIN"],
       },
-      structureItem: {
-        isNot: null,
-      },
     },
     select: {
       profileCoverStoredName: true,
       profileCoverMime: true,
+      structureItem: { select: { id: true } },
     },
   });
 
-  if (
-    !user?.profileCoverStoredName ||
-    !user.profileCoverMime
-  ) {
-    return new Response("Not found", {
-      status: 404,
-    });
+  if (!user?.profileCoverStoredName || !user.profileCoverMime) {
+    return new Response("Not found", { status: 404 });
+  }
+
+  const viewer = user.structureItem ? null : (await getCurrentUser())?.user ?? null;
+  const access = resolveMemberMediaAccess({
+    targetUserId: id,
+    isPublished: Boolean(user.structureItem),
+    viewer,
+  });
+
+  if (!access) {
+    return new Response("Not found", { status: 404 });
   }
 
   try {
-    const file = await readFile(
-      path.join(
-        process.cwd(),
-        "storage",
-        "member-covers",
-        path.basename(
-          user.profileCoverStoredName,
-        ),
-      ),
+    return (
+      (await userImageResponse({
+        storedName: user.profileCoverStoredName,
+        mime: user.profileCoverMime,
+        legacyFolder: "member-covers",
+        cacheControl: access.cacheControl,
+      })) ?? new Response("Not found", { status: 404 })
     );
-
-    return new Response(file, {
-      headers: {
-        "Content-Type":
-          user.profileCoverMime,
-        "Cache-Control":
-          "public, max-age=3600",
-      },
+  } catch (error) {
+    logPrivateBlobReadError({
+      route: "/members/[id]/cover",
+      pathname: user.profileCoverStoredName,
+      error,
     });
-  } catch {
-    return new Response("Not found", {
-      status: 404,
-    });
+    return new Response("File unavailable", { status: 500 });
   }
 }

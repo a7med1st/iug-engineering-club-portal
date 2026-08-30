@@ -1,9 +1,8 @@
-import {
-  readFile,
-} from "node:fs/promises";
-import path from "node:path";
-
+import { getCurrentUser } from "@/lib/auth";
+import { logPrivateBlobReadError } from "@/lib/blob-storage";
 import { prisma } from "@/lib/prisma";
+import { resolveMemberMediaAccess } from "@/lib/user-media-access";
+import { userImageResponse } from "@/lib/user-media-response";
 
 export const dynamic = "force-dynamic";
 
@@ -19,53 +18,52 @@ export async function GET(
 ) {
   const { id } = await params;
 
+  // لا نشترط وجود العضو داخل الهيكلية هنا؛ صفحة الملف الشخصي
+  // تحتاج عرض الصورة مباشرة بعد الحفظ حتى لو لم يكن للعضو StructureItem.
   const user = await prisma.user.findFirst({
     where: {
       id,
       role: {
         in: ["MEMBER", "ADMIN"],
       },
-      structureItem: {
-        isNot: null,
-      },
     },
     select: {
       avatarStoredName: true,
       avatarMime: true,
+      structureItem: { select: { id: true } },
     },
   });
 
-  if (
-    !user?.avatarStoredName ||
-    !user.avatarMime
-  ) {
-    return new Response("Not found", {
-      status: 404,
-    });
+  if (!user?.avatarStoredName || !user.avatarMime) {
+    return new Response("Not found", { status: 404 });
+  }
+
+  const viewer = user.structureItem ? null : (await getCurrentUser())?.user ?? null;
+  const access = resolveMemberMediaAccess({
+    targetUserId: id,
+    isPublished: Boolean(user.structureItem),
+    viewer,
+  });
+
+  if (!access) {
+    return new Response("Not found", { status: 404 });
   }
 
   try {
-    const file = await readFile(
-      path.join(
-        process.cwd(),
-        "storage",
-        "avatars",
-        path.basename(
-          user.avatarStoredName,
-        ),
-      ),
+    return (
+      (await userImageResponse({
+        storedName: user.avatarStoredName,
+        mime: user.avatarMime,
+        legacyFolder: "avatars",
+        cacheControl: access.cacheControl,
+      })) ?? new Response("Not found", { status: 404 })
     );
-
-    return new Response(file, {
-      headers: {
-        "Content-Type": user.avatarMime,
-        "Cache-Control":
-          "public, max-age=3600",
-      },
+  } catch (error) {
+    logPrivateBlobReadError({
+      route: "/members/[id]/avatar",
+      pathname: user.avatarStoredName,
+      error,
     });
-  } catch {
-    return new Response("Not found", {
-      status: 404,
-    });
+    return new Response("File unavailable", { status: 500 });
   }
 }

@@ -3,6 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import AdminFeedback from "@/components/admin/AdminFeedback";
+import ActivityDateEditor from "@/components/admin/ActivityDateEditor";
+import ActivityLocationEditor from "@/components/admin/ActivityLocationEditor";
+import RegistrationFilterSelect from "@/components/admin/RegistrationFilterSelect";
+import {
+    ACTIVITY_TIME_ZONE,
+    activityDateTimeInputValues,
+} from "@/lib/activities";
 import {
     PERMISSIONS,
     hasPermission,
@@ -18,12 +25,24 @@ import {
 } from "./actions";
 import {
     Archive,
+    ArrowRight,
+    BadgeCheck,
     BarChart3,
     CalendarDays,
+    CheckCircle2,
+    ClipboardList,
+    Clock3,
     Download,
+    Inbox,
     MapPin,
     QrCode,
     RotateCcw,
+    Save,
+    Search,
+    SlidersHorizontal,
+    TrendingUp,
+    Users,
+    XCircle,
 } from "lucide-react";
 import attendanceStyles from "./attendance.module.css";
 export const dynamic = "force-dynamic";
@@ -107,6 +126,13 @@ export default async function ActivityRegistrationsPage({
         hasPermission(
             user.role,
             PERMISSIONS.REGISTRATION_SETTINGS,
+            user.memberPermissions,
+        );
+
+    const canEditActivity =
+        hasPermission(
+            user.role,
+            PERMISSIONS.ACTIVITY_MANAGE,
             user.memberPermissions,
         );
 
@@ -400,32 +426,87 @@ export default async function ActivityRegistrationsPage({
         activity.status ===
         "ARCHIVED";
 
+    const activityDateTime =
+        activityDateTimeInputValues(
+            activity.startsAt,
+        );
+
+    const activityEndDateTime = activity.endsAt
+        ? activityDateTimeInputValues(activity.endsAt)
+        : null;
+
     return (
-        <section className="admin-page activity-registrations-admin">
+        <section
+            className={`admin-page activity-registrations-admin ${attendanceStyles.page}`}
+        >
+            <div className={attendanceStyles.pageDecorations} aria-hidden="true">
+                <span />
+                <span />
+            </div>
 
             {/* ===================================================
           HEADER
       =================================================== */}
 
-            <div className="admin-page-head">
+            <header className={attendanceStyles.hero}>
+                <div className={attendanceStyles.heroGlow} aria-hidden="true" />
 
-                <div>
-
+                <div className={attendanceStyles.heroCopy}>
                     <Link
                         href="/admin/activities"
-                        className="activity-admin-back"
+                        className={`activity-admin-back ${attendanceStyles.backLink}`}
                     >
-                        ← العودة إلى الأنشطة
+                        <ArrowRight size={16} aria-hidden="true" />
+                        <span>العودة إلى الأنشطة</span>
                     </Link>
 
                     <h1>
                         إدارة المسجلين
                     </h1>
 
-                    <p className="muted">
+                    <p>
                         {activity.title}
                     </p>
 
+                    <div className={attendanceStyles.heroMeta}>
+                        <span
+                            className={`${attendanceStyles.heroStatus} ${
+                                isArchived
+                                    ? attendanceStyles.heroStatusArchived
+                                    : attendanceStyles.heroStatusPublished
+                            }`}
+                        >
+                            <span aria-hidden="true" />
+                            {isArchived ? "مؤرشف" : "منشور"}
+                        </span>
+
+                        <span>
+                            <CalendarDays size={16} aria-hidden="true" />
+                            {new Intl.DateTimeFormat("ar-PS", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                                timeZone: ACTIVITY_TIME_ZONE,
+                            }).format(activity.startsAt)}
+                        </span>
+
+                        <span>
+                            <MapPin size={16} aria-hidden="true" />
+                            {activity.location}
+                        </span>
+                    </div>
+                </div>
+            </header>
+
+            <section className={attendanceStyles.actionToolbar}>
+                <div className={attendanceStyles.toolbarHeading}>
+                    <span aria-hidden="true">
+                        <SlidersHorizontal size={19} />
+                    </span>
+
+                    <div>
+                        <h2>إجراءات النشاط</h2>
+                        <p>الوصول السريع لأهم أدوات إدارة النشاط.</p>
+                    </div>
                 </div>
 
                 <div
@@ -442,7 +523,7 @@ export default async function ActivityRegistrationsPage({
                                         ? `/admin/activities/${activity.id}/check-in`
                                         : `/member/check-in/${activity.id}`
                                 }
-                                className="primary-btn"
+                                className={`primary-btn ${attendanceStyles.primaryAction}`}
                             >
                                 <QrCode size={18} />
                                 تسجيل الحضور
@@ -452,7 +533,8 @@ export default async function ActivityRegistrationsPage({
                     {canExport && (
                         <Link
                             href={`/admin/activities/${activity.id}/registrations/export`}
-                            className="ghost-btn activity-registration-export"
+                            className={`ghost-btn activity-registration-export ${attendanceStyles.secondaryAction}`}
+                            data-no-page-transition
                         >
                             <Download size={17} />
                             تصدير Excel
@@ -506,8 +588,7 @@ export default async function ActivityRegistrationsPage({
                     </form>
                     )}
                 </div>
-
-            </div>
+            </section>
 
 
             <AdminFeedback
@@ -529,25 +610,20 @@ export default async function ActivityRegistrationsPage({
                         attendanceStyles.activitySummaryHead
                     }
                 >
-                    <div>
-                        <span
-                            className={
-                                attendanceStyles.activitySummaryEyebrow
-                            }
-                        >
-                            <BarChart3
-                                size={16}
-                            />
-                            ملخص النشاط
+                    <div className={attendanceStyles.summaryHeading}>
+                        <span className={attendanceStyles.sectionIcon} aria-hidden="true">
+                            <BarChart3 size={22} />
                         </span>
 
-                        <h2>
-                            نتائج التسجيل والحضور
-                        </h2>
+                        <div>
+                            <h2>
+                                نتائج التسجيل والحضور
+                            </h2>
 
-                        <p>
-                            ملخص سريع لأهم أرقام النشاط وحالة الحضور.
-                        </p>
+                            <p>
+                                ملخص سريع لأهم أرقام النشاط وحالة الحضور.
+                            </p>
+                        </div>
                     </div>
 
                     <span
@@ -573,14 +649,15 @@ export default async function ActivityRegistrationsPage({
                             size={18}
                         />
 
-                        <span>
+                        <span className={attendanceStyles.activityMetaValue}>
+                            <small>تاريخ البداية</small>
                             {new Intl.DateTimeFormat(
                                 "ar-PS",
                                 {
                                     dateStyle:
                                         "medium",
-                                    timeStyle:
-                                        "short",
+                                    timeZone:
+                                        ACTIVITY_TIME_ZONE,
                                 },
                             ).format(
                                 activity.startsAt,
@@ -589,11 +666,68 @@ export default async function ActivityRegistrationsPage({
                     </div>
 
                     <div>
+                        <Clock3 size={18} />
+
+                        <span className={attendanceStyles.activityMetaValue}>
+                            <small>وقت البداية</small>
+                            {new Intl.DateTimeFormat("ar-PS", {
+                                timeStyle: "short",
+                                timeZone: ACTIVITY_TIME_ZONE,
+                            }).format(activity.startsAt)}
+                        </span>
+                    </div>
+
+                    {activity.endsAt && (
+                        <>
+                            <div>
+                                <CalendarDays size={18} />
+
+                                <span className={attendanceStyles.activityMetaValue}>
+                                    <small>تاريخ النهاية</small>
+                                    {new Intl.DateTimeFormat("ar-PS", {
+                                        dateStyle: "medium",
+                                        timeZone: ACTIVITY_TIME_ZONE,
+                                    }).format(activity.endsAt)}
+                                </span>
+                            </div>
+
+                            <div>
+                                <Clock3 size={18} />
+
+                                <span className={attendanceStyles.activityMetaValue}>
+                                    <small>وقت النهاية</small>
+                                    {new Intl.DateTimeFormat("ar-PS", {
+                                        timeStyle: "short",
+                                        timeZone: ACTIVITY_TIME_ZONE,
+                                    }).format(activity.endsAt)}
+                                </span>
+                            </div>
+                        </>
+                    )}
+
+                    {canEditActivity && (
+                        <ActivityDateEditor
+                            activityId={activity.id}
+                            currentStartDate={activityDateTime.date}
+                            currentStartTime={activityDateTime.time}
+                            currentEndDate={activityEndDateTime?.date}
+                            currentEndTime={activityEndDateTime?.time}
+                        />
+                    )}
+
+                    <div>
                         <MapPin size={18} />
 
                         <span>
                             {activity.location}
                         </span>
+
+                        {canEditActivity && (
+                            <ActivityLocationEditor
+                                activityId={activity.id}
+                                currentLocation={activity.location}
+                            />
+                        )}
                     </div>
                 </div>
 
@@ -602,45 +736,45 @@ export default async function ActivityRegistrationsPage({
                         attendanceStyles.activityResultsGrid
                     }
                 >
-                    <div>
-                        <span>
-                            إجمالي التسجيلات
+                    <article className={`${attendanceStyles.overviewStat} ${attendanceStyles.overviewStatTotal}`}>
+                        <span className={attendanceStyles.overviewStatIcon} aria-hidden="true">
+                            <Users size={20} />
                         </span>
+                        <div>
+                            <span>إجمالي التسجيلات</span>
+                            <strong>{totalCount}</strong>
+                        </div>
+                    </article>
 
-                        <strong>
-                            {totalCount}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>
-                            المقبولون
+                    <article className={`${attendanceStyles.overviewStat} ${attendanceStyles.overviewStatAccepted}`}>
+                        <span className={attendanceStyles.overviewStatIcon} aria-hidden="true">
+                            <BadgeCheck size={20} />
                         </span>
+                        <div>
+                            <span>المقبولون</span>
+                            <strong>{approvedCount}</strong>
+                        </div>
+                    </article>
 
-                        <strong>
-                            {approvedCount}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>
-                            الحضور الفعلي
+                    <article className={`${attendanceStyles.overviewStat} ${attendanceStyles.overviewStatPresent}`}>
+                        <span className={attendanceStyles.overviewStatIcon} aria-hidden="true">
+                            <CheckCircle2 size={20} />
                         </span>
+                        <div>
+                            <span>الحضور الفعلي</span>
+                            <strong>{checkedInCount}</strong>
+                        </div>
+                    </article>
 
-                        <strong>
-                            {checkedInCount}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>
-                            لم يحضروا
+                    <article className={`${attendanceStyles.overviewStat} ${attendanceStyles.overviewStatAbsent}`}>
+                        <span className={attendanceStyles.overviewStatIcon} aria-hidden="true">
+                            <Clock3 size={20} />
                         </span>
-
-                        <strong>
-                            {absentApprovedCount}
-                        </strong>
-                    </div>
+                        <div>
+                            <span>لم يحضروا</span>
+                            <strong>{absentApprovedCount}</strong>
+                        </div>
+                    </article>
                 </div>
 
                 <div
@@ -698,22 +832,24 @@ export default async function ActivityRegistrationsPage({
 =================================================== */}
 
 {canChangeSettings && (
-<div className="admin-card activity-registration-settings">
+<div className={`admin-card activity-registration-settings ${attendanceStyles.settingsPanel}`}>
 
     <div className="activity-registration-settings-head">
 
-        <div>
-            <span className="activity-registration-settings-eyebrow">
-                إعدادات التسجيل
+        <div className={attendanceStyles.settingsHeading}>
+            <span className={attendanceStyles.sectionIcon} aria-hidden="true">
+                <SlidersHorizontal size={22} />
             </span>
 
-            <h2>
-                التحكم بالتسجيل
-            </h2>
+            <div>
+                <h2>
+                    التحكم بالتسجيل
+                </h2>
 
-            <p>
-                تحكم في عدد المقاعد المتاحة وفتح أو إغلاق التسجيل للطلاب.
-            </p>
+                <p>
+                    تحكم في عدد المقاعد المتاحة وفتح أو إغلاق التسجيل للطلاب.
+                </p>
+            </div>
         </div>
 
         <span
@@ -749,6 +885,10 @@ export default async function ActivityRegistrationsPage({
         <div className="registration-setting-box">
 
             <div className="registration-setting-box-head">
+                <span className={attendanceStyles.settingIcon} aria-hidden="true">
+                    <Users size={19} />
+                </span>
+
                 <div>
                     <strong>
                         السعة الطلابية
@@ -801,6 +941,9 @@ export default async function ActivityRegistrationsPage({
         <div className="registration-setting-box">
 
             <div className="registration-setting-box-head">
+                <span className={attendanceStyles.settingIcon} aria-hidden="true">
+                    <TrendingUp size={19} />
+                </span>
 
                 <div>
                     <strong>
@@ -874,6 +1017,7 @@ export default async function ActivityRegistrationsPage({
                 className="primary-btn registration-settings-save-btn"
                 disabled={isArchived}
             >
+                <Save size={17} aria-hidden="true" />
                 {isArchived
                     ? "النشاط مؤرشف"
                     : "حفظ التغييرات"}
@@ -891,9 +1035,24 @@ export default async function ActivityRegistrationsPage({
           STATS
       =================================================== */}
 
+            <section className={attendanceStyles.statusSection}>
+                <div className={attendanceStyles.sectionHeading}>
+                    <span className={attendanceStyles.sectionIcon} aria-hidden="true">
+                        <ClipboardList size={22} />
+                    </span>
+
+                    <div>
+                        <h2>حالة الطلبات</h2>
+                        <p>نظرة تفصيلية على التسجيلات والمقاعد والحضور.</p>
+                    </div>
+                </div>
+
             <div className="activity-registration-stats">
 
-                <div className="activity-registration-stat">
+                <div className={`activity-registration-stat ${attendanceStyles.statusStatTotal}`}>
+                    <span className={attendanceStyles.statusStatIcon} aria-hidden="true">
+                        <Users size={19} />
+                    </span>
                     <span>
                         إجمالي التسجيلات
                     </span>
@@ -908,7 +1067,10 @@ export default async function ActivityRegistrationsPage({
                 </div>
 
 
-                <div className="activity-registration-stat">
+                <div className={`activity-registration-stat ${attendanceStyles.statusStatPending}`}>
+                    <span className={attendanceStyles.statusStatIcon} aria-hidden="true">
+                        <Clock3 size={19} />
+                    </span>
                     <span>
                         قيد المراجعة
                     </span>
@@ -919,7 +1081,10 @@ export default async function ActivityRegistrationsPage({
                 </div>
 
 
-                <div className="activity-registration-stat">
+                <div className={`activity-registration-stat ${attendanceStyles.statusStatAccepted}`}>
+                    <span className={attendanceStyles.statusStatIcon} aria-hidden="true">
+                        <BadgeCheck size={19} />
+                    </span>
                     <span>
                         المقبولون
                     </span>
@@ -931,6 +1096,9 @@ export default async function ActivityRegistrationsPage({
 
 
                 <div className={`activity-registration-stat ${attendanceStyles.attendanceStatPresent}`}>
+                    <span className={attendanceStyles.statusStatIcon} aria-hidden="true">
+                        <CheckCircle2 size={19} />
+                    </span>
                     <span>
                         حضروا
                     </span>
@@ -946,6 +1114,9 @@ export default async function ActivityRegistrationsPage({
 
 
                 <div className={`activity-registration-stat ${attendanceStyles.attendanceStatAbsent}`}>
+                    <span className={attendanceStyles.statusStatIcon} aria-hidden="true">
+                        <Clock3 size={19} />
+                    </span>
                     <span>
                         لم يحضروا
                     </span>
@@ -960,7 +1131,10 @@ export default async function ActivityRegistrationsPage({
                 </div>
 
 
-                <div className="activity-registration-stat">
+                <div className={`activity-registration-stat ${attendanceStyles.statusStatRejected}`}>
+                    <span className={attendanceStyles.statusStatIcon} aria-hidden="true">
+                        <XCircle size={19} />
+                    </span>
                     <span>
                         المرفوضون
                     </span>
@@ -971,7 +1145,10 @@ export default async function ActivityRegistrationsPage({
                 </div>
 
 
-                <div className="activity-registration-stat">
+                <div className={`activity-registration-stat ${attendanceStyles.statusStatSeats}`}>
+                    <span className={attendanceStyles.statusStatIcon} aria-hidden="true">
+                        <TrendingUp size={19} />
+                    </span>
                     <span>
                         المقاعد المتبقية
                     </span>
@@ -986,83 +1163,82 @@ export default async function ActivityRegistrationsPage({
                 </div>
 
             </div>
+            </section>
 
 
             {/* ===================================================
           FILTERS
       =================================================== */}
 
-            <div className="admin-card activity-registration-filters">
+            <section className={`admin-card activity-registration-filters ${attendanceStyles.filtersPanel}`}>
+
+                <div className={attendanceStyles.sectionHeading}>
+                    <span className={attendanceStyles.sectionIcon} aria-hidden="true">
+                        <SlidersHorizontal size={22} />
+                    </span>
+
+                    <div>
+                        <h2>البحث والتصفية</h2>
+                        <p>اعثر على التسجيل المطلوب بالاسم أو البريد أو التخصص.</p>
+                    </div>
+                </div>
 
                 <form
                     method="get"
                     className="activity-registration-filter-form"
                 >
 
-                    <label>
-                        البحث
+                    <label className={attendanceStyles.searchField}>
+                        <span>البحث</span>
 
-                        <input
-                            type="search"
-                            name="q"
-                            defaultValue={query}
-                            placeholder="الاسم، البريد أو التخصص..."
-                        />
+                        <span className={attendanceStyles.searchInputWrap}>
+                            <Search size={18} aria-hidden="true" />
+                            <input
+                                type="search"
+                                name="q"
+                                defaultValue={query}
+                                placeholder="ابحث بالاسم أو البريد أو التخصص"
+                            />
+                        </span>
                     </label>
 
 
-                    <label>
-                        الحالة
-
-                        <select
+                    <div className={attendanceStyles.filterField}>
+                        <span>الحالة</span>
+                        <RegistrationFilterSelect
                             name="status"
                             defaultValue={status}
-                        >
-                            <option value="ALL">
-                                جميع الحالات
-                            </option>
-
-                            <option value="SUBMITTED">
-                                قيد المراجعة
-                            </option>
-
-                            <option value="APPROVED">
-                                المقبولون
-                            </option>
-
-                            <option value="REJECTED">
-                                المرفوضون
-                            </option>
-                        </select>
-                    </label>
+                            ariaLabel="تصفية التسجيلات حسب الحالة"
+                            options={[
+                                { value: "ALL", label: "جميع الحالات", tone: "blue" },
+                                { value: "SUBMITTED", label: "قيد المراجعة", tone: "orange" },
+                                { value: "APPROVED", label: "المقبولون", tone: "green" },
+                                { value: "REJECTED", label: "المرفوضون", tone: "red" },
+                            ]}
+                        />
+                    </div>
 
 
-                    <label>
-                        الحضور
-
-                        <select
+                    <div className={attendanceStyles.filterField}>
+                        <span>الحضور</span>
+                        <RegistrationFilterSelect
                             name="attendance"
                             defaultValue={attendance}
-                        >
-                            <option value="ALL">
-                                الكل
-                            </option>
-
-                            <option value="PRESENT">
-                                حضر
-                            </option>
-
-                            <option value="ABSENT">
-                                لم يحضر
-                            </option>
-                        </select>
-                    </label>
+                            ariaLabel="تصفية التسجيلات حسب الحضور"
+                            options={[
+                                { value: "ALL", label: "الكل", tone: "blue" },
+                                { value: "PRESENT", label: "حضر", tone: "green" },
+                                { value: "ABSENT", label: "لم يحضر", tone: "neutral" },
+                            ]}
+                        />
+                    </div>
 
 
                     <button
                         type="submit"
-                        className="primary-btn"
+                        className={`primary-btn ${attendanceStyles.filterApply}`}
                     >
+                        <Search size={17} aria-hidden="true" />
                         تطبيق
                     </button>
 
@@ -1072,7 +1248,7 @@ export default async function ActivityRegistrationsPage({
                         attendance !== "ALL") && (
                             <Link
                                 href={`/admin/activities/${activity.id}/registrations`}
-                                className="ghost-btn"
+                                className={`ghost-btn ${attendanceStyles.filterClear}`}
                             >
                                 مسح الفلاتر
                             </Link>
@@ -1080,14 +1256,31 @@ export default async function ActivityRegistrationsPage({
 
                 </form>
 
-            </div>
+            </section>
 
 
             {/* ===================================================
           REGISTRATIONS
       =================================================== */}
 
-            <div className="activity-registration-admin-list">
+            <section className={`activity-registration-admin-list ${attendanceStyles.registrationsList}`}>
+
+                <div className={attendanceStyles.listHeading}>
+                    <div className={attendanceStyles.sectionHeading}>
+                        <span className={attendanceStyles.sectionIcon} aria-hidden="true">
+                            <Users size={22} />
+                        </span>
+
+                        <div>
+                            <h2>طلبات التسجيل</h2>
+                            <p>راجع بيانات الطلاب وحدّث حالة كل طلب.</p>
+                        </div>
+                    </div>
+
+                    <span className={attendanceStyles.resultsCount}>
+                        {form.submissions.length} نتيجة
+                    </span>
+                </div>
 
                 {form.submissions.length ? (
                     form.submissions.map(
@@ -1105,7 +1298,7 @@ export default async function ActivityRegistrationsPage({
 
                             return (
                                 <article
-                                    className="activity-registration-admin-card"
+                                    className={`activity-registration-admin-card ${attendanceStyles.registrationCard}`}
                                     key={submission.id}
                                 >
 
@@ -1452,20 +1645,24 @@ export default async function ActivityRegistrationsPage({
                         },
                     )
                 ) : (
-                    <div className="admin-card">
-
-                        <p className="empty-state">
-                            {query ||
-                                status !== "ALL" ||
-                                attendance !== "ALL"
-                                ? "لا توجد تسجيلات تطابق البحث أو الفلترة."
-                                : "لا يوجد طلاب مسجلون في هذا النشاط بعد."}
+                    <div className={attendanceStyles.emptyState}>
+                        <span aria-hidden="true">
+                            <Inbox size={28} />
+                        </span>
+                        <h2>
+                            {query || status !== "ALL" || attendance !== "ALL"
+                                ? "لا توجد نتائج مطابقة"
+                                : "لا توجد تسجيلات حتى الآن"}
+                        </h2>
+                        <p>
+                            {query || status !== "ALL" || attendance !== "ALL"
+                                ? "جرّب تعديل كلمات البحث أو إزالة بعض الفلاتر."
+                                : "ستظهر طلبات الطلاب هنا فور بدء التسجيل."}
                         </p>
-
                     </div>
                 )}
 
-            </div>
+            </section>
 
         </section>
     );

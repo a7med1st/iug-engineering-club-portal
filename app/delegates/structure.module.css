@@ -1,74 +1,282 @@
 .page {
-  width: min(1320px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 44px 0 92px;
+  width: min(1180px, calc(100% - 32px));
+  margin-inline: auto;
+  padding: 28px 0 64px;
 }
 
 .hero {
   position: relative;
+  min-height: 230px;
+  padding: clamp(28px, 4vw, 48px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 32px;
   overflow: hidden;
+  border: 1px solid rgba(92, 192, 255, 0.28);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(53, 212, 255, 0.23), transparent 30%),
+    radial-gradient(circle at 87% 70%, rgba(130, 189, 50, 0.12), transparent 28%),
+    linear-gradient(135deg, #071b31 0%, #0a3764 52%, #0b6e91 100%);
+  color: #fff;
+  box-shadow:
+    0 28px 70px rgba(6, 24, 44, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  isolation: isolate;
+}
+
+.heroGrid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.34;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.9), transparent 86%);
+}
+
+.heroOrbOne,
+.heroOrbTwo {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.heroOrbOne {
+  width: 260px;
+  height: 260px;
+  inset: -120px auto auto -75px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 0 0 28px rgba(255, 255, 255, 0.025),
+    0 0 0 58px rgba(255, 255, 255, 0.018);
+}
+
+.heroOrbTwo {
+  width: 160px;
+  height: 160px;
+  inset: auto 39% -115px auto;
+  background: rgba(53, 212, 255, 0.08);
+}
+
+.heroCopy {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 29px;
-  border: 1px solid var(--line);
-  border-radius: 25px;
-  background:
-    radial-gradient(circle at 92% 20%, rgba(28, 183, 162, .10), transparent 24%),
-    linear-gradient(135deg, rgba(22, 136, 255, .075), transparent 58%),
-    var(--paper);
-  margin-bottom: 28px;
+  gap: 22px;
+  min-width: 0;
 }
 
 .heroIcon {
-  width: 60px;
-  height: 60px;
-  border-radius: 18px;
+  width: 76px;
+  height: 76px;
+  flex: 0 0 76px;
   display: grid;
   place-items: center;
+  border: 1px solid rgba(153, 225, 255, 0.3);
+  border-radius: 22px;
   background:
-    linear-gradient(135deg, rgba(22, 136, 255, .12), rgba(27, 181, 196, .10));
-  border: 1px solid rgba(22, 136, 255, .10);
-  color: var(--blue);
-  flex-shrink: 0;
+    linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.07));
+  color: #62ddff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 16px 34px rgba(3, 18, 36, 0.18);
+  backdrop-filter: blur(12px);
 }
 
-.eyebrow {
-  color: var(--blue);
-  font-size: .73rem;
-  font-weight: 900;
-  letter-spacing: .09em;
-  text-transform: uppercase;
+.heroIcon svg {
+  width: 34px;
+  height: 34px;
+  transition: transform 0.3s ease;
+}
+
+.hero:hover .heroIcon svg {
+  transform: scale(1.07) rotate(-3deg);
 }
 
 .hero h1 {
-  margin: 5px 0 7px;
+  margin: 0 0 12px;
+  font-size: clamp(1.9rem, 3.4vw, 3rem);
+  line-height: 1.18;
+  color: #fff;
 }
 
 .hero p {
+  max-width: 720px;
   margin: 0;
-  max-width: 850px;
-  color: var(--muted);
-  line-height: 1.85;
+  color: rgba(223, 239, 255, 0.86);
+  font-size: clamp(0.92rem, 1.35vw, 1.02rem);
+  line-height: 2;
 }
 
-.treeScroll {
+.heroVisual {
   position: relative;
-  overflow-x: auto;
-  padding: 20px 8px 42px;
-  border: 1px solid var(--line);
-  border-radius: 24px;
+  width: 260px;
+  height: 150px;
+  display: grid;
+  place-items: center;
+  opacity: 0.9;
+}
+
+.heroVisualNode {
+  position: absolute;
+  top: 4px;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  box-shadow: 0 14px 34px rgba(2, 19, 37, 0.22);
+}
+
+.heroVisualNode svg,
+.heroVisualRow svg {
+  width: 23px;
+  height: 23px;
+}
+
+.heroVisualLine {
+  position: absolute;
+  top: 61px;
+  width: 2px;
+  height: 27px;
+  background: linear-gradient(#75ddff, rgba(117, 221, 255, 0.35));
+}
+
+.heroVisualLine::after {
+  content: "";
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  width: 172px;
+  height: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, #75ddff 14%, #75ddff 86%, transparent);
+}
+
+.heroVisualRow {
+  position: absolute;
+  bottom: 2px;
+  width: 210px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.heroVisualRow span {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #aeeeff;
+}
+
+.treePanel {
+  position: relative;
+  margin-top: 24px;
+  min-height: 470px;
+  padding: clamp(30px, 4.5vw, 54px) clamp(18px, 3vw, 34px);
+  overflow: hidden;
+  border: 1px solid #d7e6f3;
+  border-radius: 30px;
   background:
-    radial-gradient(circle at 50% 0, rgba(22, 136, 255, .035), transparent 36%),
-    var(--paper);
+    radial-gradient(circle at 50% 0%, rgba(22, 136, 255, 0.08), transparent 27%),
+    radial-gradient(circle at 8% 82%, rgba(53, 212, 255, 0.06), transparent 25%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow:
+    0 22px 60px rgba(17, 54, 88, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  isolation: isolate;
+}
+
+.panelGlow {
+  position: absolute;
+  z-index: -1;
+  width: 360px;
+  height: 360px;
+  top: -220px;
+  right: -130px;
+  border-radius: 50%;
+  background: rgba(53, 212, 255, 0.09);
+}
+
+.panelGrid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.55;
+  background-image:
+    linear-gradient(rgba(20, 90, 145, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 90, 145, 0.028) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.65), transparent 88%);
+}
+
+.treeViewport {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 10px 8px 18px;
   scrollbar-width: thin;
+  scrollbar-color: #9bcaf1 transparent;
+}
+
+.treeViewport::-webkit-scrollbar {
+  height: 8px;
+}
+
+.treeViewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.treeViewport::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7fbef3, #55d6f7);
+  background-clip: padding-box;
+}
+
+.treeCanvas {
+  width: max-content;
+  min-width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .tree,
 .children {
-  list-style: none;
-  padding: 0;
+  --connector-color: #b7d7ef;
+  --connector-main: #69c8ee;
+  --connector-size: 2px;
+  --connector-gap: 42px;
+
   margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:global(html[data-theme="dark"]) .page {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .treePanel,
+:global(html[data-theme="dark"]) .rootCard {
+  border-color: var(--line);
+  background:
+    radial-gradient(circle at 50% 0%, rgb(22 136 255 / 10%), transparent 27%),
+    var(--surface) !important;
+  color: var(--ink);
+  box-shadow: var(--theme-shadow);
 }
 
 .tree {
@@ -77,17 +285,11 @@
   min-width: max-content;
 }
 
-.branch {
-  position: relative;
-  padding: 0 13px;
-  text-align: center;
-}
-
 .children {
+  position: relative;
   display: flex;
   justify-content: center;
-  position: relative;
-  padding-top: 42px;
+  padding-top: var(--connector-gap);
 }
 
 .children::before {
@@ -95,202 +297,487 @@
   position: absolute;
   top: 0;
   left: 50%;
-  height: 27px;
-  border-left: 2px solid rgba(54, 116, 161, .22);
+  width: var(--connector-size);
+  height: var(--connector-gap);
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, var(--connector-main), var(--connector-color));
+  border-radius: 999px;
+  transition: background-color 0.2s ease;
 }
 
-.children > .branch::before,
-.children > .branch::after {
+.branch {
+  position: relative;
+  padding: var(--connector-gap) 16px 0;
+  text-align: center;
+}
+
+.rootBranch {
+  padding-top: 0;
+}
+
+.branch::before,
+.branch::after {
   content: "";
   position: absolute;
   top: 0;
-  width: 50%;
-  height: 27px;
-  border-top: 2px solid rgba(54, 116, 161, .22);
+  pointer-events: none;
 }
 
-.children > .branch::before {
-  right: 50%;
+.branch::before {
+  left: 0;
+  width: 100%;
+  height: var(--connector-size);
+  background: var(--connector-color);
+  border-radius: 999px;
 }
 
-.children > .branch::after {
+.branch::after {
   left: 50%;
-  border-left: 2px solid rgba(54, 116, 161, .22);
+  width: var(--connector-size);
+  height: var(--connector-gap);
+  transform: translateX(-50%);
+  background: var(--connector-color);
+  border-radius: 999px;
 }
 
-.children > .branch:first-child::before,
-.children > .branch:last-child::after {
-  border-top-color: transparent;
+.branch:only-child::before {
+  display: none;
 }
 
-.nodeLink {
-  display: inline-block;
-  color: inherit;
-  text-decoration: none;
+/* In RTL flex layout the first child is the right-most branch and the last
+   child is the left-most one. Trim the sibling rail at their card centres. */
+.branch:first-child::before {
+  width: 50%;
+}
+
+.branch:last-child::before {
+  right: 0;
+  left: auto;
+  width: 50%;
+}
+
+.rootBranch::before,
+.rootBranch::after {
+  display: none;
 }
 
 .nodeCard {
+  --node-accent: #1688ff;
+  --node-accent-soft: rgba(22, 136, 255, 0.11);
+
   position: relative;
-  overflow: hidden;
   width: 238px;
-  min-height: 112px;
-  display: flex;
+  min-height: 120px;
+  margin-inline: auto;
+  padding: 16px 16px 14px;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
   align-items: center;
   gap: 13px;
+  overflow: hidden;
+  border: 1px solid #d7e5f1;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 100% 0%, var(--node-accent-soft), transparent 42%),
+    linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+  color: #102c4d;
   text-align: right;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 19px;
-  background: var(--paper);
-  box-shadow: 0 10px 30px rgba(11, 39, 68, .05);
+  box-shadow:
+    0 12px 30px rgba(13, 53, 88, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
   transition:
-    transform .2s ease,
-    box-shadow .2s ease,
-    border-color .2s ease;
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.28s ease,
+    box-shadow 0.28s ease;
+  transform-origin: top center;
 }
 
 .nodeCard::after {
   content: "";
   position: absolute;
-  inset-inline-start: 0;
-  top: 0;
-  bottom: 0;
+  inset: 0 0 0 auto;
   width: 4px;
-  background: linear-gradient(180deg, #0b75be, #18a4b8);
-  opacity: .4;
+  background: linear-gradient(180deg, var(--node-accent), #35d4ff);
 }
 
-.nodeLink:hover .nodeCard {
-  transform: translateY(-5px);
-  border-color: rgba(22, 136, 255, .36);
-  box-shadow: 0 18px 40px rgba(11, 39, 68, .10);
+.nodeCard[data-tone="vice"] {
+  --node-accent: #1688ff;
+  --node-accent-soft: rgba(22, 136, 255, 0.12);
 }
 
-.tree > .branch > .nodeLink .nodeCard,
-.tree > .branch > .nodeCard {
-  width: 260px;
-  min-height: 122px;
-  border-color: rgba(22, 136, 255, .22);
-  background:
-    linear-gradient(135deg, rgba(22, 136, 255, .055), transparent 72%),
-    var(--paper);
-  box-shadow: 0 16px 42px rgba(11, 39, 68, .08);
+.nodeCard[data-tone="relations"] {
+  --node-accent: #f4a316;
+  --node-accent-soft: rgba(244, 163, 22, 0.12);
 }
 
-.tree > .branch > .nodeLink .nodeCard::after,
-.tree > .branch > .nodeCard::after {
-  opacity: 1;
-  width: 5px;
+.nodeCard[data-tone="delegate"] {
+  --node-accent: #43b86b;
+  --node-accent-soft: rgba(67, 184, 107, 0.12);
 }
 
-.avatar {
-  width: 53px;
-  height: 53px;
-  border-radius: 16px;
-  flex-shrink: 0;
-  overflow: hidden;
+.nodeCard[data-tone="member"] {
+  --node-accent: #35a7d8;
+  --node-accent-soft: rgba(53, 167, 216, 0.12);
+}
+
+.nodeCard:hover {
+  transform: scale(1.015);
+  border-color: color-mix(in srgb, var(--node-accent) 44%, #d7e5f1);
+  box-shadow:
+    0 20px 42px rgba(13, 63, 107, 0.14),
+    0 0 0 4px color-mix(in srgb, var(--node-accent) 8%, transparent);
+}
+
+.nodeGlow {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  top: -58px;
+  left: -42px;
+  border-radius: 50%;
+  background: var(--node-accent-soft);
+  transition: transform 0.3s ease;
+}
+
+.nodeCard:hover .nodeGlow {
+  transform: scale(1.25);
+}
+
+.avatarBox {
+  position: relative;
+  z-index: 1;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
-  color: var(--blue);
-  background:
-    linear-gradient(135deg, rgba(22, 136, 255, .10), rgba(24, 171, 190, .08));
-  border: 1px solid rgba(22, 136, 255, .08);
+  border: 1px solid color-mix(in srgb, var(--node-accent) 22%, #dceaf5);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--node-accent) 8%, #fff);
+  color: var(--node-accent);
+  transition:
+    transform 0.28s ease,
+    background 0.28s ease;
 }
 
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.avatarBox svg {
+  width: 23px;
+  height: 23px;
 }
 
-.nodeCard div:last-child {
+.nodeCard:hover .avatarBox {
+  transform: translateY(-2px) rotate(-2deg);
+  background: color-mix(in srgb, var(--node-accent) 13%, #fff);
+}
+
+.nodeContent {
+  position: relative;
+  z-index: 1;
   min-width: 0;
+  display: grid;
+  justify-items: start;
 }
 
-.title {
-  display: inline-flex;
-  min-height: 26px;
-  align-items: center;
-  padding: 0 8px;
+.roleBadge {
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 7px;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--node-accent) 18%, transparent);
   border-radius: 999px;
-  background: rgba(22, 136, 255, .07);
-  color: var(--blue);
-  font-size: .69rem;
-  font-weight: 900;
-  margin-bottom: 5px;
+  background: color-mix(in srgb, var(--node-accent) 9%, #fff);
+  color: var(--node-accent);
+  font-family: "Alexandria", sans-serif;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1.5;
 }
 
-.nodeCard strong {
-  display: block;
+.nodeContent strong {
+  max-width: 100%;
   overflow: hidden;
+  color: #102c4d;
+  font-family: "Alexandria", sans-serif;
+  font-size: 0.9rem;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: .92rem;
 }
 
-.nodeCard small {
-  display: block;
-  color: var(--muted);
+.nodeContent small {
+  max-width: 100%;
   margin-top: 4px;
-  font-size: .75rem;
+  overflow: hidden;
+  color: #778ba0;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.empty {
-  padding: 56px 20px;
+.profileHint {
+  position: absolute;
+  inset: auto 16px 10px auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--node-accent);
+  font-family: "Alexandria", sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(5px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.nodeCard:hover .profileHint {
+  opacity: 0.85;
+  transform: translateY(0);
+}
+
+.rootCard {
+  --node-accent: #55d8ff;
+  --node-accent-soft: rgba(53, 212, 255, 0.13);
+
+  width: 270px;
+  min-height: 132px;
+  border-color: rgba(93, 203, 244, 0.34);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(53, 212, 255, 0.2), transparent 38%),
+    linear-gradient(135deg, #08233f 0%, #0a4777 100%);
+  color: #fff;
+  box-shadow:
+    0 18px 44px rgba(5, 37, 67, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.rootCard::after {
+  width: 5px;
+  background: linear-gradient(180deg, #57dcff, #1688ff);
+}
+
+.rootCard .avatarBox {
+  border-color: rgba(137, 226, 255, 0.28);
+  background: rgba(255, 255, 255, 0.1);
+  color: #7ee7ff;
+}
+
+.rootCard .roleBadge {
+  border-color: rgba(142, 231, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  color: #9debff;
+}
+
+.rootCard .nodeContent strong {
+  color: #fff;
+}
+
+.rootCard .nodeContent small {
+  color: rgba(221, 239, 255, 0.78);
+}
+
+.rootCard .profileHint {
+  color: #9debff;
+}
+
+.rootCard:hover {
+  border-color: rgba(109, 220, 255, 0.68);
+  box-shadow:
+    0 24px 54px rgba(5, 37, 67, 0.28),
+    0 0 0 4px rgba(53, 212, 255, 0.08);
+}
+
+.emptyState {
+  min-height: 360px;
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 10px;
   text-align: center;
-  border: 1px dashed var(--line);
-  border-radius: 22px;
-  color: var(--muted);
 }
 
-.empty h2 {
-  color: var(--ink);
-  margin: 12px 0 5px;
+.emptyState > span {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 19px;
+  background: #eaf6ff;
+  color: #1688ff;
 }
 
-.empty p {
-  margin: 0;
+.emptyState > span svg {
+  width: 28px;
+  height: 28px;
 }
 
-@media (max-width: 720px) {
+.emptyState strong {
+  color: #173957;
+  font-family: "Alexandria", sans-serif;
+  font-size: 1rem;
+}
+
+.emptyState p {
+  max-width: 480px;
+  color: #71869a;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .heroVisual {
+    display: none;
+  }
+
+  .heroCopy {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 700px) {
   .page {
-    width: min(100% - 22px, 1320px);
-    padding-top: 26px;
+    width: min(100% - 20px, 1180px);
+    padding-top: 14px;
   }
 
   .hero {
-    padding: 20px;
-    align-items: flex-start;
-    border-radius: 20px;
+    min-height: auto;
+    padding: 25px 20px;
+    border-radius: 23px;
+  }
+
+  .heroCopy {
+    gap: 15px;
   }
 
   .heroIcon {
-    width: 50px;
-    height: 50px;
-    border-radius: 15px;
+    width: 58px;
+    height: 58px;
+    flex-basis: 58px;
+    border-radius: 17px;
   }
 
-  .treeScroll {
-    border-radius: 18px;
-    padding-inline: 2px;
+  .heroIcon svg {
+    width: 27px;
+    height: 27px;
   }
 
-  .nodeCard {
-    width: 212px;
-    min-height: 104px;
+  .hero h1 {
+    font-size: 1.65rem;
   }
 
-  .tree > .branch > .nodeLink .nodeCard,
-  .tree > .branch > .nodeCard {
-    width: 225px;
+  .hero p {
+    font-size: 0.86rem;
+    line-height: 1.9;
+  }
+
+  .treePanel {
+    margin-top: 16px;
+    padding: 24px 14px;
+    border-radius: 23px;
+  }
+
+  .treeViewport {
+    overflow: visible;
+    padding: 0;
+  }
+
+  .treeCanvas,
+  .tree,
+  .children {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .tree {
+    display: grid;
+    justify-items: stretch;
+  }
+
+  .children {
+    --mobile-indent: 22px;
+    --mobile-step: 16px;
+
+    display: block;
+    margin-top: 0;
+    padding: 0;
+  }
+
+  .children::before {
+    display: none;
+  }
+
+  .branch,
+  .rootBranch {
+    width: 100%;
+    padding: var(--mobile-step, 0) var(--mobile-indent, 0) 0 0;
+    text-align: right;
+  }
+
+  .rootBranch {
+    padding: 0;
+  }
+
+  .branch::before {
+    top: var(--mobile-step);
+    right: 0;
+    left: auto;
+    width: var(--mobile-indent);
+    height: var(--connector-size);
+    display: block;
+    background: var(--connector-color);
+    border-radius: 0 0 8px 0;
+  }
+
+  .branch::after {
+    top: 0;
+    right: 0;
+    left: auto;
+    bottom: 0;
+    width: var(--connector-size);
+    height: auto;
+    display: block;
+    transform: none;
+    background: var(--connector-color);
+  }
+
+  .branch:last-child::after {
+    bottom: auto;
+    height: calc(var(--mobile-step) + var(--connector-size));
+    border-radius: 0 0 8px 8px;
+  }
+
+  .branch:only-child::before {
+    display: block;
+  }
+
+  .branch.rootBranch::before,
+  .branch.rootBranch::after {
+    display: none;
+  }
+
+  .nodeCard,
+  .rootCard {
+    width: 100%;
     min-height: 112px;
   }
 
-  .avatar {
-    width: 47px;
-    height: 47px;
-    border-radius: 14px;
+  .profileHint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroIcon svg,
+  .nodeCard,
+  .avatarBox,
+  .nodeGlow,
+  .profileHint {
+    transition: none;
+  }
+
+  .nodeCard:hover {
+    transform: none;
   }
 }

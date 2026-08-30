@@ -1,4 +1,13 @@
 import Link from "next/link";
+
+import {
+  Award,
+  CalendarClock,
+  CircleCheckBig,
+  ClipboardList,
+  Compass,
+  TimerReset,
+} from "lucide-react";
 import StudentCancelRegistrationButton from "@/components/student/StudentCancelRegistrationButton";
 import StudentAvatarUploader from "@/components/student/StudentAvatarUploader";
 import StudentProfileEditor from "@/components/student/StudentProfileEditor";
@@ -9,7 +18,6 @@ import {
 import { prisma } from "@/lib/prisma";
 import StudentAcceptanceCard from "@/components/student/StudentAcceptanceCard";
 import styles from "./student.module.css";
-
 export const dynamic = "force-dynamic";
 
 const statusLabels = {
@@ -188,12 +196,6 @@ export default async function StudentDashboardPage({
         item.status === "APPROVED",
     ).length;
 
-  const rejectedCount =
-    submissions.filter(
-      (item) =>
-        item.status === "REJECTED",
-    ).length;
-
   const now = new Date();
 
   const activeCount =
@@ -261,32 +263,81 @@ export default async function StudentDashboardPage({
       ================================================== */}
 
       <section className={styles.hero}>
-        <div>
-          <span
-            className={styles.eyebrow}
-          >
-            لوحة الطالب
-          </span>
+        <div className={styles.heroContent}>
+          <h1 className={styles.heroTitle}>
+            <span className={styles.heroWelcome}>
+              مرحبًا،
+            </span>
 
-          <h1>
-            مرحبًا، {user.name}
+            <span className={styles.heroStudentName}>
+              {user.name}
+            </span>
           </h1>
 
-          <p>
-            تابع تسجيلاتك في الأنشطة،
-            حالة قبولك، وبيانات حسابك
-            من مكان واحد.
+          <p className={styles.heroDescription}>
+            تابع أنشطتك، واطّلع على معلومات حسابك وكل ما تحتاجه
+            في مكان واحد.
           </p>
+
+          <div className={styles.heroActions}>
+            <Link
+              href="/activities"
+              className={`${styles.activitiesLink} ${styles.dashboardActionButton}`}
+            >
+              <Compass
+                size={19}
+                strokeWidth={2}
+              />
+
+              <span>
+                استكشف الأنشطة
+              </span>
+            </Link>
+
+            <Link
+              href="/student/certificates"
+              className={`${styles.certificatesLink} ${styles.dashboardActionButton}`}
+            >
+              <Award
+                size={19}
+                strokeWidth={2}
+              />
+
+              <span>
+                شهاداتي
+              </span>
+            </Link>
+          </div>
         </div>
 
-        <Link
-          href="/activities"
-          className={
-            styles.activitiesLink
-          }
+        <div
+          className={styles.heroVisual}
+          aria-hidden="true"
         >
-          استكشف الأنشطة
-        </Link>
+          <img
+            src="/images/student/hero/engineering-1.png"
+            alt=""
+            className={`${styles.heroFloatingImage} ${styles.heroImageOne}`}
+          />
+
+          <img
+            src="/images/student/hero/engineering-2.png"
+            alt=""
+            className={`${styles.heroFloatingImage} ${styles.heroImageTwo}`}
+          />
+
+          <img
+            src="/images/student/hero/engineering-3.png"
+            alt=""
+            className={`${styles.heroFloatingImage} ${styles.heroImageThree}`}
+          />
+
+          <img
+            src="/images/student/hero/engineering-4.png"
+            alt=""
+            className={`${styles.heroFloatingImage} ${styles.heroImageFour}`}
+          />
+        </div>
       </section>
 
       {/* ==================================================
@@ -306,6 +357,11 @@ export default async function StudentDashboardPage({
           }
         >
           <StudentAvatarUploader
+            key={`${Boolean(
+              user.avatarStoredName,
+            )}-${user.avatarUpdatedAt
+              ?.getTime()
+              .toString() ?? "0"}`}
             name={user.name}
             initials={initials}
             hasAvatar={Boolean(
@@ -336,6 +392,15 @@ export default async function StudentDashboardPage({
             createdAtLabel={
               createdAtLabel
             }
+            initials={initials}
+            hasAvatar={Boolean(
+              user.avatarStoredName,
+            )}
+            avatarVersion={
+              user.avatarUpdatedAt
+                ?.getTime()
+                .toString() ?? "0"
+            }
           />
         </aside>
 
@@ -360,9 +425,13 @@ export default async function StudentDashboardPage({
                 styles.statCard
               }
             >
-              <span>
-                إجمالي تسجيلاتي
-              </span>
+              <div className={styles.statTop}>
+                <span>
+                  إجمالي تسجيلاتي
+                </span>
+
+                <ClipboardList aria-hidden="true" />
+              </div>
 
               <strong>
                 {submissions.length}
@@ -379,9 +448,13 @@ export default async function StudentDashboardPage({
                 styles.statCard
               }
             >
-              <span>
-                قيد المراجعة
-              </span>
+              <div className={styles.statTop}>
+                <span>
+                  قيد المراجعة
+                </span>
+
+                <TimerReset aria-hidden="true" />
+              </div>
 
               <strong>
                 {pendingCount}
@@ -397,7 +470,11 @@ export default async function StudentDashboardPage({
                 styles.statCard
               }
             >
-              <span>مقبول</span>
+              <div className={styles.statTop}>
+                <span>مقبول</span>
+
+                <CircleCheckBig aria-hidden="true" />
+              </div>
 
               <strong>
                 {approvedCount}
@@ -413,9 +490,13 @@ export default async function StudentDashboardPage({
                 styles.statCard
               }
             >
-              <span>
-                أنشطة قادمة
-              </span>
+              <div className={styles.statTop}>
+                <span>
+                  أنشطة قادمة
+                </span>
+
+                <CalendarClock aria-hidden="true" />
+              </div>
 
               <strong>
                 {activeCount}
@@ -444,7 +525,6 @@ export default async function StudentDashboardPage({
               }
             >
               <div>
-                <span>نشاطاتي</span>
 
                 <h2>
                   الأنشطة المسجل فيها
@@ -872,20 +952,23 @@ export default async function StudentDashboardPage({
                     styles.emptyIcon
                   }
                 >
-                  +
+                  <Compass
+                    size={25}
+                    aria-hidden="true"
+                  />
                 </div>
 
                 <h3>
                   {activityTab ===
                     "upcoming"
-                    ? "ما عندك أنشطة قادمة"
+                    ? "لا يوجد لديك أنشطة قادمة"
                     : activityTab ===
                       "past"
-                      ? "ما عندك أنشطة سابقة"
+                      ? "لا يوجد لديك أنشطة سابقة"
                       : activityTab ===
                         "rejected"
-                        ? "ما عندك تسجيلات مرفوضة"
-                        : "لسا ما سجلت بأي نشاط"}
+                        ? "لا يوجد لديك تسجيلات مرفوضة"
+                        : "لم تسجل بأي نشاط"}
                 </h3>
 
                 <p>

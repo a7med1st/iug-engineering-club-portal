@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { getSession } from "@/lib/auth";
+import { authorizeApiPermission } from "@/lib/api-auth";
+import { PERMISSIONS } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -11,10 +12,12 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await getSession();
+  const auth = await authorizeApiPermission(
+    PERMISSIONS.MEMBER_DASHBOARD,
+  );
 
-  if (!session) {
-    return NextResponse.json({ ok: false }, { status: 401 });
+  if (!auth.authorized) {
+    return auth.response;
   }
 
   const { id } = await params;
@@ -23,14 +26,14 @@ export async function GET(
     where: {
       conversationId_userId: {
         conversationId: id,
-        userId: session.sub,
+        userId: auth.user.id,
       },
     },
     select: {
       conversation: {
         select: {
           participants: {
-            where: { userId: { not: session.sub } },
+            where: { userId: { not: auth.user.id } },
             take: 1,
             select: {
               user: {

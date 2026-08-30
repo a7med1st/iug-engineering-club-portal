@@ -244,23 +244,36 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 32px;
-  padding: 0 12px;
-  border-radius: 999px;
+  gap: 7px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   font-size: 0.73rem;
   font-weight: 900;
   white-space: nowrap;
 }
 
+.activityStatusBadge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 13%, transparent);
+}
+
 .activityPublished {
-  border: 1px solid rgba(21, 115, 71, 0.18);
-  background: rgba(21, 115, 71, 0.08);
+  border: 0;
+  background: transparent;
   color: #157347;
 }
 
 .activityArchived {
-  border: 1px solid rgba(100, 116, 139, 0.18);
-  background: rgba(100, 116, 139, 0.08);
+  border: 0;
+  background: transparent;
   color: #526173;
 }
 
@@ -288,6 +301,20 @@
 
 .activityMetaRow svg {
   color: var(--blue);
+}
+
+.activityMetaValue {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  color: #36526d;
+  line-height: 1.45;
+}
+
+.activityMetaValue small {
+  color: #7890a5;
+  font-size: 0.58rem;
+  font-weight: 850;
 }
 
 .activityResultsGrid {
@@ -437,4 +464,1811 @@
   .activityMetaRow > div {
     width: 100%;
   }
+}
+
+/* =========================================================
+   PREMIUM REGISTRATIONS DASHBOARD
+========================================================= */
+
+.page {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 100%;
+  padding-bottom: 18px;
+}
+
+.page::before {
+  content: "";
+  position: absolute;
+  z-index: -3;
+  inset: -30px clamp(-43px, -3vw, -20px) -50px;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(15, 114, 220, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 114, 220, 0.025) 1px, transparent 1px),
+    radial-gradient(circle at 14% 8%, rgba(53, 212, 255, 0.13), transparent 27%),
+    radial-gradient(circle at 88% 34%, rgba(15, 114, 220, 0.09), transparent 31%),
+    linear-gradient(180deg, #f8fcff 0%, #f1f7fd 100%);
+  background-size: 34px 34px, 34px 34px, auto, auto, auto;
+}
+
+.pageDecorations {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pageDecorations span {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(8px);
+}
+
+.pageDecorations span:first-child {
+  top: 340px;
+  inset-inline-start: -90px;
+  width: 220px;
+  height: 220px;
+  background: rgba(53, 212, 255, 0.08);
+}
+
+.pageDecorations span:last-child {
+  top: 880px;
+  inset-inline-end: -100px;
+  width: 260px;
+  height: 260px;
+  background: rgba(15, 114, 220, 0.06);
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  margin-bottom: 18px;
+  padding: clamp(24px, 4vw, 36px);
+  border: 1px solid rgba(154, 199, 235, 0.62);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(240, 249, 255, 0.94));
+  box-shadow:
+    0 22px 56px rgba(8, 35, 63, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: -80px;
+  bottom: -120px;
+  width: 310px;
+  height: 310px;
+  border: 1px solid rgba(22, 136, 255, 0.08);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 38px rgba(53, 212, 255, 0.025),
+    0 0 0 78px rgba(22, 136, 255, 0.018);
+  pointer-events: none;
+}
+
+.heroGlow {
+  position: absolute;
+  inset-inline-end: -5%;
+  top: -70%;
+  width: 430px;
+  height: 330px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(53, 212, 255, 0.2), transparent 66%);
+  pointer-events: none;
+}
+
+.heroCopy {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.backLink {
+  width: fit-content;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-bottom: 13px !important;
+  padding: 0 14px;
+  border: 1px solid rgba(22, 136, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(235, 247, 255, 0.92);
+  color: #0f72dc;
+  box-shadow: 0 8px 20px rgba(22, 136, 255, 0.09);
+  font-family: "Alexandria", sans-serif;
+  font-size: 0.73rem;
+  font-weight: 850;
+  text-decoration: none;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.backLink svg {
+  flex: 0 0 auto;
+  transition: transform 0.25s ease;
+}
+
+.backLink:hover {
+  transform: translateY(-2px);
+  border-color: rgba(22, 136, 255, 0.32);
+  background: #fff;
+  box-shadow: 0 12px 25px rgba(22, 136, 255, 0.15);
+}
+
+.backLink:hover svg {
+  transform: translateX(3px);
+}
+
+.hero h1 {
+  margin: 0;
+  color: #08233f;
+  font-size: clamp(1.75rem, 4vw, 2.65rem) !important;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.25;
+}
+
+.heroCopy > p {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: #526d87;
+  font-size: clamp(0.88rem, 1.7vw, 1.05rem);
+  font-weight: 750;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.heroMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.heroMeta > span {
+  min-width: 0;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid rgba(172, 204, 230, 0.62);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.75);
+  color: #405d78;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  font-size: 0.74rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.heroMeta svg {
+  flex: 0 0 auto;
+  color: #1688ff;
+}
+
+.heroStatus > span {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 11%, transparent);
+}
+
+.heroStatusPublished {
+  border-color: rgba(67, 184, 107, 0.2) !important;
+  background: rgba(67, 184, 107, 0.075) !important;
+  color: #24814a !important;
+}
+
+.heroStatusArchived {
+  border-color: rgba(100, 116, 139, 0.18) !important;
+  background: rgba(100, 116, 139, 0.07) !important;
+  color: #526173 !important;
+}
+
+.actionToolbar {
+  position: relative;
+  z-index: 4;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding: 16px 18px;
+  border: 1px solid rgba(169, 205, 235, 0.56);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(246, 251, 255, 0.94));
+  box-shadow:
+    0 14px 38px rgba(8, 35, 63, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+.toolbarHeading,
+.summaryHeading,
+.settingsHeading,
+.sectionHeading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbarHeading > span,
+.sectionIcon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(22, 136, 255, 0.13);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #e9f6ff, #eafcff);
+  color: #1688ff;
+  box-shadow:
+    0 9px 20px rgba(22, 136, 255, 0.09),
+    inset 0 1px 0 #fff;
+}
+
+.toolbarHeading h2,
+.sectionHeading h2 {
+  margin: 0;
+  color: #102f4d;
+  font-size: 0.94rem;
+  font-weight: 900;
+}
+
+.toolbarHeading p,
+.sectionHeading p {
+  margin: 3px 0 0;
+  color: #71859a;
+  font-size: 0.7rem;
+  line-height: 1.65;
+}
+
+.headerActions {
+  flex: 0 0 auto;
+}
+
+.headerActions a,
+.headerActions button,
+.filterApply,
+.filterClear {
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease,
+    background 0.3s ease;
+}
+
+.headerActions a:hover,
+.headerActions button:hover,
+.filterApply:hover,
+.filterClear:hover {
+  transform: translateY(-3px);
+}
+
+.headerActions a:active,
+.headerActions button:active,
+.filterApply:active,
+.filterClear:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.primaryAction,
+.filterApply,
+.page :global(.registration-settings-save-btn) {
+  position: relative;
+  overflow: hidden;
+  min-height: 46px;
+  border: 0 !important;
+  background: linear-gradient(120deg, #0f72dc, #1688ff 55%, #35d4ff) !important;
+  color: #fff !important;
+  box-shadow: 0 11px 26px rgba(15, 114, 220, 0.23) !important;
+}
+
+.primaryAction::after,
+.filterApply::after,
+.page :global(.registration-settings-save-btn)::after {
+  content: "";
+  position: absolute;
+  inset-block: -30%;
+  inset-inline-start: -48%;
+  width: 34%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-18deg);
+  transition: inset-inline-start 0.65s ease;
+}
+
+.primaryAction:hover,
+.filterApply:hover,
+.page :global(.registration-settings-save-btn):hover:not(:disabled) {
+  background: linear-gradient(110deg, #0f72dc, #1688ff 38%, #35d4ff 67%, #55bb8a 86%, #f4a316 120%) !important;
+  box-shadow: 0 16px 32px rgba(15, 114, 220, 0.29) !important;
+}
+
+.primaryAction:hover::after,
+.filterApply:hover::after,
+.page :global(.registration-settings-save-btn):hover::after {
+  inset-inline-start: 125%;
+}
+
+.secondaryAction {
+  min-height: 46px;
+  border-color: rgba(22, 136, 255, 0.2) !important;
+  background: linear-gradient(180deg, #fff, #f4faff) !important;
+  color: #116fc9 !important;
+  box-shadow: 0 7px 18px rgba(22, 136, 255, 0.07);
+}
+
+.secondaryAction:hover {
+  border-color: rgba(22, 136, 255, 0.42) !important;
+  background: linear-gradient(135deg, #fff, #ecf7ff) !important;
+  box-shadow: 0 13px 28px rgba(22, 136, 255, 0.14);
+}
+
+.archiveActivityButton,
+.restoreActivityButton {
+  min-height: 46px;
+  border-radius: 12px;
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease,
+    background 0.3s ease;
+}
+
+.archiveActivityButton {
+  border-color: rgba(244, 163, 22, 0.28);
+  background: linear-gradient(180deg, #fffdfa, #fff7e9);
+  color: #a55d08;
+}
+
+.archiveActivityButton:hover {
+  box-shadow: 0 13px 27px rgba(244, 163, 22, 0.15);
+}
+
+.activitySummary {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 26px;
+  padding: clamp(20px, 3vw, 28px);
+  border-color: rgba(169, 205, 235, 0.58);
+  border-radius: 25px;
+  background:
+    radial-gradient(circle at 94% 4%, rgba(53, 212, 255, 0.12), transparent 28%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(246, 251, 255, 0.95));
+  box-shadow:
+    0 20px 50px rgba(8, 35, 63, 0.075),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+.activitySummary::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  width: 120px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1688ff, #35d4ff);
+}
+
+.activitySummaryHead,
+.activityMetaRow,
+.activityResultsGrid,
+.attendanceRateBlock,
+.archivedNotice {
+  position: relative;
+  z-index: 1;
+}
+
+.activitySummaryHead {
+  margin-bottom: 20px;
+}
+
+.summaryHeading,
+.settingsHeading {
+  align-items: flex-start;
+}
+
+.summaryHeading > div,
+.settingsHeading > div,
+.sectionHeading > div,
+.toolbarHeading > div {
+  min-width: 0;
+}
+
+.activitySummaryEyebrow {
+  margin-bottom: 5px;
+  font-size: 0.7rem;
+  letter-spacing: 0;
+}
+
+.activitySummaryHead h2 {
+  font-size: clamp(1.1rem, 2.2vw, 1.38rem);
+}
+
+.activitySummaryHead p {
+  font-size: 0.76rem;
+}
+
+.activityStatusBadge {
+  min-height: 0;
+  padding-inline: 0;
+  box-shadow: none;
+}
+
+.activityMetaRow {
+  gap: 9px;
+  margin-bottom: 19px;
+}
+
+.activityMetaRow > div {
+  min-width: 0;
+  min-height: 43px;
+  padding: 5px 11px;
+  border-color: rgba(178, 205, 228, 0.65);
+  border-radius: 13px;
+  background: rgba(247, 251, 255, 0.9);
+  color: #506b84;
+  box-shadow: inset 0 1px 0 #fff;
+  overflow-wrap: anywhere;
+}
+
+.activityResultsGrid {
+  gap: 12px;
+}
+
+.overviewStat {
+  --stat-accent: #1688ff;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 112px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 17px;
+  border: 1px solid rgba(174, 205, 230, 0.57);
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--stat-accent) 11%, transparent), transparent 44%),
+    linear-gradient(145deg, #fff, #f8fbfe);
+  box-shadow: 0 10px 26px rgba(8, 35, 63, 0.045);
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.overviewStat::before {
+  content: "";
+  position: absolute;
+  inset-inline: 17px;
+  top: 0;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: var(--stat-accent);
+  opacity: 0.78;
+}
+
+.overviewStat:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--stat-accent) 38%, #c5d9e9);
+  box-shadow: 0 17px 35px color-mix(in srgb, var(--stat-accent) 13%, transparent);
+}
+
+.overviewStatIcon {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  display: grid !important;
+  place-items: center;
+  margin: 0 !important;
+  border: 1px solid color-mix(in srgb, var(--stat-accent) 18%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--stat-accent) 9%, #fff);
+  color: var(--stat-accent) !important;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.overviewStat:hover .overviewStatIcon {
+  transform: translateY(-2px) rotate(-3deg);
+}
+
+.overviewStat > div {
+  min-width: 0;
+}
+
+.overviewStat > div > span {
+  margin-bottom: 4px;
+  font-size: 0.7rem;
+}
+
+.overviewStat > div > strong {
+  display: block;
+  color: var(--stat-accent);
+  font-size: clamp(1.42rem, 3vw, 1.75rem);
+  line-height: 1.1;
+}
+
+.overviewStatTotal { --stat-accent: #1688ff; }
+.overviewStatAccepted { --stat-accent: #43a966; }
+.overviewStatPresent { --stat-accent: #0f72dc; }
+.overviewStatAbsent { --stat-accent: #d88813; }
+
+.attendanceRateBlock {
+  margin-top: 16px;
+  padding: 18px;
+  border-color: rgba(67, 184, 107, 0.17);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 95% 20%, rgba(67, 184, 107, 0.09), transparent 28%),
+    linear-gradient(145deg, rgba(247, 255, 250, 0.98), rgba(244, 250, 255, 0.95));
+}
+
+.attendanceRateHead {
+  margin-bottom: 13px;
+}
+
+.attendanceRateHead > div strong {
+  font-size: 0.88rem;
+}
+
+.attendanceRateHead > strong {
+  font-size: 1.35rem;
+}
+
+.attendanceProgress {
+  height: 11px;
+  padding: 2px;
+  border: 1px solid rgba(67, 184, 107, 0.1);
+  background: linear-gradient(90deg, rgba(22, 136, 255, 0.09), rgba(67, 184, 107, 0.13));
+}
+
+.attendanceProgress > span {
+  min-width: 0;
+  background: linear-gradient(90deg, #1688ff, #35d4ff 48%, #43b86b);
+  box-shadow: 0 0 13px rgba(67, 184, 107, 0.24);
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.settingsPanel,
+.statusSection,
+.filtersPanel,
+.registrationsList {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+}
+
+.settingsPanel {
+  border-color: rgba(169, 205, 235, 0.58) !important;
+  border-radius: 25px !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(246, 251, 255, 0.95)) !important;
+  box-shadow:
+    0 20px 50px rgba(8, 35, 63, 0.07),
+    inset 0 1px 0 #fff !important;
+}
+
+.page :global(.activity-registration-settings-head) {
+  padding: 24px 26px;
+  border-bottom-color: rgba(183, 209, 231, 0.58);
+  background:
+    radial-gradient(circle at 90% 0%, rgba(53, 212, 255, 0.1), transparent 32%),
+    linear-gradient(135deg, rgba(244, 250, 255, 0.92), rgba(255, 255, 255, 0.9));
+}
+
+.page :global(.activity-registration-settings-head h2) {
+  color: #102f4d;
+  font-size: 1.18rem;
+}
+
+.page :global(.activity-registration-settings-head p) {
+  font-size: 0.74rem;
+}
+
+.page :global(.activity-registration-open-state) {
+  min-height: 0;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.page :global(.registration-state-dot) {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+}
+
+.page :global(.activity-registration-settings-form) {
+  gap: 17px;
+  padding: 23px 26px 27px;
+}
+
+.page :global(.registration-setting-box) {
+  position: relative;
+  overflow: hidden;
+  min-height: 175px;
+  padding: 19px;
+  border-color: rgba(178, 205, 228, 0.63);
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(22, 136, 255, 0.07), transparent 35%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(245, 250, 255, 0.9));
+  box-shadow: inset 0 1px 0 #fff;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.28s ease,
+    box-shadow 0.28s ease;
+}
+
+.page :global(.registration-setting-box:hover) {
+  transform: translateY(-3px);
+  border-color: rgba(22, 136, 255, 0.3);
+  box-shadow: 0 15px 30px rgba(22, 136, 255, 0.08);
+}
+
+.page :global(.registration-setting-box-head) {
+  justify-content: flex-start;
+  margin-bottom: 18px;
+}
+
+.settingIcon {
+  width: 39px;
+  height: 39px;
+  flex: 0 0 39px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(22, 136, 255, 0.14);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #edf7ff, #effcff);
+  color: #1688ff;
+}
+
+.page :global(.registration-capacity-control) {
+  border-color: rgba(174, 203, 228, 0.68);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 7px 18px rgba(8, 35, 63, 0.04);
+}
+
+.page :global(.registration-capacity-control:focus-within) {
+  border-color: #1688ff;
+  background: #fff;
+  box-shadow:
+    0 0 0 4px rgba(53, 212, 255, 0.11),
+    0 10px 24px rgba(22, 136, 255, 0.09);
+}
+
+.page :global(.registration-switch-row) {
+  border-color: rgba(174, 203, 228, 0.65);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 7px 18px rgba(8, 35, 63, 0.035);
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.page :global(.registration-switch-row:hover) {
+  border-color: rgba(22, 136, 255, 0.31);
+  background: #fff;
+  box-shadow: 0 11px 24px rgba(22, 136, 255, 0.075);
+}
+
+.page :global(.registration-switch-track) {
+  background: #b9c8d7;
+  box-shadow: inset 0 2px 5px rgba(8, 35, 63, 0.12);
+}
+
+.page :global(.registration-switch input:focus-visible + .registration-switch-track) {
+  outline: 3px solid rgba(53, 212, 255, 0.28);
+  outline-offset: 3px;
+}
+
+.page :global(.registration-switch input:checked + .registration-switch-track) {
+  background: linear-gradient(90deg, #0f72dc, #35d4ff);
+}
+
+.page :global(.registration-settings-save) {
+  border-top-color: rgba(183, 209, 231, 0.65);
+}
+
+.page :global(.registration-settings-save-btn) {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 13px;
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+}
+
+.page :global(.registration-settings-save-btn:hover:not(:disabled)) {
+  transform: translateY(-3px);
+}
+
+.statusSection {
+  margin-bottom: 26px;
+  padding: 24px;
+  border: 1px solid rgba(169, 205, 235, 0.56);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(247, 251, 255, 0.94));
+  box-shadow:
+    0 18px 48px rgba(8, 35, 63, 0.065),
+    inset 0 1px 0 #fff;
+}
+
+.statusSection > .sectionHeading {
+  margin-bottom: 18px;
+}
+
+.page :global(.activity-registration-stats) {
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 11px;
+  margin-bottom: 0;
+}
+
+.page :global(.activity-registration-stat) {
+  --status-accent: #1688ff;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 145px;
+  padding: 17px;
+  border-color: rgba(176, 205, 230, 0.57);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--status-accent) 10%, transparent), transparent 44%),
+    linear-gradient(145deg, #fff, #f8fbfe) !important;
+  box-shadow: 0 9px 23px rgba(8, 35, 63, 0.04);
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.28s ease,
+    box-shadow 0.28s ease;
+}
+
+.page :global(.activity-registration-stat)::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 18px;
+  width: 3px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--status-accent);
+}
+
+.page :global(.activity-registration-stat:hover) {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--status-accent) 34%, #c3d8e9);
+  box-shadow: 0 16px 32px color-mix(in srgb, var(--status-accent) 11%, transparent);
+}
+
+.page :global(.activity-registration-stat > span:not(.statusStatIcon)) {
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.page :global(.activity-registration-stat > strong) {
+  color: var(--status-accent) !important;
+  font-size: clamp(1.55rem, 3vw, 1.9rem);
+  line-height: 1.1;
+}
+
+.page :global(.activity-registration-stat > small) {
+  line-height: 1.55;
+}
+
+.statusStatIcon {
+  width: 36px;
+  height: 36px;
+  display: grid !important;
+  place-items: center;
+  margin-bottom: 3px;
+  border: 1px solid color-mix(in srgb, var(--status-accent) 17%, transparent);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--status-accent) 9%, #fff);
+  color: var(--status-accent) !important;
+}
+
+.statusStatTotal { --status-accent: #1688ff !important; }
+.statusStatPending { --status-accent: #d88813 !important; }
+.statusStatAccepted { --status-accent: #43a966 !important; }
+.attendanceStatPresent { --status-accent: #0f72dc !important; }
+.attendanceStatAbsent { --status-accent: #77869a !important; }
+.statusStatRejected { --status-accent: #c94a4a !important; }
+.statusStatSeats { --status-accent: #35a8cc !important; }
+
+.filtersPanel {
+  overflow: visible !important;
+  margin-bottom: 26px !important;
+  padding: 24px !important;
+  border-color: rgba(169, 205, 235, 0.56) !important;
+  border-radius: 24px !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.97), rgba(246, 251, 255, 0.95)) !important;
+  box-shadow:
+    0 18px 48px rgba(8, 35, 63, 0.065),
+    inset 0 1px 0 #fff;
+}
+
+.filtersPanel > .sectionHeading {
+  margin-bottom: 18px;
+}
+
+.page :global(.activity-registration-filter-form) {
+  grid-template-columns: minmax(250px, 2fr) minmax(155px, 0.8fr) minmax(155px, 0.8fr) auto auto;
+  align-items: end;
+  gap: 11px;
+}
+
+.searchField,
+.filterField {
+  min-width: 0;
+  display: grid !important;
+  gap: 7px !important;
+  color: #294763 !important;
+  font-size: 0.72rem !important;
+  font-weight: 850 !important;
+}
+
+.searchInputWrap {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.searchInputWrap > svg {
+  position: absolute;
+  z-index: 1;
+  inset-inline-start: 14px;
+  color: #6e8caa;
+  pointer-events: none;
+  transition: color 0.23s ease;
+}
+
+.page .searchInputWrap > input {
+  min-height: 48px;
+  padding-inline-start: 43px;
+  border-color: rgba(174, 203, 228, 0.7);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff, #f8fbfe);
+  box-shadow: 0 7px 18px rgba(8, 35, 63, 0.035);
+  transition:
+    border-color 0.23s ease,
+    box-shadow 0.23s ease,
+    background 0.23s ease;
+}
+
+.page .searchInputWrap:focus-within > input {
+  border-color: #1688ff;
+  background: #fff;
+  box-shadow:
+    0 0 0 4px rgba(53, 212, 255, 0.11),
+    0 11px 25px rgba(22, 136, 255, 0.08);
+}
+
+.searchInputWrap:focus-within > svg {
+  color: #1688ff;
+}
+
+.filterSelect {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.filterTrigger {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border: 1px solid rgba(174, 203, 228, 0.7);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff, #f8fbfe);
+  color: #294763;
+  box-shadow: 0 7px 18px rgba(8, 35, 63, 0.035);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-align: right;
+  cursor: pointer;
+  transition:
+    transform 0.23s ease,
+    border-color 0.23s ease,
+    box-shadow 0.23s ease,
+    background 0.23s ease;
+}
+
+.filterTrigger:hover {
+  transform: translateY(-1px);
+  border-color: rgba(22, 136, 255, 0.35);
+  background: #fff;
+  box-shadow: 0 11px 24px rgba(22, 136, 255, 0.09);
+}
+
+.filterSelectOpen .filterTrigger {
+  border-color: #1688ff;
+  background: #fff;
+  box-shadow:
+    0 0 0 4px rgba(53, 212, 255, 0.11),
+    0 12px 26px rgba(22, 136, 255, 0.1);
+}
+
+.filterTriggerLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filterChevron {
+  color: #1688ff;
+  transition: transform 0.22s ease;
+}
+
+.filterSelectOpen .filterChevron {
+  transform: rotate(180deg);
+}
+
+.filterDot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: #77869a;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.filterDotblue { background: #1688ff; color: #1688ff; }
+.filterDotgreen { background: #43a966; color: #43a966; }
+.filterDotorange { background: #d88813; color: #d88813; }
+.filterDotred { background: #c94a4a; color: #c94a4a; }
+.filterDotneutral { background: #77869a; color: #77869a; }
+
+.filterMenu {
+  z-index: 100000;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid rgba(169, 201, 228, 0.92);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(53, 212, 255, 0.1), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(246, 251, 255, 0.99));
+  box-shadow:
+    0 26px 60px rgba(5, 31, 61, 0.22),
+    0 7px 20px rgba(22, 136, 255, 0.09);
+  backdrop-filter: blur(18px);
+  animation: filterMenuIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.filterOption {
+  width: 100%;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 27px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: #36536d;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-align: right;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.filterOption:hover {
+  transform: translateX(-2px);
+  border-color: rgba(22, 136, 255, 0.14);
+  background: linear-gradient(90deg, #eef8ff, #f8fcff);
+}
+
+.filterOptionActive {
+  border-color: rgba(22, 136, 255, 0.22);
+  background: linear-gradient(135deg, rgba(22, 136, 255, 0.11), rgba(53, 212, 255, 0.07));
+  color: #0f72dc;
+}
+
+.filterCheck {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #fff;
+}
+
+.filterOptionActive .filterCheck {
+  background: linear-gradient(135deg, #1688ff, #35d4ff);
+  box-shadow: 0 5px 12px rgba(22, 136, 255, 0.19);
+}
+
+.filterApply,
+.filterClear {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 13px;
+  white-space: nowrap;
+}
+
+.filterClear {
+  border-color: rgba(174, 203, 228, 0.7) !important;
+  background: #fff !important;
+  color: #506b84 !important;
+}
+
+.filterClear:hover {
+  border-color: rgba(22, 136, 255, 0.35) !important;
+  color: #0f72dc !important;
+  box-shadow: 0 11px 24px rgba(22, 136, 255, 0.09);
+}
+
+.registrationsList {
+  gap: 14px;
+  margin: 0;
+  padding: 24px;
+  border: 1px solid rgba(169, 205, 235, 0.56);
+  border-radius: 25px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(243, 249, 255, 0.84));
+  box-shadow:
+    0 18px 48px rgba(8, 35, 63, 0.065),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+}
+
+.listHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 5px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(183, 209, 231, 0.62);
+}
+
+.resultsCount {
+  min-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #0f72dc;
+  font-size: 0.7rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.registrationCard {
+  border-color: rgba(174, 204, 229, 0.62) !important;
+  border-radius: 20px !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 254, 0.96)) !important;
+  box-shadow: 0 10px 28px rgba(8, 35, 63, 0.045) !important;
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.registrationCard:hover {
+  transform: translateY(-3px);
+  border-color: rgba(22, 136, 255, 0.31) !important;
+  box-shadow: 0 18px 40px rgba(8, 55, 96, 0.1) !important;
+}
+
+.page :global(.activity-registration-admin-card-head) {
+  padding: 20px 21px;
+}
+
+.page :global(.activity-registration-avatar) {
+  width: 49px;
+  height: 49px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 15px;
+  background: linear-gradient(135deg, #08233f, #1688ff 66%, #35d4ff);
+  box-shadow: 0 10px 22px rgba(15, 114, 220, 0.19);
+}
+
+.page :global(.activity-registration-student h2) {
+  color: #102f4d;
+  font-size: 0.96rem;
+}
+
+.page :global(.activity-registration-student-meta span) {
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: #f1f6fa;
+  color: #687e93;
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+
+.page :global(.activity-registration-status) {
+  min-height: 31px;
+  align-items: center;
+  border: 1px solid transparent;
+  font-weight: 850;
+}
+
+.page :global(.activity-registration-status.status-submitted) {
+  border-color: rgba(244, 163, 22, 0.18);
+  background: rgba(244, 163, 22, 0.09);
+}
+
+.page :global(.activity-registration-status.status-approved) {
+  border-color: rgba(67, 184, 107, 0.18);
+  background: rgba(67, 184, 107, 0.08);
+}
+
+.page :global(.activity-registration-status.status-rejected) {
+  border-color: rgba(201, 74, 74, 0.16);
+  background: rgba(201, 74, 74, 0.07);
+}
+
+.page :global(.activity-registration-answers) {
+  border-color: rgba(183, 209, 231, 0.65);
+  background: linear-gradient(180deg, rgba(244, 249, 253, 0.8), rgba(249, 252, 255, 0.72));
+}
+
+.page :global(.activity-registration-answers summary) {
+  position: relative;
+  padding: 15px 21px;
+  color: #0f72dc;
+  transition: background 0.22s ease;
+}
+
+.page :global(.activity-registration-answers summary:hover) {
+  background: rgba(22, 136, 255, 0.05);
+}
+
+.page :global(.activity-registration-answer) {
+  border-color: rgba(183, 209, 231, 0.62);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 1px 0 #fff;
+}
+
+.page :global(.activity-registration-review-actions) {
+  gap: 9px;
+  padding: 15px 20px 17px;
+  background: rgba(250, 252, 255, 0.72);
+}
+
+.page :global(.activity-registration-review-actions button) {
+  min-height: 40px;
+  border-radius: 11px;
+  font-weight: 850;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.page :global(.activity-registration-review-actions button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 20px rgba(8, 35, 63, 0.08);
+}
+
+.emptyState {
+  min-height: 250px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 34px 20px;
+  border: 1px dashed rgba(22, 136, 255, 0.24);
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(53, 212, 255, 0.1), transparent 30%),
+    rgba(248, 252, 255, 0.72);
+  text-align: center;
+}
+
+.emptyState > span {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 4px;
+  border: 1px solid rgba(22, 136, 255, 0.14);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #eaf6ff, #eafbff);
+  color: #1688ff;
+  box-shadow: 0 13px 28px rgba(22, 136, 255, 0.12);
+}
+
+.emptyState h2 {
+  margin: 0;
+  color: #102f4d;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.emptyState p {
+  max-width: 420px;
+  margin: 0;
+  color: #71859a;
+  font-size: 0.75rem;
+  line-height: 1.8;
+}
+
+.page :global(.admin-feedback) {
+  margin-bottom: 22px;
+  padding-block: 14px;
+  border-radius: 16px;
+  box-shadow: 0 13px 30px rgba(8, 35, 63, 0.07);
+}
+
+@keyframes filterMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-7px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 1100px) {
+  .page :global(.activity-registration-filter-form) {
+    grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(150px, 0.75fr));
+  }
+
+  .filterApply,
+  .filterClear {
+    width: 100%;
+  }
+}
+
+@media (max-width: 980px) {
+  .actionToolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+}
+
+@media (max-width: 760px) {
+  .hero {
+    border-radius: 23px;
+  }
+
+  .actionToolbar,
+  .statusSection,
+  .filtersPanel,
+  .registrationsList {
+    padding: 20px !important;
+    border-radius: 21px !important;
+  }
+
+  .page :global(.activity-registration-filter-form) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .searchField {
+    grid-column: 1 / -1;
+  }
+
+  .listHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .page :global(.activity-registration-settings-head),
+  .page :global(.activity-registration-settings-form) {
+    padding-inline: 20px;
+  }
+}
+
+@media (max-width: 560px) {
+  .page::before {
+    inset-inline: -11px;
+  }
+
+  .hero {
+    padding: 21px 17px;
+  }
+
+  .hero::after {
+    opacity: 0.65;
+  }
+
+  .heroMeta {
+    align-items: stretch;
+  }
+
+  .heroMeta > span {
+    width: 100%;
+  }
+
+  .toolbarHeading,
+  .summaryHeading,
+  .settingsHeading,
+  .sectionHeading {
+    align-items: flex-start;
+  }
+
+  .toolbarHeading > span,
+  .sectionIcon {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+    border-radius: 12px;
+  }
+
+  .headerActions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .headerActions > a,
+  .headerActions form,
+  .headerActions button {
+    width: 100%;
+  }
+
+  .activityResultsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overviewStat {
+    min-height: 126px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+    padding: 15px;
+  }
+
+  .overviewStatIcon {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+  }
+
+  .activityMetaRow > div {
+    flex-wrap: wrap;
+  }
+
+  .page :global(.activity-registration-filter-form) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .searchField {
+    grid-column: auto;
+  }
+
+  .filterApply,
+  .filterClear {
+    width: 100%;
+  }
+
+  .page :global(.activity-registration-admin-card-head) {
+    padding: 17px;
+  }
+
+  .page :global(.activity-registration-student) {
+    min-width: 0;
+    align-items: flex-start;
+  }
+
+  .page :global(.activity-registration-student > div:last-child) {
+    min-width: 0;
+  }
+
+  .page :global(.activity-registration-student-meta) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .page :global(.activity-registration-student-meta span) {
+    max-width: 100%;
+  }
+
+  .page :global(.activity-registration-review-actions) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-inline: 17px;
+  }
+
+  .page :global(.activity-registration-review-actions form),
+  .page :global(.activity-registration-review-actions button) {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .actionToolbar,
+  .statusSection,
+  .filtersPanel,
+  .registrationsList {
+    padding: 16px !important;
+  }
+
+  .activitySummary {
+    padding: 17px 15px;
+  }
+
+  .activityResultsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overviewStat {
+    min-height: 104px;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .page :global(.activity-registration-review-actions) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .attendanceRateHead {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backLink,
+  .headerActions a,
+  .headerActions button,
+  .overviewStat,
+  .overviewStatIcon,
+  .filterTrigger,
+  .filterChevron,
+  .filterMenu,
+  .filterOption,
+  .registrationCard,
+  .page :global(.registration-setting-box),
+  .page :global(.registration-switch-row),
+  .page :global(.activity-registration-review-actions button),
+  .attendanceProgress > span {
+    animation: none;
+    transition: none;
+  }
+}
+
+:global(html[data-theme="dark"]) .page {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .hero,
+:global(html[data-theme="dark"]) .activitySummary,
+:global(html[data-theme="dark"]) .filtersPanel,
+:global(html[data-theme="dark"]) .registrationCard {
+  border-color: var(--line);
+  background:
+    radial-gradient(circle at 92% 3%, rgb(22 136 255 / 14%), transparent 30%),
+    linear-gradient(145deg, var(--surface), var(--surface-2)) !important;
+  color: var(--ink);
+  box-shadow: var(--theme-shadow);
+}
+
+:global(html[data-theme="dark"]) .heroMeta > span,
+:global(html[data-theme="dark"]) .filterTrigger,
+:global(html[data-theme="dark"]) .filterMenu,
+:global(html[data-theme="dark"]) .filterClear,
+:global(html[data-theme="dark"]) .page .searchInputWrap > input,
+:global(html[data-theme="dark"]) .page :global(.registration-setting-box),
+:global(html[data-theme="dark"]) .page :global(.registration-capacity-control),
+:global(html[data-theme="dark"]) .page :global(.registration-switch-row),
+:global(html[data-theme="dark"]) .page :global(.activity-registration-stat),
+:global(html[data-theme="dark"]) .page :global(.activity-registration-answer) {
+  border-color: var(--line);
+  background: var(--surface-2) !important;
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .page :where(h1, h2, h3, strong, label) {
+  color: var(--ink);
+}
+
+:global(html[data-theme="dark"]) .page :where(p, small) {
+  color: var(--muted);
+}
+
+:global(html[data-theme="dark"]) .page::before {
+  background:
+    linear-gradient(rgba(53, 168, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(53, 168, 255, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 14% 8%, rgba(53, 212, 255, 0.09), transparent 27%),
+    radial-gradient(circle at 88% 34%, rgba(22, 136, 255, 0.08), transparent 31%),
+    #061a2b;
+}
+
+:global(html[data-theme="dark"]) .actionToolbar,
+:global(html[data-theme="dark"]) .settingsPanel,
+:global(html[data-theme="dark"]) .statusSection,
+:global(html[data-theme="dark"]) .filtersPanel,
+:global(html[data-theme="dark"]) .registrationsList {
+  border-color: #294d68 !important;
+  background:
+    radial-gradient(circle at 94% 2%, rgba(22, 136, 255, 0.12), transparent 30%),
+    linear-gradient(145deg, #0b2942, #081f33) !important;
+  box-shadow: 0 20px 48px rgba(0, 7, 13, 0.24) !important;
+}
+
+:global(html[data-theme="dark"]) .overviewStat,
+:global(html[data-theme="dark"]) .page :global(.activity-registration-stat) {
+  border-color: #315873 !important;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--stat-accent, var(--status-accent)) 13%, transparent), transparent 44%),
+    #0b2942 !important;
+  box-shadow: 0 10px 26px rgba(0, 8, 15, 0.2) !important;
+}
+
+:global(html[data-theme="dark"]) .overviewStatIcon,
+:global(html[data-theme="dark"]) .statusStatIcon {
+  background: color-mix(
+    in srgb,
+    var(--stat-accent, var(--status-accent)) 16%,
+    #0b2942
+  );
+  box-shadow: none;
+}
+
+:global(html[data-theme="dark"]) .toolbarHeading h2,
+:global(html[data-theme="dark"]) .sectionHeading h2,
+:global(html[data-theme="dark"]) .activitySummaryHead h2,
+:global(html[data-theme="dark"]) .emptyState h2,
+:global(html[data-theme="dark"]) .page :global(.activity-registration-settings-head h2),
+:global(html[data-theme="dark"]) .page :global(.activity-registration-student h2) {
+  color: #e5f1f9 !important;
+}
+
+:global(html[data-theme="dark"]) .toolbarHeading p,
+:global(html[data-theme="dark"]) .sectionHeading p,
+:global(html[data-theme="dark"]) .activitySummaryHead p,
+:global(html[data-theme="dark"]) .emptyState p,
+:global(html[data-theme="dark"]) .page :global(.activity-registration-settings-head p) {
+  color: #a8c0d3 !important;
+}
+
+:global(html[data-theme="dark"]) .toolbarHeading > span,
+:global(html[data-theme="dark"]) .sectionIcon,
+:global(html[data-theme="dark"]) .settingIcon,
+:global(html[data-theme="dark"]) .emptyState > span {
+  border-color: #315b79;
+  background: #103550 !important;
+  color: #65c7ff;
+  box-shadow: none;
+}
+
+:global(html[data-theme="dark"]) .secondaryAction,
+:global(html[data-theme="dark"]) .filterClear {
+  border-color: #35617f !important;
+  background: #0d304b !important;
+  color: #9bdcff !important;
+}
+
+:global(html[data-theme="dark"]) .page :global(.activity-registration-settings-head),
+:global(html[data-theme="dark"]) .page :global(.activity-registration-review-actions) {
+  border-color: #294d68;
+  background: #09243a !important;
+}
+
+:global(html[data-theme="dark"]) .page :global(.registration-setting-box),
+:global(html[data-theme="dark"]) .page :global(.registration-capacity-control),
+:global(html[data-theme="dark"]) .page :global(.registration-switch-row),
+:global(html[data-theme="dark"]) .page :global(.activity-registration-answer),
+:global(html[data-theme="dark"]) .page :global(.activity-registration-answers) {
+  border-color: #315873 !important;
+  background: #0a2942 !important;
+  box-shadow: none;
+}
+
+:global(html[data-theme="dark"]) .page :global(.activity-registration-student-meta span) {
+  background: #103550;
+  color: #b4cadb;
+}
+
+:global(html[data-theme="dark"]) .emptyState {
+  border-color: rgba(83, 183, 241, 0.35);
+  background:
+    radial-gradient(circle at 50% 38%, rgba(53, 212, 255, 0.08), transparent 30%),
+    #081f33;
+}
+
+/* RegistrationFilterSelect renders this menu in document.body. */
+:global(html[data-theme="dark"]) .filterMenu {
+  border-color: #315873;
+  background: #0a2439 !important;
+  scrollbar-color: #4d94c7 #071b2e;
+}
+
+:global(html[data-theme="dark"]) .filterOption {
+  color: #dcecf8 !important;
+}
+
+:global(html[data-theme="dark"]) .filterOption:hover,
+:global(html[data-theme="dark"]) .filterOptionActive {
+  border-color: #35617f;
+  background: #103550 !important;
+  color: #ffffff !important;
+}
+
+:global(html[data-theme="dark"]) .filterOptionActive .filterCheck {
+  background: linear-gradient(135deg, #1688ff, #35d4ff);
+  color: #ffffff;
+}
+
+:global(html[data-theme="dark"]) .searchField,
+:global(html[data-theme="dark"]) .filterField {
+  color: #d8e9f5 !important;
+}
+
+:global(html[data-theme="dark"]) .page .searchInputWrap > input,
+:global(html[data-theme="dark"]) .filterTrigger {
+  border-color: #315873;
+  background: #081f33 !important;
+  color: #e3f0f9 !important;
+}
+
+:global(html[data-theme="dark"]) .page .searchInputWrap > input::placeholder {
+  color: #8fa9bd !important;
+  opacity: 1;
+}
+
+:global(html[data-theme="dark"]) .backLink {
+  border-color: #376783;
+  background: #103550;
+  color: #8bd4ff !important;
+  box-shadow: 0 9px 22px rgba(0, 8, 15, 0.2);
+}
+
+:global(html[data-theme="dark"]) .backLink:hover {
+  border-color: #4da7dd;
+  background: #14415f;
+  color: #dff4ff !important;
+}
+
+:global(html[data-theme="dark"]) .activityMetaRow > div {
+  border-color: #35617f;
+  background: #0a2942;
+  color: #c5dae9;
+  box-shadow: none;
+}
+
+:global(html[data-theme="dark"]) .activityMetaValue {
+  color: #e1edf6;
+}
+
+:global(html[data-theme="dark"]) .activityMetaValue small {
+  color: #8fb0c7;
+}
+
+:global(html[data-theme="dark"]) .activityMetaRow button {
+  border-color: rgba(103, 199, 255, 0.35) !important;
+  background: rgba(22, 136, 255, 0.16) !important;
+  color: #8bd4ff !important;
+}
+
+:global(html[data-theme="dark"]) .overviewStat > div > span {
+  color: #bdd1df !important;
+  font-weight: 800;
+}
+
+:global(html[data-theme="dark"]) .overviewStat > div > strong {
+  color: var(--stat-accent) !important;
+  text-shadow: 0 0 18px color-mix(in srgb, var(--stat-accent) 22%, transparent);
+}
+
+:global(html[data-theme="dark"]) .attendanceRateBlock {
+  border-color: rgba(74, 211, 145, 0.32);
+  background: rgba(26, 113, 76, 0.16);
+}
+
+:global(html[data-theme="dark"]) .attendanceRateHead > div > strong {
+  color: #e1f4ec !important;
+}
+
+:global(html[data-theme="dark"]) .attendanceRateHead span {
+  color: #a8c9bc !important;
+}
+
+:global(html[data-theme="dark"]) .attendanceRateHead > strong {
+  color: #73e2aa !important;
+}
+
+:global(html[data-theme="dark"]) .attendanceProgress {
+  background: rgba(74, 211, 145, 0.18);
+}
+
+:global(html[data-theme="dark"]) .activityPublished {
+  border: 0;
+  background: transparent;
+  color: #78e8ad !important;
+}
+
+:global(html[data-theme="dark"]) .activityArchived {
+  border: 0;
+  background: transparent;
+  color: #cadbe7 !important;
+}
+
+:global(html[data-theme="dark"]) .page :global(.activity-registration-open-state.is-open) {
+  border: 0;
+  background: transparent !important;
+  color: #78e8ad !important;
+}
+
+:global(html[data-theme="dark"]) .page :global(.activity-registration-open-state.is-closed) {
+  border: 0;
+  background: transparent !important;
+  color: #ff9ca5 !important;
+}
+
+:global(html[data-theme="dark"]) .page :global(.registration-switch input:not(:checked) + .registration-switch-track) {
+  border: 1px solid #9b4b57;
+  background: #64343d !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.26);
+}
+
+:global(html[data-theme="dark"]) .page :global(.registration-switch input:checked + .registration-switch-track) {
+  border: 1px solid #35a8ff;
+  background: linear-gradient(90deg, #0f72dc, #35d4ff) !important;
+}
+
+:global(html[data-theme="dark"]) .page :global(.registration-switch-thumb) {
+  background: #f4f9fc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.38);
+}
+
+:global(html[data-theme="dark"]) .resultsCount {
+  border: 0 !important;
+  background: transparent !important;
+  color: #8bd4ff !important;
 }

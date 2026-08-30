@@ -1,10 +1,25 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
+import { activityDateTimeFromInput } from "@/lib/activities";
+import { tryDeleteActivityImages } from "@/lib/activity-image-storage";
+import {
+  getEmailValidationMessage,
+  validateEmail,
+} from "@/lib/email-validation";
+import {
+  createInitialEmailVerificationCode,
+  invalidateUndeliveredVerificationCode,
+} from "@/lib/email-verification";
+import {
+  assertEmailDeliveryConfigured,
+  sendEmailVerificationCode,
+} from "@/lib/mail";
 import {
   PERMISSIONS,
   canAccessActivityDepartments,
@@ -423,7 +438,7 @@ export async function createMember(
 
   return runAdminAction(
     "/admin/members",
-    "تم إنشاء حساب العضو بنجاح.",
+    "تم إنشاء حساب العضو وإرسال رمز التحقق إلى بريده بنجاح.",
     "تعذر إنشاء حساب العضو. تحقق من البيانات وحاول مجددًا.",
 
     async () => {
@@ -433,11 +448,24 @@ export async function createMember(
         "الاسم",
       );
 
-      const email = requiredText(
-        formData,
-        "email",
-        "البريد الإلكتروني",
-      ).toLowerCase();
+      const emailResult = validateEmail(
+        requiredText(
+          formData,
+          "email",
+          "البريد الإلكتروني",
+        ),
+      );
+
+      if (!emailResult.valid) {
+        throw new AdminActionError(
+          getEmailValidationMessage(
+            emailResult,
+          ) ??
+            "يرجى إدخال بريد إلكتروني صحيح.",
+        );
+      }
+
+      const email = emailResult.email;
 
       const password = String(
         formData.get("password") ?? "",
@@ -476,16 +504,6 @@ export async function createMember(
         );
       }
 
-      if (
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-          email,
-        )
-      ) {
-        throw new AdminActionError(
-          "أدخل بريدًا إلكترونيًا صالحًا.",
-        );
-      }
-
       if (password.length < 8) {
         throw new AdminActionError(
           "يجب ألا تقل كلمة المرور عن 8 أحرف.",
@@ -510,9 +528,12 @@ export async function createMember(
       );
 
       const existingUser =
-        await prisma.user.findUnique({
+        await prisma.user.findFirst({
           where: {
-            email,
+            email: {
+              equals: email,
+              mode: "insensitive",
+            },
           },
 
           select: {
@@ -532,17 +553,92 @@ export async function createMember(
           12,
         );
 
-      await prisma.user.create({
-        data: {
-          name,
-          email,
-          passwordHash,
-          role: "MEMBER",
-          position,
-          departmentId,
-          memberPermissions,
-        },
-      });
+      try {
+        assertEmailDeliveryConfigured();
+      } catch {
+        throw new AdminActionError(
+          "خدمة إرسال البريد غير مهيأة. لم يتم إنشاء حساب العضو.",
+        );
+      }
+
+      let registration:
+        | {
+            user: {
+              id: string;
+              email: string;
+              name: string;
+            };
+            verification: {
+              code: string;
+              codeHash: string;
+            };
+          }
+        | undefined;
+
+      try {
+        registration =
+          await prisma.$transaction(
+            async (transaction) => {
+              const user =
+                await transaction.user.create({
+                  data: {
+                    name,
+                    email,
+                    emailVerifiedAt: null,
+                    passwordHash,
+                    role: "MEMBER",
+                    position,
+                    departmentId,
+                    memberPermissions,
+                  },
+                  select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                  },
+                });
+
+              const verification =
+                await createInitialEmailVerificationCode(
+                  transaction,
+                  user.id,
+                );
+
+              return { user, verification };
+            },
+          );
+      } catch (error) {
+        if (
+          error instanceof
+            Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          throw new AdminActionError(
+            "هذا البريد الإلكتروني مستخدم بالفعل.",
+          );
+        }
+
+        throw error;
+      }
+
+      try {
+        await sendEmailVerificationCode({
+          email: registration.user.email,
+          name: registration.user.name,
+          code: registration.verification.code,
+        });
+      } catch {
+        await invalidateUndeliveredVerificationCode(
+          registration.user.id,
+          registration.verification.codeHash,
+        );
+
+        revalidatePath("/admin/members");
+
+        throw new AdminActionError(
+          "تم إنشاء حساب العضو، لكن تعذر إرسال رمز التحقق. يمكن للعضو طلب رمز جديد عند محاولة تسجيل الدخول.",
+        );
+      }
 
       revalidatePath(
         "/admin/members",
@@ -613,6 +709,8 @@ export async function updateMemberAccess(
           select: {
             id: true,
             role: true,
+            departmentId: true,
+            memberPermissions: true,
           },
         });
 
@@ -625,6 +723,15 @@ export async function updateMemberAccess(
         );
       }
 
+      const previousPermissions = [...member.memberPermissions].sort();
+      const nextPermissions = [...memberPermissions].sort();
+      const accessChanged =
+        member.departmentId !== departmentId ||
+        previousPermissions.length !== nextPermissions.length ||
+        previousPermissions.some(
+          (permission, index) => permission !== nextPermissions[index],
+        );
+
       await prisma.user.update({
         where: {
           id: memberId,
@@ -634,6 +741,9 @@ export async function updateMemberAccess(
           position,
           departmentId,
           memberPermissions,
+          ...(accessChanged
+            ? { sessionVersion: { increment: 1 } }
+            : {}),
         },
       });
 
@@ -695,13 +805,35 @@ export async function createActivity(
         "مكان النشاط",
       );
 
-      const startsAt = new Date(
-        requiredText(
-          formData,
-          "startsAt",
-          "تاريخ ووقت النشاط",
-        ),
+      const startDate = requiredText(
+        formData,
+        "startDate",
+        "تاريخ بداية النشاط",
       );
+
+      const startTime = requiredText(
+        formData,
+        "startTime",
+        "وقت بداية النشاط",
+      );
+
+      const startsAt = activityDateTimeFromInput(
+        startDate,
+        startTime,
+      );
+
+      const endDate = String(formData.get("endDate") ?? "").trim();
+      const endTime = String(formData.get("endTime") ?? "").trim();
+
+      if (Boolean(endDate) !== Boolean(endTime)) {
+        throw new AdminActionError(
+          "أدخل تاريخ ووقت نهاية النشاط معًا، أو اترك الحقلين فارغين.",
+        );
+      }
+
+      const endsAt = endDate && endTime
+        ? activityDateTimeFromInput(endDate, endTime)
+        : null;
 
       const capacity = Number(
         formData.get("capacity"),
@@ -788,13 +920,21 @@ export async function createActivity(
         );
       }
 
-      if (
-        Number.isNaN(
-          startsAt.getTime(),
-        )
-      ) {
+      if (!startsAt) {
         throw new AdminActionError(
-          "تاريخ النشاط غير صالح.",
+          "تاريخ أو وقت بداية النشاط غير صالح.",
+        );
+      }
+
+      if (endDate && endTime && !endsAt) {
+        throw new AdminActionError(
+          "تاريخ أو وقت نهاية النشاط غير صالح.",
+        );
+      }
+
+      if (endsAt && endsAt.getTime() <= startsAt.getTime()) {
+        throw new AdminActionError(
+          "يجب أن يكون موعد نهاية النشاط بعد موعد البداية.",
         );
       }
 
@@ -929,12 +1069,13 @@ export async function createActivity(
          CREATE EVERYTHING
       ============================================= */
 
-      await prisma.activity.create({
+      const activity = await prisma.activity.create({
         data: {
           title,
           description,
           location,
           startsAt,
+          endsAt,
           capacity,
 
           /*
@@ -1032,6 +1173,66 @@ export async function createActivity(
         },
       });
 
+      /*
+       * Notify students when a new activity is published.
+       * General activity => all students.
+       * Department activity => students in the selected departments.
+       */
+      if (
+        statusValue === "PUBLISHED"
+      ) {
+        const students =
+          await prisma.user.findMany({
+            where: {
+              role: "STUDENT",
+
+              ...(departmentIds.length > 0
+                ? {
+                    departmentId: {
+                      in: departmentIds,
+                    },
+                  }
+                : {}),
+            },
+
+            select: {
+              id: true,
+            },
+          });
+
+        if (students.length > 0) {
+          const activityDate =
+            new Intl.DateTimeFormat(
+              "ar-PS",
+              {
+                dateStyle: "medium",
+                timeStyle: "short",
+              },
+            ).format(startsAt);
+
+          await prisma.notification.createMany({
+            data: students.map(
+              (student) => ({
+                userId:
+                  student.id,
+
+                type:
+                  "ACTIVITY_NEW",
+
+                title:
+                  `نشاط جديد: ${title}`,
+
+                body:
+                  `${activityDate} · ${location}`,
+
+                href:
+                  `/activities/${activity.id}/register`,
+              }),
+            ),
+          });
+        }
+      }
+
       /* =============================================
          REVALIDATE
       ============================================= */
@@ -1042,6 +1243,10 @@ export async function createActivity(
       );
       revalidatePath(
         "/activities",
+      );
+
+      revalidatePath(
+        "/notifications",
       );
     },
   );
@@ -1080,6 +1285,14 @@ export async function deleteActivity(
           },
 
           select: {
+            coverImagePathname: true,
+
+            images: {
+              select: {
+                pathname: true,
+              },
+            },
+
             departments: {
               select: {
                 departmentId:
@@ -1109,6 +1322,14 @@ export async function deleteActivity(
           id,
         },
       });
+
+      await tryDeleteActivityImages(
+        [
+          activity.coverImagePathname,
+          ...activity.images.map(({ pathname }) => pathname),
+        ],
+        "delete-activity",
+      );
 
       revalidatePath("/");
       revalidatePath(

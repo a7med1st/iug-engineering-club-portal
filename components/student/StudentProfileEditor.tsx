@@ -5,6 +5,9 @@ import {
   useEffect,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
+
+import StudentAvatarEditor from "@/components/student/StudentAvatarEditor";
 
 import { useRouter } from "next/navigation";
 
@@ -12,6 +15,7 @@ import type { StudyLevel } from "@prisma/client";
 
 import {
   CalendarDays,
+  CircleCheck,
   GraduationCap,
   Hash,
   Mail,
@@ -36,6 +40,10 @@ type Props = {
   studyLevel: StudyLevel | null;
   departmentName: string;
   createdAtLabel: string;
+
+  initials: string;
+  hasAvatar: boolean;
+  avatarVersion: string;
 };
 
 const studyLevelLabels: Record<
@@ -63,6 +71,10 @@ export default function StudentProfileEditor({
   studyLevel,
   departmentName,
   createdAtLabel,
+
+  initials,
+  hasAvatar,
+  avatarVersion,
 }: Props) {
   const router = useRouter();
 
@@ -154,21 +166,11 @@ export default function StudentProfileEditor({
             }
           >
             <h2>{name}</h2>
-
-            <span
-              className={
-                styles.studentBadge
-              }
-            >
-              طالب
-            </span>
           </div>
 
           <button
             type="button"
-            className={
-              styles.editProfileButton
-            }
+            className={`${styles.editProfileButton} ${styles.dashboardActionButton}`}
             onClick={() =>
               setEditing(true)
             }
@@ -186,16 +188,23 @@ export default function StudentProfileEditor({
 
         {/* SUCCESS */}
 
-        {state.success &&
-          state.message && (
-            <div
-              className={
-                styles.profileSuccess
-              }
-            >
-              {state.message}
-            </div>
-          )}
+{state.success &&
+  state.message && (
+    <div
+      className={
+        styles.profileSuccess
+      }
+    >
+      <CircleCheck
+        size={19}
+        strokeWidth={2.4}
+      />
+
+      <span>
+        {state.message}
+      </span>
+    </div>
+  )}
 
         {/* DETAILS */}
 
@@ -269,8 +278,10 @@ export default function StudentProfileEditor({
           EDIT CARD
       ================================================== */}
 
-      {editing && (
-        <div
+      {editing &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
           className={
             styles.profileEditLayer
           }
@@ -280,6 +291,7 @@ export default function StudentProfileEditor({
               styles.profileEditCard
             }
             role="dialog"
+            aria-modal="true"
             aria-labelledby="student-profile-edit-title"
           >
             {/* HEADER */}
@@ -329,6 +341,13 @@ export default function StudentProfileEditor({
               </button>
             </div>
 
+
+<StudentAvatarEditor
+  name={name}
+  initials={initials}
+  hasAvatar={hasAvatar}
+  initialVersion={avatarVersion}
+/>
             {/* FORM */}
 
             <form
@@ -637,8 +656,9 @@ export default function StudentProfileEditor({
               </div>
             </form>
           </section>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
