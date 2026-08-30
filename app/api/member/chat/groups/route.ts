@@ -1,13 +1,10 @@
-import {
-  NextResponse,
-} from "next/server";
-
 import { authorizeApiPermission } from "@/lib/api-auth";
 
 import {
   getSystemGroupsForUser,
 } from "@/lib/chat-groups";
 import { PERMISSIONS } from "@/lib/permissions";
+import { privateNoStoreJson } from "@/lib/private-response";
 
 export const dynamic =
   "force-dynamic";
@@ -26,7 +23,7 @@ export async function GET() {
       auth.user.id,
     );
 
-  return NextResponse.json({
+  return privateNoStoreJson({
     ok: true,
 
     groups:

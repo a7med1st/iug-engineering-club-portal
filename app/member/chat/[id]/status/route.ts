@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { authorizeApiPermission } from "@/lib/api-auth";
 import { PERMISSIONS } from "@/lib/permissions";
+import { privateNoStoreJson } from "@/lib/private-response";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +58,7 @@ export async function GET(
     membership.conversation.participants[0]?.user;
 
   if (!partner) {
-    return NextResponse.json({
+    return privateNoStoreJson({
       ok: true,
       online: false,
       typing: false,
@@ -83,7 +84,7 @@ export async function GET(
         ONLINE_WINDOW_MS,
   );
 
-  return NextResponse.json({
+  return privateNoStoreJson({
     ok: true,
     online,
     typing: Boolean(typing && typing.expiresAt > now),
