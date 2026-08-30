@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getSession } from "@/lib/auth";
+import { privateNoStoreJson } from "@/lib/private-response";
 import { prisma } from "@/lib/prisma";
 import { rejectCrossOriginRequest } from "@/lib/request-security";
 
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     }),
   ]);
 
-  return NextResponse.json({
+  return privateNoStoreJson({
     ok: true,
     at: now.toISOString(),
   });

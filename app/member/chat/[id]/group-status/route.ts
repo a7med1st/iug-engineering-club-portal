@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authorizeApiPermission } from "@/lib/api-auth";
 import { PERMISSIONS } from "@/lib/permissions";
+import { privateNoStoreJson } from "@/lib/private-response";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +42,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const seen = p.user.chatLastSeenAt;
     return Boolean(seen && now.getTime() - seen.getTime() <= ONLINE_MS);
   }).length;
-  return NextResponse.json({
+  return privateNoStoreJson({
     ok: true,
     typingNames: typing.map((x) => x.user.name),
     onlineCount,

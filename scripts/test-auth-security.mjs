@@ -1,4 +1,5 @@
 import { randomInt } from "node:crypto";
+import { readFile } from "node:fs/promises";
 
 import { PrismaClient } from "@prisma/client";
 import { SignJWT } from "jose";
@@ -212,6 +213,61 @@ async function main() {
     `status=${adminResponse.status}`,
   );
   await adminResponse.arrayBuffer();
+
+  const notificationsResponse = await request(
+    "/api/notifications?limit=10",
+    { token: adminToken },
+  );
+  record(
+    "Private notifications cache control",
+    notificationsResponse.status === 200 &&
+      notificationsResponse.headers.get("cache-control") ===
+        "private, no-store" &&
+      (notificationsResponse.headers.get("content-type") ?? "").startsWith(
+        "application/json",
+      ),
+    `status=${notificationsResponse.status} cache-control=${notificationsResponse.headers.get("cache-control")}`,
+  );
+  await notificationsResponse.arrayBuffer();
+
+  const chatGroupsResponse = await request("/api/member/chat/groups", {
+    token: memberToken,
+  });
+  record(
+    "Private chat groups cache control",
+    chatGroupsResponse.status === 200 &&
+      chatGroupsResponse.headers.get("cache-control") ===
+        "private, no-store" &&
+      (chatGroupsResponse.headers.get("content-type") ?? "").startsWith(
+        "application/json",
+      ),
+    `status=${chatGroupsResponse.status} cache-control=${chatGroupsResponse.headers.get("cache-control")}`,
+  );
+  await chatGroupsResponse.arrayBuffer();
+
+  const additionalPrivateRoutes = [
+    "app/api/member/presence/route.ts",
+    "app/member/chat/[id]/typing/route.ts",
+    "app/member/chat/[id]/group-status/route.ts",
+    "app/member/chat/[id]/status/route.ts",
+    "app/member/chat/[id]/read/route.ts",
+  ];
+  const missingPrivateCacheGuards = [];
+
+  for (const routePath of additionalPrivateRoutes) {
+    const source = await readFile(routePath, "utf8");
+    if (!source.includes("privateNoStoreJson(")) {
+      missingPrivateCacheGuards.push(routePath);
+    }
+  }
+
+  record(
+    "Additional private API cache guards",
+    missingPrivateCacheGuards.length === 0,
+    missingPrivateCacheGuards.length === 0
+      ? `${additionalPrivateRoutes.length}/${additionalPrivateRoutes.length} guarded`
+      : `missing=${missingPrivateCacheGuards.join(",")}`,
+  );
 
   const crossOriginResponse = await fetch(
     new URL("/api/notifications", baseUrl),

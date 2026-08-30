@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { authorizeApiPermission } from "@/lib/api-auth";
 import { PERMISSIONS } from "@/lib/permissions";
+import { privateNoStoreJson } from "@/lib/private-response";
 import { prisma } from "@/lib/prisma";
 import { rejectCrossOriginRequest } from "@/lib/request-security";
 
@@ -55,7 +56,7 @@ export async function POST(
       },
     });
 
-    return NextResponse.json({ ok: true });
+    return privateNoStoreJson({ ok: true });
   }
 
   const expiresAt = new Date(Date.now() + 4_000);
@@ -75,7 +76,7 @@ export async function POST(
     update: { expiresAt },
   });
 
-  return NextResponse.json({
+  return privateNoStoreJson({
     ok: true,
     expiresAt: expiresAt.toISOString(),
   });
