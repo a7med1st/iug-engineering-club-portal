@@ -28,7 +28,6 @@ const nonceStyleFiles = [
 
 const directStyleFiles = [
   "components/admin/ActivityFormBuilder.tsx",
-  "components/admin/AdminFeedback.tsx",
   "components/admin/DepartmentGuideEditor.tsx",
   "components/admin/DepartmentSelect.tsx",
   "components/admin/StructureSelect.tsx",
@@ -211,7 +210,22 @@ async function main() {
     knownInlineStyleBlocks += styleTags.length;
   }
 
-  assert.equal(knownInlineStyleBlocks, 12);
+  assert.equal(knownInlineStyleBlocks, 11);
+
+  const adminFeedback = await readFile(
+    "components/admin/AdminFeedback.tsx",
+    "utf8",
+  );
+  assert.match(adminFeedback, /import styles from "\.\/AdminFeedback\.module\.css"/);
+  assert.ok(!/<style\b/i.test(adminFeedback));
+  assert.ok(!/styled-jsx|useCspNonce/.test(adminFeedback));
+
+  const adminFeedbackStyles = await readFile(
+    "components/admin/AdminFeedback.module.css",
+    "utf8",
+  );
+  assert.match(adminFeedbackStyles, /\.feedback\s*\{/);
+  assert.match(adminFeedbackStyles, /@keyframes feedbackCountdown/);
 
   const nonceComponent = await readFile(
     "components/security/CspNonce.tsx",

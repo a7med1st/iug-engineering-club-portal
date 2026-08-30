@@ -105,9 +105,15 @@ export async function putPublicBlob(
 
 export async function getPrivateBlob(
   pathname: string,
+  options?: {
+    abortSignal?: AbortSignal;
+    useCache?: boolean;
+  },
 ): Promise<GetBlobResult | null> {
   return get(pathname, {
     access: "private",
+    abortSignal: options?.abortSignal,
+    useCache: options?.useCache,
     ...requirePrivateBlobReadAuth(),
   });
 }
