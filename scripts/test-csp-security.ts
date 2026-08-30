@@ -28,7 +28,6 @@ const nonceStyleFiles = [
 
 const directStyleFiles = [
   "components/admin/ActivityFormBuilder.tsx",
-  "components/admin/AdminFeedback.tsx",
   "components/admin/DepartmentGuideEditor.tsx",
   "components/admin/DepartmentSelect.tsx",
   "components/admin/StructureSelect.tsx",
@@ -141,8 +140,30 @@ async function main() {
     const productionResponse = middleware(
       new NextRequest("https://production.example/"),
     );
+    const productionPolicy = productionResponse.headers.get(CSP_HEADER);
     assert.equal(productionResponse.headers.get(CSP_REPORT_ONLY_HEADER), null);
-    assert.equal(productionResponse.headers.get(CSP_HEADER), null);
+    assert.ok(productionPolicy);
+    assert.equal(
+      directive(productionPolicy, "img-src"),
+      `img-src 'self' data: blob: ${VERIFIED_PUBLIC_BLOB_ORIGIN}`,
+    );
+    assert.equal(
+      directive(productionPolicy, "media-src"),
+      "media-src 'self' blob:",
+    );
+    assert.ok(
+      !directive(productionPolicy, "script-src")?.includes("'unsafe-inline'"),
+    );
+    assert.ok(
+      !directive(productionPolicy, "script-src")?.includes("'unsafe-eval'"),
+    );
+    assert.ok(!productionPolicy.includes("*.blob.vercel-storage.com"));
+    assert.ok(!productionPolicy.includes("store_"));
+    assert.ok(
+      productionResponse.headers.get(
+        "x-middleware-request-content-security-policy",
+      ),
+    );
 
     Reflect.set(process.env, "NODE_ENV", "development");
     const localDevelopmentResponse = middleware(
@@ -211,7 +232,22 @@ async function main() {
     knownInlineStyleBlocks += styleTags.length;
   }
 
-  assert.equal(knownInlineStyleBlocks, 12);
+  assert.equal(knownInlineStyleBlocks, 11);
+
+  const adminFeedback = await readFile(
+    "components/admin/AdminFeedback.tsx",
+    "utf8",
+  );
+  assert.match(adminFeedback, /import styles from "\.\/AdminFeedback\.module\.css"/);
+  assert.ok(!/<style\b/i.test(adminFeedback));
+  assert.ok(!/styled-jsx|useCspNonce/.test(adminFeedback));
+
+  const adminFeedbackStyles = await readFile(
+    "components/admin/AdminFeedback.module.css",
+    "utf8",
+  );
+  assert.match(adminFeedbackStyles, /\.feedback\s*\{/);
+  assert.match(adminFeedbackStyles, /@keyframes feedbackCountdown/);
 
   const nonceComponent = await readFile(
     "components/security/CspNonce.tsx",

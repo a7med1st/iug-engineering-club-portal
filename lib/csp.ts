@@ -94,7 +94,10 @@ export function cspEnvironment() {
       header: CSP_REPORT_ONLY_HEADER,
     };
   }
-  if (process.env.VERCEL_ENV === "preview") {
+  if (
+    process.env.VERCEL_ENV === "preview" ||
+    process.env.VERCEL_ENV === "production"
+  ) {
     return {
       development: false,
       header: CSP_HEADER,

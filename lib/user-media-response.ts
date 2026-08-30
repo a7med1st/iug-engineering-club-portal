@@ -18,7 +18,10 @@ export async function userImageResponse(options: {
   };
 
   if (options.storedName.startsWith("user-media/")) {
-    const blob = await getPrivateBlob(options.storedName);
+    const blob = await getPrivateBlob(options.storedName, {
+      abortSignal: AbortSignal.timeout(15_000),
+      useCache: false,
+    });
     return privateFileResponse(blob, {
       fallbackMime: options.mime,
       originalName: "image",

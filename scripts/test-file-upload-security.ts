@@ -324,7 +324,9 @@ async function main() {
 
   assert.match(blobStorage, /requirePrivateBlobReadAuth/);
   assert.match(blobStorage, /return \{ storeId: auth\.storeId, oidcToken \}/);
-  assert.match(userMediaResponse, /getPrivateBlob\(options\.storedName\)/);
+  assert.match(userMediaResponse, /getPrivateBlob\(options\.storedName,\s*\{/);
+  assert.match(userMediaResponse, /abortSignal:\s*AbortSignal\.timeout\(15_000\)/);
+  assert.match(userMediaResponse, /useCache:\s*false/);
   assert.match(userMediaResponse, /privateFileResponse\(blob/);
   assert.match(chatStorage, /putPrivateBlob/);
   assert.match(chatStorage, /url:\s*null/);
