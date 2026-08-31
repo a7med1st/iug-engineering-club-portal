@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 
 import { Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -16,7 +16,7 @@ function emailArgument() {
 
 async function main() {
   const email = emailArgument();
-  const password = (await readFile(0, "utf8")).replace(/[\r\n]+$/, "");
+  const password = readFileSync(0, "utf8").replace(/[\r\n]+$/, "");
   if (password.length < 12) {
     throw new Error("The admin password must contain at least 12 characters.");
   }
