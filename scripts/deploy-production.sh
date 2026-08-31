@@ -15,7 +15,12 @@ if [[ ! "$commit_sha" =~ ^[0-9a-f]{40}$ ]]; then
   exit 2
 fi
 
-mkdir -p "$releases_dir" "$shared_dir"
+mkdir -p \
+  "$releases_dir" \
+  "$shared_dir" \
+  "$shared_dir/storage/public" \
+  "$shared_dir/storage/private"
+chmod 700 "$shared_dir/storage" "$shared_dir/storage/public" "$shared_dir/storage/private"
 
 if [[ ! -f "$shared_dir/.env" ]]; then
   echo "Missing production environment file: $shared_dir/.env" >&2

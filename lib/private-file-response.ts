@@ -1,4 +1,5 @@
 import type { GetBlobResult } from "@vercel/blob";
+import type { StoredFileResult } from "@/lib/blob-storage";
 
 const MIME_PATTERN = /^[a-z0-9][a-z0-9!#$&^_.+-]*\/[a-z0-9][a-z0-9!#$&^_.+-]*$/i;
 
@@ -24,13 +25,19 @@ export function isSafeInlineMime(mime: string) {
 }
 
 function resolvedMime(blobMime: string | null, fallbackMime: string) {
-  if (blobMime && MIME_PATTERN.test(blobMime)) return blobMime;
+  if (
+    blobMime &&
+    blobMime !== "application/octet-stream" &&
+    MIME_PATTERN.test(blobMime)
+  ) {
+    return blobMime;
+  }
   if (MIME_PATTERN.test(fallbackMime)) return fallbackMime;
   return "application/octet-stream";
 }
 
 export function privateFileResponse(
-  result: GetBlobResult | null,
+  result: GetBlobResult | StoredFileResult | null,
   options: {
     fallbackMime: string;
     originalName: string;

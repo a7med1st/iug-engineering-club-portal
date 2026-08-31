@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 
 import type { GetBlobResult } from "@vercel/blob";
@@ -8,6 +9,12 @@ import sharp from "sharp";
 import { rateLimitResponse } from "../lib/auth-rate-limit";
 import {
   BlobStorageConfigurationError,
+  deletePrivateBlobs,
+  deletePublicBlobs,
+  getPrivateBlob,
+  getPublicBlob,
+  putPrivateBlob,
+  putPublicBlob,
   requirePrivateBlobAuth,
   requirePrivateBlobReadAuth,
   requirePublicBlobAuth,
@@ -56,6 +63,8 @@ async function main() {
     "BLOB_PUBLIC_READ_WRITE_TOKEN",
     "BLOB_PRIVATE_READ_WRITE_TOKEN",
     "BLOB_READ_WRITE_TOKEN",
+    "FILE_STORAGE_DRIVER",
+    "LOCAL_STORAGE_ROOT",
   ] as const;
   const originalBlobEnvironment = Object.fromEntries(
     blobEnvironmentNames.map((name) => [name, process.env[name]]),
@@ -102,6 +111,54 @@ async function main() {
       if (value === undefined) delete process.env[name];
       else Object.assign(process.env, { [name]: value });
     }
+  }
+
+  const localStorageRoot = await mkdtemp(path.join(os.tmpdir(), "iug-storage-test-"));
+  try {
+    process.env.FILE_STORAGE_DRIVER = "local";
+    process.env.LOCAL_STORAGE_ROOT = localStorageRoot;
+
+    const privatePut = await putPrivateBlob(
+      "user-media/test/avatar/file.png",
+      Buffer.from("private-file"),
+      "image/png",
+    );
+    assert.equal(privatePut.pathname, "user-media/test/avatar/file.png");
+    const privateGet = await getPrivateBlob(privatePut.pathname);
+    assert.equal(privateGet?.statusCode, 200);
+    assert.equal(
+      Buffer.from(await new Response(privateGet?.stream).arrayBuffer()).toString(),
+      "private-file",
+    );
+
+    const publicPut = await putPublicBlob(
+      "activity-images/test/cover/file.webp",
+      Buffer.from("public-file"),
+      "image/webp",
+    );
+    assert.equal(publicPut.url, "/uploads/activity-images/test/cover/file.webp");
+    assert.equal((await getPublicBlob(publicPut.pathname))?.statusCode, 200);
+
+    await assert.rejects(
+      putPrivateBlob("../escape.txt", Buffer.from("bad"), "text/plain"),
+      /Invalid storage pathname/,
+    );
+    await assert.rejects(
+      putPublicBlob("activity-images\\escape.png", Buffer.from("bad"), "image/png"),
+      /Invalid storage pathname/,
+    );
+
+    await deletePrivateBlobs([privatePut.pathname]);
+    await deletePublicBlobs([publicPut.pathname]);
+    assert.equal(await getPrivateBlob(privatePut.pathname), null);
+    assert.equal(await getPublicBlob(publicPut.pathname), null);
+  } finally {
+    for (const name of ["FILE_STORAGE_DRIVER", "LOCAL_STORAGE_ROOT"] as const) {
+      const value = originalBlobEnvironment[name];
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+    await rm(localStorageRoot, { recursive: true, force: true });
   }
 
   const jpegBuffer = await sharp({

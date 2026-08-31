@@ -7,6 +7,9 @@ import {
   type HeadBlobResult,
   type PutCommandOptions,
 } from "@vercel/blob";
+import { randomUUID } from "node:crypto";
+import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 export class BlobStorageConfigurationError extends Error {
   constructor(message: string) {
@@ -17,9 +20,135 @@ export class BlobStorageConfigurationError extends Error {
 
 type BlobAuthOptions = Pick<PutCommandOptions, "oidcToken" | "storeId" | "token">;
 
+export type StoredFileResult = {
+  statusCode: number;
+  stream: ReadableStream<Uint8Array> | null;
+  blob: { contentType: string | null };
+  headers: Headers;
+};
+
 function configuredValue(name: string) {
   const value = process.env[name]?.trim();
   return value || null;
+}
+
+function usesLocalStorage() {
+  return configuredValue("FILE_STORAGE_DRIVER") === "local";
+}
+
+function requireLocalRoot() {
+  const configured = configuredValue("LOCAL_STORAGE_ROOT");
+  if (!configured || !path.isAbsolute(configured)) {
+    throw new BlobStorageConfigurationError(
+      "Local file storage requires an absolute LOCAL_STORAGE_ROOT path.",
+    );
+  }
+  return path.resolve(configured);
+}
+
+function safeStoragePath(scope: "private" | "public", pathname: string) {
+  if (
+    !pathname ||
+    pathname.includes("\\") ||
+    pathname.includes("\0") ||
+    path.posix.isAbsolute(pathname)
+  ) {
+    throw new Error("Invalid storage pathname.");
+  }
+
+  const segments = pathname.split("/");
+  if (segments.some((segment) => !segment || segment === "." || segment === "..")) {
+    throw new Error("Invalid storage pathname.");
+  }
+
+  const scopeRoot = path.join(requireLocalRoot(), scope);
+  const target = path.resolve(scopeRoot, ...segments);
+  if (!target.startsWith(`${scopeRoot}${path.sep}`)) {
+    throw new Error("Invalid storage pathname.");
+  }
+  return target;
+}
+
+async function bodyBuffer(body: Buffer | Blob | File) {
+  return Buffer.isBuffer(body) ? body : Buffer.from(await body.arrayBuffer());
+}
+
+async function putLocalFile(
+  scope: "private" | "public",
+  pathname: string,
+  body: Buffer | Blob | File,
+  contentType: string,
+  allowOverwrite = false,
+) {
+  const target = safeStoragePath(scope, pathname);
+  await mkdir(path.dirname(target), { recursive: true, mode: 0o700 });
+  const temporary = `${target}.${randomUUID()}.tmp`;
+  await writeFile(temporary, await bodyBuffer(body), { flag: "wx", mode: 0o600 });
+
+  try {
+    if (!allowOverwrite) {
+      try {
+        await stat(target);
+        throw new Error("A file already exists at this storage pathname.");
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+    }
+    await rename(temporary, target);
+  } catch (error) {
+    await unlink(temporary).catch(() => undefined);
+    throw error;
+  }
+
+  return {
+    pathname,
+    contentType,
+    url:
+      scope === "public"
+        ? `/uploads/${pathname.split("/").map(encodeURIComponent).join("/")}`
+        : "",
+  };
+}
+
+function mimeFromPathname(pathname: string) {
+  const extension = path.extname(pathname).toLowerCase();
+  return ({
+    ".avif": "image/avif",
+    ".gif": "image/gif",
+    ".jpeg": "image/jpeg",
+    ".jpg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+  } as Record<string, string>)[extension] ?? "application/octet-stream";
+}
+
+async function getLocalFile(
+  scope: "private" | "public",
+  pathname: string,
+): Promise<StoredFileResult | null> {
+  try {
+    const target = safeStoragePath(scope, pathname);
+    const [data, fileStat] = await Promise.all([readFile(target), stat(target)]);
+    const headers = new Headers({
+      "content-length": String(fileStat.size),
+      "last-modified": fileStat.mtime.toUTCString(),
+    });
+    return {
+      statusCode: 200,
+      stream: new Blob([new Uint8Array(data)]).stream(),
+      blob: { contentType: mimeFromPathname(pathname) },
+      headers,
+    };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+export function requirePublicStorage() {
+  if (usesLocalStorage()) return requireLocalRoot();
+  requirePublicBlobAuth();
+  return "vercel-blob";
 }
 
 function requireBlobAuth(options: {
@@ -95,6 +224,15 @@ export async function putPrivateBlob(
   contentType: string,
   options?: { allowOverwrite?: boolean },
 ) {
+  if (usesLocalStorage()) {
+    return putLocalFile(
+      "private",
+      pathname,
+      body,
+      contentType,
+      options?.allowOverwrite,
+    );
+  }
   return put(pathname, body, {
     access: "private",
     addRandomSuffix: false,
@@ -110,6 +248,9 @@ export async function putPublicBlob(
   contentType: string,
   cacheControlMaxAge?: number,
 ) {
+  if (usesLocalStorage()) {
+    return putLocalFile("public", pathname, body, contentType);
+  }
   return put(pathname, body, {
     access: "public",
     addRandomSuffix: false,
@@ -125,7 +266,8 @@ export async function getPrivateBlob(
     abortSignal?: AbortSignal;
     useCache?: boolean;
   },
-): Promise<GetBlobResult | null> {
+): Promise<GetBlobResult | StoredFileResult | null> {
+  if (usesLocalStorage()) return getLocalFile("private", pathname);
   return get(pathname, {
     access: "private",
     abortSignal: options?.abortSignal,
@@ -135,7 +277,26 @@ export async function getPrivateBlob(
 }
 
 export async function headPrivateBlob(pathname: string): Promise<HeadBlobResult> {
+  if (usesLocalStorage()) {
+    const target = safeStoragePath("private", pathname);
+    const fileStat = await stat(target);
+    return {
+      pathname,
+      url: "",
+      downloadUrl: "",
+      contentType: mimeFromPathname(pathname),
+      contentDisposition: "attachment",
+      size: fileStat.size,
+      uploadedAt: fileStat.mtime,
+      cacheControl: "private, no-store",
+    } as HeadBlobResult;
+  }
   return head(pathname, requirePrivateBlobReadAuth());
+}
+
+export async function getPublicBlob(pathname: string) {
+  if (!usesLocalStorage()) return null;
+  return getLocalFile("public", pathname);
 }
 
 export function logPrivateBlobReadError(options: {
@@ -163,6 +324,17 @@ export async function deletePrivateBlobs(
   const unique = [...new Set(pathnames.filter((value): value is string => Boolean(value)))];
   if (unique.length === 0) return;
 
+  if (usesLocalStorage()) {
+    await Promise.all(
+      unique.map((pathname) =>
+        unlink(safeStoragePath("private", pathname)).catch((error) => {
+          if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+        }),
+      ),
+    );
+    return;
+  }
+
   await del(unique, requirePrivateBlobAuth());
 }
 
@@ -171,6 +343,17 @@ export async function deletePublicBlobs(
 ) {
   const unique = [...new Set(pathnames.filter((value): value is string => Boolean(value)))];
   if (unique.length === 0) return;
+
+  if (usesLocalStorage()) {
+    await Promise.all(
+      unique.map((pathname) =>
+        unlink(safeStoragePath("public", pathname)).catch((error) => {
+          if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+        }),
+      ),
+    );
+    return;
+  }
 
   await del(unique, requirePublicBlobAuth());
 }

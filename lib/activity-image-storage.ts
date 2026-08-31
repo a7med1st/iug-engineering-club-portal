@@ -4,7 +4,7 @@ import { ACTIVITY_IMAGE_MAX_BYTES } from "@/lib/activity-image-constants";
 import {
   deletePublicBlobs,
   putPublicBlob,
-  requirePublicBlobAuth,
+  requirePublicStorage,
 } from "@/lib/blob-storage";
 import {
   UploadValidationError,
@@ -21,12 +21,12 @@ export type StoredActivityImage = {
   size: number;
 };
 
-function requireBlobToken() {
+function requireActivityStorage() {
   try {
-    requirePublicBlobAuth();
+    requirePublicStorage();
   } catch {
     throw new ActivityImageStorageError(
-      "تخزين صور الأنشطة غير مهيأ. أضف إعدادات Vercel Blob العامة إلى متغيرات البيئة.",
+      "تخزين صور الأنشطة غير مهيأ. راجع إعدادات تخزين الملفات في متغيرات البيئة.",
     );
   }
 }
@@ -53,7 +53,7 @@ export async function uploadActivityImage(
   activityId: string,
   kind: "cover" | "gallery",
 ): Promise<StoredActivityImage> {
-  requireBlobToken();
+  requireActivityStorage();
   const validated = await validateActivityImage(file);
   const pathname = `activity-images/${activityId}/${kind}/${randomUUID()}${validated.extension}`;
   const blob = await putPublicBlob(
@@ -85,7 +85,7 @@ export async function deleteActivityImages(
 
   if (safePathnames.length === 0) return;
 
-  requireBlobToken();
+  requireActivityStorage();
   await deletePublicBlobs(safePathnames);
 }
 
