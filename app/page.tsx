@@ -51,11 +51,11 @@ export default async function HomePage() {
     <>
       <section className="hero">
         <div className="shell hero-grid">
-          <div className="hero-copy">
+          <div className="hero-copy" data-reveal="up">
             <h1>
               هندسة تبدأ من <span>الطالب</span>
               <br />
-              وتصل إلى الأثر.
+              وتصل إلى <span className="hero-impact-word">الأثر</span>.
             </h1>
 
             <p>
@@ -82,28 +82,16 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="campus-mosaic">
+          <div className="hero-logo-area">
+            <div className="hero-logo-glow" />
+
             <Image
-              className="main"
-              src="/images/campus/campus-1.webp"
-              width={640}
-              height={430}
-              alt="الجامعة الإسلامية بغزة"
+              className="hero-floating-logo"
+              src="/images/eng-logo.png"
+              width={520}
+              height={520}
+              alt="شعار النادي الهندسي"
               priority
-            />
-
-            <Image
-              src="/images/campus/campus-2.webp"
-              width={547}
-              height={365}
-              alt="حرم الجامعة الإسلامية بغزة"
-            />
-
-            <Image
-              src="/images/campus/campus-3.webp"
-              width={640}
-              height={362}
-              alt="مدخل الجامعة الإسلامية بغزة"
             />
           </div>
         </div>
@@ -137,43 +125,49 @@ export default async function HomePage() {
           </div>
 
           <div className="feature-grid">
-            <div className="feature-card">
-              <div className="feature-icon">
-                <CalendarCheck2 />
+            <div className="feature-card-reveal">
+              <div className="feature-card">
+                <div className="feature-icon">
+                  <CalendarCheck2 />
+                </div>
+
+                <h3>أنشطة النادي</h3>
+
+                <p>
+                  عرض الأنشطة الجارية والمنتهية، مع تفاصيل القسم، الموعد،
+                  المكان، السعة ورابط التسجيل.
+                </p>
               </div>
-
-              <h3>أنشطة النادي</h3>
-
-              <p>
-                عرض الأنشطة الجارية والمنتهية، مع تفاصيل القسم، الموعد،
-                المكان، السعة ورابط التسجيل.
-              </p>
             </div>
 
-            <div className="feature-card">
-              <div className="feature-icon">
-                <GraduationCap />
+            <div className="feature-card-reveal">
+              <div className="feature-card">
+                <div className="feature-icon">
+                  <GraduationCap />
+                </div>
+
+                <h3>دليل الأقسام</h3>
+
+                <p>
+                  محتوى قابل للإدارة يغطي طبيعة التخصص، مجالات العمل،
+                  المهارات، الفروقات والأسئلة الشائعة.
+                </p>
               </div>
-
-              <h3>دليل الأقسام</h3>
-
-              <p>
-                محتوى قابل للإدارة يغطي طبيعة التخصص، مجالات العمل،
-                المهارات، الفروقات والأسئلة الشائعة.
-              </p>
             </div>
 
-            <div className="feature-card">
-              <div className="feature-icon">
-                <UsersRound />
+            <div className="feature-card-reveal">
+              <div className="feature-card">
+                <div className="feature-icon">
+                  <UsersRound />
+                </div>
+
+                <h3>هيكلية النادي</h3>
+
+                <p>
+                  صفحة واضحة تعرف الطالب بالمناديب والهيكلية العامة للنادي
+                  الهندسي.
+                </p>
               </div>
-
-              <h3>هيكلية النادي</h3>
-
-              <p>
-                صفحة واضحة تعرف الطالب بالمناديب والهيكلية العامة للنادي
-                الهندسي.
-              </p>
             </div>
           </div>
         </div>

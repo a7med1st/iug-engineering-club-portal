@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSession } from "@/lib/auth";
+import { authorizeAuthenticatedApi } from "@/lib/api-auth";
 import { privateNoStoreJson } from "@/lib/private-response";
 import { prisma } from "@/lib/prisma";
 import { rejectCrossOriginRequest } from "@/lib/request-security";
@@ -22,21 +22,15 @@ function parseLimit(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const session = await getSession();
-
-  if (!session) {
-    return NextResponse.json(
-      { ok: false },
-      { status: 401 },
-    );
-  }
+  const auth = await authorizeAuthenticatedApi();
+  if (!auth.authorized) return auth.response;
 
   const limit = parseLimit(request);
 
   const [items, unreadCount] = await prisma.$transaction([
     prisma.notification.findMany({
       where: {
-        userId: session.sub,
+        userId: auth.user.id,
       },
 
       orderBy: {
@@ -58,7 +52,7 @@ export async function GET(request: Request) {
 
     prisma.notification.count({
       where: {
-        userId: session.sub,
+        userId: auth.user.id,
         readAt: null,
       },
     }),
@@ -82,14 +76,8 @@ export async function POST(request: Request) {
     return crossOriginResponse;
   }
 
-  const session = await getSession();
-
-  if (!session) {
-    return NextResponse.json(
-      { ok: false },
-      { status: 401 },
-    );
-  }
+  const auth = await authorizeAuthenticatedApi();
+  if (!auth.authorized) return auth.response;
 
   let payload:
     | {
@@ -109,7 +97,7 @@ export async function POST(request: Request) {
   if (payload?.all) {
     await prisma.notification.updateMany({
       where: {
-        userId: session.sub,
+        userId: auth.user.id,
         readAt: null,
       },
 
@@ -121,7 +109,7 @@ export async function POST(request: Request) {
     await prisma.notification.updateMany({
       where: {
         id: payload.id,
-        userId: session.sub,
+        userId: auth.user.id,
         readAt: null,
       },
 
@@ -143,7 +131,7 @@ export async function POST(request: Request) {
 
   const unreadCount = await prisma.notification.count({
     where: {
-      userId: session.sub,
+      userId: auth.user.id,
       readAt: null,
     },
   });

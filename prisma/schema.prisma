@@ -126,16 +126,17 @@ enum ChatConversationType {
 // =========================================================
 
 model User {
-  id                String    @id @default(cuid())
-  name              String
-  email             String    @unique
-  emailVerifiedAt   DateTime?
-  passwordHash      String
-  role              Role      @default(STUDENT)
-  sessionVersion    Int       @default(0)
-  position          String?
-  memberPermissions String[]  @default([])
-  chatLastSeenAt    DateTime?
+  id                 String    @id @default(cuid())
+  name               String
+  email              String    @unique
+  emailVerifiedAt    DateTime?
+  passwordHash       String
+  role               Role      @default(STUDENT)
+  sessionVersion     Int       @default(0)
+  mustChangePassword Boolean   @default(false)
+  position           String?
+  memberPermissions  String[]  @default([])
+  chatLastSeenAt     DateTime?
   // =====================================================
   // MEMBER PUBLIC PROFILE
   // =====================================================
@@ -191,6 +192,7 @@ model User {
   updatedAt             DateTime               @updatedAt
   notifications         Notification[]
   emailVerificationCode EmailVerificationCode?
+  passwordResetCode     PasswordResetCode?
 
   submittedComplaints      Complaint[]            @relation("ComplaintSubmitter")
   submittedSuggestions     Suggestion[]           @relation("SuggestionSubmitter")
@@ -218,6 +220,27 @@ model RateLimitCounter {
 // =========================================================
 
 model EmailVerificationCode {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  codeHash        String
+  expiresAt       DateTime
+  attempts        Int      @default(0)
+  lastSentAt      DateTime @default(now())
+  windowStartedAt DateTime @default(now())
+  sendCount       Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+// =========================================================
+// PASSWORD RESET
+// =========================================================
+
+model PasswordResetCode {
   id              String   @id @default(cuid())
   userId          String   @unique
   codeHash        String

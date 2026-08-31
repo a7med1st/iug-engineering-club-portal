@@ -1,13 +1,40 @@
 "use client";
 
 import {
+  Award,
+  BadgeDollarSign,
+  BookOpen,
+  BrainCircuit,
+  BriefcaseBusiness,
+  Building2,
   CheckCircle2,
+  Circle,
   CircleAlert,
+  CircleHelp,
+  CircuitBoard,
+  Cog,
+  DraftingCompass,
+  Factory,
+  GraduationCap,
+  HardHat,
+  HeartHandshake,
   Handshake,
+  Laptop,
   Lightbulb,
   MessageSquareWarning,
+  MessagesSquare,
+  MoreHorizontal,
+  Presentation,
   Send,
+  Sprout,
+  TrendingUp,
+  Trophy,
   UploadCloud,
+  User,
+  UserRound,
+  UsersRound,
+  Wrench,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -33,6 +60,9 @@ import {
   EXPERIENCE_LEVEL_OPTIONS,
   STUDY_LEVEL_OPTIONS,
 } from "@/lib/contact-options";
+import CustomSelect, {
+  type CustomSelectOption,
+} from "@/components/CustomSelect";
 
 /* =========================================================
    TYPES
@@ -41,6 +71,7 @@ import {
 type Department = {
   id: string;
   nameAr: string;
+  slug: string;
 };
 
 type ContactTab =
@@ -52,6 +83,100 @@ const initialState: ContactFormState = {
   success: false,
   message: "",
 };
+
+const STUDY_LEVEL_SELECT_OPTIONS: CustomSelectOption[] =
+  STUDY_LEVEL_OPTIONS.map((option) => ({
+    ...option,
+    icon: option.value === "GRADUATE" ? GraduationCap : Circle,
+  }));
+
+const COMPLAINT_TYPE_SELECT_OPTIONS: CustomSelectOption[] =
+  COMPLAINT_TYPE_OPTIONS.map((option) => ({
+    ...option,
+    icon: {
+      COMPLAINT: MessageSquareWarning,
+      ORGANIZATIONAL_PROBLEM: CircleAlert,
+      IMPROVEMENT_SUGGESTION: Lightbulb,
+      INQUIRY: CircleHelp,
+      OTHER: MoreHorizontal,
+    }[option.value],
+  }));
+
+const ACTIVITY_TYPE_SELECT_OPTIONS: CustomSelectOption[] =
+  ACTIVITY_TYPE_OPTIONS.map((option) => ({
+    ...option,
+    icon: {
+      TRAINING_COURSE: GraduationCap,
+      WORKSHOP: Wrench,
+      TECH_LECTURE: Presentation,
+      COMPETITION: Trophy,
+      DISCUSSION_SESSION: MessagesSquare,
+      PRACTICAL_TRAINING: BriefcaseBusiness,
+    }[option.value],
+  }));
+
+const EXPERIENCE_LEVEL_SELECT_OPTIONS: CustomSelectOption[] =
+  EXPERIENCE_LEVEL_OPTIONS.map((option) => ({
+    ...option,
+    icon: {
+      BEGINNER: Sprout,
+      INTERMEDIATE: TrendingUp,
+      ADVANCED: Award,
+    }[option.value],
+  }));
+
+const ENTITY_TYPE_SELECT_OPTIONS: CustomSelectOption[] =
+  ENTITY_TYPE_OPTIONS.map((option) => ({
+    ...option,
+    icon: {
+      TRAINER: UserRound,
+      COMPANY: Building2,
+      EDUCATIONAL_INSTITUTION: GraduationCap,
+      CHARITY: HeartHandshake,
+      TECH_COMMUNITY: UsersRound,
+      INDIVIDUAL: User,
+      OTHER: MoreHorizontal,
+    }[option.value],
+  }));
+
+const COOPERATION_TYPE_SELECT_OPTIONS: CustomSelectOption[] =
+  COOPERATION_TYPE_OPTIONS.map((option) => ({
+    ...option,
+    icon: {
+      TRAINING_COURSE: GraduationCap,
+      WORKSHOP: Wrench,
+      LECTURE: Presentation,
+      EVENT_SPONSORSHIP: BadgeDollarSign,
+      STRATEGIC_PARTNERSHIP: Handshake,
+      COMMUNITY_INITIATIVE: UsersRound,
+      OTHER: MoreHorizontal,
+    }[option.value],
+  }));
+
+const DEPARTMENT_ICONS = {
+  "computer-engineering": Laptop,
+  "ai-engineering": BrainCircuit,
+  architecture: DraftingCompass,
+  "civil-engineering": HardHat,
+  "industrial-engineering": Factory,
+  "mechanical-engineering": Cog,
+  "electrical-engineering": Zap,
+  "intelligent-systems": CircuitBoard,
+  "smart-systems": CircuitBoard,
+} as const;
+
+function getDepartmentOptions(
+  departments: Department[]
+): CustomSelectOption[] {
+  return departments.map((department) => ({
+    value: department.id,
+    label: department.nameAr,
+    icon:
+      DEPARTMENT_ICONS[
+        department.slug as keyof typeof DEPARTMENT_ICONS
+      ] ?? GraduationCap,
+  }));
+}
 
 /* =========================================================
    MAIN COMPONENT
@@ -68,7 +193,7 @@ export default function ContactPortal({
     useState<ContactTab>("complaint");
 
   return (
-    <div className="contact-portal">
+    <div className="contact-portal" data-reveal="up">
 
       {/* ===========================
           TOP CARDS
@@ -326,101 +451,39 @@ function ComplaintForm({
           {/* Department */}
 
           <Field label="تخصص الطالب">
-            <select
+            <CustomSelect
               name="departmentId"
               required
-              defaultValue=""
-            >
-              <option
-                value=""
-                disabled
-              >
-                اختر التخصص
-              </option>
-
-              {departments.map(
-                (department) => (
-                  <option
-                    key={
-                      department.id
-                    }
-                    value={
-                      department.id
-                    }
-                  >
-                    {
-                      department.nameAr
-                    }
-                  </option>
-                )
-              )}
-            </select>
+              placeholder="اختر التخصص"
+              icon={GraduationCap}
+              options={getDepartmentOptions(departments)}
+            />
           </Field>
 
 
           {/* Study level */}
 
           <Field label="المستوى الدراسي للطالب">
-            <select
+            <CustomSelect
               name="studyLevel"
               required
-              defaultValue=""
-            >
-              <option
-                value=""
-                disabled
-              >
-                اختر المستوى
-              </option>
-
-              {STUDY_LEVEL_OPTIONS.map(
-                (option) => (
-                  <option
-                    key={
-                      option.value
-                    }
-                    value={
-                      option.value
-                    }
-                  >
-                    {option.label}
-                  </option>
-                )
-              )}
-            </select>
+              placeholder="اختر المستوى"
+              icon={BookOpen}
+              options={STUDY_LEVEL_SELECT_OPTIONS}
+            />
           </Field>
 
 
           {/* Complaint type */}
 
           <Field label="نوع الملاحظة">
-            <select
+            <CustomSelect
               name="type"
               required
-              defaultValue=""
-            >
-              <option
-                value=""
-                disabled
-              >
-                اختر نوع الملاحظة
-              </option>
-
-              {COMPLAINT_TYPE_OPTIONS.map(
-                (option) => (
-                  <option
-                    key={
-                      option.value
-                    }
-                    value={
-                      option.value
-                    }
-                  >
-                    {option.label}
-                  </option>
-                )
-              )}
-            </select>
+              placeholder="اختر نوع الملاحظة"
+              icon={MessageSquareWarning}
+              options={COMPLAINT_TYPE_SELECT_OPTIONS}
+            />
           </Field>
 
 
@@ -601,68 +664,26 @@ function SuggestionForm({
           {/* Department */}
 
           <Field label="تخصص الطالب">
-            <select
+            <CustomSelect
               name="departmentId"
               required
-              defaultValue=""
-            >
-              <option
-                value=""
-                disabled
-              >
-                اختر التخصص
-              </option>
-
-              {departments.map(
-                (department) => (
-                  <option
-                    key={
-                      department.id
-                    }
-                    value={
-                      department.id
-                    }
-                  >
-                    {
-                      department.nameAr
-                    }
-                  </option>
-                )
-              )}
-            </select>
+              placeholder="اختر التخصص"
+              icon={GraduationCap}
+              options={getDepartmentOptions(departments)}
+            />
           </Field>
 
 
           {/* Study level */}
 
           <Field label="المستوى الدراسي للطالب">
-            <select
+            <CustomSelect
               name="studyLevel"
               required
-              defaultValue=""
-            >
-              <option
-                value=""
-                disabled
-              >
-                اختر المستوى
-              </option>
-
-              {STUDY_LEVEL_OPTIONS.map(
-                (option) => (
-                  <option
-                    key={
-                      option.value
-                    }
-                    value={
-                      option.value
-                    }
-                  >
-                    {option.label}
-                  </option>
-                )
-              )}
-            </select>
+              placeholder="اختر المستوى"
+              icon={BookOpen}
+              options={STUDY_LEVEL_SELECT_OPTIONS}
+            />
           </Field>
 
 
@@ -694,66 +715,26 @@ function SuggestionForm({
           {/* Activity type */}
 
           <Field label="ما نوع النشاط الذي تفضله؟">
-            <select
+            <CustomSelect
               name="activityType"
               required
-              defaultValue=""
-            >
-              <option
-                value=""
-                disabled
-              >
-                اختر نوع النشاط
-              </option>
-
-              {ACTIVITY_TYPE_OPTIONS.map(
-                (option) => (
-                  <option
-                    key={
-                      option.value
-                    }
-                    value={
-                      option.value
-                    }
-                  >
-                    {option.label}
-                  </option>
-                )
-              )}
-            </select>
+              placeholder="اختر نوع النشاط"
+              icon={GraduationCap}
+              options={ACTIVITY_TYPE_SELECT_OPTIONS}
+            />
           </Field>
 
 
           {/* Activity level */}
 
           <Field label="ما المستوى المناسب للنشاط؟">
-            <select
+            <CustomSelect
               name="activityLevel"
               required
-              defaultValue=""
-            >
-              <option
-                value=""
-                disabled
-              >
-                اختر المستوى
-              </option>
-
-              {EXPERIENCE_LEVEL_OPTIONS.map(
-                (option) => (
-                  <option
-                    key={
-                      option.value
-                    }
-                    value={
-                      option.value
-                    }
-                  >
-                    {option.label}
-                  </option>
-                )
-              )}
-            </select>
+              placeholder="اختر المستوى"
+              icon={TrendingUp}
+              options={EXPERIENCE_LEVEL_SELECT_OPTIONS}
+            />
           </Field>
 
 
@@ -781,33 +762,13 @@ function SuggestionForm({
           {/* Experience */}
 
           <Field label="مستوى خبرتك في المجال المقترح">
-            <select
+            <CustomSelect
               name="experienceLevel"
               required
-              defaultValue=""
-            >
-              <option
-                value=""
-                disabled
-              >
-                اختر مستوى الخبرة
-              </option>
-
-              {EXPERIENCE_LEVEL_OPTIONS.map(
-                (option) => (
-                  <option
-                    key={
-                      option.value
-                    }
-                    value={
-                      option.value
-                    }
-                  >
-                    {option.label}
-                  </option>
-                )
-              )}
-            </select>
+              placeholder="اختر مستوى الخبرة"
+              icon={Award}
+              options={EXPERIENCE_LEVEL_SELECT_OPTIONS}
+            />
           </Field>
 
         </div>
@@ -921,33 +882,13 @@ function CollaborationForm() {
           {/* Entity type */}
 
           <Field label="نوع الجهة">
-            <select
+            <CustomSelect
               name="entityType"
               required
-              defaultValue=""
-            >
-              <option
-                value=""
-                disabled
-              >
-                اختر نوع الجهة
-              </option>
-
-              {ENTITY_TYPE_OPTIONS.map(
-                (option) => (
-                  <option
-                    key={
-                      option.value
-                    }
-                    value={
-                      option.value
-                    }
-                  >
-                    {option.label}
-                  </option>
-                )
-              )}
-            </select>
+              placeholder="اختر نوع الجهة"
+              icon={Building2}
+              options={ENTITY_TYPE_SELECT_OPTIONS}
+            />
           </Field>
 
 
@@ -1007,33 +948,13 @@ function CollaborationForm() {
           {/* Cooperation type */}
 
           <Field label="نوع التعاون المقترح">
-            <select
+            <CustomSelect
               name="cooperationType"
               required
-              defaultValue=""
-            >
-              <option
-                value=""
-                disabled
-              >
-                اختر نوع التعاون
-              </option>
-
-              {COOPERATION_TYPE_OPTIONS.map(
-                (option) => (
-                  <option
-                    key={
-                      option.value
-                    }
-                    value={
-                      option.value
-                    }
-                  >
-                    {option.label}
-                  </option>
-                )
-              )}
-            </select>
+              placeholder="اختر نوع التعاون"
+              icon={Handshake}
+              options={COOPERATION_TYPE_SELECT_OPTIONS}
+            />
           </Field>
 
 

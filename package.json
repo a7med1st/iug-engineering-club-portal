@@ -12,6 +12,7 @@
     "test:integrity": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env scripts/run-final-programming-check.mjs",
     "test:routes": "node --env-file=.env scripts/test-role-routes.mjs",
     "test:auth-security": "node --env-file=.env scripts/test-auth-security.mjs",
+    "test:password-security": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --import tsx scripts/test-password-security.ts",
     "test:file-security": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --import tsx scripts/test-file-upload-security.ts",
     "test:csp-security": "node --require ./scripts/node-platform-fallback.cjs --import tsx scripts/test-csp-security.ts",
     "test:all": "tsc --noEmit --incremental false && prisma validate && npm run test:csp-security && npm run test:file-security && npm run test:email-verification && npm run test:contact-routing && npm run test:integrity && npm run test:routes",

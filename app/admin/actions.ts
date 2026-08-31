@@ -504,9 +504,9 @@ export async function createMember(
         );
       }
 
-      if (password.length < 8) {
+      if (password.length < 8 || password.length > 128) {
         throw new AdminActionError(
-          "يجب ألا تقل كلمة المرور عن 8 أحرف.",
+          "يجب أن تكون كلمة المرور بين 8 و128 حرفًا.",
         );
       }
 
@@ -587,6 +587,7 @@ export async function createMember(
                     emailVerifiedAt: null,
                     passwordHash,
                     role: "MEMBER",
+                    mustChangePassword: true,
                     position,
                     departmentId,
                     memberPermissions,

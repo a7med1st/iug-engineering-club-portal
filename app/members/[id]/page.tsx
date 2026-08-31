@@ -14,6 +14,7 @@ import {
 import { prisma } from "@/lib/prisma";
 
 import AvatarPreview from "./AvatarPreview";
+import MemberCoverImage from "./MemberCoverImage";
 import styles from "./member-public.module.css";
 
 export const dynamic = "force-dynamic";
@@ -121,15 +122,9 @@ export default async function MemberPublicProfilePage({
         </Link>
       </div>
 
-      <section className={styles.hero}>
+      <section className={styles.hero} data-reveal="up">
         <div className={styles.heroCover}>
-          {coverUrl ? (
-            <img
-              src={coverUrl}
-              alt={`غلاف ${member.name}`}
-              className={styles.coverImage}
-            />
-          ) : null}
+          <MemberCoverImage src={coverUrl} />
           <div className={styles.heroOverlay} />
         </div>
 
@@ -150,7 +145,7 @@ export default async function MemberPublicProfilePage({
         </div>
       </section>
 
-      <section className={styles.cardsGrid}>
+      <section className={styles.cardsGrid} data-reveal-group="up">
         <article className={styles.infoCard}>
           <div className={styles.cardHead}>
             <div className={styles.cardIcon}>

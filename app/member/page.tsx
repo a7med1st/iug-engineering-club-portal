@@ -130,7 +130,7 @@ export default async function Member() {
 
   return (
     <main className={styles.page}>
-      <section className={styles.hero}>
+      <section className={styles.hero} data-reveal="up">
         <div className={styles.heroGlow} aria-hidden="true" />
 
         <div className={styles.heroTop}>
@@ -188,7 +188,7 @@ export default async function Member() {
         </div>
       </section>
 
-      <div className={styles.sectionHead}>
+      <div className={styles.sectionHead} data-reveal="up">
         <div>
           <h2>أدوات العضو</h2>
           <span className={styles.sectionLine} aria-hidden="true" />
@@ -197,7 +197,7 @@ export default async function Member() {
         <p>تظهر الأدوات حسب الصلاحيات التي منحتها الإدارة لحسابك.</p>
       </div>
 
-      <section className={styles.grid}>
+      <section className={styles.grid} data-reveal-group="scale">
         {tools.map(({ href, title, text, icon: Icon, tone }, index) => {
           const isLastOdd =
             tools.length % 2 === 1 && index === tools.length - 1;

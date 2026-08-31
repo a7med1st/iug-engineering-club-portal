@@ -4,7 +4,10 @@ import {
 } from "@/lib/permissions";
 import { logPrivateBlobReadError } from "@/lib/blob-storage";
 import { prisma } from "@/lib/prisma";
-import { userImageResponse } from "@/lib/user-media-response";
+import {
+  userImageErrorResponse,
+  userImageResponse,
+} from "@/lib/user-media-response";
 
 export const dynamic = "force-dynamic";
 
@@ -53,11 +56,6 @@ export async function GET() {
       pathname: user.avatarStoredName,
       error,
     });
-    return new Response(
-      "File unavailable",
-      {
-        status: 500,
-      },
-    );
+    return userImageErrorResponse(error);
   }
 }

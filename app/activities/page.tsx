@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import ActivityCard from "@/components/ActivityCard";
 import PastActivityCard from "@/components/PastActivityCard";
+import PastActivityFilterDropdown from "@/components/PastActivityFilterDropdown";
 import {
   activityYear,
   activityYearRange,
@@ -40,7 +41,7 @@ export default async function Activities({
 
   const [departments, departmentCount, pastActivityDates] = await Promise.all([
     prisma.department.findMany({
-      select: { id: true, nameAr: true },
+      select: { id: true, nameAr: true, slug: true },
       orderBy: { sortOrder: "asc" },
     }),
     prisma.department.count(),
@@ -142,29 +143,40 @@ export default async function Activities({
                 />
               </label>
 
-              <label>
+              <div className="past-activity-filter-field">
                 <span>القسم</span>
-                <select name="department" defaultValue={department}>
-                  <option value="">جميع الأقسام</option>
-                  {departments.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.nameAr}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                <PastActivityFilterDropdown
+                  name="department"
+                  label="القسم"
+                  defaultValue={department}
+                  kind="department"
+                  options={[
+                    { value: "", label: "جميع الأقسام" },
+                    ...departments.map((item) => ({
+                      value: item.id,
+                      label: item.nameAr,
+                      slug: item.slug,
+                    })),
+                  ]}
+                />
+              </div>
 
-              <label>
+              <div className="past-activity-filter-field">
                 <span>السنة</span>
-                <select name="year" defaultValue={year ?? ""}>
-                  <option value="">جميع السنوات</option>
-                  {years.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                <PastActivityFilterDropdown
+                  name="year"
+                  label="السنة"
+                  defaultValue={year?.toString() ?? ""}
+                  kind="year"
+                  options={[
+                    { value: "", label: "جميع السنوات" },
+                    ...years.map((item) => ({
+                      value: item.toString(),
+                      label: item.toString(),
+                    })),
+                  ]}
+                />
+              </div>
 
               <div className="past-activity-filter-actions">
                 <button className="primary-btn" type="submit">

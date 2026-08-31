@@ -365,7 +365,11 @@ export default function ReportsFilters({
   }
 
   return (
-    <form className={styles.filters} onSubmit={handleSubmit}>
+    <form
+      className={styles.filters}
+      onSubmit={handleSubmit}
+      data-reveal="up"
+    >
       <div className={styles.filtersIntro}>
         <span className={styles.filtersIntroIcon}>
           <SlidersHorizontal size={19} />

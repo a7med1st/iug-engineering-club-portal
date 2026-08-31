@@ -7,6 +7,7 @@ import sharp from "sharp";
 
 import { rateLimitResponse } from "../lib/auth-rate-limit";
 import {
+  BlobStorageConfigurationError,
   requirePrivateBlobAuth,
   requirePrivateBlobReadAuth,
   requirePublicBlobAuth,
@@ -47,6 +48,7 @@ async function source(relativePath: string) {
 
 async function main() {
   const blobEnvironmentNames = [
+    "NODE_ENV",
     "VERCEL",
     "VERCEL_OIDC_TOKEN",
     "BLOB_PUBLIC_STORE_ID",
@@ -61,6 +63,7 @@ async function main() {
 
   try {
     for (const name of blobEnvironmentNames) delete process.env[name];
+    Object.assign(process.env, { NODE_ENV: "production" });
     process.env.VERCEL_OIDC_TOKEN = "test-oidc-token";
     process.env.BLOB_PUBLIC_STORE_ID = "store_public-test";
     process.env.BLOB_PRIVATE_STORE_ID = "store_private-test";
@@ -74,6 +77,18 @@ async function main() {
       oidcToken: "test-oidc-token",
     });
 
+    Object.assign(process.env, { NODE_ENV: "development" });
+    assert.deepEqual(requirePrivateBlobReadAuth(), {
+      token: "vercel_blob_rw_private-test",
+    });
+    delete process.env.BLOB_PRIVATE_READ_WRITE_TOKEN;
+    assert.throws(
+      () => requirePrivateBlobReadAuth(),
+      BlobStorageConfigurationError,
+    );
+
+    Object.assign(process.env, { NODE_ENV: "production" });
+    process.env.BLOB_PRIVATE_READ_WRITE_TOKEN = "vercel_blob_rw_private-test";
     delete process.env.VERCEL_OIDC_TOKEN;
     assert.deepEqual(requirePublicBlobAuth(), {
       token: "vercel_blob_rw_public-test",
@@ -85,7 +100,7 @@ async function main() {
     for (const name of blobEnvironmentNames) {
       const value = originalBlobEnvironment[name];
       if (value === undefined) delete process.env[name];
-      else process.env[name] = value;
+      else Object.assign(process.env, { [name]: value });
     }
   }
 
@@ -328,6 +343,8 @@ async function main() {
   assert.match(userMediaResponse, /abortSignal:\s*AbortSignal\.timeout\(15_000\)/);
   assert.match(userMediaResponse, /useCache:\s*false/);
   assert.match(userMediaResponse, /privateFileResponse\(blob/);
+  assert.match(userMediaResponse, /BlobStorageConfigurationError/);
+  assert.match(userMediaResponse, /status:\s*error instanceof BlobStorageConfigurationError \? 503 : 500/);
   assert.match(chatStorage, /putPrivateBlob/);
   assert.match(chatStorage, /url:\s*null/);
   assert.doesNotMatch(chatStorage, /access:\s*["']public["']/);
@@ -341,19 +358,19 @@ async function main() {
   assert.match(memberAvatar, /resolveMemberMediaAccess/);
   assert.match(memberAvatar, /cacheControl:\s*access\.cacheControl/);
   assert.doesNotMatch(memberAvatar, /structureItem:\s*\{\s*isNot:\s*null/);
-  assert.match(memberAvatar, /File unavailable["'],\s*\{ status: 500 \}/);
+  assert.match(memberAvatar, /userImageErrorResponse\(error\)/);
   assert.match(memberCover, /userImageResponse/);
   assert.match(memberCover, /getCurrentUser\(\)/);
   assert.match(memberCover, /resolveMemberMediaAccess/);
   assert.match(memberCover, /cacheControl:\s*access\.cacheControl/);
   assert.doesNotMatch(memberCover, /structureItem:\s*\{\s*isNot:\s*null/);
-  assert.match(memberCover, /File unavailable["'],\s*\{ status: 500 \}/);
+  assert.match(memberCover, /userImageErrorResponse\(error\)/);
   assert.match(memberProfile, /where:\s*\{\s*id:\s*user\.id\s*\}/);
   assert.match(studentAvatar, /where:\s*\{\s*id:\s*user\.id/);
   assert.match(studentAvatarRoute, /userImageResponse/);
   assert.match(studentAvatarRoute, /requirePermission\([\s\S]*PERMISSIONS\.STUDENT_DASHBOARD/);
   assert.match(studentAvatarRoute, /cacheControl:\s*["']private, no-store["']/);
-  assert.match(studentAvatarRoute, /status:\s*500/);
+  assert.match(studentAvatarRoute, /userImageErrorResponse\(error\)/);
   assert.match(
     studentAvatarUploader,
     /data-testid="student-avatar-upload-trigger"/,

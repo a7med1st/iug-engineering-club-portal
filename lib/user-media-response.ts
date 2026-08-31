@@ -1,7 +1,10 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { getPrivateBlob } from "@/lib/blob-storage";
+import {
+  BlobStorageConfigurationError,
+  getPrivateBlob,
+} from "@/lib/blob-storage";
 import { privateFileResponse } from "@/lib/private-file-response";
 
 export async function userImageResponse(options: {
@@ -40,4 +43,14 @@ export async function userImageResponse(options: {
   } catch {
     return null;
   }
+}
+
+export function userImageErrorResponse(error: unknown) {
+  return new Response("File unavailable", {
+    status: error instanceof BlobStorageConfigurationError ? 503 : 500,
+    headers: {
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }

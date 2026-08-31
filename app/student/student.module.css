@@ -5067,6 +5067,24 @@
   color: #72c8ff;
 }
 
+:global(html[data-theme="dark"]) .avatarActionButton {
+  border-color: rgb(83 181 255 / 30%);
+  background: #12324d !important;
+  color: #9bdcff !important;
+  box-shadow: 0 8px 20px rgb(0 7 14 / 18%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :global(html[data-theme="dark"]) .avatarActionButton:hover {
+    border-color: #52bcf4;
+    background: #174564 !important;
+    color: #ffffff !important;
+    box-shadow:
+      0 13px 30px rgb(0 7 14 / 28%),
+      0 0 0 3px rgb(53 168 255 / 8%);
+  }
+}
+
 :global(html[data-theme="dark"]) .profileInfoItem {
   border-color: var(--student-line);
   background: var(--student-soft) !important;

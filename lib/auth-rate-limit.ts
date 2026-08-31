@@ -81,6 +81,80 @@ export function resendVerificationRateLimitRules(
   ];
 }
 
+export function forgotPasswordRateLimitRules(
+  request: Request,
+  email: string,
+): RateLimitRule[] {
+  const ip = getClientIp(request);
+  return [
+    {
+      key: createRateLimitKey("forgot-password:ip-email", ip, email),
+      limit: 5,
+      windowSeconds: 60 * 60,
+    },
+    {
+      key: createRateLimitKey("forgot-password:ip", ip),
+      limit: 25,
+      windowSeconds: 60 * 60,
+    },
+  ];
+}
+
+export function resendPasswordResetRateLimitRules(
+  request: Request,
+  email: string,
+): RateLimitRule[] {
+  const ip = getClientIp(request);
+  return [
+    {
+      key: createRateLimitKey("resend-password-reset:ip-email", ip, email),
+      limit: 8,
+      windowSeconds: 60 * 60,
+    },
+    {
+      key: createRateLimitKey("resend-password-reset:ip", ip),
+      limit: 30,
+      windowSeconds: 60 * 60,
+    },
+  ];
+}
+
+export function resetPasswordRateLimitRules(
+  request: Request,
+  email: string,
+): RateLimitRule[] {
+  const ip = getClientIp(request);
+  return [
+    {
+      key: createRateLimitKey("reset-password:ip-email", ip, email),
+      limit: 12,
+      windowSeconds: 15 * 60,
+    },
+    {
+      key: createRateLimitKey("reset-password:ip", ip),
+      limit: 40,
+      windowSeconds: 15 * 60,
+    },
+  ];
+}
+
+export function changePasswordRateLimitRules(
+  request: Request,
+  userId: string,
+): RateLimitRule[] {
+  return [
+    {
+      key: createRateLimitKey(
+        "change-password:ip-user",
+        getClientIp(request),
+        userId,
+      ),
+      limit: 8,
+      windowSeconds: 15 * 60,
+    },
+  ];
+}
+
 export function rateLimitResponse(retryAfterSeconds: number) {
   const retryAfter = Math.max(1, Math.ceil(retryAfterSeconds));
 

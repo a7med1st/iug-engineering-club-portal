@@ -31,7 +31,10 @@ export default function AvatarPreview({
   initials,
 }: AvatarPreviewProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const sourceRef = useRef<HTMLButtonElement>(null);
+  const sourceImageRef = useRef<HTMLImageElement>(null);
   const previewRef = useRef<HTMLImageElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const sourceRectRef = useRef<ImageRect | null>(null);
@@ -185,7 +188,23 @@ export default function AvatarPreview({
     };
   }, [animateIn, closePreview, isOpen]);
 
-  if (!src) {
+  useEffect(() => {
+    setImageFailed(false);
+    setImageLoaded(false);
+    setIsOpen(false);
+    isClosingRef.current = false;
+    hasAnimatedInRef.current = false;
+
+    const image = sourceImageRef.current;
+    if (src && image?.complete) {
+      if (image.naturalWidth > 0) setImageLoaded(true);
+      else setImageFailed(true);
+    }
+  }, [src]);
+
+  const availableSrc = src && !imageFailed ? src : null;
+
+  if (!availableSrc) {
     return (
       <div className={styles.avatarWrap}>
         <div className={styles.avatarFallback}>
@@ -197,6 +216,8 @@ export default function AvatarPreview({
   }
 
   const openPreview = () => {
+    if (!imageLoaded) return;
+
     const sourceRect = sourceRef.current?.getBoundingClientRect();
     if (!sourceRect) return;
 
@@ -209,6 +230,14 @@ export default function AvatarPreview({
     setIsOpen(true);
   };
 
+  const handleImageError = () => {
+    setImageLoaded(false);
+    setImageFailed(true);
+    setIsOpen(false);
+    isClosingRef.current = false;
+    hasAnimatedInRef.current = false;
+  };
+
   return (
     <>
       <button
@@ -216,13 +245,31 @@ export default function AvatarPreview({
         type="button"
         className={`${styles.avatarWrap} ${styles.avatarButton}`}
         onClick={openPreview}
-        aria-label="عرض الصورة الشخصية بالحجم الكامل"
-        aria-expanded={isOpen}
+        aria-label={imageLoaded ? "عرض الصورة الشخصية بالحجم الكامل" : undefined}
+        aria-expanded={imageLoaded ? isOpen : undefined}
+        disabled={!imageLoaded}
       >
-        <img src={src} alt={alt} className={styles.avatar} />
+        {!imageLoaded ? (
+          <div className={styles.avatarFallback} aria-hidden="true">
+            <UserRound size={34} />
+            <strong>{initials}</strong>
+          </div>
+        ) : null}
+
+        <img
+          ref={sourceImageRef}
+          src={availableSrc}
+          alt=""
+          aria-hidden="true"
+          className={`${styles.avatar} ${
+            imageLoaded ? styles.avatarLoaded : ""
+          }`}
+          onLoad={() => setImageLoaded(true)}
+          onError={handleImageError}
+        />
       </button>
 
-      {isOpen &&
+      {isOpen && availableSrc && imageLoaded &&
         createPortal(
           <div
             className={styles.avatarLightbox}
@@ -238,10 +285,11 @@ export default function AvatarPreview({
 
             <img
               ref={previewRef}
-              src={src}
+              src={availableSrc}
               alt={alt}
               className={styles.avatarPreviewImage}
               onLoad={animateIn}
+              onError={handleImageError}
             />
 
             <button

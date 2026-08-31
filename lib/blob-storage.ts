@@ -8,7 +8,12 @@ import {
   type PutCommandOptions,
 } from "@vercel/blob";
 
-export class BlobStorageConfigurationError extends Error {}
+export class BlobStorageConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "BlobStorageConfigurationError";
+  }
+}
 
 type BlobAuthOptions = Pick<PutCommandOptions, "oidcToken" | "storeId" | "token">;
 
@@ -61,6 +66,17 @@ export function requirePublicBlobAuth() {
 }
 
 export function requirePrivateBlobReadAuth(): BlobAuthOptions {
+  if (configuredValue("NODE_ENV") === "development") {
+    const localToken = configuredValue("BLOB_PRIVATE_READ_WRITE_TOKEN");
+    if (localToken) return { token: localToken };
+
+    // OIDC values copied into a local .env can be expired or request-scoped.
+    // Local reads must use the existing explicit private-store fallback.
+    throw new BlobStorageConfigurationError(
+      "Private file reads in local development require BLOB_PRIVATE_READ_WRITE_TOKEN.",
+    );
+  }
+
   const auth = requirePrivateBlobAuth();
   const oidcToken = configuredValue("VERCEL_OIDC_TOKEN");
 
@@ -130,10 +146,14 @@ export function logPrivateBlobReadError(options: {
 }) {
   console.error("Private blob read failed", {
     route: options.route,
-    pathname: options.pathname,
+    storageNamespace: options.pathname.startsWith("user-media/")
+      ? "user-media"
+      : "legacy-or-unknown",
     storeType: "private",
     errorName: options.error instanceof Error ? options.error.name : "UnknownError",
-    status: options.status ?? 500,
+    status:
+      options.status ??
+      (options.error instanceof BlobStorageConfigurationError ? 503 : 500),
   });
 }
 

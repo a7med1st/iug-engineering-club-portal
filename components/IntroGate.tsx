@@ -24,13 +24,15 @@ export default function IntroGate() {
 
       <div className="intro-logo-wrap">
         <div className="intro-logo-bg">
-          <Image
-            src="/images/club-logo.png"
-            alt="النادي الهندسي"
-            width={230}
-            height={230}
-            priority
-          />
+          <div className="intro-logo-spin">
+            <Image
+              src="/images/club-logo.png"
+              alt="النادي الهندسي"
+              width={230}
+              height={230}
+              priority
+            />
+          </div>
         </div>
       </div>
 

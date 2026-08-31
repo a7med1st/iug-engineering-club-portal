@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSession } from "@/lib/auth";
+import { authorizeAuthenticatedApi } from "@/lib/api-auth";
 import { privateNoStoreJson } from "@/lib/private-response";
 import { prisma } from "@/lib/prisma";
 import { rejectCrossOriginRequest } from "@/lib/request-security";
@@ -17,16 +17,9 @@ export async function POST(
     return crossOriginResponse;
   }
 
-  const session = await getSession();
-
-  if (!session) {
-    return NextResponse.json({ ok: false }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: session.sub },
-    select: { id: true, role: true },
-  });
+  const auth = await authorizeAuthenticatedApi();
+  if (!auth.authorized) return auth.response;
+  const user = auth.user;
 
   if (
     !user ||

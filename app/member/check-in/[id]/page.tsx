@@ -122,6 +122,7 @@ export default async function MemberActivityCheckInPage({
         className={
           styles.topBar
         }
+        data-reveal="right"
       >
         <Link
           href="/member/check-in"
@@ -141,6 +142,7 @@ export default async function MemberActivityCheckInPage({
         className={
           styles.activityHero
         }
+        data-reveal="up"
       >
         <div>
           <span
@@ -185,6 +187,7 @@ export default async function MemberActivityCheckInPage({
         className={
           styles.quickStats
         }
+        data-reveal-group="up"
       >
         <div>
           <Users size={20} />

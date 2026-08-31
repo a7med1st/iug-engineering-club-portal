@@ -20,6 +20,7 @@ export default async function ContactPage() {
       select: {
         id: true,
         nameAr: true,
+        slug: true,
       },
       orderBy: {
         sortOrder: "asc",
@@ -60,7 +61,7 @@ export default async function ContactPage() {
         <div className="shell">
 
           {!session && (
-            <div className="contact-tracking-notice">
+            <div className="contact-tracking-notice" data-reveal="up">
               <strong>هل تريد متابعة حالة طلبك داخل الموقع؟</strong>
               <span>
                 سجّل الدخول قبل الإرسال لتصلك إشعارات عند المراجعة أو

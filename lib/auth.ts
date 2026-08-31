@@ -37,6 +37,7 @@ export type CurrentUser = {
   departmentId: string | null;
   memberPermissions: string[];
   sessionVersion: number;
+  mustChangePassword: boolean;
   department: {
     id: string;
     nameAr: string;
@@ -144,6 +145,7 @@ export async function getCurrentUser(): Promise<{
       departmentId: true,
       memberPermissions: true,
       sessionVersion: true,
+      mustChangePassword: true,
       department: {
         select: {
           id: true,
@@ -179,6 +181,8 @@ export async function requireAdmin() {
     redirect("/login?portal=member");
   }
 
+  if (auth.user.mustChangePassword) redirect("/change-password");
+
   return auth.session;
 }
 
@@ -192,6 +196,8 @@ export async function requireMember() {
     redirect("/login?portal=member");
   }
 
+  if (auth.user.mustChangePassword) redirect("/change-password");
+
   return auth.session;
 }
 
@@ -201,6 +207,8 @@ export async function requireStudent() {
   if (!auth || auth.user.role !== "STUDENT") {
     redirect("/login?portal=student");
   }
+
+  if (auth.user.mustChangePassword) redirect("/change-password");
 
   return {
     session: auth.session,

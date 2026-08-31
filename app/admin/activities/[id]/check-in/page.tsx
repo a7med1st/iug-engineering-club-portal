@@ -120,6 +120,7 @@ export default async function ActivityCheckInPage({
         className={
           styles.topBar
         }
+        data-reveal="right"
       >
         <Link
           href={`/admin/activities/${activity.id}/registrations`}
@@ -139,6 +140,7 @@ export default async function ActivityCheckInPage({
         className={
           styles.hero
         }
+        data-reveal="up"
       >
         <div>
           <span
@@ -179,6 +181,7 @@ export default async function ActivityCheckInPage({
         className={
           styles.stats
         }
+        data-reveal-group="up"
       >
         <article>
           <span

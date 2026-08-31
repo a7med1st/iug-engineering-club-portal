@@ -106,7 +106,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
 
   return (
     <section className={styles.page}>
-      <header className={styles.hero}>
+      <header className={styles.hero} data-reveal="up">
         <div className={styles.heroDecoration} aria-hidden="true" />
         <div className={styles.heroCopy}>
           <h1>لوحة الإحصائيات</h1>
@@ -134,7 +134,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
         range={range}
       />
 
-      <div className={styles.metrics}>
+      <div className={styles.metrics} data-reveal-group="scale">
         <Metric
           title="الطلاب"
           value={summary.studentCount}
@@ -198,7 +198,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
       </div>
 
       <div className={styles.twoColumns}>
-        <section className={styles.panel}>
+        <section className={styles.panel} data-reveal="up">
           <div className={styles.panelHead}>
             <div>
               <h2>حالات التسجيل</h2>
@@ -232,7 +232,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
           </div>
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} data-reveal="up">
           <div className={styles.panelHead}>
             <div>
               <h2>أكثر الأنشطة تسجيلًا</h2>
@@ -272,7 +272,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
       </div>
 
       <div className={styles.twoColumns}>
-        <section className={styles.panel}>
+        <section className={styles.panel} data-reveal="up">
           <div className={styles.panelHead}>
             <div>
               <h2>الأنشطة القادمة</h2>
@@ -318,7 +318,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
           )}
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} data-reveal="up">
           <div className={styles.panelHead}>
             <div>
               <h2>أحدث التسجيلات</h2>
@@ -356,7 +356,10 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
         </section>
       </div>
 
-      <section className={`${styles.panel} ${styles.departmentPanel}`}>
+      <section
+        className={`${styles.panel} ${styles.departmentPanel}`}
+        data-reveal="up"
+      >
         <div className={styles.panelHead}>
           <div>
             <h2>إحصائيات الأقسام</h2>

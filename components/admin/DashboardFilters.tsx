@@ -74,7 +74,12 @@ export default function DashboardFilters({
   const hasFilters = Boolean(departmentId) || selectedRange !== "ALL";
 
   return (
-    <form ref={rootRef} method="get" className={styles.filters}>
+    <form
+      ref={rootRef}
+      method="get"
+      className={styles.filters}
+      data-reveal="up"
+    >
       <input type="hidden" name="department" value={departmentId} />
       <input type="hidden" name="range" value={selectedRange} />
 

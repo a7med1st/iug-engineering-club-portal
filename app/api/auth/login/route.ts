@@ -1,6 +1,4 @@
 import bcrypt from "bcryptjs";
-import { NextResponse } from "next/server";
-
 import { createSession } from "@/lib/auth";
 import {
   loginRateLimitRules,
@@ -18,6 +16,7 @@ import {
   sendEmailVerificationCode,
 } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
+import { privateNoStoreJson } from "@/lib/private-response";
 import {
   checkRateLimits,
   consumeRateLimits,
@@ -71,7 +70,7 @@ export async function POST(req: Request) {
         return rateLimitResponse(failedAttempt.retryAfterSeconds);
       }
 
-      return NextResponse.json(
+      return privateNoStoreJson(
         {
           error:
             "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
@@ -86,7 +85,7 @@ export async function POST(req: Request) {
       portal === "student" &&
       user.role !== "STUDENT"
     ) {
-      return NextResponse.json(
+      return privateNoStoreJson(
         {
           error:
             "هذا الحساب ليس حساب طالب. استخدم بوابة الأعضاء.",
@@ -99,7 +98,7 @@ export async function POST(req: Request) {
       portal === "member" &&
       user.role === "STUDENT"
     ) {
-      return NextResponse.json(
+      return privateNoStoreJson(
         {
           error:
             "حساب الطالب لا يمكنه الدخول من بوابة الأعضاء.",
@@ -151,7 +150,7 @@ export async function POST(req: Request) {
         }
       }
 
-      return NextResponse.json(
+      return privateNoStoreJson(
         {
           verificationRequired: true,
           redirect: deliveryFailed
@@ -170,17 +169,19 @@ export async function POST(req: Request) {
       sessionVersion: user.sessionVersion,
     });
 
-    return NextResponse.json({
+    return privateNoStoreJson({
       ok: true,
       redirect:
-        user.role === "ADMIN"
+        user.mustChangePassword
+          ? "/change-password"
+          : user.role === "ADMIN"
           ? "/admin"
           : user.role === "MEMBER"
             ? "/member"
             : "/",
     });
   } catch {
-    return NextResponse.json(
+    return privateNoStoreJson(
       {
         error:
           "حدث خطأ غير متوقع.",

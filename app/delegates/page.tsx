@@ -196,7 +196,7 @@ export default async function DelegatesPage() {
         <span className={styles.heroOrbOne} aria-hidden="true" />
         <span className={styles.heroOrbTwo} aria-hidden="true" />
 
-        <div className={styles.heroCopy}>
+        <div className={styles.heroCopy} data-reveal="up">
           <div className={styles.heroIcon}>
             <Network aria-hidden="true" />
           </div>
@@ -223,7 +223,7 @@ export default async function DelegatesPage() {
         </div>
       </section>
 
-      <section className={styles.treePanel}>
+      <section className={styles.treePanel} data-reveal="up">
         <div className={styles.panelGlow} aria-hidden="true" />
         <div className={styles.panelGrid} aria-hidden="true" />
 

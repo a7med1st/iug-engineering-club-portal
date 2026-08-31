@@ -14,6 +14,7 @@ export default function AuthForm() {
   const [portal, setPortal] = useState<"student" | "member">(initial);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const passwordResetSucceeded = search.get("passwordReset") === "success";
   const title = useMemo(() => portal === "student" ? "دخول الطالب" : "دخول عضو النادي", [portal]);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -33,7 +34,11 @@ export default function AuthForm() {
         return;
       }
 
-      router.push(returnTo || data.redirect || "/");
+      router.push(
+        data.redirect === "/change-password"
+          ? data.redirect
+          : returnTo || data.redirect || "/",
+      );
       router.refresh();
     } catch {
       setError("تعذر الاتصال بالخادم. حاول مرة أخرى.");
@@ -52,6 +57,8 @@ export default function AuthForm() {
       <form onSubmit={submit} className="stack-form">
         <label>البريد الإلكتروني<input type="email" name="email" required autoComplete="email" placeholder="name@gmail.com" /></label>
         <label>كلمة المرور<input type="password" name="password" required minLength={8} autoComplete="current-password" /></label>
+        <Link className="forgot-password-link" href={`/forgot-password?portal=${portal}`}>نسيت كلمة المرور؟</Link>
+        {passwordResetSucceeded && !error && <div className="form-success">تم تغيير كلمة المرور بنجاح. سجّل الدخول بكلمة المرور الجديدة.</div>}
         {error && <div className="form-error">{error}</div>}
         <button className="primary-btn" disabled={loading}>{loading ? "جارٍ التحقق..." : "دخول"}</button>
       </form>

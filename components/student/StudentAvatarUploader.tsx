@@ -20,6 +20,7 @@ import {
   useState,
   useTransition,
 } from "react";
+import { createPortal } from "react-dom";
 
 import {
   removeStudentAvatar,
@@ -75,6 +76,9 @@ export default function StudentAvatarUploader({
     useState(false);
 
   const [previewOpen, setPreviewOpen] =
+    useState(false);
+
+  const [portalReady, setPortalReady] =
     useState(false);
 
   const [cameraOpen, setCameraOpen] =
@@ -173,6 +177,10 @@ export default function StudentAvatarUploader({
       }
     };
   }, [localPreviewUrl]);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -555,9 +563,7 @@ onClick={(event) => {
       >
         <button
           type="button"
-          className={
-            styles.avatarActionButton
-          }
+          className={`${styles.avatarActionButton} ${styles.dashboardActionButton}`}
           data-testid="student-avatar-upload-trigger"
           data-avatar-state={
             avatarVisible
@@ -571,9 +577,11 @@ onClick={(event) => {
         >
           <ImageUp size={16} />
 
-          {avatarVisible
-            ? "تغيير الصورة"
-            : "إضافة صورة"}
+          <span>
+            {avatarVisible
+              ? "تغيير الصورة"
+              : "إضافة صورة"}
+          </span>
         </button>
       </div>
 
@@ -621,7 +629,7 @@ onClick={(event) => {
 
       {/* IMAGE OPTIONS */}
 
-      {menuOpen && (
+      {portalReady && menuOpen && createPortal((
         <div
           className={
             styles.avatarModalLayer
@@ -808,10 +816,10 @@ onClick={(event) => {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
       {/* AVATAR PREVIEW */}
 
-{previewOpen && avatarVisible && (
+{portalReady && previewOpen && avatarVisible && createPortal((
   <div
     className={styles.avatarImageViewer}
     onMouseDown={(event) => {
@@ -851,11 +859,11 @@ onClick={(event) => {
   }
 />
   </div>
-)}
+), document.body)}
       
       {/* CAMERA */}
 
-      {cameraOpen && (
+      {portalReady && cameraOpen && createPortal((
         <div
           className={
             styles.avatarModalLayer
@@ -1002,7 +1010,7 @@ onClick={(event) => {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </div>
   );
 }

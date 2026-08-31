@@ -383,7 +383,7 @@ export default function MemberProfileMediaManager({
 
   return (
     <>
-      <section className={styles.mediaCard}>
+      <section className={styles.mediaCard} data-reveal="scale">
         <div className={styles.mediaStage}>
           <div className={styles.coverStage}>
             {hasCover ? (

@@ -116,7 +116,7 @@ export default async function AdminCertificatesPage({
 
   return (
     <section className={styles.page}>
-      <header className={styles.hero}>
+      <header className={styles.hero} data-reveal="up">
         <div className={styles.heroCopy}>
           <h1>الشهادات</h1>
 
@@ -136,7 +136,7 @@ export default async function AdminCertificatesPage({
         error={error}
       />
 
-      <div className={styles.summary}>
+      <div className={styles.summary} data-reveal-group="scale">
         {summary.map((item) => {
           const Icon = item.icon;
 
@@ -160,7 +160,7 @@ export default async function AdminCertificatesPage({
         })}
       </div>
 
-      <div className={styles.controls}>
+      <div className={styles.controls} data-reveal="up">
         <CertificatesFilters
           activities={data.activities.map((activity) => ({
             id: activity.id,
@@ -200,7 +200,7 @@ export default async function AdminCertificatesPage({
         )}
       </div>
 
-      <section className={styles.panel}>
+      <section className={styles.panel} data-reveal="up">
         <div className={styles.panelHead}>
           <div>
             <h2>الحاضرون المؤهلون</h2>

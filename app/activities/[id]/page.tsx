@@ -113,7 +113,7 @@ export default async function ActivityDetailsPage({ params }: Props) {
       </section>
 
       <div className={`shell ${styles.content}`}>
-        <section className={styles.aboutSection}>
+        <section className={styles.aboutSection} data-reveal="up">
           <div className={styles.sectionTitle}>
             <h2>{past ? "عن الفعالية" : "تفاصيل النشاط"}</h2>
           </div>
@@ -124,7 +124,11 @@ export default async function ActivityDetailsPage({ params }: Props) {
           }</p>
         </section>
 
-        <section className={styles.infoGrid} aria-label="معلومات النشاط">
+        <section
+          className={styles.infoGrid}
+          aria-label="معلومات النشاط"
+          data-reveal-group="scale"
+        >
           <div className={styles.infoCard}>
             <CalendarDays aria-hidden="true" />
             <span>التاريخ</span>
@@ -148,7 +152,7 @@ export default async function ActivityDetailsPage({ params }: Props) {
         </section>
 
         {past && activity.images.length > 0 && (
-          <section className={styles.gallerySection}>
+          <section className={styles.gallerySection} data-reveal="up">
             <div className={styles.sectionTitle}>
               <h2>صور من الفعالية</h2>
             </div>

@@ -104,15 +104,19 @@ export default async function MembersAdminPage({
             </label>
 
             <label>
-              كلمة مرور مؤقتة
+              كلمة المرور المؤقتة
               <input
                 name="password"
                 type="password"
                 minLength={8}
+                maxLength={128}
                 required
                 autoComplete="new-password"
                 dir="ltr"
               />
+              <small className="field-hint">
+                سيُطلب من العضو تغيير كلمة المرور بعد تسجيل الدخول لأول مرة.
+              </small>
             </label>
 
             <label>

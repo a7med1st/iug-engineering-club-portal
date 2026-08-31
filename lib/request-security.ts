@@ -49,6 +49,9 @@ export function rejectCrossOriginRequest(request: Request) {
       ok: false,
       error: "CROSS_ORIGIN_REQUEST_REJECTED",
     },
-    { status: 403 },
+    {
+      status: 403,
+      headers: { "Cache-Control": "no-store" },
+    },
   );
 }

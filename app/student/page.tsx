@@ -263,7 +263,7 @@ export default async function StudentDashboardPage({
       ================================================== */}
 
       <section className={styles.hero}>
-        <div className={styles.heroContent}>
+        <div className={styles.heroContent} data-reveal="up">
           <h1 className={styles.heroTitle}>
             <span className={styles.heroWelcome}>
               مرحبًا،
@@ -355,6 +355,7 @@ export default async function StudentDashboardPage({
           className={
             styles.profileCard
           }
+          data-reveal="left"
         >
           <StudentAvatarUploader
             key={`${Boolean(
@@ -419,6 +420,7 @@ export default async function StudentDashboardPage({
             className={
               styles.statsGrid
             }
+            data-reveal-group="up"
           >
             <article
               className={
@@ -518,6 +520,7 @@ export default async function StudentDashboardPage({
             className={
               styles.activitiesSection
             }
+            data-reveal="up"
           >
             <div
               className={
@@ -979,11 +982,9 @@ export default async function StudentDashboardPage({
 
                 <Link
                   href="/activities"
-                  className={
-                    styles.primaryButton
-                  }
+                  className={`${styles.primaryButton} ${styles.dashboardActionButton}`}
                 >
-                  تصفح الأنشطة
+                  <span>تصفح الأنشطة</span>
                 </Link>
               </div>
             )}

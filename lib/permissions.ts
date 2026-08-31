@@ -411,6 +411,10 @@ export async function getCurrentPermissionUser() {
     redirect("/login");
   }
 
+  if (auth.user.mustChangePassword) {
+    redirect("/change-password");
+  }
+
   return auth;
 }
 

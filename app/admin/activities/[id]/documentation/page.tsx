@@ -55,7 +55,7 @@ export default async function ActivityDocumentationPage({
 
   return (
     <section className={`admin-page ${styles.page}`}>
-      <div className={styles.topbar}>
+      <div className={styles.topbar} data-reveal="right">
         <div>
           <h1>توثيق النشاط بعد التنفيذ</h1>
           <p>
@@ -78,7 +78,7 @@ export default async function ActivityDocumentationPage({
 
       <AdminFeedback error={feedback.error} success={feedback.success} />
 
-      <article className={styles.activitySummary}>
+      <article className={styles.activitySummary} data-reveal="scale">
         <div>
           <h2>{activity.title}</h2>
           <p>{activity.description}</p>
@@ -99,7 +99,7 @@ export default async function ActivityDocumentationPage({
         </div>
       </article>
 
-      <div className={styles.contentGrid}>
+      <div className={styles.contentGrid} data-reveal-group="up">
         <section className={styles.panel}>
           <div className={styles.panelHeading}>
             <div>
@@ -156,7 +156,10 @@ export default async function ActivityDocumentationPage({
         </section>
       </div>
 
-      <section className={`${styles.panel} ${styles.galleryPanel}`}>
+      <section
+        className={`${styles.panel} ${styles.galleryPanel}`}
+        data-reveal="up"
+      >
         <div className={styles.panelHeading}>
           <div>
             <h2>معرض الصور</h2>

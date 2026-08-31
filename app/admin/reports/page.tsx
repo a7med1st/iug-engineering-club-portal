@@ -143,7 +143,7 @@ export default async function AdminReportsPage({
 
   return (
     <section className={styles.page}>
-      <header className={styles.hero}>
+      <header className={styles.hero} data-reveal="up">
         <div className={styles.heroCopy}>
           <h1>التقارير</h1>
           <p>
@@ -195,7 +195,7 @@ export default async function AdminReportsPage({
         }
       />
 
-      <div className={styles.summary}>
+      <div className={styles.summary} data-reveal-group="scale">
         {summaryItems.map((item) => {
           const Icon = item.icon;
 
@@ -219,7 +219,7 @@ export default async function AdminReportsPage({
         })}
       </div>
 
-      <section className={styles.panel}>
+      <section className={styles.panel} data-reveal="up">
         <div className={styles.panelHead}>
           <div>
             <h2>تقرير الأنشطة</h2>

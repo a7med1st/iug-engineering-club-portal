@@ -81,7 +81,7 @@ export default async function MemberProfileEditorPage({
 
   return (
     <main className={styles.page}>
-      <div className={styles.topBar}>
+      <div className={styles.topBar} data-reveal="right">
         <Link href="/member" className={styles.backLink}>
           <ArrowRight size={18} />
           لوحة العضو
@@ -98,7 +98,7 @@ export default async function MemberProfileEditorPage({
         )}
       </div>
 
-      <section className={styles.hero}>
+      <section className={styles.hero} data-reveal="up">
         <div className={styles.heroGlow} aria-hidden="true" />
         <div className={styles.heroIcon}>
           <UserRound size={24} />
@@ -132,7 +132,7 @@ export default async function MemberProfileEditorPage({
           }
         />
 
-        <section className={styles.card}>
+        <section className={styles.card} data-reveal="up">
           <div className={styles.cardHead}>
             <div className={styles.cardHeadIcon}>
               <Sparkles size={18} />
@@ -169,7 +169,7 @@ export default async function MemberProfileEditorPage({
           </div>
         </section>
 
-        <section className={styles.card}>
+        <section className={styles.card} data-reveal="up">
           <div className={styles.cardHead}>
             <div className={styles.cardHeadIcon}>
               <Link2 size={18} />

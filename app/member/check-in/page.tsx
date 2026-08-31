@@ -120,7 +120,7 @@ export default async function MemberCheckInActivitiesPage() {
 
   return (
     <main className={styles.page}>
-<section className={styles.hero}>
+<section className={styles.hero} data-reveal="up">
   <div className={styles.heroDecoration} aria-hidden="true" />
 
   <div className={styles.heroCopy}>
@@ -138,7 +138,7 @@ export default async function MemberCheckInActivitiesPage() {
   </div>
 </section>
 
-<div className={styles.sectionHead}>
+<div className={styles.sectionHead} data-reveal="up">
   <div>
     <h2>اختر النشاط</h2>
     <p>
@@ -153,7 +153,7 @@ export default async function MemberCheckInActivitiesPage() {
 </div>
 
       {rows.length ? (
-        <div className={styles.activityGrid}>
+        <div className={styles.activityGrid} data-reveal-group="scale">
           {rows.map((activity, index) => {
             const remaining = Math.max(
               activity.approvedCount - activity.checkedInCount,

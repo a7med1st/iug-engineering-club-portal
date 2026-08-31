@@ -87,7 +87,7 @@ export default async function StudentCertificatesPage() {
         styles.page
       }
     >
-      <header>
+      <header data-reveal="up">
         <span>
           My Certificates
         </span>
@@ -107,6 +107,7 @@ export default async function StudentCertificatesPage() {
           className={
             styles.grid
           }
+          data-reveal-group="scale"
         >
           {certificates.map(
             (certificate) => (
@@ -186,6 +187,7 @@ export default async function StudentCertificatesPage() {
           className={
             styles.empty
           }
+          data-reveal="up"
         >
           لا توجد شهادات صادرة لك
           حتى الآن.
