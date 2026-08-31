@@ -309,6 +309,7 @@ async function main() {
   record(
     "Current-device logout",
     logoutResponse.status === 303 &&
+      logoutResponse.headers.get("location") === "/" &&
       (logoutResponse.headers.get("set-cookie") ?? "").includes(
         "ec_session=",
       ),

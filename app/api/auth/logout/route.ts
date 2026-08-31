@@ -11,5 +11,8 @@ export async function POST(request: Request) {
   }
 
   await clearSession();
-  return NextResponse.redirect(new URL("/", request.url), 303);
+  return new NextResponse(null, {
+    status: 303,
+    headers: { Location: "/" },
+  });
 }
