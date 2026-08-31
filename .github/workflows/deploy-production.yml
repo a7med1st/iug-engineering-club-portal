@@ -1,0 +1,46 @@
+name: Deploy production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iug-main-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Oracle server
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Configure SSH
+        shell: bash
+        env:
+          DEPLOY_KEY: ${{ secrets.IUG_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.IUG_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/iug_deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/iug_deploy ~/.ssh/known_hosts
+
+      - name: Deploy exact commit
+        shell: bash
+        run: |
+          ssh \
+            -i ~/.ssh/iug_deploy \
+            -o IdentitiesOnly=yes \
+            iugdeploy@130.110.247.136 \
+            "bash -s -- '$GITHUB_SHA'" \
+            < scripts/deploy-production.sh
+
