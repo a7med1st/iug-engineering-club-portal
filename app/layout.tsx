@@ -46,6 +46,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <CspNonceProvider nonce={nonce}>
       <IntroGate />
       <NavigationTransitionProvider />
+      <ScrollReveal />
       <Header />
       <main data-page-transition-content>{children}</main>
       <Footer />

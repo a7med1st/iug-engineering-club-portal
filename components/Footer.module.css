@@ -2,7 +2,8 @@
   position: relative;
   width: 100%;
   min-width: 0;
-  padding: 22px 0 0;
+  margin-top: -1px;
+  padding: 0;
   border: 0;
   background: transparent;
   color: #eef8ff;
@@ -14,15 +15,13 @@
   width: 100%;
   margin-inline: auto;
   overflow: hidden;
-  border-block: 1px solid rgba(87, 188, 255, 0.22);
+  border-block: 0;
   border-inline: 0;
   border-radius: 0;
   background:
     radial-gradient(circle at 50% -28%, rgba(26, 164, 255, 0.23), transparent 44%),
     linear-gradient(135deg, #061827 0%, #08253b 50%, #051725 100%);
-  box-shadow:
-    0 -10px 34px rgba(0, 12, 24, 0.14),
-    inset 0 1px 0 rgba(205, 238, 255, 0.08);
+  box-shadow: 0 -10px 34px rgba(0, 12, 24, 0.14);
 }
 
 .frame::after {
@@ -353,7 +352,7 @@
 
 @media (max-width: 680px) {
   .footer {
-    padding: 18px 0 0;
+    padding: 0;
   }
 
   .frame {
