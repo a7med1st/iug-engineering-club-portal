@@ -56,19 +56,19 @@ export default async function ActivitiesAdminPage({
 
   const departments = isAdmin
     ? await prisma.department.findMany({
+      orderBy: {
+        sortOrder: "asc",
+      },
+    })
+    : user.departmentId
+      ? await prisma.department.findMany({
+        where: {
+          id: user.departmentId,
+        },
         orderBy: {
           sortOrder: "asc",
         },
       })
-    : user.departmentId
-      ? await prisma.department.findMany({
-          where: {
-            id: user.departmentId,
-          },
-          orderBy: {
-            sortOrder: "asc",
-          },
-        })
       : [];
 
   const rawActivities = await prisma.activity.findMany({
@@ -76,12 +76,12 @@ export default async function ActivitiesAdminPage({
       isAdmin || !user.departmentId
         ? undefined
         : {
-            departments: {
-              some: {
-                departmentId: user.departmentId,
-              },
+          departments: {
+            some: {
+              departmentId: user.departmentId,
             },
           },
+        },
 
     include: {
       departments: {
@@ -123,9 +123,8 @@ export default async function ActivitiesAdminPage({
           <p className="muted">
             {isAdmin
               ? "أنشئ الأنشطة وحدد الأقسام المستهدفة، ثم تابع التسجيلات."
-              : `يمكنك إدارة الأنشطة المرتبطة حصريًا بقسم ${
-                  user.department?.nameAr ?? "المحدد لحسابك"
-                } فقط.`}
+              : `يمكنك إدارة الأنشطة المرتبطة حصريًا بقسم ${user.department?.nameAr ?? "المحدد لحسابك"
+              } فقط.`}
           </p>
         </div>
       </div>
@@ -1013,6 +1012,7 @@ export default async function ActivitiesAdminPage({
           position: relative;
           isolation: isolate;
           overflow: hidden;
+          container-type: inline-size;
           border: 1px solid rgba(179, 204, 232, 0.72);
           background:
             radial-gradient(circle at 92% 4%, rgba(22, 136, 255, 0.16), transparent 29%),
@@ -1131,8 +1131,10 @@ export default async function ActivitiesAdminPage({
         .activities-admin-page .activity-visual-card {
           position: relative;
           overflow: hidden;
-          align-items: center;
-          gap: 16px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 164px;
+          align-items: stretch;
+          gap: 18px;
           padding: 16px 17px;
           border: 1px solid rgba(198, 214, 232, 0.86);
           border-inline-start: 4px solid #1688ff;
@@ -1182,8 +1184,10 @@ export default async function ActivitiesAdminPage({
         .activities-admin-page .activity-admin-main {
           position: relative;
           z-index: 1;
-          flex: 1 1 auto;
           min-width: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
           padding-inline-start: 7px;
         }
 
@@ -1197,6 +1201,8 @@ export default async function ActivitiesAdminPage({
 
         .activities-admin-page .activity-title {
           min-width: 0;
+          display: block;
+          margin: 0;
           color: #102139;
           font-size: 0.88rem;
           line-height: 1.55;
@@ -1205,6 +1211,10 @@ export default async function ActivitiesAdminPage({
 
         .activities-admin-page .activity-status-badge {
           flex: 0 0 auto;
+          min-height: 28px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           padding: 5px 10px;
           border: 1px solid transparent;
           border-radius: 999px;
@@ -1252,9 +1262,9 @@ export default async function ActivitiesAdminPage({
         }
 
         .activities-admin-page .activity-info-row {
-          display: flex;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           align-items: center;
-          flex-wrap: wrap;
           gap: 0;
           color: #617289;
           font-size: 0.7rem;
@@ -1262,15 +1272,23 @@ export default async function ActivitiesAdminPage({
         }
 
         .activities-admin-page .activity-info-form-row {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           margin-top: 7px;
           padding-top: 7px;
           border-top: 1px solid rgba(214, 225, 237, 0.86);
-          flex-wrap: nowrap;
         }
 
         .activities-admin-page .activity-info-form-row .activity-info-item {
-          flex: 0 1 auto;
-          white-space: nowrap;
+          width: 100%;
+          justify-content: center;
+          text-align: center;
+          white-space: normal;
+        }
+
+        .activities-admin-page .activity-info-form-row .activity-info-item:only-child {
+          grid-column: 1 / -1;
+          justify-content: flex-start;
+          text-align: start;
         }
 
         .activities-admin-page .activity-info-item {
@@ -1281,7 +1299,8 @@ export default async function ActivitiesAdminPage({
           min-width: 0;
           padding-inline: 9px;
           color: #617289;
-          overflow-wrap: anywhere;
+          overflow-wrap: normal;
+          word-break: normal;
         }
 
         .activities-admin-page .activity-info-item:first-child {
@@ -1375,16 +1394,19 @@ export default async function ActivitiesAdminPage({
         .activities-admin-page .activity-admin-row-actions {
           position: relative;
           z-index: 2;
-          flex: 0 0 auto;
-          display: flex;
-          flex-direction: column;
-          align-items: stretch;
-          justify-content: center;
+          width: 164px;
+          min-width: 164px;
+          height: 156px;
+          min-height: 156px;
+          display: grid;
+          grid-auto-rows: 46px;
+          align-content: center;
           gap: 9px;
         }
 
         .activities-admin-page .activity-admin-row-actions form {
           width: 100%;
+          height: 46px;
           min-width: 0;
           margin: 0;
         }
@@ -1392,8 +1414,9 @@ export default async function ActivitiesAdminPage({
         .activities-admin-page .activity-admin-row-actions .ghost-btn,
         .activities-admin-page .activity-admin-row-actions .danger-btn {
           width: 100%;
+          height: 46px;
           min-width: 0;
-          min-height: 46px;
+          min-height: 0;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1487,16 +1510,79 @@ export default async function ActivitiesAdminPage({
           .activities-admin-page .activities-panel-head {
             align-items: center;
           }
+        }
 
+        @container (max-width: 620px) {
           .activities-admin-page .activity-visual-card {
-            align-items: stretch;
-            flex-direction: column;
+            grid-template-columns: minmax(0, 1fr);
           }
 
           .activities-admin-page .activity-admin-row-actions {
             width: 100%;
-            justify-content: flex-start;
+            min-width: 0;
+            height: auto;
+            min-height: 0;
+            grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+            grid-auto-rows: 46px;
+            align-content: start;
           }
+
+          .activities-admin-page .activity-info-form-row {
+            grid-template-columns: repeat(4, minmax(max-content, 1fr));
+          }
+
+          .activities-admin-page .activity-info-form-row .activity-info-item {
+            white-space: nowrap;
+            overflow-wrap: normal;
+            word-break: normal;
+          }
+        }
+
+        @container (max-width: 470px) {
+          .activities-admin-page .activity-info-form-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            row-gap: 8px;
+          }
+
+          .activities-admin-page .activity-info-form-row .activity-info-item {
+            white-space: normal;
+            overflow-wrap: normal;
+            word-break: normal;
+          }
+
+          .activities-admin-page .activity-admin-row-actions {
+            grid-template-columns: minmax(0, 1fr);
+          }
+        }
+
+        @media (max-width: 680px) {
+          .activities-admin-page .activity-info-form-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            row-gap: 8px;
+          }
+
+.activities-admin-page .activity-info-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin-top: 7px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(214, 225, 237, 0.18);
+}
+
+.activities-admin-page .activity-info-form-row .activity-info-item {
+  width: 100%;
+  padding-inline: 0;
+  justify-content: flex-start;
+  text-align: start;
+  white-space: normal;
+}
+
+.activities-admin-page .activity-info-form-row .activity-info-item::before,
+.activities-admin-page .activity-info-form-row .activity-info-item + .activity-info-item::before,
+.activities-admin-page .activity-info-form-row .activity-info-item:nth-child(even)::before {
+  display: none !important;
+}
         }
 
         @media (max-width: 560px) {
@@ -1528,30 +1614,28 @@ export default async function ActivitiesAdminPage({
 
           .activities-admin-page .activity-info-row {
             align-items: flex-start;
-            flex-direction: column;
+            grid-template-columns: minmax(0, 1fr);
             gap: 5px;
           }
 
           .activities-admin-page .activity-info-form-row {
-            display: flex;
+            display: grid;
             align-items: center;
-            flex-direction: row;
-            flex-wrap: nowrap;
-            gap: 0;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px 0;
           }
 
           .activities-admin-page .activity-info-form-row .activity-info-item {
-            width: auto;
-            flex: 0 1 auto;
+            width: 100%;
             padding-inline: 6px;
-            white-space: nowrap;
+            white-space: normal;
           }
 
           .activities-admin-page .activity-info-form-row .activity-info-item:first-child {
             padding-inline-start: 0;
           }
 
-          .activities-admin-page .activity-info-form-row .activity-info-item + .activity-info-item::before {
+          .activities-admin-page .activity-info-form-row .activity-info-item:nth-child(even)::before {
             display: block;
           }
 
@@ -1564,7 +1648,17 @@ export default async function ActivitiesAdminPage({
             display: none;
           }
 
-خ        }
+          .activities-admin-page .activity-admin-row-actions {
+            grid-template-columns: minmax(0, 1fr);
+          }
+        }
+
+        @media (min-width: 681px) {
+  .activities-admin-page .activity-info-form-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px 14px;
+  }
+}
 
         @media (max-width: 560px) {
           .activities-admin-page .activity-form-builder {

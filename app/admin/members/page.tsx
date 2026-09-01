@@ -430,7 +430,115 @@ export default async function MembersAdminPage({
         .members-admin-page .members-form {
           position: relative;
           z-index: 1;
-          margin-top: 16px;
+          margin-top: 18px;
+        }
+
+        /* Create-member form: keep both columns visually aligned */
+        .members-admin-page .members-create-card .members-form-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          align-items: start;
+          column-gap: 20px;
+          row-gap: 16px;
+        }
+
+        .members-admin-page .members-create-card .members-form-grid > label,
+        .members-admin-page .members-create-card .members-form-grid > .members-field {
+          min-width: 0;
+          display: grid;
+          grid-template-rows: auto 54px minmax(22px, auto);
+          align-content: start;
+          gap: 7px;
+          margin: 0;
+        }
+
+        .members-admin-page .members-create-card .members-form-grid > label,
+        .members-admin-page .members-create-card .members-field-label {
+          color: #102139;
+          font-family: "Alexandria", sans-serif;
+          font-size: .75rem;
+          font-weight: 700;
+          line-height: 1.5;
+        }
+
+        .members-admin-page .members-create-card .members-form-grid input {
+          width: 100%;
+          height: 54px;
+          min-height: 54px;
+          margin: 0;
+          padding: 0 14px;
+          border: 1px solid #c8dced;
+          border-radius: 13px;
+          background: rgba(255,255,255,.9);
+          color: #102139;
+          font-family: "Alexandria", sans-serif;
+          font-size: .78rem;
+          line-height: 1.4;
+          box-sizing: border-box;
+        }
+
+        .members-admin-page .members-create-card .members-form-grid input[dir="ltr"] {
+          text-align: left;
+        }
+
+        .members-admin-page .members-create-card .members-form-grid input:disabled {
+          opacity: 1;
+          border-color: #d1deea;
+          background: linear-gradient(180deg, #f1f6fb, #eaf2f9);
+          color: #5f7287;
+          font-weight: 700;
+          cursor: default;
+        }
+
+        .members-admin-page .members-create-card .field-hint {
+          min-height: 22px;
+          margin: 0;
+          display: block;
+          align-self: start;
+          color: #7c8fa4;
+          font-family: "Alexandria", sans-serif;
+          font-size: .66rem;
+          font-weight: 500;
+          line-height: 1.55;
+        }
+
+        .members-admin-page .members-create-card .members-field {
+          gap: 7px;
+        }
+
+        .members-admin-page .members-create-card .members-department-select {
+          align-self: stretch;
+          min-width: 0;
+        }
+
+        .members-admin-page .members-create-card .members-department-trigger {
+          height: 54px;
+          min-height: 54px;
+          padding: 7px 10px;
+          border-radius: 13px;
+          box-sizing: border-box;
+        }
+
+        .members-admin-page .members-create-card .members-department-icon {
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
+        }
+
+        .members-admin-page .members-create-card .members-department-chevron {
+          width: 32px;
+          height: 32px;
+          border-radius: 9px;
+        }
+
+        .members-admin-page .members-create-card .members-department-selected-copy strong {
+          font-size: .76rem;
+          line-height: 1.4;
+        }
+
+        .members-admin-page .members-create-card .members-department-selected-copy small {
+          font-size: .64rem;
+          line-height: 1.3;
         }
 
         .members-admin-page .members-form-grid label,
@@ -490,6 +598,27 @@ export default async function MembersAdminPage({
         .members-admin-page .members-form-grid input:disabled {
           background: rgba(238,244,250,.78);
           color: #607286;
+        }
+
+        html[data-theme="dark"] .members-admin-page .members-create-card .members-form-grid > label,
+        html[data-theme="dark"] .members-admin-page .members-create-card .members-field-label {
+          color: #dcebf6;
+        }
+
+        html[data-theme="dark"] .members-admin-page .members-create-card .members-form-grid input {
+          border-color: rgba(91, 169, 224, .38);
+          background: #071e31;
+          color: #f2f8fc;
+        }
+
+        html[data-theme="dark"] .members-admin-page .members-create-card .members-form-grid input:disabled {
+          border-color: rgba(91, 169, 224, .28);
+          background: #0b2a43;
+          color: #b7ccdc;
+        }
+
+        html[data-theme="dark"] .members-admin-page .members-create-card .field-hint {
+          color: #93aabd;
         }
 
         .members-admin-page .members-permissions-fieldset {
@@ -896,6 +1025,10 @@ export default async function MembersAdminPage({
         }
 
         @media (max-width: 760px) {
+          .members-admin-page .members-create-card .members-form-grid {
+            grid-template-columns: minmax(0, 1fr);
+          }
+
           .members-admin-page .member-permission-row {
             align-items: flex-start;
             flex-direction: column;

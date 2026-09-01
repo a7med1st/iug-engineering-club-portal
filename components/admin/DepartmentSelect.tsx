@@ -140,7 +140,7 @@ export default function DepartmentSelect({
         </div>
       )}
 
-      <style nonce={nonce}>{`
+      <style nonce={nonce} suppressHydrationWarning>{`
         .members-department-select {
           position: relative;
           width: 100%;
@@ -150,8 +150,9 @@ export default function DepartmentSelect({
 
         .members-department-trigger {
           width: 100%;
-          min-height: 58px;
-          padding: 9px 11px 9px 12px;
+          height: 54px;
+          min-height: 54px;
+          padding: 7px 10px 7px 11px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -200,8 +201,8 @@ export default function DepartmentSelect({
 
         .members-department-icon {
           flex: 0 0 auto;
-          width: 36px;
-          height: 36px;
+          width: 34px;
+          height: 34px;
           display: grid;
           place-items: center;
           border: 1px solid rgba(22,136,255,.14);
@@ -242,11 +243,11 @@ export default function DepartmentSelect({
 
         .members-department-chevron {
           flex: 0 0 auto;
-          width: 34px;
-          height: 34px;
+          width: 32px;
+          height: 32px;
           display: grid;
           place-items: center;
-          border-radius: 10px;
+          border-radius: 9px;
           background: #edf6ff;
           color: #147bdc;
           transition: transform .22s ease, background .22s ease, color .22s ease;

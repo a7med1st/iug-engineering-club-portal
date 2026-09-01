@@ -29,5 +29,9 @@ export function useCspNonce() {
 export function NonceStyle({ children }: { children: string }) {
   const nonce = useCspNonce();
 
-  return <style nonce={nonce}>{children}</style>;
+return (
+  <style nonce={nonce} suppressHydrationWarning>
+    {children}
+  </style>
+);
 }

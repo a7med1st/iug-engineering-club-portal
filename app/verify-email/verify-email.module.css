@@ -2,10 +2,10 @@
   position: relative;
   isolation: isolate;
   display: grid;
-  min-height: 72vh;
+  min-height: 62vh;
   place-items: center;
   overflow: hidden;
-  padding: 54px 20px 72px;
+  padding: 34px 16px 46px;
   background:
     radial-gradient(circle at 82% 18%, rgba(43, 174, 255, 0.16), transparent 31%),
     radial-gradient(circle at 14% 86%, rgba(44, 195, 163, 0.11), transparent 28%),
@@ -37,22 +37,22 @@
 .glow {
   position: absolute;
   z-index: -1;
-  width: min(620px, 88vw);
+  width: min(520px, 84vw);
   aspect-ratio: 1;
   border-radius: 50%;
   background: rgba(26, 145, 239, 0.12);
-  filter: blur(80px);
+  filter: blur(72px);
 }
 
 .card {
   position: relative;
-  width: min(100%, 590px);
+  width: min(100%, 500px);
   overflow: hidden;
   border: 1px solid rgba(80, 154, 216, 0.25);
-  border-radius: 26px;
-  padding: 38px clamp(22px, 6vw, 48px) 30px;
+  border-radius: 22px;
+  padding: 26px clamp(20px, 5vw, 34px) 22px;
   background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 28px 70px rgba(7, 39, 69, 0.14);
+  box-shadow: 0 22px 55px rgba(7, 39, 69, 0.12);
   text-align: center;
   backdrop-filter: blur(18px);
 }
@@ -60,105 +60,110 @@
 .accent {
   position: absolute;
   inset: 0 0 auto;
-  height: 5px;
+  height: 4px;
   background: linear-gradient(90deg, #24c6a3, #168af1 62%, #f5a623);
 }
 
 .iconWrap {
   display: grid;
-  width: 72px;
-  height: 72px;
+  width: 58px;
+  height: 58px;
   place-items: center;
-  margin: 0 auto 22px;
+  margin: 0 auto 15px;
   border: 1px solid rgba(40, 169, 245, 0.25);
-  border-radius: 22px;
+  border-radius: 17px;
   color: #087ae0;
   background: linear-gradient(145deg, #eaf8ff, #dff2ff);
-  box-shadow: 0 13px 30px rgba(15, 129, 224, 0.15);
+  box-shadow: 0 10px 24px rgba(15, 129, 224, 0.13);
 }
 
 .iconWrap svg {
-  width: 34px;
-  height: 34px;
+  width: 27px;
+  height: 27px;
 }
 
 .heading {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   color: #092a49;
 }
 
 .heading svg {
-  width: 23px;
+  width: 20px;
   color: #138be8;
 }
 
 .heading h1 {
   margin: 0;
-  font-size: clamp(1.7rem, 5vw, 2.25rem);
-  line-height: 1.35;
+  font-size: clamp(1.4rem, 3vw, 1.75rem);
+  line-height: 1.3;
 }
 
 .lead {
-  max-width: 440px;
-  margin: 14px auto 27px;
+  max-width: 390px;
+  margin: 10px auto 20px;
   color: #587087;
-  line-height: 1.9;
+  font-size: 0.88rem;
+  line-height: 1.7;
 }
 
 .lead strong {
   display: block;
-  margin-top: 3px;
+  margin-top: 2px;
   color: #0c70c5;
   font-weight: 750;
 }
 
 .developmentCode {
   display: grid;
-  gap: 4px;
-  margin: -10px auto 22px;
+  gap: 3px;
+  margin: -6px auto 16px;
   border: 1px solid #b9dcf6;
-  border-radius: 14px;
-  padding: 11px 14px;
+  border-radius: 12px;
+  padding: 9px 12px;
   color: #17689f;
   background: #eef8ff;
 }
 
 .developmentCode span,
 .developmentCode small {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
 }
 
 .developmentCode strong {
   color: #075ca2;
-  font: 800 1.35rem / 1.4 system-ui, sans-serif;
-  letter-spacing: 0.24em;
+  font: 800 1.18rem / 1.35 system-ui, sans-serif;
+  letter-spacing: 0.22em;
 }
 
 .label {
   display: block;
-  margin-bottom: 9px;
+  margin-bottom: 7px;
   color: #183c5b;
   text-align: right;
+  font-size: 0.86rem;
   font-weight: 750;
 }
 
 .codeInput {
   width: 100%;
-  height: 76px;
+  height: 62px;
   border: 1px solid #b9d7ed;
-  border-radius: 18px;
+  border-radius: 15px;
   outline: 0;
   color: #092f53;
   background:
     linear-gradient(180deg, #ffffff, #f6fbff);
-  font: 800 clamp(1.8rem, 7vw, 2.45rem) / 1 system-ui, sans-serif;
-  letter-spacing: 0.5em;
+  font: 800 clamp(1.55rem, 5vw, 2rem) / 1 system-ui, sans-serif;
+  letter-spacing: 0.42em;
   text-align: center;
-  text-indent: 0.5em;
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  text-indent: 0.42em;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .codeInput:focus-visible {
@@ -176,32 +181,32 @@
 }
 
 .help {
-  margin: 10px 0 0;
+  margin: 7px 0 0;
   color: #71879b;
-  font-size: 0.84rem;
-  line-height: 1.7;
+  font-size: 0.76rem;
+  line-height: 1.6;
 }
 
 .feedbackRegion {
-  min-height: 64px;
-  padding-top: 14px;
+  min-height: 50px;
+  padding-top: 10px;
 }
 
 .feedback {
   display: flex;
   align-items: flex-start;
-  gap: 9px;
+  gap: 8px;
   border: 1px solid;
-  border-radius: 14px;
-  padding: 11px 13px;
+  border-radius: 12px;
+  padding: 9px 11px;
   text-align: right;
-  font-size: 0.9rem;
-  line-height: 1.65;
+  font-size: 0.82rem;
+  line-height: 1.55;
 }
 
 .feedback svg {
   flex: 0 0 auto;
-  width: 19px;
+  width: 17px;
   margin-top: 2px;
 }
 
@@ -228,7 +233,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  gap: 8px;
   border: 0;
   font: inherit;
   font-weight: 750;
@@ -237,27 +242,35 @@
 .verifyButton {
   position: relative;
   width: 100%;
-  min-height: 52px;
+  min-height: 46px;
   overflow: hidden;
-  border-radius: 15px;
+  border-radius: 13px;
   color: #fff;
   background: linear-gradient(110deg, #086bd1, #15aaf1);
-  box-shadow: 0 13px 26px rgba(13, 122, 213, 0.23);
-  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+  box-shadow: 0 11px 22px rgba(13, 122, 213, 0.21);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
 }
 
 .verifyButton::after {
   position: absolute;
   inset: 0;
   content: "";
-  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.28), transparent 75%);
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.28),
+    transparent 75%
+  );
   transform: translateX(110%);
   transition: transform 420ms ease;
 }
 
 .verifyButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 17px 30px rgba(13, 122, 213, 0.3);
+  box-shadow: 0 15px 27px rgba(13, 122, 213, 0.28);
 }
 
 .verifyButton:hover:not(:disabled)::after {
@@ -281,24 +294,27 @@
 }
 
 .resendArea {
-  margin-top: 23px;
-  padding-top: 21px;
+  margin-top: 17px;
+  padding-top: 16px;
   border-top: 1px solid #e4edf4;
 }
 
 .resendArea p {
-  margin: 0 0 11px;
+  margin: 0 0 7px;
   color: #6b8194;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
 }
 
 .resendButton {
-  min-height: 40px;
-  border-radius: 12px;
-  padding: 7px 12px;
+  min-height: 36px;
+  border-radius: 10px;
+  padding: 5px 10px;
   color: #0875cf;
   background: transparent;
-  transition: color 160ms ease, background 160ms ease;
+  font-size: 0.82rem;
+  transition:
+    color 160ms ease,
+    background 160ms ease;
 }
 
 .resendButton:hover:not(:disabled) {
@@ -308,8 +324,8 @@
 
 .resendButton svg,
 .spinner {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .spinner {
@@ -318,9 +334,9 @@
 
 .loginLink {
   display: inline-block;
-  margin-top: 18px;
+  margin-top: 12px;
   color: #587087;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   text-underline-offset: 4px;
 }
 
@@ -332,17 +348,45 @@
 
 @media (max-width: 520px) {
   .page {
-    padding-inline: 12px;
+    min-height: 58vh;
+    padding: 26px 12px 34px;
   }
 
   .card {
-    border-radius: 22px;
+    width: min(100%, 460px);
+    padding: 23px 18px 20px;
+    border-radius: 19px;
+  }
+
+  .iconWrap {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 13px;
+  }
+
+  .iconWrap svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .heading h1 {
+    font-size: 1.35rem;
+  }
+
+  .lead {
+    margin-bottom: 17px;
+    font-size: 0.82rem;
   }
 
   .codeInput {
-    height: 68px;
-    letter-spacing: 0.35em;
-    text-indent: 0.35em;
+    height: 58px;
+    font-size: 1.55rem;
+    letter-spacing: 0.34em;
+    text-indent: 0.34em;
+  }
+
+  .feedbackRegion {
+    min-height: 46px;
   }
 }
 
