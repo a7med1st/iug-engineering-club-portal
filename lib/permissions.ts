@@ -276,11 +276,18 @@ export function isDepartmentScopedPermission(
 export function hasPermission(
   role: Role,
   permission: Permission,
-  memberPermissions: readonly string[] =
-    [],
+  memberPermissions: readonly string[] = [],
+  position?: string | null,
 ) {
   if (role === "ADMIN") {
     return true;
+  }
+
+  // Club leaders have MEMBER_MANAGE permission
+  if (isClubLeadership(position)) {
+    if (permission === PERMISSIONS.MEMBER_MANAGE) {
+      return true;
+    }
   }
 
   if (role === "STUDENT") {
@@ -304,8 +311,8 @@ export function hasPermission(
 export function hasAnyPermission(
   role: Role,
   permissions: readonly Permission[],
-  memberPermissions: readonly string[] =
-    [],
+  memberPermissions: readonly string[] = [],
+  position?: string | null,
 ) {
   return permissions.some(
     (permission) =>
@@ -313,6 +320,7 @@ export function hasAnyPermission(
         role,
         permission,
         memberPermissions,
+        position,
       ),
   );
 }
@@ -320,8 +328,8 @@ export function hasAnyPermission(
 export function hasAllPermissions(
   role: Role,
   permissions: readonly Permission[],
-  memberPermissions: readonly string[] =
-    [],
+  memberPermissions: readonly string[] = [],
+  position?: string | null,
 ) {
   return permissions.every(
     (permission) =>
@@ -329,6 +337,7 @@ export function hasAllPermissions(
         role,
         permission,
         memberPermissions,
+        position,
       ),
   );
 }
@@ -479,6 +488,7 @@ export async function requireContactAccess() {
       auth.user.role,
       PERMISSIONS.CONTACT_MANAGE,
       auth.user.memberPermissions,
+      auth.user.position,
     ) ||
     (await hasAssignedContactRequests(auth.user.id))
   ) {
@@ -494,6 +504,7 @@ export async function requireAdminAreaAccess() {
     auth.user.role,
     ADMIN_AREA_PERMISSIONS,
     auth.user.memberPermissions,
+    auth.user.position,
   );
   const hasContactAssignments = hasAdminPermission
     ? false
@@ -526,6 +537,7 @@ export async function requirePermission(
       user.role,
       permission,
       user.memberPermissions,
+      user.position,
     )
   ) {
     redirect(
@@ -649,6 +661,7 @@ export async function requireAnyPermission(
       user.role,
       permissions,
       user.memberPermissions,
+      user.position,
     )
   ) {
     redirect(
