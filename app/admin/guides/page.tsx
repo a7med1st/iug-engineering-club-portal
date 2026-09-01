@@ -4,6 +4,7 @@ import { NonceStyle } from "@/components/security/CspNonce";
 
 import {
   PERMISSIONS,
+  isClubLeadership,
   requirePermission,
 } from "@/lib/permissions";
 
@@ -22,9 +23,11 @@ export default async function GuidesAdminPage({
   const { user } = await requirePermission(PERMISSIONS.GUIDE_MANAGE);
   const feedback = await searchParams;
 
+  const isAdmin = user.role === "ADMIN" || isClubLeadership(user.position);
+
   const departments = await prisma.department.findMany({
     where:
-      user.role === "MEMBER"
+      !isAdmin && user.role === "MEMBER"
         ? {
             id: user.departmentId ?? "__NO_DEPARTMENT__",
           }
@@ -43,7 +46,7 @@ export default async function GuidesAdminPage({
         <div>
           <h1>تحرير دليل قسم</h1>
           <p className="muted">
-            {user.role === "ADMIN"
+            {isAdmin
               ? "اختر أحد أقسام الهندسة، ثم حدّث محتوى دليله واحفظ التغييرات."
               : `يمكنك تعديل دليل ${
                   user.department?.nameAr ?? "القسم المرتبط بحسابك"

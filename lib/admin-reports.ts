@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { isClubLeadership } from "@/lib/permissions";
 
 export type ReportRange =
   | "ALL"
@@ -86,6 +87,9 @@ export async function getAdminReportsData({
     departmentId:
       | string
       | null;
+    position?:
+      | string
+      | null;
   };
 
   departmentId:
@@ -130,8 +134,10 @@ export async function getAdminReportsData({
         ) ?? null
       : null;
 
+  const isAdmin = user.role === "ADMIN" || isClubLeadership(user.position);
+
   const effectiveDepartmentId =
-    user.role === "ADMIN"
+    isAdmin
       ? requestedDepartment?.id ??
         null
       : user.departmentId;
@@ -472,7 +478,7 @@ export async function getAdminReportsData({
     },
 
     departments:
-      user.role === "ADMIN"
+      isAdmin
         ? departments
         : departments.filter(
             (department) =>

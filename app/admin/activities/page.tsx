@@ -12,6 +12,7 @@ import {
   PERMISSIONS,
   canAccessActivityDepartments,
   hasPermission,
+  isClubLeadership,
   requireAnyPermission,
 } from "@/lib/permissions";
 
@@ -40,7 +41,7 @@ export default async function ActivitiesAdminPage({
 
   const feedback = await searchParams;
 
-  const isAdmin = user.role === "ADMIN";
+  const isAdmin = user.role === "ADMIN" || isClubLeadership(user.position);
 
   const canManageActivities = hasPermission(
     user.role,

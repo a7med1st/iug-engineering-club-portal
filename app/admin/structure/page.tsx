@@ -4,6 +4,7 @@ import { NonceStyle } from "@/components/security/CspNonce";
 
 import {
   PERMISSIONS,
+  isClubLeadership,
   requirePermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -36,7 +37,7 @@ export default async function StructureAdminPage({
   );
 
   const feedback = await searchParams;
-  const isAdmin = user.role === "ADMIN";
+  const isAdmin = user.role === "ADMIN" || isClubLeadership(user.position);
 
   const [items, accounts] = await Promise.all([
     prisma.clubStructureItem.findMany({
