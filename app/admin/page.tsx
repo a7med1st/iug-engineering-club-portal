@@ -32,6 +32,7 @@ export default async function AdminPage() {
       user.role,
       ACTIVITY_ADMIN_PERMISSIONS,
       user.memberPermissions,
+      user.position,
     )
   ) {
     redirect("/admin/activities");
@@ -42,6 +43,7 @@ export default async function AdminPage() {
       user.role,
       PERMISSIONS.STRUCTURE_MANAGE,
       user.memberPermissions,
+      user.position,
     )
   ) {
     redirect("/admin/structure");
@@ -52,6 +54,7 @@ export default async function AdminPage() {
       user.role,
       PERMISSIONS.GUIDE_MANAGE,
       user.memberPermissions,
+      user.position,
     )
   ) {
     redirect("/admin/guides");
@@ -62,6 +65,7 @@ export default async function AdminPage() {
       user.role,
       PERMISSIONS.CONTACT_MANAGE,
       user.memberPermissions,
+      user.position,
     )
   ) {
     redirect("/admin/contact");

@@ -47,12 +47,14 @@ export default async function ActivitiesAdminPage({
     user.role,
     PERMISSIONS.ACTIVITY_MANAGE,
     user.memberPermissions,
+    user.position,
   );
 
   const canReviewRegistrations = hasPermission(
     user.role,
     PERMISSIONS.REGISTRATION_REVIEW,
     user.memberPermissions,
+    user.position,
   );
 
   const departments = isAdmin

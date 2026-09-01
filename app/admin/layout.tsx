@@ -28,6 +28,7 @@ export default async function AdminLayout({
       user.role,
       ACTIVITY_ADMIN_PERMISSIONS,
       user.memberPermissions,
+      user.position,
     )
   ) {
     allowedHrefs.push(
@@ -40,6 +41,7 @@ export default async function AdminLayout({
       user.role,
       PERMISSIONS.MEMBER_MANAGE,
       user.memberPermissions,
+      user.position,
     )
   ) {
     allowedHrefs.push(
@@ -52,6 +54,7 @@ export default async function AdminLayout({
       user.role,
       PERMISSIONS.STRUCTURE_MANAGE,
       user.memberPermissions,
+      user.position,
     )
   ) {
     allowedHrefs.push(
@@ -64,6 +67,7 @@ export default async function AdminLayout({
       user.role,
       PERMISSIONS.GUIDE_MANAGE,
       user.memberPermissions,
+      user.position,
     )
   ) {
     allowedHrefs.push(
@@ -76,6 +80,7 @@ export default async function AdminLayout({
       user.role,
       PERMISSIONS.CONTACT_MANAGE,
       user.memberPermissions,
+      user.position,
     ) || hasContactAssignments
   ) {
     allowedHrefs.push(

@@ -226,6 +226,11 @@ export const ADMIN_AREA_PERMISSIONS =
     PERMISSIONS.CONTACT_MANAGE,
   ] as const;
 
+const ADMIN_AREA_PERMISSION_SET =
+  new Set<Permission>(
+    ADMIN_AREA_PERMISSIONS,
+  );
+
 export const ACTIVITY_ADMIN_PERMISSIONS =
   [
     PERMISSIONS.ACTIVITY_MANAGE,
@@ -283,9 +288,11 @@ export function hasPermission(
     return true;
   }
 
-  // Club leaders have MEMBER_MANAGE permission
   if (isClubLeadership(position)) {
-    if (permission === PERMISSIONS.MEMBER_MANAGE) {
+    if (
+      permission === PERMISSIONS.MEMBER_MANAGE ||
+      ADMIN_AREA_PERMISSION_SET.has(permission)
+    ) {
       return true;
     }
   }
