@@ -338,20 +338,42 @@ export type PermissionUser = {
   role: Role;
   departmentId: string | null;
   memberPermissions: string[];
+  position?: string | null;
 };
+
+/**
+ * Check if a member is a club president or vice president.
+ * They have full permissions across all departments.
+ */
+export function isClubLeadership(position: string | null | undefined): boolean {
+  if (!position) return false;
+  const positionLower = position.toLowerCase();
+  return (
+    positionLower.includes("رئيس النادي") ||
+    positionLower.includes("نائب رئيس النادي") ||
+    positionLower.includes("club president") ||
+    positionLower.includes("vice president")
+  );
+}
 
 /*
  * ADMIN: any department.
+ * CLUB_LEADER (President/Vice President): any department.
  * MEMBER: only the department stored on the account.
  */
 export function canAccessDepartment(
   user: Pick<
     PermissionUser,
-    "role" | "departmentId"
+    "role" | "departmentId" | "position"
   >,
   departmentId: string,
 ) {
   if (user.role === "ADMIN") {
+    return true;
+  }
+
+  // Club leaders have access to all departments
+  if (isClubLeadership(user.position)) {
     return true;
   }
 
@@ -367,17 +389,24 @@ export function canAccessDepartment(
  * Department representatives may manage only an activity
  * that belongs exclusively to their own department.
  *
+ * Club leaders (President/Vice President) can manage any activity.
+ *
  * General activities or multi-department activities remain
  * ADMIN-only because editing them affects other departments.
  */
 export function canAccessActivityDepartments(
   user: Pick<
     PermissionUser,
-    "role" | "departmentId"
+    "role" | "departmentId" | "position"
   >,
   departmentIds: readonly string[],
 ) {
   if (user.role === "ADMIN") {
+    return true;
+  }
+
+  // Club leaders can access activities from any department
+  if (isClubLeadership(user.position)) {
     return true;
   }
 

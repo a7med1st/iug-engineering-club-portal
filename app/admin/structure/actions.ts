@@ -34,6 +34,7 @@ async function assertManagedUser(
   currentUser: {
     role: "STUDENT" | "MEMBER" | "ADMIN";
     departmentId: string | null;
+    position?: string | null;
   },
   targetUserId: string,
 ) {
@@ -76,6 +77,7 @@ async function assertParentAllowed(
   currentUser: {
     role: "STUDENT" | "MEMBER" | "ADMIN";
     departmentId: string | null;
+    position?: string | null;
   },
   parentId: string | null,
 ) {
