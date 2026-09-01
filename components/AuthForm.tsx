@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { appendReturnTo, getSafeReturnTo } from "@/lib/safe-return-to";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function AuthForm() {
   const search = useSearchParams();
@@ -16,6 +17,7 @@ export default function AuthForm() {
   const [loading, setLoading] = useState(false);
   const passwordResetSucceeded = search.get("passwordReset") === "success";
   const title = useMemo(() => portal === "student" ? "دخول الطالب" : "دخول عضو النادي", [portal]);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); setError(""); setLoading(true);
@@ -56,8 +58,28 @@ export default function AuthForm() {
       <p>{portal === "student" ? "استخدم البريد الإلكتروني المرتبط بحساب الطالب الذي أنشأته." : "حسابات الأعضاء تُنشأ حصريًا بواسطة مدير النظام ولا يوجد تسجيل ذاتي للأعضاء."}</p>
       <form onSubmit={submit} className="stack-form">
         <label>البريد الإلكتروني<input type="email" name="email" required autoComplete="email" placeholder="name@gmail.com" /></label>
-        <label>كلمة المرور<input type="password" name="password" required minLength={8} autoComplete="current-password" /></label>
-        <Link className="forgot-password-link" href={`/forgot-password?portal=${portal}`}>نسيت كلمة المرور؟</Link>
+        <label>
+          كلمة المرور
+          <div className="password-field">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              required
+              minLength={8}
+              autoComplete="current-password"
+            />
+
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((value) => !value)}
+              aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+            </button>
+          </div>
+        </label>        <Link className="forgot-password-link" href={`/forgot-password?portal=${portal}`}>نسيت كلمة المرور؟</Link>
         {passwordResetSucceeded && !error && <div className="form-success">تم تغيير كلمة المرور بنجاح. سجّل الدخول بكلمة المرور الجديدة.</div>}
         {error && <div className="form-error">{error}</div>}
         <button className="primary-btn" disabled={loading}>{loading ? "جارٍ التحقق..." : "دخول"}</button>

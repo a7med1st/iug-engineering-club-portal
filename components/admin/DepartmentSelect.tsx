@@ -235,7 +235,7 @@ export default function DepartmentSelect({
 
         .members-department-selected-copy small {
           color: #78899c;
-          font-family: "Amiri Quran", serif;
+          font-family: "Alexandria", sans-serif;
           font-size: .72rem;
           line-height: 1.35;
         }
@@ -376,7 +376,7 @@ export default function DepartmentSelect({
 
         .members-department-option-copy small {
           color: #7a8b9f;
-          font-family: "Amiri Quran", serif;
+          font-family: "Alexandria", sans-serif;
           font-size: .69rem;
           line-height: 1.35;
         }

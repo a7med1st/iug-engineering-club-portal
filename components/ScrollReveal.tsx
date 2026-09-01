@@ -36,7 +36,6 @@ const SHARED_TARGETS: ReadonlyArray<{
   { selector: ".guide-section", variant: "up" },
   { selector: ".empty-guide", variant: "up" },
   { selector: ".activities-empty-state-public", variant: "up" },
-  { selector: ".auth-card", variant: "scale" },
   { selector: ".admin-page-head", variant: "up" },
   { selector: ".admin-card", variant: "up" },
   { selector: ".contact-admin-header", variant: "up" },
