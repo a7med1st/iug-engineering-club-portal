@@ -270,6 +270,23 @@ model Department {
   detailImage String?
   sortOrder   Int     @default(0)
 
+  // =====================================================
+  // PROFILE IMAGE (Stored in Blob Storage)
+  // =====================================================
+
+  profileImageStoredName   String?
+  profileImageOriginalName String?
+  profileImageMime         String?
+  profileImageSize         Int?
+  profileImageUpdatedAt    DateTime?
+
+  // Detail image for department guide
+  detailImageStoredName    String?
+  detailImageOriginalName  String?
+  detailImageMime          String?
+  detailImageSize          Int?
+  detailImageUpdatedAt     DateTime?
+
   users          User[]
   activities     ActivityDepartment[]
   guide          DepartmentGuide?

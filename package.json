@@ -23,7 +23,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "admin:create": "tsx scripts/create-production-admin.ts",
     "db:studio": "prisma studio",
-    "migrate:private-files": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --env-file-if-exists=.env.local --import tsx scripts/migrate-files-to-private-blob.ts"
+    "migrate:private-files": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --env-file-if-exists=.env.local --import tsx scripts/migrate-files-to-private-blob.ts",
+    "upload:department-images": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --env-file-if-exists=.env.local --import tsx scripts/upload-department-images.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",

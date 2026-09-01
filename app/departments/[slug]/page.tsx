@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
 import { departmentFontClass } from "@/lib/departments";
+import { getDepartmentDisplayImage } from "@/lib/department-images";
 
 const labels = [
     ["overview", "نبذة عن القسم"],
@@ -29,12 +30,32 @@ export default async function DepartmentDetail({
         notFound();
     }
 
+    // Get the best available image
+    const detailImage = await getDepartmentDisplayImage(
+        d.detailImageStoredName
+            ? {
+                  storedName: d.detailImageStoredName,
+                  originalName: d.detailImageOriginalName,
+                  mime: d.detailImageMime,
+                  size: d.detailImageSize,
+                  updatedAt: d.detailImageUpdatedAt,
+              }
+            : d.profileImageStoredName
+              ? {
+                    storedName: d.profileImageStoredName,
+                    originalName: d.profileImageOriginalName,
+                    mime: d.profileImageMime,
+                    size: d.profileImageSize,
+                    updatedAt: d.profileImageUpdatedAt,
+                }
+              : null,
+        d.detailImage || d.coverImage
+    );
+
     return (
         <>
             <section className="page-hero">
                 <div className="shell">
-
-
                     <h1>{d.nameAr}</h1>
 
                     <p
@@ -51,7 +72,7 @@ export default async function DepartmentDetail({
                     <aside className="guide-cover">
                         <div className="guide-cover-image-wrap">
                             <Image
-                                src={d.detailImage || d.coverImage}
+                                src={detailImage}
                                 alt={d.nameAr}
                                 width={1000}
                                 height={1000}
