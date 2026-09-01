@@ -93,163 +93,165 @@ export default function DashboardFilters({
         </div>
       </div>
 
-      <div className={styles.filterControl}>
-        <span className={styles.filterLabel}>القسم</span>
-        <div className={styles.dropdown}>
-          <button
-            type="button"
-            className={`${styles.dropdownTrigger} ${
-              openMenu === "department" ? styles.dropdownTriggerOpen : ""
-            }`}
-            aria-haspopup="listbox"
-            aria-expanded={openMenu === "department"}
-            onClick={() =>
-              setOpenMenu((current) =>
-                current === "department" ? null : "department",
-              )
-            }
-          >
-            <span className={styles.dropdownLeadIcon}>
-              <Building2 size={18} aria-hidden="true" />
-            </span>
-            <span className={styles.dropdownTriggerText}>
-              <strong>{selectedDepartment?.nameAr ?? "جميع الأقسام"}</strong>
-              <small>
-                {selectedDepartment
-                  ? "عرض البيانات الخاصة بهذا القسم"
-                  : "عرض بيانات النادي بالكامل"}
-              </small>
-            </span>
-            <span className={styles.dropdownChevron}>
-              <ChevronDown size={18} aria-hidden="true" />
-            </span>
+      <div className={styles.filterBody}>
+        <div className={styles.filterControl}>
+          <span className={styles.filterLabel}>القسم</span>
+          <div className={styles.dropdown}>
+            <button
+              type="button"
+              className={`${styles.dropdownTrigger} ${
+                openMenu === "department" ? styles.dropdownTriggerOpen : ""
+              }`}
+              aria-haspopup="listbox"
+              aria-expanded={openMenu === "department"}
+              onClick={() =>
+                setOpenMenu((current) =>
+                  current === "department" ? null : "department",
+                )
+              }
+            >
+              <span className={styles.dropdownLeadIcon}>
+                <Building2 size={18} aria-hidden="true" />
+              </span>
+              <span className={styles.dropdownTriggerText}>
+                <strong>{selectedDepartment?.nameAr ?? "جميع الأقسام"}</strong>
+                <small>
+                  {selectedDepartment
+                    ? "عرض البيانات الخاصة بهذا القسم"
+                    : "عرض بيانات النادي بالكامل"}
+                </small>
+              </span>
+              <span className={styles.dropdownChevron}>
+                <ChevronDown size={18} aria-hidden="true" />
+              </span>
+            </button>
+
+            {openMenu === "department" && (
+              <div className={styles.dropdownMenu} role="listbox" aria-label="القسم">
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={!departmentId}
+                  className={`${styles.dropdownOption} ${
+                    !departmentId ? styles.dropdownOptionActive : ""
+                  }`}
+                  onClick={() => {
+                    setDepartmentId("");
+                    setOpenMenu(null);
+                  }}
+                >
+                  <span className={styles.dropdownOptionMark}>
+                    {!departmentId ? <Check size={15} /> : null}
+                  </span>
+                  <span>
+                    <strong>جميع الأقسام</strong>
+                    <small>إحصائيات النادي كاملة</small>
+                  </span>
+                </button>
+
+                {departments.map((department) => {
+                  const active = department.id === departmentId;
+                  return (
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={active}
+                      className={`${styles.dropdownOption} ${
+                        active ? styles.dropdownOptionActive : ""
+                      }`}
+                      key={department.id}
+                      onClick={() => {
+                        setDepartmentId(department.id);
+                        setOpenMenu(null);
+                      }}
+                    >
+                      <span className={styles.dropdownOptionMark}>
+                        {active ? <Check size={15} /> : null}
+                      </span>
+                      <span>
+                        <strong>{department.nameAr}</strong>
+                        <small>تصفية النتائج حسب القسم</small>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.filterControl}>
+          <span className={styles.filterLabel}>الفترة الإحصائية</span>
+          <div className={styles.dropdown}>
+            <button
+              type="button"
+              className={`${styles.dropdownTrigger} ${
+                openMenu === "range" ? styles.dropdownTriggerOpen : ""
+              }`}
+              aria-haspopup="listbox"
+              aria-expanded={openMenu === "range"}
+              onClick={() =>
+                setOpenMenu((current) => (current === "range" ? null : "range"))
+              }
+            >
+              <span className={styles.dropdownLeadIcon}>
+                <CalendarDays size={18} aria-hidden="true" />
+              </span>
+              <span className={styles.dropdownTriggerText}>
+                <strong>{selectedRangeOption.label}</strong>
+                <small>{selectedRangeOption.hint}</small>
+              </span>
+              <span className={styles.dropdownChevron}>
+                <ChevronDown size={18} aria-hidden="true" />
+              </span>
+            </button>
+
+            {openMenu === "range" && (
+              <div className={styles.dropdownMenu} role="listbox" aria-label="الفترة">
+                {RANGE_OPTIONS.map((item) => {
+                  const active = item.value === selectedRange;
+                  return (
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={active}
+                      className={`${styles.dropdownOption} ${
+                        active ? styles.dropdownOptionActive : ""
+                      }`}
+                      key={item.value}
+                      onClick={() => {
+                        setSelectedRange(item.value);
+                        setOpenMenu(null);
+                      }}
+                    >
+                      <span className={styles.dropdownOptionMark}>
+                        {active ? <Check size={15} /> : null}
+                      </span>
+                      <span>
+                        <strong>{item.label}</strong>
+                        <small>{item.hint}</small>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.filterActions}>
+          <button type="submit" className={styles.applyButton}>
+            <SlidersHorizontal size={17} aria-hidden="true" />
+            تطبيق
           </button>
 
-          {openMenu === "department" && (
-            <div className={styles.dropdownMenu} role="listbox" aria-label="القسم">
-              <button
-                type="button"
-                role="option"
-                aria-selected={!departmentId}
-                className={`${styles.dropdownOption} ${
-                  !departmentId ? styles.dropdownOptionActive : ""
-                }`}
-                onClick={() => {
-                  setDepartmentId("");
-                  setOpenMenu(null);
-                }}
-              >
-                <span className={styles.dropdownOptionMark}>
-                  {!departmentId ? <Check size={15} /> : null}
-                </span>
-                <span>
-                  <strong>جميع الأقسام</strong>
-                  <small>إحصائيات النادي كاملة</small>
-                </span>
-              </button>
-
-              {departments.map((department) => {
-                const active = department.id === departmentId;
-                return (
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={active}
-                    className={`${styles.dropdownOption} ${
-                      active ? styles.dropdownOptionActive : ""
-                    }`}
-                    key={department.id}
-                    onClick={() => {
-                      setDepartmentId(department.id);
-                      setOpenMenu(null);
-                    }}
-                  >
-                    <span className={styles.dropdownOptionMark}>
-                      {active ? <Check size={15} /> : null}
-                    </span>
-                    <span>
-                      <strong>{department.nameAr}</strong>
-                      <small>تصفية النتائج حسب القسم</small>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+          {hasFilters && (
+            <Link href="/admin/dashboard" className={styles.reset}>
+              <RotateCcw size={16} aria-hidden="true" />
+              مسح الفلاتر
+            </Link>
           )}
         </div>
-      </div>
-
-      <div className={styles.filterControl}>
-        <span className={styles.filterLabel}>الفترة الإحصائية</span>
-        <div className={styles.dropdown}>
-          <button
-            type="button"
-            className={`${styles.dropdownTrigger} ${
-              openMenu === "range" ? styles.dropdownTriggerOpen : ""
-            }`}
-            aria-haspopup="listbox"
-            aria-expanded={openMenu === "range"}
-            onClick={() =>
-              setOpenMenu((current) => (current === "range" ? null : "range"))
-            }
-          >
-            <span className={styles.dropdownLeadIcon}>
-              <CalendarDays size={18} aria-hidden="true" />
-            </span>
-            <span className={styles.dropdownTriggerText}>
-              <strong>{selectedRangeOption.label}</strong>
-              <small>{selectedRangeOption.hint}</small>
-            </span>
-            <span className={styles.dropdownChevron}>
-              <ChevronDown size={18} aria-hidden="true" />
-            </span>
-          </button>
-
-          {openMenu === "range" && (
-            <div className={styles.dropdownMenu} role="listbox" aria-label="الفترة">
-              {RANGE_OPTIONS.map((item) => {
-                const active = item.value === selectedRange;
-                return (
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={active}
-                    className={`${styles.dropdownOption} ${
-                      active ? styles.dropdownOptionActive : ""
-                    }`}
-                    key={item.value}
-                    onClick={() => {
-                      setSelectedRange(item.value);
-                      setOpenMenu(null);
-                    }}
-                  >
-                    <span className={styles.dropdownOptionMark}>
-                      {active ? <Check size={15} /> : null}
-                    </span>
-                    <span>
-                      <strong>{item.label}</strong>
-                      <small>{item.hint}</small>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className={styles.filterActions}>
-        <button type="submit" className={styles.applyButton}>
-          <SlidersHorizontal size={17} aria-hidden="true" />
-          تطبيق
-        </button>
-
-        {hasFilters && (
-          <Link href="/admin/dashboard" className={styles.reset}>
-            <RotateCcw size={16} aria-hidden="true" />
-            مسح الفلاتر
-          </Link>
-        )}
       </div>
     </form>
   );

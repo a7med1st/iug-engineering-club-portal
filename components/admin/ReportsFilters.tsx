@@ -381,60 +381,62 @@ export default function ReportsFilters({
         </div>
       </div>
 
-      <Dropdown
-        name="department"
-        label="القسم"
-        value={department}
-        options={departmentOptions}
-        icon="building"
-        disabled={memberDepartmentLocked}
-        onChange={setDepartment}
-      />
+      <div className={styles.filtersGrid}>
+        <Dropdown
+          name="department"
+          label="القسم"
+          value={department}
+          options={departmentOptions}
+          icon="building"
+          disabled={memberDepartmentLocked}
+          onChange={setDepartment}
+        />
 
-      <Dropdown
-        name="range"
-        label="الفترة"
-        value={range}
-        options={rangeOptions}
-        icon="calendar"
-        onChange={(value) =>
-          setRange(value as Props["selectedRange"])
-        }
-      />
+        <Dropdown
+          name="range"
+          label="الفترة"
+          value={range}
+          options={rangeOptions}
+          icon="calendar"
+          onChange={(value) =>
+            setRange(value as Props["selectedRange"])
+          }
+        />
 
-      <Dropdown
-        name="status"
-        label="حالة النشاط"
-        value={status}
-        options={statusOptions}
-        icon="status"
-        onChange={(value) =>
-          setStatus(value as Props["selectedStatus"])
-        }
-      />
+        <Dropdown
+          name="status"
+          label="حالة النشاط"
+          value={status}
+          options={statusOptions}
+          icon="status"
+          onChange={(value) =>
+            setStatus(value as Props["selectedStatus"])
+          }
+        />
 
-      <div className={styles.filterActions}>
-        <button
-          type="submit"
-          className={styles.applyButton}
-          disabled={isPending}
-          aria-busy={isPending}
-        >
-          <SlidersHorizontal size={17} />
-          {isPending ? "جارٍ التطبيق..." : "تطبيق"}
-        </button>
-
-        {showReset && (
+        <div className={styles.filterActions}>
           <button
-            type="button"
-            className={styles.reset}
-            onClick={handleReset}
+            type="submit"
+            className={styles.applyButton}
             disabled={isPending}
+            aria-busy={isPending}
           >
-            <RotateCcw size={16} />
-            مسح الفلاتر
+            <SlidersHorizontal size={17} />
+            {isPending ? "جارٍ التطبيق..." : "تطبيق"}
           </button>
-        )}
+
+          {showReset && (
+            <button
+              type="button"
+              className={styles.reset}
+              onClick={handleReset}
+              disabled={isPending}
+            >
+              <RotateCcw size={16} />
+              مسح الفلاتر
+            </button>
+          )}
+        </div>
       </div>
     </form>
   );

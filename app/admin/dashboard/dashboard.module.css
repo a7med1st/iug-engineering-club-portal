@@ -140,14 +140,20 @@
   isolation: isolate;
   overflow: visible;
   padding: 18px;
-  display: grid;
-  grid-template-columns: minmax(180px, 0.72fr) repeat(2, minmax(220px, 1fr)) auto;
-  align-items: end;
+  display: flex;
+  flex-direction: column;
   gap: 13px;
   border-radius: 20px;
   background:
     radial-gradient(circle at 100% 0%, rgba(22, 136, 255, 0.09), transparent 30%),
     linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.filterBody {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr)) auto;
+  align-items: end;
+  gap: 13px;
 }
 
 .filterHeading {
@@ -998,16 +1004,12 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .filters {
+  .filterBody {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .filterHeading,
   .filterActions {
     grid-column: 1 / -1;
-  }
-
-  .filterActions {
     justify-content: flex-start;
   }
 }

@@ -15,6 +15,7 @@ import ReportsFilters from "@/components/admin/ReportsFilters";
 
 import {
   PERMISSIONS,
+  isClubLeadership,
   requirePermission,
 } from "@/lib/permissions";
 
@@ -184,7 +185,9 @@ export default async function AdminReportsPage({
         }
         selectedRange={range}
         selectedStatus={activityStatus}
-        memberDepartmentLocked={user.role === "MEMBER"}
+        memberDepartmentLocked={
+          user.role === "MEMBER" && !isClubLeadership(user.position)
+        }
         showReset={
           user.role === "ADMIN" &&
           Boolean(
