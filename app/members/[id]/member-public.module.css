@@ -244,7 +244,7 @@
   position: absolute;
   right: 0;
   top: 150px;
-  width: 280px;
+  width: 330px;
   min-width: 0;
   color: #fff;
   text-align: center;
@@ -265,7 +265,7 @@
   text-align: center;
   font-size: clamp(1.9rem, 2.9vw, 3.3rem);
   line-height: 1.08;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .role {
@@ -274,6 +274,7 @@
   font-size: 1rem;
   font-weight: 700;
   text-align: center;
+  white-space: nowrap;
 }
 
 .metaPills {
