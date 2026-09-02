@@ -115,8 +115,8 @@
 
 .avatarWrap {
   position: absolute;
-  top: 36px;
-  right: 28px;
+  top: 24px;
+  right: 18px;
   width: 126px;
   height: 126px;
   border-radius: 50%;
@@ -242,12 +242,12 @@
 
 .identityText {
   position: absolute;
-  left: 28px;
-  bottom: 14px;
-  width: min(72%, 760px);
+  right: 0;
+  top: 150px;
+  width: 280px;
   min-width: 0;
   color: #fff;
-  text-align: left;
+  text-align: center;
 }
 
 .eyebrow {
@@ -262,8 +262,8 @@
 
 .identityText h1 {
   margin: 0;
-  text-align: left;
-  font-size: clamp(1.8rem, 3vw, 3.8rem);
+  text-align: center;
+  font-size: clamp(1.9rem, 2.9vw, 3.3rem);
   line-height: 1.08;
   white-space: normal;
 }
@@ -273,7 +273,7 @@
   color: rgba(255, 255, 255, 0.82);
   font-size: 1rem;
   font-weight: 700;
-  text-align: left;
+  text-align: center;
 }
 
 .metaPills {
