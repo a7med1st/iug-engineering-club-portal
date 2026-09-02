@@ -87,15 +87,15 @@
 }
 
 .coverImageLoaded {
-  opacity: 0.22;
+  opacity: 0.9;
 }
 
 .heroOverlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to top, rgba(6, 29, 51, 0.75), rgba(6, 29, 51, 0.1)),
-    linear-gradient(to left, rgba(6, 29, 51, 0.25), rgba(6, 29, 51, 0.05));
+    linear-gradient(to top, rgba(6, 29, 51, 0.18), rgba(6, 29, 51, 0.02)),
+    linear-gradient(to left, rgba(6, 29, 51, 0.08), rgba(6, 29, 51, 0.02));
 }
 
 .heroContent {
