@@ -105,14 +105,15 @@
   padding: 34px;
   display: flex;
   align-items: flex-end;
+  justify-content: flex-end;
 }
 
 .identity {
-  width: 100%;
+  width: auto;
   display: flex;
-  align-items: flex-end;
-  gap: 22px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .avatarWrap {
@@ -257,15 +258,17 @@
 
 .identityText h1 {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3.2rem);
+  text-align: center;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
   line-height: 1.08;
 }
 
 .role {
   margin: 10px 0 0;
   color: rgba(255, 255, 255, 0.82);
-  font-size: 1.02rem;
+  font-size: 0.96rem;
   font-weight: 700;
+  text-align: center;
 }
 
 .metaPills {
