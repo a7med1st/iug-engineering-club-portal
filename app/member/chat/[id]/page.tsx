@@ -1,339 +1,240 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
 
+import { notFound } from "next/navigation";
 import {
-  Check,
-  CheckCheck,
   ArrowRight,
+  BookUser,
   ExternalLink,
-  MessagesSquare,
+  Github,
+  Instagram,
+  Linkedin,
+  Link2,
+  Sparkles,
 } from "lucide-react";
 
-import ChatComposer from "@/components/member/ChatComposer";
-import ChatConversationView from "@/components/member/ChatConversationView";
-import ChatMessageContent from "@/components/member/ChatMessageContent";
-import ChatPresenceStatus from "@/components/member/ChatPresenceStatus";
-
-import {
-  PERMISSIONS,
-  requirePermission,
-} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
-import styles from "../chat.module.css";
+import AvatarPreview from "./AvatarPreview";
+import MemberCoverImage from "./MemberCoverImage";
+import styles from "./member-public.module.css";
 
 export const dynamic = "force-dynamic";
 
-function formatMessageTime(date: Date) {
-  return new Intl.DateTimeFormat("ar-PS", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function formatMessageDay(date: Date) {
-  return new Intl.DateTimeFormat("ar-PS", {
-    dateStyle: "medium",
-  }).format(date);
-}
-
-export default async function ConversationPage({
+export default async function MemberPublicProfilePage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
 }) {
-  const { user } = await requirePermission(
-    PERMISSIONS.MEMBER_DASHBOARD,
-  );
-
   const { id } = await params;
-  const feedback = await searchParams;
 
-  const membership =
-    await prisma.chatParticipant.findUnique({
-      where: {
-        conversationId_userId: {
-          conversationId: id,
-          userId: user.id,
-        },
+  const member = await prisma.user.findFirst({
+    where: {
+      id,
+      role: { in: ["MEMBER", "ADMIN"] },
+    },
+    select: {
+      id: true,
+      name: true,
+      position: true,
+      profileBio: true,
+      profileSkills: true,
+      profileLinkedIn: true,
+      profileGithub: true,
+      profileInstagram: true,
+      avatarStoredName: true,
+      avatarUpdatedAt: true,
+      profileCoverStoredName: true,
+      profileCoverUpdatedAt: true,
+      department: {
+        select: { nameAr: true },
       },
-      include: {
-        conversation: {
-          include: {
-            participants: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    role: true,
-                    avatarStoredName: true,
-                    avatarUpdatedAt: true,
-                    chatLastSeenAt: true,
-                    department: {
-                      select: { nameAr: true },
-                    },
-                    structureItem: {
-                      select: { title: true },
-                    },
-                  },
-                },
-              },
-            },
-            messages: {
-              take: 120,
-              orderBy: { createdAt: "asc" },
-              include: {
-                sender: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-                receipts: {
-                  where: {
-                    userId: { not: user.id },
-                  },
-                  select: {
-                    deliveredAt: true,
-                    readAt: true,
-                  },
-                },
-                attachments: {
-                  select: {
-                    id: true,
-                    originalName: true,
-                    mime: true,
-                    size: true,
-                  },
-                },
-                pollVotes: {
-                  select: {
-                    userId: true,
-                    optionIndex: true,
-                  },
-                },
-              },
-            },
-          },
-        },
+      structureItem: {
+        select: { title: true },
       },
-    });
-
-  if (!membership) redirect("/member/chat");
-
-  const conversation = membership.conversation;
-
-  const partner =
-    conversation.participants.find(
-      (item) => item.userId !== user.id,
-    )?.user ?? null;
-
-  if (!partner) redirect("/member/chat");
-
-  const messages = conversation.messages;
-  let lastDay = "";
-
-  const messageRows = messages.map((message) => {
-    const day = formatMessageDay(message.createdAt);
-    const showDay = day !== lastDay;
-    lastDay = day;
-
-    const mine = message.senderId === user.id;
-    const receipt = mine
-      ? message.receipts[0] ?? null
-      : null;
-
-    const deliveryState = !mine
-      ? null
-      : receipt?.readAt
-        ? "READ"
-        : receipt?.deliveredAt
-          ? "DELIVERED"
-          : "SENT";
-
-    return {
-      id: message.id,
-      body: message.body,
-      kind: message.kind,
-      attachments: message.attachments,
-      pollQuestion: message.pollQuestion,
-      pollOptions: message.pollOptions,
-      pollVotes: message.pollVotes,
-      imageOnly:
-        message.body === "صورة" &&
-        message.attachments.some((attachment) =>
-          /^image\/(jpeg|png|gif|webp)$/i.test(attachment.mime),
-        ),
-      mine,
-      senderName: message.sender.name,
-      time: formatMessageTime(message.createdAt),
-      day: showDay ? day : null,
-      deliveryState,
-    };
+    },
   });
 
-  const lastMessageId =
-    messages.at(-1)?.id ?? "";
+  if (!member || !member.structureItem) {
+    notFound();
+  }
+
+  const title =
+    member.structureItem.title ??
+    member.position ??
+    "عضو في النادي الهندسي";
+
+  const initials =
+    member.name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0))
+      .join("")
+      .toUpperCase() || "EC";
+
+  const avatarVersion =
+    member.avatarUpdatedAt?.getTime() ?? 0;
+
+  const coverVersion =
+    member.profileCoverUpdatedAt?.getTime() ?? 0;
+
+  const avatarUrl = member.avatarStoredName
+    ? `/members/${member.id}/avatar?v=${avatarVersion}`
+    : null;
+
+  const coverUrl = member.profileCoverStoredName
+    ? `/members/${member.id}/cover?v=${coverVersion}`
+    : null;
+
+  const links = [
+    member.profileLinkedIn
+      ? {
+          label: "LinkedIn",
+          url: member.profileLinkedIn,
+          icon: Linkedin,
+        }
+      : null,
+    member.profileGithub
+      ? {
+          label: "GitHub",
+          url: member.profileGithub,
+          icon: Github,
+        }
+      : null,
+    member.profileInstagram
+      ? {
+          label: "Instagram",
+          url: member.profileInstagram,
+          icon: Instagram,
+        }
+      : null,
+  ].filter(Boolean) as {
+    label: string;
+    url: string;
+    icon: typeof Linkedin;
+  }[];
 
   return (
-    <section className={styles.conversation}>
-      <header className={styles.conversationHeader}>
-        <div className={styles.partnerAvatar}>
-          {partner.avatarStoredName ? (
-            <img
-              src={`/members/${partner.id}/avatar?v=${partner.avatarUpdatedAt?.getTime() ?? 0}`}
-              alt=""
-            />
-          ) : (
-            partner.name.trim().charAt(0).toUpperCase()
-          )}
-        </div>
-
-        <div className={styles.partnerInfo}>
-          <h1>{partner.name}</h1>
-
-          <p>
-            <ChatPresenceStatus
-              conversationId={id}
-              initialLastSeenAt={
-                partner.chatLastSeenAt?.toISOString() ??
-                null
-              }
-            />
-          </p>
-        </div>
-
-        <Link
-          href="/member/chat"
-          className={styles.mobileChatBack}
-          aria-label="العودة إلى قائمة المحادثات"
-          title="العودة إلى المحادثات"
-        >
-          <ArrowRight aria-hidden="true" />
+    <main className={styles.page} dir="rtl">
+      <div className={styles.topBar}>
+        <Link href="/delegates" className={styles.backButton}>
+          <ArrowRight size={17} />
+          العودة إلى الهيكلية
         </Link>
+      </div>
 
-        {partner.structureItem && (
-          <Link
-            href={`/members/${partner.id}`}
-            className={styles.profileLink}
-          >
-            <ExternalLink size={16} />
-            الملف الشخصي
-          </Link>
-        )}
-      </header>
-
-      {feedback.error && (
-        <div className={styles.feedbackError}>
-          {feedback.error}
+      <section className={styles.hero} data-reveal="up">
+        <div className={styles.heroCover}>
+          <MemberCoverImage src={coverUrl} />
+          <div className={styles.heroOverlay} />
         </div>
-      )}
 
-      <ChatConversationView
-        conversationId={id}
-        lastMessageId={lastMessageId}
-      >
-        <div className={styles.messages}>
-          {messageRows.length ? (
-            messageRows.map((message) => (
-              <div key={message.id}>
-                {message.day && (
-                  <div className={styles.dayDivider}>
-                    <span>{message.day}</span>
-                  </div>
-                )}
+        <div className={styles.heroContent}>
+          <div className={styles.identity}>
+            <AvatarPreview
+              src={avatarUrl}
+              alt={`الصورة الشخصية لـ ${member.name}`}
+              initials={initials}
+            />
 
-                <article
-                  className={
-                    `${
-                      message.mine
-                        ? styles.messageMine
-                        : styles.messageOther
-                    } ${
-                      message.attachments.length
-                        ? styles.messageWithAttachment
-                        : ""
-                    } ${
-                      message.imageOnly
-                        ? styles.messageImageOnly
-                        : ""
-                    }`
-                  }
-                >
-                  {!message.mine && (
-                    <small className={styles.senderName}>
-                      {message.senderName}
-                    </small>
-                  )}
+            <div className={styles.identityText}>
+              <h1>{member.name}</h1>
 
-                  <ChatMessageContent
-                    messageId={message.id}
-                    kind={message.kind}
-                    body={message.body}
-                    attachments={message.attachments}
-                    pollQuestion={message.pollQuestion}
-                    pollOptions={message.pollOptions}
-                    pollVotes={message.pollVotes}
-                    currentUserId={user.id}
-                  />
-
-                  <div className={styles.messageFooter}>
-                    <time>{message.time}</time>
-
-                    {message.mine &&
-                      message.deliveryState === "SENT" && (
-                        <Check
-                          size={15}
-                          className={styles.deliverySent}
-                          aria-label="تم الإرسال"
-                        />
-                      )}
-
-                    {message.mine &&
-                      message.deliveryState ===
-                        "DELIVERED" && (
-                        <CheckCheck
-                          size={16}
-                          className={
-                            styles.deliveryDelivered
-                          }
-                          aria-label="تم التسليم"
-                        />
-                      )}
-
-                    {message.mine &&
-                      message.deliveryState === "READ" && (
-                        <CheckCheck
-                          size={16}
-                          className={styles.deliveryRead}
-                          aria-label="تمت القراءة"
-                        />
-                      )}
-                  </div>
-                </article>
-              </div>
-            ))
-          ) : (
-            <div className={styles.noMessages}>
-              <MessagesSquare size={30} />
-              <strong>ابدأ المحادثة</strong>
-              <span>
-                أرسل أول رسالة إلى {partner.name}.
-              </span>
+              <p className={styles.role}>{title}</p>
             </div>
-          )}
-
-          <div id="chat-bottom" aria-hidden="true" />
+          </div>
         </div>
-      </ChatConversationView>
+      </section>
 
-      <ChatComposer
-        conversationId={id}
-        className={styles.composer}
-      />
-    </section>
+      <section className={styles.cardsGrid} data-reveal-group="up">
+        <article className={styles.infoCard}>
+          <div className={styles.cardHead}>
+            <div className={styles.cardIcon}>
+              <BookUser size={20} />
+            </div>
+
+            <div>
+              <h2>عن العضو</h2>
+              <p>نبذة مختصرة عن العضو ودوره داخل النادي.</p>
+            </div>
+          </div>
+
+          <div className={styles.cardBody}>
+            {member.profileBio?.trim() ? (
+              <p className={styles.bodyText}>
+                {member.profileBio}
+              </p>
+            ) : (
+              <div className={styles.emptyState}>
+                لم تتم إضافة نبذة شخصية بعد.
+              </div>
+            )}
+          </div>
+        </article>
+
+        <article className={styles.infoCard}>
+          <div className={styles.cardHead}>
+            <div className={styles.cardIcon}>
+              <Sparkles size={20} />
+            </div>
+
+            <div>
+              <h2>المهارات والاهتمامات</h2>
+              <p>أبرز المهارات والمجالات التي يهتم بها العضو.</p>
+            </div>
+          </div>
+
+          <div className={styles.cardBody}>
+            {member.profileSkills.length ? (
+              <div className={styles.skillsList}>
+                {member.profileSkills.map((skill) => (
+                  <span key={skill}>{skill}</span>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                لم تتم إضافة مهارات أو اهتمامات بعد.
+              </div>
+            )}
+          </div>
+        </article>
+
+        <article className={styles.infoCard}>
+          <div className={styles.cardHead}>
+            <div className={styles.cardIcon}>
+              <Link2 size={20} />
+            </div>
+
+            <div>
+              <h2>روابط العضو</h2>
+              <p>الحسابات المهنية والاجتماعية التي اختار العضو مشاركتها.</p>
+            </div>
+          </div>
+
+          <div className={styles.cardBody}>
+            {links.length ? (
+              <div className={styles.linksList}>
+                {links.map(({ label, url, icon: Icon }) => (
+                  <a
+                    key={label}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={styles.linkItem}
+                  >
+                    <Icon size={18} />
+                    <span>{label}</span>
+                    <ExternalLink size={15} />
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                لم تتم إضافة روابط بعد.
+              </div>
+            )}
+          </div>
+        </article>
+      </section>
+    </main>
   );
 }
