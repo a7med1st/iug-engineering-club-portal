@@ -27,6 +27,8 @@ import {
   isClubLeadership,
   isDepartmentScopedPermission,
   normalizeMemberPermissions,
+    requireActivityPermission,
+
   requirePermission,
 } from "@/lib/permissions";
 
@@ -1539,6 +1541,105 @@ export async function addStructureItem(
 
       revalidatePath(
         "/delegates",
+      );
+    },
+  );
+}
+/* =========================================================
+   UPDATE ACTIVITY TEXT
+========================================================= */
+
+export async function updateActivityText(
+  formData: FormData,
+) {
+  const activityId =
+    requiredText(
+      formData,
+      "activityId",
+      "معرّف النشاط",
+    );
+
+  await requireActivityPermission(
+    PERMISSIONS.ACTIVITY_MANAGE,
+    activityId,
+  );
+
+  return runAdminAction(
+    `/admin/activities/${activityId}/edit`,
+
+    "تم تحديث نص النشاط بنجاح.",
+
+    "تعذر تحديث النشاط.",
+
+    async () => {
+      const title =
+        requiredText(
+          formData,
+          "title",
+          "عنوان النشاط",
+        );
+
+      const description =
+        requiredText(
+          formData,
+          "description",
+          "وصف النشاط",
+        );
+
+      const postEventSummary =
+        String(
+          formData.get(
+            "postEventSummary",
+          ) ?? "",
+        ).trim() || null;
+
+      if (title.length > 160) {
+        throw new AdminActionError(
+          "عنوان النشاط طويل جدًا.",
+        );
+      }
+
+      if (
+        description.length >
+        10_000
+      ) {
+        throw new AdminActionError(
+          "وصف النشاط طويل جدًا.",
+        );
+      }
+
+      if (
+        postEventSummary &&
+        postEventSummary.length >
+          10_000
+      ) {
+        throw new AdminActionError(
+          "ملخص الفعالية طويل جدًا.",
+        );
+      }
+
+      await prisma.activity.update({
+        where: {
+          id: activityId,
+        },
+
+        data: {
+          title,
+          description,
+          postEventSummary,
+        },
+      });
+
+      revalidatePath(
+        `/activities/${activityId}`,
+      );
+
+      revalidatePath(
+        "/activities",
+      );
+
+      revalidatePath(
+        "/admin/activities",
       );
     },
   );

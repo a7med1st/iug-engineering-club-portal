@@ -3,9 +3,9 @@ import {
   ArrowLeft,
   Building2,
   CalendarDays,
-  CheckCircle2,
   ImageIcon,
   MapPin,
+  Pencil,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -17,6 +17,10 @@ import {
   formatActivitySchedule,
   isPastActivity,
 } from "@/lib/activities";
+import { getCurrentUser } from "@/lib/auth";
+import {
+  isClubLeadership,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 import styles from "./activity-details.module.css";
@@ -31,149 +35,391 @@ async function publicActivity(id: string) {
   return prisma.activity.findFirst({
     where: {
       id,
-      status: { in: ["PUBLISHED", "ARCHIVED"] },
+      status: {
+        in: [
+          "PUBLISHED",
+          "ARCHIVED",
+        ],
+      },
     },
     include: {
-      departments: { include: { department: true } },
-      images: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
+      departments: {
+        include: {
+          department: true,
+        },
+      },
+      images: {
+        orderBy: [
+          {
+            sortOrder: "asc",
+          },
+          {
+            createdAt: "asc",
+          },
+        ],
+      },
     },
   });
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: Props): Promise<Metadata> {
   const { id } = await params;
-  const activity = await prisma.activity.findFirst({
-    where: {
-      id,
-      status: { in: ["PUBLISHED", "ARCHIVED"] },
-    },
-    select: {
-      title: true,
-      description: true,
-      postEventSummary: true,
-    },
-  });
+
+  const activity =
+    await prisma.activity.findFirst({
+      where: {
+        id,
+        status: {
+          in: [
+            "PUBLISHED",
+            "ARCHIVED",
+          ],
+        },
+      },
+      select: {
+        title: true,
+        description: true,
+        postEventSummary: true,
+      },
+    });
 
   if (!activity) {
-    return { title: "النشاط غير موجود | النادي الهندسي للطلاب" };
+    return {
+      title:
+        "النشاط غير موجود | النادي الهندسي للطلاب",
+    };
   }
 
   return {
     title: `${activity.title} | النادي الهندسي للطلاب`,
-    description: (activity.postEventSummary || activity.description).slice(
+    description: (
+      activity.postEventSummary ||
+      activity.description
+    ).slice(
       0,
       160,
     ),
   };
 }
 
-export default async function ActivityDetailsPage({ params }: Props) {
+export default async function ActivityDetailsPage({
+  params,
+}: Props) {
   const { id } = await params;
-  const [activity, departmentCount] = await Promise.all([
+
+  const auth = await getCurrentUser();
+
+  const canEditActivity =
+    auth?.user.role === "ADMIN" ||
+    isClubLeadership(
+      auth?.user.position,
+    );
+
+  const [
+    activity,
+    departmentCount,
+  ] = await Promise.all([
     publicActivity(id),
     prisma.department.count(),
   ]);
 
-  if (!activity) notFound();
+  if (!activity) {
+    notFound();
+  }
 
-  const past = isPastActivity(activity);
-  const date = formatActivitySchedule(activity.startsAt, activity.endsAt);
-  const departmentLabel = activityDepartmentLabel(activity, departmentCount);
+  const past =
+    isPastActivity(activity);
+
+  const date =
+    formatActivitySchedule(
+      activity.startsAt,
+      activity.endsAt,
+    );
+
+  const departmentLabel =
+    activityDepartmentLabel(
+      activity,
+      departmentCount,
+    );
+
   const showDepartmentBadge =
-    !past || departmentLabel !== "عام · جميع الأقسام";
-  const backHref = past ? "/activities?view=past" : "/activities";
+    !past ||
+    departmentLabel !==
+      "عام · جميع الأقسام";
+
+  const backHref =
+    past
+      ? "/activities?view=past"
+      : "/activities";
 
   return (
-    <article className={styles.page}>
-      <section className={styles.hero}>
-        <div className={styles.heroPattern} aria-hidden="true" />
-        <div className={`shell ${styles.heroShell}`}>
-          <div className={styles.cover}>
+    <article
+      className={styles.page}
+    >
+      <section
+        className={styles.hero}
+      >
+        <div
+          className={
+            styles.heroPattern
+          }
+          aria-hidden="true"
+        />
+
+        <div
+          className={`shell ${styles.heroShell}`}
+        >
+          <div
+            className={styles.cover}
+          >
             {activity.coverImageUrl ? (
-              <img src={activity.coverImageUrl} alt={`غلاف ${activity.title}`} />
+              <img
+                src={
+                  activity.coverImageUrl
+                }
+                alt={`غلاف ${activity.title}`}
+              />
             ) : (
-              <div className={styles.coverFallback}>
-                <ImageIcon aria-hidden="true" />
-                <span>النادي الهندسي للطلاب</span>
+              <div
+                className={
+                  styles.coverFallback
+                }
+              >
+                <ImageIcon
+                  aria-hidden="true"
+                />
+
+                <span>
+                  النادي الهندسي
+                  للطلاب
+                </span>
               </div>
             )}
           </div>
 
-          <div className={styles.heroContent}>
+          <div
+            className={
+              styles.heroContent
+            }
+          >
             {showDepartmentBadge && (
-              <div className={styles.badges}>
-                <span className={styles.departmentBadge}>{departmentLabel}</span>
+              <div
+                className={
+                  styles.badges
+                }
+              >
+                <span
+                  className={
+                    styles.departmentBadge
+                  }
+                >
+                  {
+                    departmentLabel
+                  }
+                </span>
               </div>
             )}
-            <h1>{activity.title}</h1>
-            <p>{activity.description}</p>
 
+            <h1>
+              {activity.title}
+            </h1>
+
+            <p>
+              {
+                activity.description
+              }
+            </p>
+
+            {canEditActivity && (
+              <Link
+                href={`/admin/activities/${activity.id}/edit`}
+                className={
+                  styles.editActivityButton
+                }
+              >
+                <Pencil
+                  size={16}
+                />
+
+                تعديل النشاط
+              </Link>
+            )}
           </div>
         </div>
       </section>
 
-      <div className={`shell ${styles.content}`}>
-        <section className={styles.aboutSection} data-reveal="up">
-          <div className={styles.sectionTitle}>
-            <h2>{past ? "عن الفعالية" : "تفاصيل النشاط"}</h2>
+      <div
+        className={`shell ${styles.content}`}
+      >
+        <section
+          className={
+            styles.aboutSection
+          }
+          data-reveal="up"
+        >
+          <div
+            className={
+              styles.sectionTitle
+            }
+          >
+            <h2>
+              {past
+                ? "عن الفعالية"
+                : "تفاصيل النشاط"}
+            </h2>
           </div>
-          <p>{
-            past
-              ? activity.postEventSummary || activity.description
-              : activity.description
-          }</p>
+
+          <p>
+            {past
+              ? activity.postEventSummary ||
+                activity.description
+              : activity.description}
+          </p>
         </section>
 
         <section
-          className={styles.infoGrid}
+          className={
+            styles.infoGrid
+          }
           aria-label="معلومات النشاط"
           data-reveal-group="scale"
         >
-          <div className={styles.infoCard}>
-            <CalendarDays aria-hidden="true" />
-            <span>التاريخ</span>
-            <strong>{date}</strong>
+          <div
+            className={
+              styles.infoCard
+            }
+          >
+            <CalendarDays
+              aria-hidden="true"
+            />
+
+            <span>
+              التاريخ
+            </span>
+
+            <strong>
+              {date}
+            </strong>
           </div>
-          <div className={styles.infoCard}>
-            <MapPin aria-hidden="true" />
-            <span>المكان</span>
-            <strong>{activity.location}</strong>
+
+          <div
+            className={
+              styles.infoCard
+            }
+          >
+            <MapPin
+              aria-hidden="true"
+            />
+
+            <span>
+              المكان
+            </span>
+
+            <strong>
+              {
+                activity.location
+              }
+            </strong>
           </div>
-          <div className={styles.infoCard}>
-            <Building2 aria-hidden="true" />
-            <span>القسم المنظم</span>
-            <strong>{departmentLabel}</strong>
+
+          <div
+            className={
+              styles.infoCard
+            }
+          >
+            <Building2
+              aria-hidden="true"
+            />
+
+            <span>
+              القسم المنظم
+            </span>
+
+            <strong>
+              {
+                departmentLabel
+              }
+            </strong>
           </div>
-          <div className={styles.infoCard}>
-            <Users aria-hidden="true" />
-            <span>السعة</span>
-            <strong>{activity.capacity} طالب/ة</strong>
+
+          <div
+            className={
+              styles.infoCard
+            }
+          >
+            <Users
+              aria-hidden="true"
+            />
+
+            <span>
+              السعة
+            </span>
+
+            <strong>
+              {
+                activity.capacity
+              }{" "}
+              طالب/ة
+            </strong>
           </div>
         </section>
 
-        {past && activity.images.length > 0 && (
-          <section className={styles.gallerySection} data-reveal="up">
-            <div className={styles.sectionTitle}>
-              <h2>صور من الفعالية</h2>
-            </div>
-            <ActivityGallery
-              images={activity.images.map(({ id: imageId, url }) => ({
-                id: imageId,
-                url,
-              }))}
-              activityTitle={activity.title}
-            />
-          </section>
-        )}
+        {past &&
+          activity.images.length >
+            0 && (
+            <section
+              className={
+                styles.gallerySection
+              }
+              data-reveal="up"
+            >
+              <div
+                className={
+                  styles.sectionTitle
+                }
+              >
+                <h2>
+                  صور من الفعالية
+                </h2>
+              </div>
 
-        <div className={styles.backRow}>
-          <Link className="ghost-btn fancy-outline-btn" href={backHref}>
+              <ActivityGallery
+                images={activity.images.map(
+                  ({
+                    id: imageId,
+                    url,
+                  }) => ({
+                    id: imageId,
+                    url,
+                  }),
+                )}
+                activityTitle={
+                  activity.title
+                }
+              />
+            </section>
+          )}
+
+        <div
+          className={
+            styles.backRow
+          }
+        >
+          <Link
+            className="ghost-btn fancy-outline-btn"
+            href={backHref}
+          >
             <span>
               {past
                 ? "العودة إلى الأنشطة السابقة"
                 : "العودة إلى الأنشطة الحالية والقادمة"}
             </span>
-            <ArrowLeft aria-hidden="true" />
+
+            <ArrowLeft
+              aria-hidden="true"
+            />
           </Link>
         </div>
       </div>
