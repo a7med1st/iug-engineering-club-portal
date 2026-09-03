@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import ReplyMessageJump from "@/components/member/ReplyMessageJump";
 import {
   ArrowRight,
   Check,
   CheckCheck,
   ExternalLink,
   MessagesSquare,
+  Pin,
 } from "lucide-react";
-
+import DirectMessageContextMenu from "@/components/member/DirectMessageContextMenu";
+import PinnedMessageJumpButton from "@/components/member/PinnedMessageJumpButton";
 import ChatComposer from "@/components/member/ChatComposer";
 import ChatConversationView from "@/components/member/ChatConversationView";
 import ChatMessageContent from "@/components/member/ChatMessageContent";
@@ -131,6 +134,18 @@ export default async function ConversationPage({
                     optionIndex: true,
                   },
                 },
+
+                replyTo: {
+                  select: {
+                    id: true,
+                    body: true,
+                    sender: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
@@ -154,6 +169,29 @@ export default async function ConversationPage({
       `/member/chat/groups/${conversation.id}`,
     );
   }
+
+  const pinnedMessage =
+    await prisma.chatMessage.findFirst({
+      where: {
+        conversationId: id,
+        isPinned: true,
+      },
+
+      select: {
+        id: true,
+        body: true,
+
+        sender: {
+          select: {
+            name: true,
+          },
+        },
+      },
+
+      orderBy: {
+        pinnedAt: "desc",
+      },
+    });
 
   const partner =
     conversation.participants.find(
@@ -205,6 +243,7 @@ export default async function ConversationPage({
       id: message.id,
       body: message.body,
       kind: message.kind,
+      isPinned: message.isPinned,
       attachments: message.attachments,
 
       pollQuestion:
@@ -215,6 +254,9 @@ export default async function ConversationPage({
 
       pollVotes:
         message.pollVotes,
+
+      replyTo:
+        message.replyTo,
 
       imageOnly,
 
@@ -327,6 +369,56 @@ export default async function ConversationPage({
         </div>
       )}
 
+      {pinnedMessage && (
+        <div
+          className={styles.pinnedMessageBar}
+        >
+          <span
+            className={
+              styles.pinnedMessageIcon
+            }
+          >
+            <Pin
+              size={17}
+              aria-hidden="true"
+            />
+          </span>
+
+          <span
+            className={
+              styles.pinnedMessageContent
+            }
+          >
+            <strong>
+              رسالة مثبتة
+            </strong>
+
+            <small>
+              {pinnedMessage.sender.name}
+            </small>
+
+            <p>
+              {pinnedMessage.body.length >
+              100
+                ? `${pinnedMessage.body.slice(
+                    0,
+                    100,
+                  )}...`
+                : pinnedMessage.body}
+            </p>
+          </span>
+
+          <PinnedMessageJumpButton
+            messageId={
+              pinnedMessage.id
+            }
+            className={
+              styles.pinnedMessageView
+            }
+          />
+        </div>
+      )}
+
       <ChatConversationView
         conversationId={id}
         lastMessageId={
@@ -335,12 +427,19 @@ export default async function ConversationPage({
       >
         <div
           className={styles.messages}
+          data-chat-messages="true"
         >
           {messageRows.length ? (
             messageRows.map(
               (message) => (
                 <div
                   key={message.id}
+                  id={`message-${message.id}`}
+                  className={
+                    message.isPinned
+                      ? styles.pinnedMessageTarget
+                      : undefined
+                  }
                 >
                   {message.day && (
                     <div
@@ -354,7 +453,15 @@ export default async function ConversationPage({
                     </div>
                   )}
 
-                  <article
+                  <DirectMessageContextMenu
+                    messageId={message.id}
+                    senderName={
+                      message.senderName
+                    }
+                    body={message.body}
+                    isPinned={
+                      message.isPinned
+                    }
                     className={`${
                       message.mine
                         ? styles.messageMine
@@ -381,6 +488,28 @@ export default async function ConversationPage({
                         }
                       </small>
                     )}
+
+{message.replyTo && (
+  <ReplyMessageJump
+    messageId={
+      message.replyTo.id
+    }
+    className={
+      styles.replyContext
+    }
+  >
+    <strong>
+      {
+        message.replyTo
+          .sender.name
+      }
+    </strong>
+
+    <span>
+      {message.replyTo.body}
+    </span>
+  </ReplyMessageJump>
+)}
 
                     <ChatMessageContent
                       messageId={
@@ -415,9 +544,7 @@ export default async function ConversationPage({
                       }
                     >
                       <time>
-                        {
-                          message.time
-                        }
+                        {message.time}
                       </time>
 
                       {message.mine &&
@@ -462,7 +589,7 @@ export default async function ConversationPage({
                           />
                         )}
                     </div>
-                  </article>
+                  </DirectMessageContextMenu>
                 </div>
               ),
             )

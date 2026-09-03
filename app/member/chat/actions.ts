@@ -5,6 +5,10 @@ import {
 } from "@prisma/client";
 
 import {
+  sendPushToUsers,
+} from "@/lib/push";
+
+import {
   revalidatePath,
 } from "next/cache";
 
@@ -293,6 +297,12 @@ export async function sendChatMessage(
       "body",
     );
 
+  const replyToMessageId =
+  text(
+    formData,
+    "replyToMessageId",
+  );
+
   const pollQuestion = text(formData, "pollQuestion");
   const pollOptions = formData
     .getAll("pollOption")
@@ -341,6 +351,36 @@ export async function sendChatMessage(
   ) {
     return { status: "error", message: "لا يمكنك الإرسال إلى هذه المحادثة." };
   }
+
+  let replyToId: string | null =
+  null;
+
+if (replyToMessageId) {
+  const replyTarget =
+    await prisma.chatMessage.findFirst({
+      where: {
+        id:
+          replyToMessageId,
+
+        conversationId,
+      },
+
+      select: {
+        id: true,
+      },
+    });
+
+  if (!replyTarget) {
+    return {
+      status: "error",
+      message:
+        "الرسالة التي تريد الرد عليها غير موجودة.",
+    };
+  }
+
+  replyToId =
+    replyTarget.id;
+}
 
   const isGroup =
     participant
@@ -478,6 +518,8 @@ export async function sendChatMessage(
             senderId:
               user.id,
 
+            replyToId,
+
             body: messageBody,
             kind,
             pollQuestion: pollQuestion || null,
@@ -604,6 +646,37 @@ export async function sendChatMessage(
     }
     return { status: "error", message: "تعذر إرسال الرسالة. حاول مرة أخرى." };
   }
+  if (recipients.length) {
+  const pushTitle =
+    isGroup
+      ? `رسالة جديدة في ${
+          participant.conversation.name ??
+          "المجموعة"
+        }`
+      : `رسالة جديدة من ${sender.name}`;
+
+  const pushBody =
+    isGroup
+      ? `${sender.name}: ${messagePreview(
+          messageBody,
+        )}`
+      : messagePreview(
+          messageBody,
+        );
+
+  await sendPushToUsers(
+    recipients.map(
+      (recipient) =>
+        recipient.userId,
+    ),
+    {
+      title: pushTitle,
+      body: pushBody,
+      url: chatHref,
+      tag: `chat-${conversationId}`,
+    },
+  );
+}
 
   revalidatePath(
     "/member/chat",
@@ -656,4 +729,202 @@ export async function voteOnChatPoll(formData: FormData) {
       ? `/member/chat/groups/${message.conversationId}`
       : `/member/chat/${message.conversationId}`;
   revalidatePath(href);
+}
+export async function togglePinnedGroupMessage(
+  formData: FormData,
+) {
+  const { user } = await requirePermission(
+    PERMISSIONS.MEMBER_DASHBOARD,
+  );
+
+  const messageId = text(
+    formData,
+    "messageId",
+  );
+
+  if (!messageId) {
+    return;
+  }
+
+  const message =
+    await prisma.chatMessage.findFirst({
+      where: {
+        id: messageId,
+
+        conversation: {
+          type: "GROUP",
+
+          participants: {
+            some: {
+              userId: user.id,
+            },
+          },
+        },
+      },
+
+      select: {
+        id: true,
+        conversationId: true,
+        isPinned: true,
+      },
+    });
+
+  if (!message) {
+    return;
+  }
+
+  await prisma.$transaction(
+    async (tx) => {
+      /*
+       * إذا كانت الرسالة مثبتة أصلًا:
+       * نفك التثبيت.
+       */
+      if (message.isPinned) {
+        await tx.chatMessage.update({
+          where: {
+            id: message.id,
+          },
+
+          data: {
+            isPinned: false,
+            pinnedAt: null,
+          },
+        });
+
+        return;
+      }
+
+      /*
+       * نخلي لكل مجموعة رسالة مثبتة واحدة فقط.
+       */
+      await tx.chatMessage.updateMany({
+        where: {
+          conversationId:
+            message.conversationId,
+
+          isPinned: true,
+        },
+
+        data: {
+          isPinned: false,
+          pinnedAt: null,
+        },
+      });
+
+      await tx.chatMessage.update({
+        where: {
+          id: message.id,
+        },
+
+        data: {
+          isPinned: true,
+          pinnedAt: new Date(),
+        },
+      });
+    },
+  );
+
+  revalidatePath(
+    `/member/chat/groups/${message.conversationId}`,
+  );
+
+  revalidatePath(
+    "/member/chat",
+  );
+}
+
+export async function togglePinnedDirectMessage(
+  formData: FormData,
+) {
+  const { user } = await requirePermission(
+    PERMISSIONS.MEMBER_DASHBOARD,
+  );
+
+  const messageId = text(
+    formData,
+    "messageId",
+  );
+
+  if (!messageId) {
+    return;
+  }
+
+  const message =
+    await prisma.chatMessage.findFirst({
+      where: {
+        id: messageId,
+
+        conversation: {
+          type: "DIRECT",
+
+          participants: {
+            some: {
+              userId: user.id,
+            },
+          },
+        },
+      },
+
+      select: {
+        id: true,
+        conversationId: true,
+        isPinned: true,
+      },
+    });
+
+  if (!message) {
+    return;
+  }
+
+  await prisma.$transaction(
+    async (tx) => {
+      if (message.isPinned) {
+        await tx.chatMessage.update({
+          where: {
+            id: message.id,
+          },
+
+          data: {
+            isPinned: false,
+            pinnedAt: null,
+          },
+        });
+
+        return;
+      }
+
+      await tx.chatMessage.updateMany({
+        where: {
+          conversationId:
+            message.conversationId,
+
+          isPinned: true,
+        },
+
+        data: {
+          isPinned: false,
+          pinnedAt: null,
+        },
+      });
+
+      await tx.chatMessage.update({
+        where: {
+          id: message.id,
+        },
+
+        data: {
+          isPinned: true,
+          pinnedAt: new Date(),
+        },
+      });
+    },
+  );
+
+  revalidatePath(
+    `/member/chat/${message.conversationId}`,
+  );
+
+  revalidatePath(
+    "/member/chat",
+  );
 }

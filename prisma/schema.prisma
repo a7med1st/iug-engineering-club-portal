@@ -191,6 +191,7 @@ model User {
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   notifications         Notification[]
+  pushSubscriptions     PushSubscription[]
   emailVerificationCode EmailVerificationCode?
   passwordResetCode     PasswordResetCode?
 
@@ -202,6 +203,28 @@ model User {
   assignedComplaints     Complaint[]            @relation("ComplaintAssignee")
   assignedSuggestions    Suggestion[]           @relation("SuggestionAssignee")
   assignedCollaborations CollaborationRequest[] @relation("CollaborationAssignee")
+}
+
+// =========================================================
+// WEB PUSH NOTIFICATIONS
+// =========================================================
+
+model PushSubscription {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  endpoint String @unique
+  p256dh   String
+  auth     String
+
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // Distributed fixed-window counters shared by all server instances.
@@ -281,11 +304,11 @@ model Department {
   profileImageUpdatedAt    DateTime?
 
   // Detail image for department guide
-  detailImageStoredName    String?
-  detailImageOriginalName  String?
-  detailImageMime          String?
-  detailImageSize          Int?
-  detailImageUpdatedAt     DateTime?
+  detailImageStoredName   String?
+  detailImageOriginalName String?
+  detailImageMime         String?
+  detailImageSize         Int?
+  detailImageUpdatedAt    DateTime?
 
   users          User[]
   activities     ActivityDepartment[]
@@ -761,11 +784,18 @@ model ChatMessage {
   conversationId String
   conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
+  replyToId String?
+  replyTo   ChatMessage?  @relation("ChatMessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   ChatMessage[] @relation("ChatMessageReplies")
+
   senderId String
   sender   User   @relation("ChatMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   body String @default("")
   kind String @default("TEXT")
+
+  isPinned Boolean   @default(false)
+  pinnedAt DateTime?
 
   pollQuestion String?
   pollOptions  String[] @default([])
@@ -779,6 +809,8 @@ model ChatMessage {
 
   @@index([conversationId, createdAt])
   @@index([senderId, createdAt])
+  @@index([conversationId, isPinned, pinnedAt])
+  @@index([replyToId])
 }
 
 model ChatAttachment {

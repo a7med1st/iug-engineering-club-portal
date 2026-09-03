@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, FileText, LoaderCircle, Mic, Paperclip, Plus, Send, Square, X } from "lucide-react";
+import { BarChart3, FileText, LoaderCircle, Mic, Paperclip, Plus, Reply, Send, Square, X } from "lucide-react";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -32,6 +32,13 @@ export default function ChatComposer({ conversationId, className }: { conversati
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [mediaError, setMediaError] = useState("");
+  const [replyTarget, setReplyTarget] = useState<{
+    messageId: string;
+    senderName: string;
+    body: string;
+  } | null>(null);
+
+
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -40,6 +47,39 @@ export default function ChatComposer({ conversationId, className }: { conversati
   const typingTimer = useRef<number | null>(null);
   const lastTypingPing = useRef(0);
   const discardRecording = useRef(false);
+  useEffect(() => {
+  const handleReplySelected = (event: Event) => {
+    const customEvent =
+      event as CustomEvent<{
+        messageId: string;
+        senderName: string;
+        body: string;
+      }>;
+
+    if (!customEvent.detail?.messageId) {
+      return;
+    }
+
+    setReplyTarget(customEvent.detail);
+
+    window.setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
+  };
+
+  window.addEventListener(
+    "chat-reply-selected",
+    handleReplySelected,
+  );
+
+  return () => {
+    window.removeEventListener(
+      "chat-reply-selected",
+      handleReplySelected,
+    );
+  };
+}, []);
+
 
   const sendTyping = async (active: boolean) => {
     try {
@@ -49,7 +89,7 @@ export default function ChatComposer({ conversationId, className }: { conversati
         body: JSON.stringify({ active }),
         cache: "no-store",
       });
-    } catch {}
+    } catch { }
   };
 
   const stopTyping = () => {
@@ -68,6 +108,7 @@ export default function ChatComposer({ conversationId, className }: { conversati
 
   const resetComposer = () => {
     clearAttachment();
+    setReplyTarget(null);
     setPollOpen(false);
     setPollQuestion("");
     setPollOptions(["", ""]);
@@ -111,6 +152,64 @@ export default function ChatComposer({ conversationId, className }: { conversati
     setIsVoiceNote(false);
     setPollOpen(false);
     setMediaError("");
+  };
+  const handlePaste = (
+    event: React.ClipboardEvent<HTMLTextAreaElement>,
+  ) => {
+    const items =
+      Array.from(
+        event.clipboardData.items,
+      );
+
+    const imageItem =
+      items.find((item) =>
+        item.type.startsWith("image/"),
+      );
+
+    if (!imageItem) {
+      return;
+    }
+
+    const blob =
+      imageItem.getAsFile();
+
+    if (!blob) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const extension =
+      blob.type === "image/jpeg"
+        ? "jpg"
+        : blob.type === "image/webp"
+          ? "webp"
+          : blob.type === "image/gif"
+            ? "gif"
+            : "png";
+
+    const file =
+      new File(
+        [blob],
+        `clipboard-${Date.now()}.${extension}`,
+        {
+          type:
+            blob.type ||
+            "image/png",
+        },
+      );
+
+    const transfer =
+      new DataTransfer();
+
+    transfer.items.add(file);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.files =
+        transfer.files;
+    }
+
+    selectFile(file);
   };
 
   const stopRecording = (discard = false) => {
@@ -185,7 +284,48 @@ export default function ChatComposer({ conversationId, className }: { conversati
   return (
     <form action={formAction} className={`${className} ${styles.composerEnhanced}`}>
       <input type="hidden" name="conversationId" value={conversationId} />
+      <input
+  type="hidden"
+  name="replyToMessageId"
+  value={replyTarget?.messageId ?? ""}
+/>
       <input type="hidden" name="isVoiceNote" value={isVoiceNote ? "true" : "false"} />
+
+      {replyTarget && (
+  <div className={styles.composerReplyPreview}>
+    <span className={styles.composerReplyIcon}>
+      <Reply
+        size={16}
+        aria-hidden="true"
+      />
+    </span>
+
+    <div className={styles.composerReplyCopy}>
+      <strong>
+        الرد على {replyTarget.senderName}
+      </strong>
+
+      <span>
+        {replyTarget.body.length > 100
+          ? `${replyTarget.body.slice(0, 100)}...`
+          : replyTarget.body}
+      </span>
+    </div>
+
+    <button
+      type="button"
+      className={styles.composerReplyClose}
+      onClick={() => setReplyTarget(null)}
+      aria-label="إلغاء الرد"
+      title="إلغاء الرد"
+    >
+      <X
+        size={16}
+        aria-hidden="true"
+      />
+    </button>
+  </div>
+)}
 
       {pollOpen && (
         <section className={styles.pollEditor} aria-label="إنشاء تصويت">
@@ -264,6 +404,7 @@ export default function ChatComposer({ conversationId, className }: { conversati
           maxLength={3000}
           placeholder="اكتب رسالتك..."
           onInput={onInput}
+          onPaste={handlePaste}
           onBlur={stopTyping}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {

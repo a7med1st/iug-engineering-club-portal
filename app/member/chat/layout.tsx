@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-
 import {
   PERMISSIONS,
   requirePermission,
@@ -104,28 +103,28 @@ export default async function ChatLayout({
         id: conversation.id,
         partner: partner
           ? {
-              id: partner.id,
-              name: partner.name,
-              role: partner.role,
-              title:
-                partner.structureItem?.title ??
-                (partner.role === "ADMIN"
-                  ? "إدارة النادي"
-                  : "عضو"),
-              department:
-                partner.department?.nameAr ?? null,
-              hasAvatar: Boolean(partner.avatarStoredName),
-              avatarVersion:
-                partner.avatarUpdatedAt?.getTime() ?? 0,
-            }
+            id: partner.id,
+            name: partner.name,
+            role: partner.role,
+            title:
+              partner.structureItem?.title ??
+              (partner.role === "ADMIN"
+                ? "إدارة النادي"
+                : "عضو"),
+            department:
+              partner.department?.nameAr ?? null,
+            hasAvatar: Boolean(partner.avatarStoredName),
+            avatarVersion:
+              partner.avatarUpdatedAt?.getTime() ?? 0,
+          }
           : null,
         lastMessage: lastMessage
           ? {
-              body: lastMessage.body,
-              createdAt:
-                lastMessage.createdAt.toISOString(),
-              mine: lastMessage.senderId === user.id,
-            }
+            body: lastMessage.body,
+            createdAt:
+              lastMessage.createdAt.toISOString(),
+            mine: lastMessage.senderId === user.id,
+          }
           : null,
         unreadCount,
         sortTime:
@@ -139,29 +138,29 @@ export default async function ChatLayout({
 
   return (
     <main className={styles.page}>
-      <section className={styles.shell}>
-        <ChatSidebar
-          conversations={rows}
-          availableUsers={availableUsers.map((item) => ({
-            id: item.id,
-            name: item.name,
-            role: item.role,
-            title:
-              item.structureItem?.title ??
-              (item.role === "ADMIN"
-                ? "إدارة النادي"
-                : "عضو"),
-            department: item.department?.nameAr ?? null,
-          }))}
-        />
+        <section className={styles.shell}>
+          <ChatSidebar
+            conversations={rows}
+            availableUsers={availableUsers.map((item) => ({
+              id: item.id,
+              name: item.name,
+              role: item.role,
+              title:
+                item.structureItem?.title ??
+                (item.role === "ADMIN"
+                  ? "إدارة النادي"
+                  : "عضو"),
+              department: item.department?.nameAr ?? null,
+            }))}
+          />
 
-        <div
-          className={styles.content}
-          data-page-transition-content
-        >
-          {children}
-        </div>
-      </section>
+          <div
+            className={styles.content}
+            data-page-transition-content
+          >
+            {children}
+          </div>
+        </section>
     </main>
   );
 }

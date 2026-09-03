@@ -22,6 +22,59 @@ function fileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} ميجابايت`;
 }
 
+const messageUrlPattern =
+  /((?:https?:\/\/|www\.)[^\s<]+)/gi;
+
+function renderMessageText(text: string) {
+  const parts = text.split(messageUrlPattern);
+
+  return parts.map((part, index) => {
+    const isUrl =
+      /^(?:https?:\/\/|www\.)/i.test(part);
+
+    if (!isUrl) {
+      return part;
+    }
+
+    /*
+     * نفصل علامات الترقيم الموجودة بعد الرابط
+     * حتى لا تدخل ضمن الرابط نفسه.
+     */
+    const trailingMatch =
+      part.match(/[.,!?،؛:]+$/);
+
+    const trailing =
+      trailingMatch?.[0] ?? "";
+
+    const cleanUrl = trailing
+      ? part.slice(
+          0,
+          -trailing.length,
+        )
+      : part;
+
+    const href =
+      cleanUrl.startsWith("www.")
+        ? `https://${cleanUrl}`
+        : cleanUrl;
+
+    return (
+      <span key={`${cleanUrl}-${index}`}>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.messageLink}
+        >
+          {cleanUrl}
+        </a>
+
+        {trailing}
+      </span>
+    );
+  });
+}
+
 export default function ChatMessageContent({
   messageId,
   kind,
@@ -53,9 +106,13 @@ export default function ChatMessageContent({
 
   return (
     <div className={styles.messageContent}>
-      {kind !== "POLL" && body && !generatedAttachmentLabel && (
-        <p className={styles.messageCaption}>{body}</p>
-      )}
+{kind !== "POLL" &&
+  body &&
+  !generatedAttachmentLabel && (
+    <p className={styles.messageCaption}>
+      {renderMessageText(body)}
+    </p>
+  )}
 
       {attachments.map((attachment) => {
         const source = `/member/chat/attachments/${attachment.id}`;

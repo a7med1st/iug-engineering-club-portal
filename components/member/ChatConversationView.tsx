@@ -28,7 +28,7 @@ export default function ChatConversationView({
             cache: "no-store",
           },
         );
-      } catch {}
+      } catch { }
     };
 
     void markRead();
@@ -36,11 +36,26 @@ export default function ChatConversationView({
 
   useEffect(() => {
     const bottom =
-      document.getElementById("chat-bottom");
+      document.getElementById(
+        "chat-bottom",
+      );
 
-    bottom?.scrollIntoView({
-      behavior: firstRender.current ? "auto" : "smooth",
-      block: "end",
+    const messagesContainer =
+      bottom?.closest(
+        '[data-chat-messages="true"]',
+      ) as HTMLElement | null;
+
+    if (!messagesContainer) {
+      return;
+    }
+
+    messagesContainer.scrollTo({
+      top: messagesContainer.scrollHeight,
+
+      behavior:
+        firstRender.current
+          ? "auto"
+          : "smooth",
     });
 
     firstRender.current = false;

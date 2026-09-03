@@ -15,7 +15,9 @@ import {
   useRef,
   useState,
 } from "react";
-
+import {
+  ensurePushSubscription,
+} from "@/lib/push-client";
 import styles from "./notification-bell.module.css";
 
 type NotificationItem = {
@@ -605,6 +607,8 @@ export default function NotificationBell() {
         aria-controls="notifications-dropdown"
         onClick={() => {
           void unlockSound();
+          void ensurePushSubscription();
+
 
           setOpen(
             (value) =>

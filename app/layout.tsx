@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./theme.css";
+import ConditionalFooter from "@/components/ConditionalFooter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import IntroGate from "@/components/IntroGate";
@@ -48,8 +49,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <NavigationTransitionProvider />
       <ScrollReveal />
       <Header />
-      <main data-page-transition-content>{children}</main>
-      <Footer />
+<main data-page-transition-content>
+  {children}
+</main>
+
+<ConditionalFooter>
+  <Footer />
+</ConditionalFooter>
       <div id="app-portal-root" />
     </CspNonceProvider>
   </body>

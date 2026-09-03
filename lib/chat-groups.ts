@@ -28,42 +28,45 @@ export async function syncSystemChatGroups() {
       select: { id: true, nameAr: true, sortOrder: true },
       orderBy: { sortOrder: "asc" },
     }),
-prisma.user.findMany({
-  where: {
-    role: {
-      in: ["MEMBER", "ADMIN"],
-    },
-  },
-  select: {
-    id: true,
-    role: true,
-    departmentId: true,
-    position: true,
-  },
-}),
+    prisma.user.findMany({
+      where: {
+        role: {
+          in: ["MEMBER", "ADMIN"],
+        },
+      },
+      select: {
+        id: true,
+        role: true,
+        departmentId: true,
+        position: true,
+      },
+    }),
   ]);
 
   const allIds = users.map((u) => u.id);
   const adminIds = users.filter((u) => u.role === "ADMIN").map((u) => u.id);
-const leadershipIds = users
-  .filter(
-    (u) =>
-      u.role === "MEMBER" &&
-      isClubLeadership(u.position),
-  )
-  .map((u) => u.id);
+  const leadershipIds = users
+    .filter(
+      (u) =>
+        u.role === "MEMBER" &&
+        isClubLeadership(u.position),
+    )
+    .map((u) => u.id);
+
   const general = await prisma.chatConversation.upsert({
     where: { directKey: GENERAL_KEY },
     create: { type: "GROUP", name: "النادي الهندسي - عام", directKey: GENERAL_KEY },
     update: { type: "GROUP", name: "النادي الهندسي - عام" },
     select: { id: true },
   });
+
   await syncParticipants(general.id, allIds);
 
   for (const department of departments) {
     const memberIds = users
       .filter((u) => u.role === "MEMBER" && u.departmentId === department.id)
       .map((u) => u.id);
+
     const group = await prisma.chatConversation.upsert({
       where: { directKey: deptKey(department.id) },
       create: {
@@ -74,19 +77,21 @@ const leadershipIds = users
       update: { type: "GROUP", name: `قسم ${department.nameAr}` },
       select: { id: true },
     });
+
     await syncParticipants(
-  group.id,
-  [
-    ...adminIds,
-    ...leadershipIds,
-    ...memberIds,
-  ],
-);
+      group.id,
+      [
+        ...adminIds,
+        ...leadershipIds,
+        ...memberIds,
+      ],
+    );
   }
 }
 
 export async function getSystemGroupsForUser(userId: string) {
   await syncSystemChatGroups();
+
   const memberships = await prisma.chatParticipant.findMany({
     where: {
       userId,
@@ -140,6 +145,7 @@ export async function getSystemGroupsForUser(userId: string) {
 
 export async function getSystemGroupMembership(userId: string, conversationId: string) {
   await syncSystemChatGroups();
+
   return prisma.chatParticipant.findFirst({
     where: {
       userId,
@@ -158,12 +164,46 @@ export async function getSystemGroupMembership(userId: string, conversationId: s
             take: 150,
             orderBy: { createdAt: "asc" },
             include: {
-              sender: { select: { id: true, name: true } },
-              receipts: { select: { userId: true, deliveredAt: true, readAt: true } },
-              attachments: {
-                select: { id: true, originalName: true, mime: true, size: true },
+              sender: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatarStoredName: true,
+                  avatarUpdatedAt: true,
+                },
               },
-              pollVotes: { select: { userId: true, optionIndex: true } },
+              receipts: {
+                select: {
+                  userId: true,
+                  deliveredAt: true,
+                  readAt: true,
+                },
+              },
+              attachments: {
+                select: {
+                  id: true,
+                  originalName: true,
+                  mime: true,
+                  size: true,
+                },
+              },
+              pollVotes: {
+                select: {
+                  userId: true,
+                  optionIndex: true,
+                },
+              },
+              replyTo: {
+                select: {
+                  id: true,
+                  body: true,
+                  sender: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
