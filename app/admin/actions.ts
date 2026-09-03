@@ -24,6 +24,7 @@ import {
   PERMISSIONS,
   canAccessActivityDepartments,
   canAccessDepartment,
+  isClubLeadership,
   isDepartmentScopedPermission,
   normalizeMemberPermissions,
   requirePermission,
@@ -70,7 +71,7 @@ type RegistrationQuestionInput = {
    ERROR
 ========================================================= */
 
-class AdminActionError extends Error {}
+class AdminActionError extends Error { }
 
 /* =========================================================
    HELPERS
@@ -170,8 +171,7 @@ function parseRegistrationQuestions(
         typeof item !== "object"
       ) {
         throw new AdminActionError(
-          `السؤال رقم ${
-            index + 1
+          `السؤال رقم ${index + 1
           } غير صالح.`,
         );
       }
@@ -207,16 +207,14 @@ function parseRegistrationQuestions(
 
       if (!label) {
         throw new AdminActionError(
-          `اكتب نص السؤال رقم ${
-            index + 1
+          `اكتب نص السؤال رقم ${index + 1
           }.`,
         );
       }
 
       if (label.length > 250) {
         throw new AdminActionError(
-          `نص السؤال رقم ${
-            index + 1
+          `نص السؤال رقم ${index + 1
           } طويل جدًا.`,
         );
       }
@@ -231,8 +229,7 @@ function parseRegistrationQuestions(
         )
       ) {
         throw new AdminActionError(
-          `نوع السؤال رقم ${
-            index + 1
+          `نوع السؤال رقم ${index + 1
           } غير صالح.`,
         );
       }
@@ -246,8 +243,7 @@ function parseRegistrationQuestions(
 
       if (placeholder.length > 250) {
         throw new AdminActionError(
-          `النص الإرشادي للسؤال رقم ${
-            index + 1
+          `النص الإرشادي للسؤال رقم ${index + 1
           } طويل جدًا.`,
         );
       }
@@ -258,8 +254,7 @@ function parseRegistrationQuestions(
 
       if (helpText.length > 500) {
         throw new AdminActionError(
-          `الملاحظة التوضيحية للسؤال رقم ${
-            index + 1
+          `الملاحظة التوضيحية للسؤال رقم ${index + 1
           } طويلة جدًا.`,
         );
       }
@@ -290,16 +285,14 @@ function parseRegistrationQuestions(
       if (usesOptions) {
         if (options.length < 2) {
           throw new AdminActionError(
-            `السؤال رقم ${
-              index + 1
+            `السؤال رقم ${index + 1
             } يحتاج إلى خيارين على الأقل.`,
           );
         }
 
         if (options.length > 30) {
           throw new AdminActionError(
-            `السؤال رقم ${
-              index + 1
+            `السؤال رقم ${index + 1
             } يحتوي على خيارات كثيرة جدًا.`,
           );
         }
@@ -311,8 +304,7 @@ function parseRegistrationQuestions(
           )
         ) {
           throw new AdminActionError(
-            `يوجد خيار طويل جدًا في السؤال رقم ${
-              index + 1
+            `يوجد خيار طويل جدًا في السؤال رقم ${index + 1
             }.`,
           );
         }
@@ -329,8 +321,7 @@ function parseRegistrationQuestions(
           options.length
         ) {
           throw new AdminActionError(
-            `يوجد خيار مكرر في السؤال رقم ${
-              index + 1
+            `يوجد خيار مكرر في السؤال رقم ${index + 1
             }.`,
           );
         }
@@ -374,7 +365,7 @@ async function runAdminAction(
   } catch (error) {
     const message =
       error instanceof
-      AdminActionError
+        AdminActionError
         ? error.message
         : fallbackError;
 
@@ -461,7 +452,7 @@ export async function createMember(
           getEmailValidationMessage(
             emailResult,
           ) ??
-            "يرجى إدخال بريد إلكتروني صحيح.",
+          "يرجى إدخال بريد إلكتروني صحيح.",
         );
       }
 
@@ -492,7 +483,7 @@ export async function createMember(
       const requestedRole =
         String(
           formData.get("role") ??
-            "MEMBER",
+          "MEMBER",
         );
 
       if (
@@ -563,16 +554,16 @@ export async function createMember(
 
       let registration:
         | {
-            user: {
-              id: string;
-              email: string;
-              name: string;
-            };
-            verification: {
-              code: string;
-              codeHash: string;
-            };
-          }
+          user: {
+            id: string;
+            email: string;
+            name: string;
+          };
+          verification: {
+            code: string;
+            codeHash: string;
+          };
+        }
         | undefined;
 
       try {
@@ -611,7 +602,7 @@ export async function createMember(
       } catch (error) {
         if (
           error instanceof
-            Prisma.PrismaClientKnownRequestError &&
+          Prisma.PrismaClientKnownRequestError &&
           error.code === "P2002"
         ) {
           throw new AdminActionError(
@@ -842,7 +833,7 @@ export async function createActivity(
 
       const statusValue = String(
         formData.get("status") ??
-          "PUBLISHED",
+        "PUBLISHED",
       ).trim();
 
       /* =============================================
@@ -1023,7 +1014,7 @@ export async function createActivity(
 
       if (
         availableDepartments.length ===
-          0 ||
+        0 ||
         explicitDepartmentIds.some(
           (departmentId) =>
             !availableDepartmentIds.has(
@@ -1050,15 +1041,14 @@ export async function createActivity(
           : explicitDepartmentIds;
 
       if (
-        user.role === "MEMBER"
+        user.role === "MEMBER" &&
+        !isClubLeadership(user.position)
       ) {
         if (
           !user.departmentId ||
           selectAll ||
-          departmentIds.length !==
-            1 ||
-          departmentIds[0] !==
-            user.departmentId
+          departmentIds.length !== 1 ||
+          departmentIds[0] !== user.departmentId
         ) {
           throw new AdminActionError(
             "يمكنك إنشاء نشاط لقسمك فقط.",
@@ -1095,19 +1085,19 @@ export async function createActivity(
           departments:
             departmentIds.length > 0
               ? {
-                  create:
-                    departmentIds.map(
-                      (
-                        departmentId,
-                      ) => ({
-                        department: {
-                          connect: {
-                            id: departmentId,
-                          },
+                create:
+                  departmentIds.map(
+                    (
+                      departmentId,
+                    ) => ({
+                      department: {
+                        connect: {
+                          id: departmentId,
                         },
-                      }),
-                    ),
-                }
+                      },
+                    }),
+                  ),
+              }
               : undefined,
 
           /* -----------------------------------------
@@ -1131,43 +1121,43 @@ export async function createActivity(
 
               questions:
                 registrationQuestions.length >
-                0
+                  0
                   ? {
-                      create:
-                        registrationQuestions.map(
-                          (
-                            question,
-                          ) => ({
-                            label:
-                              question.label,
+                    create:
+                      registrationQuestions.map(
+                        (
+                          question,
+                        ) => ({
+                          label:
+                            question.label,
 
-                            type:
-                              question.type,
+                          type:
+                            question.type,
 
-                            required:
-                              question.required,
+                          required:
+                            question.required,
 
-                            placeholder:
-                              question.placeholder ||
-                              null,
+                          placeholder:
+                            question.placeholder ||
+                            null,
 
-                            helpText:
-                              question.helpText ||
-                              null,
+                          helpText:
+                            question.helpText ||
+                            null,
 
-                            options:
-                              question
-                                .options
-                                .length >
+                          options:
+                            question
+                              .options
+                              .length >
                               0
-                                ? question.options
-                                : undefined,
+                              ? question.options
+                              : undefined,
 
-                            sortOrder:
-                              question.sortOrder,
-                          }),
-                        ),
-                    }
+                          sortOrder:
+                            question.sortOrder,
+                        }),
+                      ),
+                  }
                   : undefined,
             },
           },
@@ -1189,10 +1179,10 @@ export async function createActivity(
 
               ...(departmentIds.length > 0
                 ? {
-                    departmentId: {
-                      in: departmentIds,
-                    },
-                  }
+                  departmentId: {
+                    in: departmentIds,
+                  },
+                }
                 : {}),
             },
 
@@ -1433,7 +1423,7 @@ export async function saveGuide(
 
         faq: String(
           formData.get("faq") ??
-            "",
+          "",
         ).trim(),
       };
 
