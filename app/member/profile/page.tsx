@@ -53,6 +53,7 @@ export default async function MemberProfileEditorPage({
       department: {
         select: {
           nameAr: true,
+          slug: true,
         },
       },
       structureItem: {
@@ -70,6 +71,7 @@ export default async function MemberProfileEditorPage({
   const title =
     user.structureItem?.title ?? user.position ?? "عضو في النادي الهندسي";
   const departmentName = user.department?.nameAr ?? "الإدارة العامة";
+  const isArchitecture = user.department?.slug === "architecture";
   const initials =
     user.name
       .trim()
@@ -192,16 +194,23 @@ export default async function MemberProfileEditorPage({
               />
             </label>
 
-            <label className={styles.fieldCard}>
-              <span className={styles.fieldLabel}>GitHub</span>
-              <input
-                type="url"
-                name="github"
-                dir="ltr"
-                defaultValue={user.profileGithub ?? ""}
-                placeholder="https://github.com/..."
-              />
-            </label>
+<label className={styles.fieldCard}>
+  <span className={styles.fieldLabel}>
+    {isArchitecture ? "Behance" : "GitHub"}
+  </span>
+
+  <input
+    type="url"
+    name="github"
+    dir="ltr"
+    defaultValue={user.profileGithub ?? ""}
+    placeholder={
+      isArchitecture
+        ? "https://behance.net/..."
+        : "https://github.com/..."
+    }
+  />
+</label>
 
             <label className={styles.fieldCard}>
               <span className={styles.fieldLabel}>Instagram</span>

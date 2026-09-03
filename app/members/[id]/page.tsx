@@ -8,6 +8,7 @@ import {
   Instagram,
   Linkedin,
   Link2,
+  Palette,
   Sparkles,
 } from "lucide-react";
 
@@ -44,9 +45,12 @@ export default async function MemberPublicProfilePage({
       avatarUpdatedAt: true,
       profileCoverStoredName: true,
       profileCoverUpdatedAt: true,
-      department: {
-        select: { nameAr: true },
-      },
+department: {
+  select: {
+    nameAr: true,
+    slug: true,
+  },
+},
       structureItem: {
         select: { title: true },
       },
@@ -85,6 +89,9 @@ export default async function MemberPublicProfilePage({
     ? `/members/${member.id}/cover?v=${coverVersion}`
     : null;
 
+    const isArchitecture =
+  member.department?.slug === "architecture";
+
   const links = [
     member.profileLinkedIn
       ? {
@@ -93,13 +100,13 @@ export default async function MemberPublicProfilePage({
           icon: Linkedin,
         }
       : null,
-    member.profileGithub
-      ? {
-          label: "GitHub",
-          url: member.profileGithub,
-          icon: Github,
-        }
-      : null,
+member.profileGithub
+  ? {
+      label: isArchitecture ? "Behance" : "GitHub",
+      url: member.profileGithub,
+      icon: isArchitecture ? Palette : Github,
+    }
+  : null,
     member.profileInstagram
       ? {
           label: "Instagram",
