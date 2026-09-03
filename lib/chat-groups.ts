@@ -1,3 +1,4 @@
+import { isClubLeadership } from "./permissions";
 import { prisma } from "./prisma.ts";
 
 const GENERAL_KEY = "group:general";
@@ -27,15 +28,30 @@ export async function syncSystemChatGroups() {
       select: { id: true, nameAr: true, sortOrder: true },
       orderBy: { sortOrder: "asc" },
     }),
-    prisma.user.findMany({
-      where: { role: { in: ["MEMBER", "ADMIN"] } },
-      select: { id: true, role: true, departmentId: true },
-    }),
+prisma.user.findMany({
+  where: {
+    role: {
+      in: ["MEMBER", "ADMIN"],
+    },
+  },
+  select: {
+    id: true,
+    role: true,
+    departmentId: true,
+    position: true,
+  },
+}),
   ]);
 
   const allIds = users.map((u) => u.id);
   const adminIds = users.filter((u) => u.role === "ADMIN").map((u) => u.id);
-
+const leadershipIds = users
+  .filter(
+    (u) =>
+      u.role === "MEMBER" &&
+      isClubLeadership(u.position),
+  )
+  .map((u) => u.id);
   const general = await prisma.chatConversation.upsert({
     where: { directKey: GENERAL_KEY },
     create: { type: "GROUP", name: "النادي الهندسي - عام", directKey: GENERAL_KEY },
@@ -58,7 +74,14 @@ export async function syncSystemChatGroups() {
       update: { type: "GROUP", name: `قسم ${department.nameAr}` },
       select: { id: true },
     });
-    await syncParticipants(group.id, [...adminIds, ...memberIds]);
+    await syncParticipants(
+  group.id,
+  [
+    ...adminIds,
+    ...leadershipIds,
+    ...memberIds,
+  ],
+);
   }
 }
 
