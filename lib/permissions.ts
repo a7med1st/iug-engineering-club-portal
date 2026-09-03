@@ -361,14 +361,30 @@ export type PermissionUser = {
  * Check if a member is a club president or vice president.
  * They have full permissions across all departments.
  */
-export function isClubLeadership(position: string | null | undefined): boolean {
+export function isClubLeadership(
+  position: string | null | undefined,
+): boolean {
   if (!position) return false;
+
   const positionLower = position.toLowerCase();
+
   return (
     positionLower.includes("رئيس النادي") ||
     positionLower.includes("نائب رئيس النادي") ||
     positionLower.includes("club president") ||
     positionLower.includes("vice president")
+  );
+}
+
+export function hasGlobalContactAccess(
+  user: Pick<
+    PermissionUser,
+    "role" | "position"
+  >,
+) {
+  return (
+    user.role === "ADMIN" ||
+    isClubLeadership(user.position)
   );
 }
 

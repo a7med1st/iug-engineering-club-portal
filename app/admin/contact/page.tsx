@@ -13,7 +13,10 @@ import ContactStatusSelect from "@/components/admin/ContactStatusSelect";
 import ContactEscalationForm from "@/components/admin/ContactEscalationForm";
 import ComplaintReplyForm from "@/components/admin/ComplaintReplyForm";
 import { NonceStyle } from "@/components/security/CspNonce";
-import { requireContactAccess } from "@/lib/permissions";
+import {
+  hasGlobalContactAccess,
+  requireContactAccess,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { CONTACT_STATUS_LABELS } from "@/lib/contact-options";
 import { updateContactStatus } from "./actions";
@@ -27,10 +30,10 @@ export default async function AdminContactPage({
 }) {
   const { user } = await requireContactAccess();
 
-  const assignedWhere =
-    user.role === "ADMIN"
-      ? undefined
-      : { assignedToId: user.id };
+const assignedWhere =
+  hasGlobalContactAccess(user)
+    ? undefined
+    : { assignedToId: user.id };
   const { focus } = await searchParams;
 
   const [complaints, suggestions, collaborations] = await Promise.all([

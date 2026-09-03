@@ -12,7 +12,10 @@ import {
   findInitialContactAssignee,
   findParentContactAssignee,
 } from "@/lib/contact-routing";
-import { requireContactAccess } from "@/lib/permissions";
+import {
+  hasGlobalContactAccess,
+  requireContactAccess,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 type ContactKind =
@@ -34,11 +37,12 @@ function canManageAssignedRequest(
   user: {
     id: string;
     role: "STUDENT" | "MEMBER" | "ADMIN";
+    position?: string | null;
   },
   assignedToId: string | null,
 ) {
   return (
-    user.role === "ADMIN" ||
+    hasGlobalContactAccess(user) ||
     assignedToId === user.id
   );
 }

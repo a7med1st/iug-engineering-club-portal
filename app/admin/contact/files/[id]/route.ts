@@ -8,7 +8,10 @@ import {
   getPrivateBlob,
   logPrivateBlobReadError,
 } from "@/lib/blob-storage";
-import { requireContactAccess } from "@/lib/permissions";
+import {
+  hasGlobalContactAccess,
+  requireContactAccess,
+} from "@/lib/permissions";
 import {
   privateFileResponse,
   safeContentDisposition,
@@ -38,7 +41,7 @@ export async function GET(
     await prisma.collaborationRequest.findFirst({
       where: {
         id,
-        ...(user.role === "ADMIN"
+        ...(hasGlobalContactAccess(user)
           ? {}
           : { assignedToId: user.id }),
       },
@@ -66,13 +69,13 @@ export async function GET(
     );
 
   const responseHeaders = {
-      "Content-Type":
-        request.attachmentMime ||
-        "application/octet-stream",
-      "Content-Disposition":
-        safeContentDisposition(request.attachmentOriginalName, "attachment"),
-      "Cache-Control": "private, no-store",
-      "X-Content-Type-Options": "nosniff",
+    "Content-Type":
+      request.attachmentMime ||
+      "application/octet-stream",
+    "Content-Disposition":
+      safeContentDisposition(request.attachmentOriginalName, "attachment"),
+    "Cache-Control": "private, no-store",
+    "X-Content-Type-Options": "nosniff",
   };
 
   if (request.attachmentStoredName.startsWith("collaboration/")) {

@@ -4,11 +4,15 @@ import { notFound } from "next/navigation";
 import PrintButton from "@/components/admin/PrintButton";
 import { NonceStyle } from "@/components/security/CspNonce";
 
-import { requireContactAccess } from "@/lib/permissions";
+import {
+  hasGlobalContactAccess,
+  requireContactAccess,
+} from "@/lib/permissions";
 
 import { prisma } from "@/lib/prisma";
 
 import styles from "./print.module.css";
+
 
 type Props = {
   params: Promise<{
@@ -35,10 +39,10 @@ export default async function ContactPrintPage({
 }: Props) {
   const { user } = await requireContactAccess();
 
-  const assignmentScope =
-    user.role === "ADMIN"
-      ? {}
-      : { assignedToId: user.id };
+const assignmentScope =
+  hasGlobalContactAccess(user)
+    ? {}
+    : { assignedToId: user.id };
 
   const { type, id } = await params;
 

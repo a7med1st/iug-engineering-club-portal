@@ -1,6 +1,9 @@
 import ExcelJS from "exceljs";
 
-import { requireContactAccess } from "@/lib/permissions";
+import {
+  hasGlobalContactAccess,
+  requireContactAccess,
+} from "@/lib/permissions";
 
 import { prisma } from "@/lib/prisma";
 
@@ -12,10 +15,10 @@ export async function GET() {
 
   const complaints =
     await prisma.complaint.findMany({
-      where:
-        user.role === "ADMIN"
-          ? undefined
-          : { assignedToId: user.id },
+where:
+  hasGlobalContactAccess(user)
+    ? undefined
+    : { assignedToId: user.id },
       include: {
         department: true,
       },
