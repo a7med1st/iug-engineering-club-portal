@@ -179,12 +179,6 @@ const isCapacityFull =
                                     {form.title}
                                 </h2>
 
-                                {form.description && (
-                                    <p>
-                                        {form.description}
-                                    </p>
-                                )}
-
                             </div>
 
                             {form.questions.length === 0 ? (
