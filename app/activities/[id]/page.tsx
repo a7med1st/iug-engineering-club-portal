@@ -144,11 +144,6 @@ export default async function ActivityDetailsPage({
       departmentCount,
     );
 
-  const showDepartmentBadge =
-    !past ||
-    departmentLabel !==
-      "عام · جميع الأقسام";
-
   const backHref =
     past
       ? "/activities?view=past"
@@ -204,23 +199,6 @@ export default async function ActivityDetailsPage({
               styles.heroContent
             }
           >
-            {showDepartmentBadge && (
-              <div
-                className={
-                  styles.badges
-                }
-              >
-                <span
-                  className={
-                    styles.departmentBadge
-                  }
-                >
-                  {
-                    departmentLabel
-                  }
-                </span>
-              </div>
-            )}
 
             <h1>
               {activity.title}

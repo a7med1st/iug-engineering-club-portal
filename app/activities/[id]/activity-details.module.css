@@ -31,20 +31,38 @@
 
 .heroShell {
   position: relative;
+
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(310px, 0.92fr);
+  grid-template-columns: minmax(0, 1fr);
+
+  width: min(
+    760px,
+    calc(100% - 30px)
+  );
+
   align-items: center;
-  gap: clamp(26px, 4vw, 52px);
-  padding-block: clamp(44px, 7vw, 76px);
+  gap: 24px;
+
+  margin-inline: auto;
+  padding-block: 40px 48px;
 }
 
 .cover {
+  width: 100%;
+  max-width: 760px;
   min-width: 0;
+
+  margin-inline: auto;
+
   aspect-ratio: 16 / 10;
+
   overflow: hidden;
+
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 28px;
+
   background: #08233f;
+
   box-shadow:
     0 30px 70px rgba(0, 0, 0, 0.3),
     0 0 35px rgba(53, 212, 255, 0.1);
@@ -111,7 +129,11 @@
 }
 
 .heroContent {
+  width: 100%;
+  max-width: 760px;
   min-width: 0;
+
+  margin-inline: auto;
 }
 
 .badges {
