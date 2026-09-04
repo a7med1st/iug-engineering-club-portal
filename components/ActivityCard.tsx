@@ -26,7 +26,6 @@ export default function ActivityCard({
       <div className="activity-copy">
         <div>
           <h3>{activity.title}</h3>
-          <p>{activity.description}</p>
         </div>
         <div className="activity-meta">
           <span>
