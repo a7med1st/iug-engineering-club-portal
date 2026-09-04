@@ -8751,3 +8751,118 @@
     background: #061827 !important;
   }
 }
+.messageImageButton {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.messageImageButton img {
+  display: block;
+  width: 100%;
+}
+
+.chatImageLightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 72px 24px 24px;
+
+  background:
+    rgba(2, 10, 18, 0.94);
+
+  backdrop-filter:
+    blur(8px);
+}
+
+.chatImageLightboxImage {
+  display: block;
+
+  max-width: min(
+    94vw,
+    1400px
+  );
+
+  max-height: calc(
+    100vh - 110px
+  );
+
+  width: auto;
+  height: auto;
+
+  object-fit: contain;
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 24px 80px
+    rgba(0, 0, 0, 0.45);
+}
+
+.chatImageLightboxClose {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+
+  background:
+    rgba(255, 255, 255, 0.12);
+
+  color: #fff;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.chatImageLightboxClose:hover {
+  background:
+    rgba(255, 255, 255, 0.2);
+
+  transform: scale(1.05);
+}
+
+@media (max-width: 600px) {
+  .chatImageLightbox {
+    padding:
+      64px 10px 16px;
+  }
+
+  .chatImageLightboxImage {
+    max-width: 100%;
+    max-height:
+      calc(100vh - 90px);
+
+    border-radius: 8px;
+  }
+
+  .chatImageLightboxClose {
+    top: 12px;
+    right: 12px;
+
+    width: 40px;
+    height: 40px;
+  }
+}

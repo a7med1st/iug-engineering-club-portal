@@ -3,6 +3,7 @@ import { BarChart3, Check, Download, FileText } from "lucide-react";
 import { voteOnChatPoll } from "@/app/member/chat/actions";
 import styles from "@/app/member/chat/chat.module.css";
 import ChatAudioPlayer from "@/components/member/ChatAudioPlayer";
+import ChatImageLightbox from "@/components/member/ChatImageLightbox";
 
 type Attachment = {
   id: string;
@@ -48,9 +49,9 @@ function renderMessageText(text: string) {
 
     const cleanUrl = trailing
       ? part.slice(
-          0,
-          -trailing.length,
-        )
+        0,
+        -trailing.length,
+      )
       : part;
 
     const href =
@@ -106,13 +107,13 @@ export default function ChatMessageContent({
 
   return (
     <div className={styles.messageContent}>
-{kind !== "POLL" &&
-  body &&
-  !generatedAttachmentLabel && (
-    <p className={styles.messageCaption}>
-      {renderMessageText(body)}
-    </p>
-  )}
+      {kind !== "POLL" &&
+        body &&
+        !generatedAttachmentLabel && (
+          <p className={styles.messageCaption}>
+            {renderMessageText(body)}
+          </p>
+        )}
 
       {attachments.map((attachment) => {
         const source = `/member/chat/attachments/${attachment.id}`;
@@ -122,9 +123,13 @@ export default function ChatMessageContent({
 
         if (isImage) {
           return (
-            <a key={attachment.id} href={source} className={styles.messageImageLink} target="_blank" rel="noreferrer">
-              <img src={source} alt={attachment.originalName} className={styles.messageImage} />
-            </a>
+            <ChatImageLightbox
+              key={attachment.id}
+              src={source}
+              alt={
+                attachment.originalName
+              }
+            />
           );
         }
 
