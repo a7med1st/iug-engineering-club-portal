@@ -60,6 +60,7 @@ type ActivityQuestionTypeInput =
   (typeof activityQuestionTypes)[number];
 
 type RegistrationQuestionInput = {
+  id: string | null;
   label: string;
   type: ActivityQuestionTypeInput;
   required: boolean;
@@ -183,6 +184,11 @@ function parseRegistrationQuestions(
           string,
           unknown
         >;
+
+      const id =
+        String(
+          question.id ?? "",
+        ).trim() || null;
 
       const label = String(
         question.label ?? "",
@@ -335,6 +341,7 @@ function parseRegistrationQuestions(
       }
 
       return {
+        id,
         label,
         type: typedType,
         required,
@@ -1546,7 +1553,7 @@ export async function addStructureItem(
   );
 }
 /* =========================================================
-   UPDATE ACTIVITY TEXT
+   UPDATE ACTIVITY
 ========================================================= */
 
 export async function updateActivityText(
@@ -1559,19 +1566,24 @@ export async function updateActivityText(
       "معرّف النشاط",
     );
 
-  await requireActivityPermission(
-    PERMISSIONS.ACTIVITY_MANAGE,
-    activityId,
-  );
+  const { user } =
+    await requireActivityPermission(
+      PERMISSIONS.ACTIVITY_MANAGE,
+      activityId,
+    );
 
   return runAdminAction(
     `/admin/activities/${activityId}/edit`,
 
-    "تم تحديث نص النشاط بنجاح.",
+    "تم تحديث النشاط ونموذج التسجيل بنجاح.",
 
-    "تعذر تحديث النشاط.",
+    "تعذر تحديث النشاط. تحقق من البيانات وحاول مجددًا.",
 
     async () => {
+      /* =============================================
+         ACTIVITY DATA
+      ============================================= */
+
       const title =
         requiredText(
           formData,
@@ -1586,6 +1598,13 @@ export async function updateActivityText(
           "وصف النشاط",
         );
 
+      const location =
+        requiredText(
+          formData,
+          "location",
+          "مكان النشاط",
+        );
+
       const postEventSummary =
         String(
           formData.get(
@@ -1593,7 +1612,127 @@ export async function updateActivityText(
           ) ?? "",
         ).trim() || null;
 
-      if (title.length > 160) {
+      const startDate =
+        requiredText(
+          formData,
+          "startDate",
+          "تاريخ بداية النشاط",
+        );
+
+      const startTime =
+        requiredText(
+          formData,
+          "startTime",
+          "وقت بداية النشاط",
+        );
+
+      const startsAt =
+        activityDateTimeFromInput(
+          startDate,
+          startTime,
+        );
+
+      const endDate =
+        String(
+          formData.get(
+            "endDate",
+          ) ?? "",
+        ).trim();
+
+      const endTime =
+        String(
+          formData.get(
+            "endTime",
+          ) ?? "",
+        ).trim();
+
+      if (
+        Boolean(endDate) !==
+        Boolean(endTime)
+      ) {
+        throw new AdminActionError(
+          "أدخل تاريخ ووقت نهاية النشاط معًا، أو اترك الحقلين فارغين.",
+        );
+      }
+
+      const endsAt =
+        endDate && endTime
+          ? activityDateTimeFromInput(
+              endDate,
+              endTime,
+            )
+          : null;
+
+      const capacity =
+        Number(
+          formData.get(
+            "capacity",
+          ),
+        );
+
+      const statusValue =
+        String(
+          formData.get(
+            "status",
+          ) ?? "PUBLISHED",
+        ).trim();
+
+      /* =============================================
+         REGISTRATION FORM
+      ============================================= */
+
+      const registrationFormTitle =
+        String(
+          formData.get(
+            "registrationFormTitle",
+          ) ?? "",
+        ).trim() ||
+        "نموذج التسجيل";
+
+      const registrationFormDescription =
+        String(
+          formData.get(
+            "registrationFormDescription",
+          ) ?? "",
+        ).trim();
+
+      const registrationFormIsOpen =
+        formData.get(
+          "registrationFormIsOpen",
+        ) === "on";
+
+      const registrationQuestions =
+        parseRegistrationQuestions(
+          formData,
+        );
+
+      /* =============================================
+         DEPARTMENTS
+      ============================================= */
+
+      const requestedDepartmentIds = [
+        ...new Set(
+          formData
+            .getAll(
+              "departmentIds",
+            )
+            .map((value) =>
+              String(
+                value,
+              ).trim(),
+            )
+            .filter(Boolean),
+        ),
+      ];
+
+      /* =============================================
+         VALIDATION
+      ============================================= */
+
+      if (
+        title.length >
+        160
+      ) {
         throw new AdminActionError(
           "عنوان النشاط طويل جدًا.",
         );
@@ -1618,28 +1757,559 @@ export async function updateActivityText(
         );
       }
 
-      await prisma.activity.update({
-        where: {
-          id: activityId,
-        },
+      if (
+        location.length >
+        250
+      ) {
+        throw new AdminActionError(
+          "اسم مكان النشاط طويل جدًا.",
+        );
+      }
 
-        data: {
-          title,
-          description,
-          postEventSummary,
-        },
-      });
+      if (!startsAt) {
+        throw new AdminActionError(
+          "تاريخ أو وقت بداية النشاط غير صالح.",
+        );
+      }
 
-      revalidatePath(
-        `/activities/${activityId}`,
+      if (
+        endDate &&
+        endTime &&
+        !endsAt
+      ) {
+        throw new AdminActionError(
+          "تاريخ أو وقت نهاية النشاط غير صالح.",
+        );
+      }
+
+      if (
+        endsAt &&
+        endsAt.getTime() <=
+          startsAt.getTime()
+      ) {
+        throw new AdminActionError(
+          "يجب أن يكون موعد نهاية النشاط بعد موعد البداية.",
+        );
+      }
+
+      if (
+        !Number.isInteger(
+          capacity,
+        ) ||
+        capacity < 1 ||
+        capacity > 100_000
+      ) {
+        throw new AdminActionError(
+          "السعة الطلابية يجب أن تكون رقمًا صحيحًا موجبًا.",
+        );
+      }
+
+      if (
+        !activityStatuses.includes(
+          statusValue as ActivityStatusInput,
+        )
+      ) {
+        throw new AdminActionError(
+          "حالة النشاط غير صالحة.",
+        );
+      }
+
+      if (
+        registrationFormTitle.length >
+        160
+      ) {
+        throw new AdminActionError(
+          "عنوان نموذج التسجيل طويل جدًا.",
+        );
+      }
+
+      if (
+        registrationFormDescription.length >
+        3000
+      ) {
+        throw new AdminActionError(
+          "وصف نموذج التسجيل طويل جدًا.",
+        );
+      }
+
+      if (
+        requestedDepartmentIds.length ===
+        0
+      ) {
+        throw new AdminActionError(
+          "اختر قسمًا واحدًا على الأقل أو اختر جميع الأقسام.",
+        );
+      }
+
+      const selectAll =
+        requestedDepartmentIds.includes(
+          "all",
+        );
+
+      const explicitDepartmentIds =
+        requestedDepartmentIds.filter(
+          (departmentId) =>
+            departmentId !==
+            "all",
+        );
+
+      const availableDepartments =
+        await prisma.department.findMany({
+          select: {
+            id: true,
+          },
+        });
+
+      const availableDepartmentIds =
+        new Set(
+          availableDepartments.map(
+            ({ id }) => id,
+          ),
+        );
+
+      if (
+        availableDepartments.length ===
+          0 ||
+        explicitDepartmentIds.some(
+          (departmentId) =>
+            !availableDepartmentIds.has(
+              departmentId,
+            ),
+        )
+      ) {
+        throw new AdminActionError(
+          "يتضمن اختيار الأقسام قسمًا غير موجود.",
+        );
+      }
+
+      /*
+       * Selecting all means a general activity.
+       * General activities have no ActivityDepartment rows.
+       */
+      const departmentIds =
+        selectAll
+          ? []
+          : explicitDepartmentIds;
+
+      if (
+        user.role ===
+          "MEMBER" &&
+        !isClubLeadership(
+          user.position,
+        )
+      ) {
+        if (
+          !user.departmentId ||
+          selectAll ||
+          departmentIds.length !==
+            1 ||
+          departmentIds[0] !==
+            user.departmentId
+        ) {
+          throw new AdminActionError(
+            "يمكنك تعديل نشاط قسمك فقط.",
+          );
+        }
+      }
+
+      /* =============================================
+         LOAD CURRENT ACTIVITY / FORM
+      ============================================= */
+
+      const currentActivity =
+        await prisma.activity.findUnique({
+          where: {
+            id: activityId,
+          },
+
+          include: {
+            registrationForm: {
+              include: {
+                questions: {
+                  select: {
+                    id: true,
+
+                    _count: {
+                      select: {
+                        answers: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+
+      if (!currentActivity) {
+        throw new AdminActionError(
+          "النشاط غير موجود.",
+        );
+      }
+
+      const currentForm =
+        currentActivity.registrationForm;
+
+      const currentQuestionById =
+        new Map(
+          (
+            currentForm?.questions ??
+            []
+          ).map(
+            (question) => [
+              question.id,
+              question,
+            ],
+          ),
+        );
+
+      const incomingQuestionIds =
+        registrationQuestions
+          .map(
+            (question) =>
+              question.id,
+          )
+          .filter(
+            (
+              questionId,
+            ): questionId is string =>
+              Boolean(
+                questionId,
+              ),
+          );
+
+      if (
+        new Set(
+          incomingQuestionIds,
+        ).size !==
+        incomingQuestionIds.length
+      ) {
+        throw new AdminActionError(
+          "بيانات أسئلة التسجيل تحتوي على سؤال مكرر.",
+        );
+      }
+
+      if (
+        incomingQuestionIds.some(
+          (questionId) =>
+            !currentQuestionById.has(
+              questionId,
+            ),
+        )
+      ) {
+        throw new AdminActionError(
+          "يتضمن نموذج التسجيل سؤالًا غير تابع لهذا النشاط.",
+        );
+      }
+
+      const incomingQuestionIdSet =
+        new Set(
+          incomingQuestionIds,
+        );
+
+      const questionsToDelete =
+        (
+          currentForm?.questions ??
+          []
+        ).filter(
+          (question) =>
+            !incomingQuestionIdSet.has(
+              question.id,
+            ),
+        );
+
+      const answeredQuestionToDelete =
+        questionsToDelete.find(
+          (question) =>
+            question._count
+              .answers > 0,
+        );
+
+      if (
+        answeredQuestionToDelete
+      ) {
+        throw new AdminActionError(
+          "لا يمكن حذف سؤال لديه إجابات طلابية سابقة. يمكنك تعديل نص السؤال بدلًا من حذفه.",
+        );
+      }
+
+      /* =============================================
+         UPDATE EVERYTHING ATOMICALLY
+      ============================================= */
+
+      await prisma.$transaction(
+        async (transaction) => {
+          await transaction.activity.update({
+            where: {
+              id: activityId,
+            },
+
+            data: {
+              title,
+              description,
+              location,
+              startsAt,
+              endsAt,
+              capacity,
+              postEventSummary,
+
+              status:
+                statusValue as
+                  ActivityStatusInput,
+            },
+          });
+
+          await transaction.activityDepartment.deleteMany({
+            where: {
+              activityId,
+            },
+          });
+
+          if (
+            departmentIds.length >
+            0
+          ) {
+            await transaction.activityDepartment.createMany({
+              data:
+                departmentIds.map(
+                  (
+                    departmentId,
+                  ) => ({
+                    activityId,
+                    departmentId,
+                  }),
+                ),
+            });
+          }
+
+          let formId:
+            | string
+            | null =
+            currentForm?.id ??
+            null;
+
+          if (currentForm) {
+            await transaction.activityRegistrationForm.update({
+              where: {
+                id:
+                  currentForm.id,
+              },
+
+              data: {
+                title:
+                  registrationFormTitle,
+
+                description:
+                  registrationFormDescription,
+
+                isOpen:
+                  registrationFormIsOpen,
+              },
+            });
+
+            if (
+              questionsToDelete.length >
+              0
+            ) {
+              await transaction.activityFormQuestion.deleteMany({
+                where: {
+                  id: {
+                    in:
+                      questionsToDelete.map(
+                        (
+                          question,
+                        ) =>
+                          question.id,
+                      ),
+                  },
+                },
+              });
+            }
+          } else {
+            const createdForm =
+              await transaction.activityRegistrationForm.create({
+                data: {
+                  activityId,
+
+                  title:
+                    registrationFormTitle,
+
+                  description:
+                    registrationFormDescription,
+
+                  isOpen:
+                    registrationFormIsOpen,
+                },
+
+                select: {
+                  id: true,
+                },
+              });
+
+            formId =
+              createdForm.id;
+          }
+
+          if (!formId) {
+            throw new AdminActionError(
+              "تعذر تجهيز نموذج التسجيل.",
+            );
+          }
+
+          for (
+            const question
+            of registrationQuestions
+          ) {
+            const questionData = {
+              label:
+                question.label,
+
+              type:
+                question.type,
+
+              required:
+                question.required,
+
+              placeholder:
+                question.placeholder ||
+                null,
+
+              helpText:
+                question.helpText ||
+                null,
+
+              options:
+                question.options,
+
+              sortOrder:
+                question.sortOrder,
+            };
+
+            if (question.id) {
+              await transaction.activityFormQuestion.update({
+                where: {
+                  id:
+                    question.id,
+                },
+
+                data:
+                  questionData,
+              });
+            } else {
+              await transaction.activityFormQuestion.create({
+                data: {
+                  formId,
+                  ...questionData,
+                },
+              });
+            }
+          }
+
+          /*
+           * Send the "new activity" notification only when
+           * an existing non-published activity becomes published.
+           */
+          if (
+            currentActivity.status !==
+              "PUBLISHED" &&
+            statusValue ===
+              "PUBLISHED"
+          ) {
+            const students =
+              await transaction.user.findMany({
+                where: {
+                  role:
+                    "STUDENT",
+
+                  ...(departmentIds.length >
+                  0
+                    ? {
+                        departmentId:
+                          {
+                            in:
+                              departmentIds,
+                          },
+                      }
+                    : {}),
+                },
+
+                select: {
+                  id: true,
+                },
+              });
+
+            if (
+              students.length >
+              0
+            ) {
+              const activityDate =
+                new Intl.DateTimeFormat(
+                  "ar-PS",
+                  {
+                    dateStyle:
+                      "medium",
+                    timeStyle:
+                      "short",
+                    timeZone:
+                      "Asia/Hebron",
+                  },
+                ).format(
+                  startsAt,
+                );
+
+              await transaction.notification.createMany({
+                data:
+                  students.map(
+                    (
+                      student,
+                    ) => ({
+                      userId:
+                        student.id,
+
+                      type:
+                        "ACTIVITY_NEW",
+
+                      title:
+                        `نشاط جديد: ${title}`,
+
+                      body:
+                        `${activityDate} · ${location}`,
+
+                      href:
+                        `/activities/${activityId}/register`,
+                    }),
+                  ),
+              });
+            }
+          }
+        },
       );
 
+      /* =============================================
+         REVALIDATE
+      ============================================= */
+
+      revalidatePath("/");
       revalidatePath(
         "/activities",
       );
-
+      revalidatePath(
+        `/activities/${activityId}`,
+      );
+      revalidatePath(
+        `/activities/${activityId}/register`,
+      );
       revalidatePath(
         "/admin/activities",
+      );
+      revalidatePath(
+        `/admin/activities/${activityId}/edit`,
+      );
+      revalidatePath(
+        `/admin/activities/${activityId}/registrations`,
+      );
+      revalidatePath(
+        "/notifications",
       );
     },
   );

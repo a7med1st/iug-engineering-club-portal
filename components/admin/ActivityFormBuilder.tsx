@@ -21,7 +21,19 @@ type QuestionType =
   | "RADIO"
   | "CHECKBOX";
 
+export type ActivityFormBuilderInitialQuestion = {
+  id: string;
+  label: string;
+  type: QuestionType;
+  required: boolean;
+  placeholder: string | null;
+  helpText: string | null;
+  options: string[];
+  answerCount?: number;
+};
+
 type BuilderQuestion = {
+  id: string | null;
   localId: string;
   label: string;
   type: QuestionType;
@@ -29,6 +41,14 @@ type BuilderQuestion = {
   placeholder: string;
   helpText: string;
   options: string[];
+  answerCount: number;
+};
+
+type ActivityFormBuilderProps = {
+  initialTitle?: string;
+  initialDescription?: string;
+  initialIsOpen?: boolean;
+  initialQuestions?: ActivityFormBuilderInitialQuestion[];
 };
 
 const QUESTION_TYPES: {
@@ -48,6 +68,7 @@ const QUESTION_TYPES: {
 
 function createQuestion(): BuilderQuestion {
   return {
+    id: null,
     localId: crypto.randomUUID(),
     label: "",
     type: "SHORT_TEXT",
@@ -55,6 +76,7 @@ function createQuestion(): BuilderQuestion {
     placeholder: "",
     helpText: "",
     options: [],
+    answerCount: 0,
   };
 }
 
@@ -62,9 +84,29 @@ function needsOptions(type: QuestionType) {
   return type === "SELECT" || type === "RADIO" || type === "CHECKBOX";
 }
 
-export default function ActivityFormBuilder() {
+export default function ActivityFormBuilder({
+  initialTitle = "نموذج التسجيل",
+  initialDescription = "",
+  initialIsOpen = true,
+  initialQuestions = [],
+}: ActivityFormBuilderProps) {
   const nonce = useCspNonce();
-  const [questions, setQuestions] = useState<BuilderQuestion[]>([]);
+
+  const [questions, setQuestions] = useState<BuilderQuestion[]>(
+    () =>
+      initialQuestions.map((question, index) => ({
+        id: question.id,
+        localId: question.id || `initial-question-${index}`,
+        label: question.label,
+        type: question.type,
+        required: question.required,
+        placeholder: question.placeholder ?? "",
+        helpText: question.helpText ?? "",
+        options: [...question.options],
+        answerCount: question.answerCount ?? 0,
+      })),
+  );
+
   const [openTypeMenuId, setOpenTypeMenuId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -189,14 +231,23 @@ export default function ActivityFormBuilder() {
   }
 
   const serializedQuestions = JSON.stringify(
-    questions.map(({ localId: _localId, ...question }, index) => ({
-      ...question,
-      label: question.label.trim(),
-      placeholder: question.placeholder.trim(),
-      helpText: question.helpText.trim(),
-      options: question.options.map((option) => option.trim()).filter(Boolean),
-      sortOrder: index,
-    })),
+    questions.map(
+      (
+        {
+          localId: _localId,
+          answerCount: _answerCount,
+          ...question
+        },
+        index,
+      ) => ({
+        ...question,
+        label: question.label.trim(),
+        placeholder: question.placeholder.trim(),
+        helpText: question.helpText.trim(),
+        options: question.options.map((option) => option.trim()).filter(Boolean),
+        sortOrder: index,
+      }),
+    ),
   );
 
   return (
@@ -234,7 +285,7 @@ export default function ActivityFormBuilder() {
             id="registrationFormTitle"
             name="registrationFormTitle"
             type="text"
-            defaultValue="نموذج التسجيل"
+            defaultValue={initialTitle}
             placeholder="مثال: نموذج التسجيل في الدورة"
           />
         </div>
@@ -245,6 +296,7 @@ export default function ActivityFormBuilder() {
             id="registrationFormDescription"
             name="registrationFormDescription"
             rows={3}
+            defaultValue={initialDescription}
             placeholder="تعليمات أو ملاحظات تظهر للطالب قبل تعبئة النموذج"
           />
         </div>
@@ -253,7 +305,7 @@ export default function ActivityFormBuilder() {
           <input
             type="checkbox"
             name="registrationFormIsOpen"
-            defaultChecked
+            defaultChecked={initialIsOpen}
           />
           <span>فتح التسجيل مباشرة بعد نشر النشاط</span>
         </label>
@@ -319,7 +371,12 @@ export default function ActivityFormBuilder() {
                       type="button"
                       className="danger"
                       aria-label="حذف السؤال"
-                      title="حذف السؤال"
+                      title={
+                        question.answerCount > 0
+                          ? "لا يمكن حذف سؤال لديه إجابات سابقة"
+                          : "حذف السؤال"
+                      }
+                      disabled={question.answerCount > 0}
                       onClick={() => removeQuestion(question.localId)}
                     >
                       <Trash2 size={17} />
@@ -854,6 +911,322 @@ export default function ActivityFormBuilder() {
             transform: translateY(0) scale(1);
           }
         }
+
+        /* =========================================================
+           REGISTRATION OPEN TOGGLE
+           Keep checkbox + text on one compact row on every page.
+        ========================================================= */
+
+        .activity-builder-open-toggle {
+          grid-column: 1 / -1;
+          display: inline-flex !important;
+          flex-direction: row !important;
+          align-items: center !important;
+          justify-content: flex-start !important;
+          gap: 10px !important;
+
+          width: fit-content !important;
+          max-width: 100%;
+          min-height: 44px;
+
+          margin: 4px 0 0 !important;
+          padding: 10px 14px !important;
+
+          border: 1px solid rgba(190, 207, 226, .82);
+          border-radius: 12px;
+
+          background: rgba(255, 255, 255, .78);
+          color: #19314d;
+
+          direction: rtl;
+          cursor: pointer;
+
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .88);
+
+          transition:
+            border-color .2s ease,
+            background .2s ease,
+            box-shadow .2s ease;
+        }
+
+        .activity-builder-open-toggle:hover {
+          border-color: rgba(22, 136, 255, .34);
+          background: #f1f8ff;
+          box-shadow:
+            0 8px 20px rgba(22, 136, 255, .08);
+        }
+
+        .activity-builder-open-toggle > input[type="checkbox"] {
+          flex: 0 0 auto !important;
+          width: 18px !important;
+          height: 18px !important;
+          min-width: 18px !important;
+
+          margin: 0 !important;
+          padding: 0 !important;
+
+          accent-color: #1688ff;
+          cursor: pointer;
+        }
+
+        .activity-builder-open-toggle > span {
+          display: inline !important;
+          width: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
+
+          color: inherit;
+          font-size: .78rem;
+          font-weight: 700;
+          line-height: 1.5;
+
+          white-space: nowrap;
+        }
+
+        html[data-theme="dark"] .activity-builder-open-toggle {
+          border-color: rgba(91, 169, 224, .36) !important;
+          background: #0a2941 !important;
+          color: #e7f2fb !important;
+
+          box-shadow:
+            inset 0 1px 0 rgba(157, 211, 248, .07) !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-open-toggle:hover {
+          border-color: rgba(103, 199, 255, .60) !important;
+          background: #103550 !important;
+
+          box-shadow:
+            0 8px 20px rgba(0, 7, 18, .24) !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-open-toggle > input[type="checkbox"] {
+          accent-color: #1688ff !important;
+          opacity: 1 !important;
+          filter: none !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-open-toggle > span {
+          color: #e7f2fb !important;
+          opacity: 1 !important;
+          text-shadow: none !important;
+        }
+
+        @media (max-width: 560px) {
+          .activity-builder-open-toggle {
+            width: 100% !important;
+            justify-content: flex-start !important;
+          }
+
+          .activity-builder-open-toggle > span {
+            white-space: normal;
+          }
+        }
+
+        /* =========================================================
+           DARK MODE — ACTIVITY QUESTION BUILDER
+        ========================================================= */
+
+        html[data-theme="dark"] .activity-builder-question {
+          border-color: rgba(91, 169, 224, .34) !important;
+          background:
+            radial-gradient(circle at 92% 4%, rgba(22, 136, 255, .10), transparent 30%),
+            linear-gradient(180deg, #0d2a42 0%, #0a2338 100%) !important;
+          box-shadow:
+            inset 0 1px 0 rgba(157, 211, 248, .07),
+            0 16px 34px rgba(0, 7, 18, .24) !important;
+          color: #e7f2fb !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-question .field > label,
+        html[data-theme="dark"] .activity-builder-options-head strong,
+        html[data-theme="dark"] .activity-builder-required > span {
+          color: #e8f3fc !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-question input[type="text"],
+        html[data-theme="dark"] .activity-builder-question input[type="email"],
+        html[data-theme="dark"] .activity-builder-question input[type="tel"],
+        html[data-theme="dark"] .activity-builder-question input[type="number"],
+        html[data-theme="dark"] .activity-builder-question textarea,
+        html[data-theme="dark"] .activity-builder-question select {
+          border-color: rgba(91, 169, 224, .34) !important;
+          background: #08253b !important;
+          color: #edf7ff !important;
+          box-shadow:
+            inset 0 1px 0 rgba(157, 211, 248, .05) !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-question input::placeholder,
+        html[data-theme="dark"] .activity-builder-question textarea::placeholder {
+          color: #8fa9bf !important;
+          opacity: 1 !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-question input:focus,
+        html[data-theme="dark"] .activity-builder-question textarea:focus,
+        html[data-theme="dark"] .activity-builder-question select:focus {
+          border-color: #3eaef5 !important;
+          box-shadow:
+            0 0 0 3px rgba(62, 174, 245, .14) !important;
+          outline: none !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-question-number {
+          border-color: rgba(91, 169, 224, .38) !important;
+          background:
+            linear-gradient(135deg, #0b2941 0%, #0f3552 100%) !important;
+          box-shadow:
+            0 10px 26px rgba(0, 7, 18, .24),
+            inset 0 1px 0 rgba(157, 211, 248, .08) !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-question-number-label {
+          color: #b9d9ef !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-question-actions button {
+          border-color: rgba(91, 169, 224, .35) !important;
+          background: #0a2941 !important;
+          color: #b8d5e9 !important;
+          box-shadow:
+            0 6px 16px rgba(0, 7, 18, .20) !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-question-actions button:hover:not(:disabled) {
+          border-color: rgba(103, 199, 255, .62) !important;
+          background: #103550 !important;
+          color: #67c7ff !important;
+          box-shadow:
+            0 10px 22px rgba(0, 7, 18, .26) !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-question-actions button.danger {
+          border-color: rgba(255, 112, 126, .34) !important;
+          background: rgba(114, 31, 43, .28) !important;
+          color: #ff98a2 !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-question-actions button.danger:hover {
+          border-color: rgba(255, 132, 145, .56) !important;
+          background: rgba(135, 35, 49, .40) !important;
+          color: #ffb0b7 !important;
+        }
+
+        html[data-theme="dark"] .question-type-trigger {
+          border-color: rgba(91, 169, 224, .38) !important;
+          background:
+            linear-gradient(180deg, #0b2a42 0%, #08243a 100%) !important;
+          color: #edf7ff !important;
+          box-shadow:
+            0 7px 18px rgba(0, 7, 18, .18),
+            inset 0 1px 0 rgba(157, 211, 248, .06) !important;
+        }
+
+        html[data-theme="dark"] .question-type-trigger:hover {
+          border-color: rgba(103, 199, 255, .60) !important;
+          background:
+            linear-gradient(135deg, #0f3552 0%, #0b2d47 100%) !important;
+          box-shadow:
+            0 10px 24px rgba(0, 7, 18, .24),
+            0 0 0 3px rgba(62, 174, 245, .08) !important;
+        }
+
+        html[data-theme="dark"] .question-type-trigger-copy strong {
+          color: #edf7ff !important;
+        }
+
+        html[data-theme="dark"] .question-type-trigger-copy small {
+          color: #a8c0d2 !important;
+        }
+
+        html[data-theme="dark"] .question-type-chevron {
+          background: #103754 !important;
+          color: #67c7ff !important;
+        }
+
+        html[data-theme="dark"] .question-type-menu {
+          border-color: rgba(91, 169, 224, .42) !important;
+          background:
+            radial-gradient(circle at 90% 0%, rgba(22, 136, 255, .12), transparent 34%),
+            linear-gradient(180deg, #0b2941 0%, #071f33 100%) !important;
+          box-shadow:
+            0 24px 55px rgba(0, 7, 18, .48),
+            0 6px 18px rgba(22, 136, 255, .10) !important;
+        }
+
+        html[data-theme="dark"] .question-type-menu-head,
+        html[data-theme="dark"] .question-type-option-copy small,
+        html[data-theme="dark"] .activity-builder-options-head span {
+          color: #9fb9ce !important;
+        }
+
+        html[data-theme="dark"] .question-type-option {
+          color: #dcecf8 !important;
+        }
+
+        html[data-theme="dark"] .question-type-option:hover {
+          border-color: rgba(103, 199, 255, .22) !important;
+          background: #10334d !important;
+          box-shadow:
+            0 7px 18px rgba(0, 7, 18, .22) !important;
+        }
+
+        html[data-theme="dark"] .question-type-option.is-active {
+          border-color: rgba(103, 199, 255, .34) !important;
+          background:
+            linear-gradient(135deg, rgba(22, 136, 255, .22), rgba(53, 212, 255, .10)) !important;
+        }
+
+        html[data-theme="dark"] .question-type-option-mark {
+          border-color: rgba(91, 169, 224, .38) !important;
+          background: #0a2941 !important;
+          color: #67c7ff !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-required {
+          display: inline-flex !important;
+          flex-direction: row !important;
+          align-items: center !important;
+          justify-content: flex-start !important;
+          gap: 9px !important;
+          width: fit-content !important;
+          max-width: 100%;
+          margin-top: 14px !important;
+          padding: 10px 12px !important;
+          border: 1px solid rgba(91, 169, 224, .34) !important;
+          border-radius: 12px !important;
+          background: #0a2941 !important;
+          cursor: pointer;
+        }
+
+        html[data-theme="dark"] .activity-builder-required > input[type="checkbox"] {
+          flex: 0 0 auto;
+          width: 18px !important;
+          height: 18px !important;
+          margin: 0 !important;
+          accent-color: #1688ff;
+          opacity: 1 !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-required > span {
+          display: inline !important;
+          margin: 0 !important;
+          line-height: 1.5;
+          font-weight: 700;
+        }
+
+        html[data-theme="dark"] .activity-builder-options {
+          border-color: rgba(91, 169, 224, .30) !important;
+          background: rgba(7, 31, 51, .58) !important;
+        }
+
+        html[data-theme="dark"] .activity-builder-option-row {
+          border-color: rgba(91, 169, 224, .26) !important;
+          background: rgba(10, 41, 65, .66) !important;
+        }
+
 
         @media (max-width: 560px) {
           .question-type-menu {

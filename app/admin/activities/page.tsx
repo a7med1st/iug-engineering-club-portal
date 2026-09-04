@@ -330,6 +330,15 @@ export default async function ActivitiesAdminPage({
                     <div className="activity-admin-row-actions">
                       {canManageActivities && (
                         <Link
+                          href={`/admin/activities/${activity.id}/edit`}
+                          className="ghost-btn activity-manage-btn"
+                        >
+                          تعديل النشاط
+                        </Link>
+                      )}
+
+                      {canManageActivities && (
+                        <Link
                           href={`/admin/activities/${activity.id}/documentation`}
                           className="ghost-btn activity-manage-btn"
                         >
@@ -1399,7 +1408,7 @@ export default async function ActivitiesAdminPage({
           z-index: 2;
           width: 164px;
           min-width: 164px;
-          height: 156px;
+          height: auto;
           min-height: 156px;
           display: grid;
           grid-auto-rows: 46px;

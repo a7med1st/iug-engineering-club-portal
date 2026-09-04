@@ -165,6 +165,8 @@
   color: #c7d9ed;
   font-size: 0.91rem;
   line-height: 2;
+
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 

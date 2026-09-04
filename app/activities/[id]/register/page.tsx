@@ -175,10 +175,6 @@ const isCapacityFull =
 
                             <div className="activity-registration-card-head">
 
-                                <span>
-                                    نموذج التسجيل
-                                </span>
-
                                 <h2>
                                     {form.title}
                                 </h2>
