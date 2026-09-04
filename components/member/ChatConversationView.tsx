@@ -4,7 +4,9 @@ import {
   useEffect,
   useRef,
 } from "react";
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+} from "next/navigation";
 
 export default function ChatConversationView({
   conversationId,
@@ -15,24 +17,33 @@ export default function ChatConversationView({
   lastMessageId: string;
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const firstRender = useRef(true);
+  const router =
+    useRouter();
+
+  const firstRender =
+    useRef(true);
 
   useEffect(() => {
-    const markRead = async () => {
-      try {
-        await fetch(
-          `/member/chat/${conversationId}/read`,
-          {
-            method: "POST",
-            cache: "no-store",
-          },
-        );
-      } catch { }
-    };
+    const markRead =
+      async () => {
+        try {
+          await fetch(
+            `/member/chat/${conversationId}/read`,
+            {
+              method: "POST",
+              cache: "no-store",
+            },
+          );
+        } catch {
+          // Reading state must never break the chat.
+        }
+      };
 
     void markRead();
-  }, [conversationId, lastMessageId]);
+  }, [
+    conversationId,
+    lastMessageId,
+  ]);
 
   useEffect(() => {
     const bottom =
@@ -50,7 +61,9 @@ export default function ChatConversationView({
     }
 
     messagesContainer.scrollTo({
-      top: messagesContainer.scrollHeight,
+      top:
+        messagesContainer
+          .scrollHeight,
 
       behavior:
         firstRender.current
@@ -58,17 +71,28 @@ export default function ChatConversationView({
           : "smooth",
     });
 
-    firstRender.current = false;
+    firstRender.current =
+      false;
   }, [lastMessageId]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") {
-        router.refresh();
-      }
-    }, 2_500);
+    const timer =
+      window.setInterval(
+        () => {
+          if (
+            document.visibilityState ===
+            "visible"
+          ) {
+            router.refresh();
+          }
+        },
+        2_500,
+      );
 
-    return () => window.clearInterval(timer);
+    return () =>
+      window.clearInterval(
+        timer,
+      );
   }, [router]);
 
   return <>{children}</>;

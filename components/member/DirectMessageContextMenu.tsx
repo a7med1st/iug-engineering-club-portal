@@ -4,21 +4,24 @@ import {
   useEffect,
   useRef,
   useState,
+  useTransition,
 } from "react";
-
+import { createPortal } from "react-dom";
 import {
-  createPortal,
-} from "react-dom";
-
-import {
+  Copy,
+  Pencil,
   Pin,
   PinOff,
   Reply,
+  Trash2,
 } from "lucide-react";
 
 import {
+  deleteChatMessageForEveryone,
+  editChatMessage,
   togglePinnedDirectMessage,
 } from "@/app/member/chat/actions";
+import ChatMessageActionModal from "@/components/member/ChatMessageActionModal";
 
 import styles from "@/app/member/chat/chat.module.css";
 
@@ -27,6 +30,8 @@ type Props = {
   senderName: string;
   body: string;
   isPinned: boolean;
+  isMine: boolean;
+  canEdit: boolean;
   className?: string;
   children: React.ReactNode;
 };
@@ -41,6 +46,8 @@ export default function DirectMessageContextMenu({
   senderName,
   body,
   isPinned,
+  isMine,
+  canEdit,
   className,
   children,
 }: Props) {
@@ -49,6 +56,15 @@ export default function DirectMessageContextMenu({
 
   const [swipeX, setSwipeX] =
     useState(0);
+
+  const [isPending, startTransition] =
+    useTransition();
+
+  const [actionModal, setActionModal] =
+    useState<"edit" | "delete" | null>(null);
+
+  const [editBody, setEditBody] =
+    useState(body);
 
   const pointerStart =
     useRef({
@@ -76,8 +92,14 @@ export default function DirectMessageContextMenu({
     x: number,
     y: number,
   ) => {
-    const menuWidth = 200;
-    const menuHeight = 112;
+    const menuWidth = 215;
+
+    const menuHeight =
+      isMine
+        ? canEdit
+          ? 265
+          : 220
+        : 155;
 
     setMenu({
       x: Math.max(
@@ -102,6 +124,10 @@ export default function DirectMessageContextMenu({
     });
   };
 
+  /* =========================
+     REPLY
+  ========================= */
+
   const handleReply = () => {
     window.dispatchEvent(
       new CustomEvent(
@@ -119,10 +145,151 @@ export default function DirectMessageContextMenu({
     closeMenu();
   };
 
+  /* =========================
+     COPY
+  ========================= */
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        body,
+      );
+    } catch {
+      const textarea =
+        document.createElement(
+          "textarea",
+        );
+
+      textarea.value = body;
+      textarea.style.position =
+        "fixed";
+      textarea.style.opacity =
+        "0";
+
+      document.body.appendChild(
+        textarea,
+      );
+
+      textarea.select();
+
+      document.execCommand(
+        "copy",
+      );
+
+      textarea.remove();
+    }
+
+    closeMenu();
+  };
+
+  /* =========================
+     EDIT
+  ========================= */
+
+  const handleEdit = () => {
+    if (
+      !isMine ||
+      !canEdit ||
+      isPending
+    ) {
+      return;
+    }
+
+    setEditBody(body);
+    closeMenu();
+    setActionModal("edit");
+  };
+
+  const confirmEdit = () => {
+    const normalized =
+      editBody.trim();
+
+    if (!normalized) {
+      return;
+    }
+
+    if (normalized === body) {
+      setActionModal(null);
+      return;
+    }
+
+    const formData =
+      new FormData();
+
+    formData.set(
+      "messageId",
+      messageId,
+    );
+
+    formData.set(
+      "body",
+      normalized,
+    );
+
+    startTransition(
+      async () => {
+        try {
+          await editChatMessage(
+            formData,
+          );
+        } finally {
+          setActionModal(null);
+        }
+      },
+    );
+  };
+
+  /* =========================
+     DELETE FOR EVERYONE
+  ========================= */
+
+  const handleDelete = () => {
+    if (
+      !isMine ||
+      isPending
+    ) {
+      return;
+    }
+
+    closeMenu();
+    setActionModal("delete");
+  };
+
+  const confirmDelete = () => {
+    if (isPending) {
+      return;
+    }
+
+    const formData =
+      new FormData();
+
+    formData.set(
+      "messageId",
+      messageId,
+    );
+
+    startTransition(
+      async () => {
+        try {
+          await deleteChatMessageForEveryone(
+            formData,
+          );
+        } finally {
+          setActionModal(null);
+        }
+      },
+    );
+  };
+
+  /* =========================
+     SWIPE TO REPLY
+  ========================= */
+
   const resetSwipe = () => {
     swipeXRef.current = 0;
     isSwiping.current = false;
     activePointerId.current = null;
+
     setSwipeX(0);
   };
 
@@ -130,7 +297,10 @@ export default function DirectMessageContextMenu({
     target: EventTarget | null,
   ) => {
     if (
-      !(target instanceof HTMLElement)
+      !(
+        target instanceof
+        HTMLElement
+      )
     ) {
       return false;
     }
@@ -150,7 +320,10 @@ export default function DirectMessageContextMenu({
     const handleEscape = (
       event: KeyboardEvent,
     ) => {
-      if (event.key === "Escape") {
+      if (
+        event.key ===
+        "Escape"
+      ) {
         closeMenu();
       }
     };
@@ -192,7 +365,7 @@ export default function DirectMessageContextMenu({
         }`}
         style={{
           transform:
-            swipeX > 0
+            swipeX !== 0
               ? `translate3d(${swipeX}px, 0, 0)`
               : undefined,
 
@@ -201,14 +374,11 @@ export default function DirectMessageContextMenu({
               ? "none"
               : "transform 180ms cubic-bezier(.2,.8,.2,1)",
         }}
-
-        onContextMenu={(event) => {
+        onContextMenu={(
+          event,
+        ) => {
           event.preventDefault();
 
-          /*
-           * على اللمس ما نفتح
-           * قائمة بالضغط المطول.
-           */
           if (
             lastPointerType.current ===
               "touch" ||
@@ -223,12 +393,15 @@ export default function DirectMessageContextMenu({
             event.clientY,
           );
         }}
-
-        onPointerDown={(event) => {
+        onPointerDown={(
+          event,
+        ) => {
           lastPointerType.current =
             event.pointerType;
 
-          if (event.button !== 0) {
+          if (
+            event.button !== 0
+          ) {
             return;
           }
 
@@ -258,8 +431,9 @@ export default function DirectMessageContextMenu({
               );
           } catch {}
         }}
-
-        onPointerMove={(event) => {
+        onPointerMove={(
+          event,
+        ) => {
           if (
             activePointerId.current !==
             event.pointerId
@@ -284,32 +458,61 @@ export default function DirectMessageContextMenu({
             return;
           }
 
-          if (diffX <= 0) {
-            return;
-          }
+          /*
+           * رسالتي:
+           * السحب لليمين للرد.
+           *
+           * رسالة الطرف الآخر:
+           * السحب لليسار للرد.
+           */
+          if (isMine) {
+            if (diffX <= 5) {
+              return;
+            }
 
-          if (diffX < 5) {
-            return;
-          }
+            isSwiping.current = true;
 
-          isSwiping.current = true;
+            const nextX =
+              Math.min(
+                diffX,
+                90,
+              );
 
-          const nextX =
-            Math.min(
-              diffX,
-              90,
+            swipeXRef.current =
+              nextX;
+
+            setSwipeX(
+              nextX,
             );
+          } else {
+            if (diffX >= -5) {
+              return;
+            }
 
-          swipeXRef.current =
-            nextX;
+            isSwiping.current = true;
 
-          setSwipeX(nextX);
+            const nextX =
+              Math.max(
+                diffX,
+                -90,
+              );
+
+            swipeXRef.current =
+              nextX;
+
+            setSwipeX(
+              nextX,
+            );
+          }
         }}
-
-        onPointerUp={(event) => {
+        onPointerUp={(
+          event,
+        ) => {
           const shouldReply =
             isSwiping.current &&
-            swipeXRef.current >= 55;
+            Math.abs(
+              swipeXRef.current,
+            ) >= 55;
 
           try {
             if (
@@ -327,17 +530,21 @@ export default function DirectMessageContextMenu({
 
           resetSwipe();
 
-          if (shouldReply) {
+          if (
+            shouldReply
+          ) {
             handleReply();
 
             if (
-              "vibrate" in navigator
+              "vibrate" in
+              navigator
             ) {
-              navigator.vibrate(20);
+              navigator.vibrate(
+                20,
+              );
             }
           }
         }}
-
         onPointerCancel={() => {
           resetSwipe();
         }}
@@ -389,6 +596,52 @@ export default function DirectMessageContextMenu({
                 </span>
               </button>
 
+              <button
+                type="button"
+                className={
+                  styles.messageContextMenuItem
+                }
+                onClick={
+                  handleCopy
+                }
+                role="menuitem"
+              >
+                <Copy
+                  size={17}
+                  aria-hidden="true"
+                />
+
+                <span>
+                  نسخ
+                </span>
+              </button>
+
+              {isMine &&
+                canEdit && (
+                  <button
+                    type="button"
+                    className={
+                      styles.messageContextMenuItem
+                    }
+                    onClick={
+                      handleEdit
+                    }
+                    disabled={
+                      isPending
+                    }
+                    role="menuitem"
+                  >
+                    <Pencil
+                      size={17}
+                      aria-hidden="true"
+                    />
+
+                    <span>
+                      تعديل
+                    </span>
+                  </button>
+                )}
+
               <form
                 action={
                   togglePinnedDirectMessage
@@ -431,10 +684,69 @@ export default function DirectMessageContextMenu({
                   </span>
                 </button>
               </form>
+
+              {isMine && (
+                <button
+                  type="button"
+                  className={
+                    styles.messageContextMenuItem
+                  }
+                  style={{
+                    color:
+                      "#ef4444",
+                  }}
+                  onClick={
+                    handleDelete
+                  }
+                  disabled={
+                    isPending
+                  }
+                  role="menuitem"
+                >
+                  <Trash2
+                    size={17}
+                    aria-hidden="true"
+                  />
+
+                  <span>
+                    حذف للجميع
+                  </span>
+                </button>
+              )}
             </div>
           </>,
           document.body,
         )}
+
+      {actionModal && (
+        <ChatMessageActionModal
+          mode={
+            actionModal
+          }
+          value={
+            editBody
+          }
+          onChange={
+            setEditBody
+          }
+          pending={
+            isPending
+          }
+          onClose={() => {
+            if (!isPending) {
+              setActionModal(
+                null,
+              );
+            }
+          }}
+          onConfirm={
+            actionModal ===
+            "edit"
+              ? confirmEdit
+              : confirmDelete
+          }
+        />
+      )}
     </>
   );
 }

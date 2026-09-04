@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, MessagesSquare } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import MainNav from "@/components/MainNav";
 import MobileNavigation from "@/components/MobileNavigation";
@@ -8,6 +8,7 @@ import MemberPresenceHeartbeat from "@/components/member/MemberPresenceHeartbeat
 import NotificationBell from "@/components/notifications/NotificationBell";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import LogoutButton from "@/components/auth/LogoutButton";
+import ChatMessagesHeaderLink from "@/components/member/ChatMessagesHeaderLink";
 
 const navigationLinks = [
   { href: "/", label: "الرئيسية" },
@@ -24,19 +25,19 @@ export default async function Header() {
   const portal =
     session?.role === "ADMIN"
       ? {
-          href: "/admin",
-          label: "لوحة الإدارة",
-        }
+        href: "/admin",
+        label: "لوحة الإدارة",
+      }
       : session?.role === "MEMBER"
         ? {
-            href: "/member",
-            label: "بوابة العضو",
-          }
+          href: "/member",
+          label: "بوابة العضو",
+        }
         : session?.role === "STUDENT"
           ? {
-              href: "/student",
-              label: "لوحتي",
-            }
+            href: "/student",
+            label: "لوحتي",
+          }
           : null;
 
   return (
@@ -77,30 +78,24 @@ export default async function Header() {
           <div className="header-notification-slot">
             <NotificationBell />
 
-            {(session.role === "MEMBER" || session.role === "ADMIN") && (
-              <Link
-                className="header-messages-link"
-                href="/member/chat"
-                aria-label="رسائلي"
-                title="رسائلي"
-              >
-                <MessagesSquare aria-hidden="true" />
-              </Link>
-            )}
+            {(session.role === "MEMBER" ||
+              session.role === "ADMIN") && (
+                <ChatMessagesHeaderLink />
+              )}
           </div>
         )}
 
         <div className="header-actions desktop-header-actions">
-<ThemeToggle />
-{portal && (
-  <Link
-    className="ghost-btn fancy-outline-btn"
-    href={portal.href}
-  >
-    <span>{portal.label}</span>
-    <ArrowLeft size={16} />
-  </Link>
-)}
+          <ThemeToggle />
+          {portal && (
+            <Link
+              className="ghost-btn fancy-outline-btn"
+              href={portal.href}
+            >
+              <span>{portal.label}</span>
+              <ArrowLeft size={16} />
+            </Link>
+          )}
 
           {session ? (
             <LogoutButton />

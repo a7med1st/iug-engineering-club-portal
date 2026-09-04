@@ -1,19 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import ReplyMessageJump from "@/components/member/ReplyMessageJump";
 import {
   ArrowRight,
-  Check,
-  CheckCheck,
   ExternalLink,
-  MessagesSquare,
   Pin,
 } from "lucide-react";
-import DirectMessageContextMenu from "@/components/member/DirectMessageContextMenu";
 import PinnedMessageJumpButton from "@/components/member/PinnedMessageJumpButton";
 import ChatComposer from "@/components/member/ChatComposer";
 import ChatConversationView from "@/components/member/ChatConversationView";
-import ChatMessageContent from "@/components/member/ChatMessageContent";
+import ChatMessageList from "@/components/member/ChatMessageList";
 import ChatPresenceStatus from "@/components/member/ChatPresenceStatus";
 
 import {
@@ -26,18 +21,6 @@ import styles from "../chat.module.css";
 
 export const dynamic = "force-dynamic";
 
-function formatMessageTime(date: Date) {
-  return new Intl.DateTimeFormat("ar-PS", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function formatMessageDay(date: Date) {
-  return new Intl.DateTimeFormat("ar-PS", {
-    dateStyle: "medium",
-  }).format(date);
-}
 
 export default async function ConversationPage({
   params,
@@ -93,10 +76,15 @@ export default async function ConversationPage({
             },
 
             messages: {
-              take: 120,
-              orderBy: {
-                createdAt: "asc",
-              },
+              take: 121,
+              orderBy: [
+                {
+                  createdAt: "desc",
+                },
+                {
+                  id: "desc",
+                },
+              ],
 
               include: {
                 sender: {
@@ -202,85 +190,99 @@ export default async function ConversationPage({
     redirect("/member/chat");
   }
 
-  const messages = conversation.messages;
+  const hasOlderMessages =
+    conversation.messages.length >
+    120;
 
-  let lastDay = "";
+  const messages =
+    conversation.messages
+      .slice(0, 120)
+      .reverse();
 
-  const messageRows = messages.map((message) => {
-    const day = formatMessageDay(
-      message.createdAt,
+  const initialMessages =
+    messages.map(
+      (message) => {
+        const mine =
+          message.senderId ===
+          user.id;
+
+        const receipt = mine
+          ? message.receipts[0] ??
+            null
+          : null;
+
+        const deliveryState:
+          | "SENT"
+          | "DELIVERED"
+          | "READ"
+          | null =
+          !mine
+            ? null
+            : receipt?.readAt
+              ? "READ"
+              : receipt?.deliveredAt
+                ? "DELIVERED"
+                : "SENT";
+
+        const imageOnly =
+          message.body ===
+            "صورة" &&
+          message.attachments.some(
+            (attachment) =>
+              /^image\/(jpeg|png|gif|webp)$/i.test(
+                attachment.mime,
+              ),
+          );
+
+        return {
+          id: message.id,
+          body: message.body,
+          kind: message.kind,
+          isPinned:
+            message.isPinned,
+
+          attachments:
+            message.attachments,
+
+          pollQuestion:
+            message.pollQuestion,
+
+          pollOptions:
+            message.pollOptions,
+
+          pollVotes:
+            message.pollVotes,
+
+          replyTo:
+            message.replyTo,
+
+          imageOnly,
+          mine,
+
+          senderId:
+            message.sender.id,
+
+          senderName:
+            message.sender.name,
+
+          senderHasAvatar:
+            false,
+
+          senderAvatarVersion:
+            0,
+
+          createdAt:
+            message.createdAt
+              .toISOString(),
+
+          deliveryState,
+        };
+      },
     );
 
-    const showDay = day !== lastDay;
-
-    lastDay = day;
-
-    const mine =
-      message.senderId === user.id;
-
-    const receipt = mine
-      ? message.receipts[0] ?? null
-      : null;
-
-    const deliveryState = !mine
-      ? null
-      : receipt?.readAt
-        ? "READ"
-        : receipt?.deliveredAt
-          ? "DELIVERED"
-          : "SENT";
-
-    const imageOnly =
-      message.body === "صورة" &&
-      message.attachments.some(
-        (attachment) =>
-          /^image\/(jpeg|png|gif|webp)$/i.test(
-            attachment.mime,
-          ),
-      );
-
-    return {
-      id: message.id,
-      body: message.body,
-      kind: message.kind,
-      isPinned: message.isPinned,
-      attachments: message.attachments,
-
-      pollQuestion:
-        message.pollQuestion,
-
-      pollOptions:
-        message.pollOptions,
-
-      pollVotes:
-        message.pollVotes,
-
-      replyTo:
-        message.replyTo,
-
-      imageOnly,
-
-      mine,
-
-      senderName:
-        message.sender.name,
-
-      time:
-        formatMessageTime(
-          message.createdAt,
-        ),
-
-      day:
-        showDay
-          ? day
-          : null,
-
-      deliveryState,
-    };
-  });
-
   const lastMessageId =
-    messages.at(-1)?.id ?? "";
+    messages.at(-1)?.id ??
+    "";
 
   return (
     <section
@@ -296,12 +298,10 @@ export default async function ConversationPage({
         >
           {partner.avatarStoredName ? (
             <img
-              src={`/members/${
-                partner.id
-              }/avatar?v=${
-                partner.avatarUpdatedAt?.getTime() ??
+              src={`/members/${partner.id
+                }/avatar?v=${partner.avatarUpdatedAt?.getTime() ??
                 0
-              }`}
+                }`}
               alt=""
             />
           ) : (
@@ -399,11 +399,11 @@ export default async function ConversationPage({
 
             <p>
               {pinnedMessage.body.length >
-              100
+                100
                 ? `${pinnedMessage.body.slice(
-                    0,
-                    100,
-                  )}...`
+                  0,
+                  100,
+                )}...`
                 : pinnedMessage.body}
             </p>
           </span>
@@ -425,200 +425,19 @@ export default async function ConversationPage({
           lastMessageId
         }
       >
-        <div
-          className={styles.messages}
-          data-chat-messages="true"
-        >
-          {messageRows.length ? (
-            messageRows.map(
-              (message) => (
-                <div
-                  key={message.id}
-                  id={`message-${message.id}`}
-                  className={
-                    message.isPinned
-                      ? styles.pinnedMessageTarget
-                      : undefined
-                  }
-                >
-                  {message.day && (
-                    <div
-                      className={
-                        styles.dayDivider
-                      }
-                    >
-                      <span>
-                        {message.day}
-                      </span>
-                    </div>
-                  )}
-
-                  <DirectMessageContextMenu
-                    messageId={message.id}
-                    senderName={
-                      message.senderName
-                    }
-                    body={message.body}
-                    isPinned={
-                      message.isPinned
-                    }
-                    className={`${
-                      message.mine
-                        ? styles.messageMine
-                        : styles.messageOther
-                    } ${
-                      message.attachments
-                        .length
-                        ? styles.messageWithAttachment
-                        : ""
-                    } ${
-                      message.imageOnly
-                        ? styles.messageImageOnly
-                        : ""
-                    }`}
-                  >
-                    {!message.mine && (
-                      <small
-                        className={
-                          styles.senderName
-                        }
-                      >
-                        {
-                          message.senderName
-                        }
-                      </small>
-                    )}
-
-{message.replyTo && (
-  <ReplyMessageJump
-    messageId={
-      message.replyTo.id
-    }
-    className={
-      styles.replyContext
-    }
-  >
-    <strong>
-      {
-        message.replyTo
-          .sender.name
-      }
-    </strong>
-
-    <span>
-      {message.replyTo.body}
-    </span>
-  </ReplyMessageJump>
-)}
-
-                    <ChatMessageContent
-                      messageId={
-                        message.id
-                      }
-                      kind={
-                        message.kind
-                      }
-                      body={
-                        message.body
-                      }
-                      attachments={
-                        message.attachments
-                      }
-                      pollQuestion={
-                        message.pollQuestion
-                      }
-                      pollOptions={
-                        message.pollOptions
-                      }
-                      pollVotes={
-                        message.pollVotes
-                      }
-                      currentUserId={
-                        user.id
-                      }
-                    />
-
-                    <div
-                      className={
-                        styles.messageFooter
-                      }
-                    >
-                      <time>
-                        {message.time}
-                      </time>
-
-                      {message.mine &&
-                        message.deliveryState ===
-                          "SENT" && (
-                          <Check
-                            size={
-                              15
-                            }
-                            className={
-                              styles.deliverySent
-                            }
-                            aria-label="تم الإرسال"
-                          />
-                        )}
-
-                      {message.mine &&
-                        message.deliveryState ===
-                          "DELIVERED" && (
-                          <CheckCheck
-                            size={
-                              16
-                            }
-                            className={
-                              styles.deliveryDelivered
-                            }
-                            aria-label="تم التسليم"
-                          />
-                        )}
-
-                      {message.mine &&
-                        message.deliveryState ===
-                          "READ" && (
-                          <CheckCheck
-                            size={
-                              16
-                            }
-                            className={
-                              styles.deliveryRead
-                            }
-                            aria-label="تمت القراءة"
-                          />
-                        )}
-                    </div>
-                  </DirectMessageContextMenu>
-                </div>
-              ),
-            )
-          ) : (
-            <div
-              className={
-                styles.noMessages
-              }
-            >
-              <MessagesSquare
-                size={30}
-              />
-
-              <strong>
-                ابدأ المحادثة
-              </strong>
-
-              <span>
-                أرسل أول رسالة إلى{" "}
-                {partner.name}.
-              </span>
-            </div>
-          )}
-
-          <div
-            id="chat-bottom"
-            aria-hidden="true"
-          />
-        </div>
+        <ChatMessageList
+          mode="direct"
+          conversationId={id}
+          currentUserId={
+            user.id
+          }
+          initialMessages={
+            initialMessages
+          }
+          initialHasMore={
+            hasOlderMessages
+          }
+        />
       </ChatConversationView>
 
       <ChatComposer

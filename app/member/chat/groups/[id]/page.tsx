@@ -1,20 +1,16 @@
 import Link from "next/link";
-import ReplyMessageJump from "@/components/member/ReplyMessageJump";
 import { redirect } from "next/navigation";
 import PinnedMessageJumpButton from "@/components/member/PinnedMessageJumpButton";
 import {
   ArrowRight,
-  Check,
-  CheckCheck,
   Pin,
   UsersRound,
 } from "lucide-react";
-import GroupMessageContextMenu from "@/components/member/GroupMessageContextMenu";
 
 import ChatComposer from "@/components/member/ChatComposer";
 import ChatConversationView from "@/components/member/ChatConversationView";
+import ChatMessageList from "@/components/member/ChatMessageList";
 import ChatGroupTypingStatus from "@/components/member/ChatGroupTypingStatus";
-import ChatMessageContent from "@/components/member/ChatMessageContent";
 
 import {
   PERMISSIONS,
@@ -32,16 +28,6 @@ import styles from "../groups.module.css";
 
 export const dynamic = "force-dynamic";
 
-const fmtTime = (date: Date) =>
-  new Intl.DateTimeFormat("ar-PS", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-
-const fmtDay = (date: Date) =>
-  new Intl.DateTimeFormat("ar-PS", {
-    dateStyle: "medium",
-  }).format(date);
 
 export default async function GroupPage({
   params,
@@ -90,21 +76,18 @@ export default async function GroupPage({
       },
     });
 
-  let lastDay = "";
+  const hasOlderMessages =
+    conversation.messages.length >
+    120;
 
-  const rows =
-    conversation.messages.map(
+  const messages =
+    conversation.messages
+      .slice(0, 120)
+      .reverse();
+
+  const initialMessages =
+    messages.map(
       (message) => {
-        const day =
-          fmtDay(
-            message.createdAt,
-          );
-
-        const showDay =
-          day !== lastDay;
-
-        lastDay = day;
-
         const mine =
           message.senderId ===
           user.id;
@@ -112,31 +95,40 @@ export default async function GroupPage({
         const receipts =
           mine
             ? message.receipts.filter(
-              (receipt) =>
-                receipt.userId !==
-                user.id,
-            )
+                (receipt) =>
+                  receipt.userId !==
+                  user.id,
+              )
             : [];
 
-        const state =
+        const deliveryState:
+          | "SENT"
+          | "DELIVERED"
+          | "READ"
+          | null =
           !mine
             ? null
             : receipts.length &&
-              receipts.every(
-                (receipt) =>
-                  receipt.readAt,
-              )
-              ? "READ"
-              : receipts.length &&
                 receipts.every(
                   (receipt) =>
-                    receipt.deliveredAt,
+                    Boolean(
+                      receipt.readAt,
+                    ),
                 )
+              ? "READ"
+              : receipts.length &&
+                  receipts.every(
+                    (receipt) =>
+                      Boolean(
+                        receipt.deliveredAt,
+                      ),
+                  )
                 ? "DELIVERED"
                 : "SENT";
 
         const imageOnly =
-          message.body === "صورة" &&
+          message.body ===
+            "صورة" &&
           message.attachments.some(
             (attachment) =>
               /^image\/(jpeg|png|gif|webp)$/i.test(
@@ -146,13 +138,8 @@ export default async function GroupPage({
 
         return {
           id: message.id,
-
-          body:
-            message.body,
-
-          kind:
-            message.kind,
-
+          body: message.body,
+          kind: message.kind,
           isPinned:
             message.isPinned,
 
@@ -172,7 +159,6 @@ export default async function GroupPage({
             message.replyTo,
 
           imageOnly,
-
           mine,
 
           senderId:
@@ -192,24 +178,18 @@ export default async function GroupPage({
               .avatarUpdatedAt
               ?.getTime() ?? 0,
 
-          time:
-            fmtTime(
-              message.createdAt,
-            ),
+          createdAt:
+            message.createdAt
+              .toISOString(),
 
-          day:
-            showDay
-              ? day
-              : null,
-
-          state,
+          deliveryState,
         };
       },
     );
 
   const lastMessageId =
-    conversation.messages.at(-1)
-      ?.id ?? "";
+    messages.at(-1)?.id ??
+    "";
 
   return (
     <main
@@ -341,196 +321,19 @@ export default async function GroupPage({
             lastMessageId
           }
         >
-<div
-  className={chatStyles.messages}
-  data-chat-messages="true"
->
-            {rows.map(
-              (message) => (
-                <div
-                  key={message.id}
-                  id={`message-${message.id}`}
-                  className={
-                    message.isPinned
-                      ? chatStyles.pinnedMessageTarget
-                      : undefined
-                  }
-                >
-                  {message.day && (
-                    <div
-                      className={
-                        chatStyles.dayDivider
-                      }
-                    >
-                      <span>
-                        {
-                          message.day
-                        }
-                      </span>
-                    </div>
-                  )}
-
-                  <div
-                    className={`${chatStyles.groupMessageRow} ${message.mine
-                      ? chatStyles.groupMessageRowMine
-                      : chatStyles.groupMessageRowOther
-                      }`}
-                  >
-                    {!message.mine && (
-                      <div
-                        className={
-                          chatStyles.groupMessageAvatar
-                        }
-                      >
-                        {message.senderHasAvatar ? (
-                          <img
-                            src={`/members/${message.senderId}/avatar?v=${message.senderAvatarVersion}`}
-                            alt=""
-                          />
-                        ) : (
-                          <span>
-                            {message.senderName
-                              .trim()
-                              .charAt(0)
-                              .toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    <GroupMessageContextMenu
-                      messageId={message.id}
-                      senderName={message.senderName}
-                      body={message.body}
-                      isPinned={message.isPinned}
-                      className={`${message.mine
-                        ? chatStyles.messageMine
-                        : chatStyles.messageOther
-                        } ${message
-                          .attachments
-                          .length
-                          ? chatStyles.messageWithAttachment
-                          : ""
-                        } ${message.imageOnly
-                          ? chatStyles.messageImageOnly
-                          : ""
-                        }`}
-                    >
-                      {!message.mine && (
-                        <small
-                          className={
-                            chatStyles.senderName
-                          }
-                        >
-                          {
-                            message.senderName
-                          }
-                        </small>
-                      )}
-
-                      {message.replyTo && (
-  <ReplyMessageJump
-    messageId={
-      message.replyTo.id
-    }
-className={
-  chatStyles.replyContext
-}
-  >
-    <strong>
-      {
-        message.replyTo
-          .sender.name
-      }
-    </strong>
-
-    <span>
-      {message.replyTo.body}
-    </span>
-  </ReplyMessageJump>
-)}
-
-                      <ChatMessageContent
-                        messageId={
-                          message.id
-                        }
-                        kind={
-                          message.kind
-                        }
-                        body={
-                          message.body
-                        }
-                        attachments={
-                          message.attachments
-                        }
-                        pollQuestion={
-                          message.pollQuestion
-                        }
-                        pollOptions={
-                          message.pollOptions
-                        }
-                        pollVotes={
-                          message.pollVotes
-                        }
-                        currentUserId={
-                          user.id
-                        }
-                      />
-
-                      <div
-                        className={
-                          chatStyles.messageFooter
-                        }
-                      >
-                        <time>
-                          {message.time}
-                        </time>
-
-                        {message.mine &&
-                          message.state === "SENT" && (
-                            <Check
-                              size={15}
-                              className={
-                                chatStyles.deliverySent
-                              }
-                              aria-label="تم الإرسال"
-                            />
-                          )}
-
-                        {message.mine &&
-                          message.state === "DELIVERED" && (
-                            <CheckCheck
-                              size={16}
-                              className={
-                                chatStyles.deliveryDelivered
-                              }
-                              aria-label="تم التسليم"
-                            />
-                          )}
-
-                        {message.mine &&
-                          message.state === "READ" && (
-                            <CheckCheck
-                              size={16}
-                              className={
-                                chatStyles.deliveryRead
-                              }
-                              aria-label="تمت القراءة"
-                            />
-                          )}
-                      </div>
-                    </GroupMessageContextMenu>
-
-                  </div>
-                </div>
-              ),
-            )}
-
-            <div
-              id="chat-bottom"
-              aria-hidden="true"
-            />
-          </div>
+          <ChatMessageList
+            mode="group"
+            conversationId={id}
+            currentUserId={
+              user.id
+            }
+            initialMessages={
+              initialMessages
+            }
+            initialHasMore={
+              hasOlderMessages
+            }
+          />
         </ChatConversationView>
 
         {/* =========================

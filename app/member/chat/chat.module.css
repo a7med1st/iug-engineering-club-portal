@@ -7458,3 +7458,1296 @@
     1px solid
     rgba(73, 169, 255, 0.18);
 }
+
+/* ========================================
+   CHAT MESSAGE ACTION MODAL
+   Edit / Delete
+======================================== */
+
+.chatActionModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(4, 15, 26, 0.62);
+
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+
+  animation: chatActionOverlayIn 160ms ease-out;
+}
+
+.chatActionModalCard {
+  width: min(460px, calc(100vw - 32px));
+
+  overflow: hidden;
+
+  direction: rtl;
+
+  border: 1px solid rgba(34, 118, 190, 0.14);
+  border-radius: 20px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 25px 70px rgba(6, 34, 58, 0.24),
+    0 8px 25px rgba(6, 34, 58, 0.12);
+
+  animation:
+    chatActionModalIn
+    180ms
+    cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+
+/* ========================================
+   HEADER
+======================================== */
+
+.chatActionModalHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 18px 18px 16px;
+
+  border-bottom: 1px solid #e7eef5;
+}
+
+.chatActionModalIcon,
+.chatActionModalIconDanger {
+  flex: 0 0 auto;
+
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 13px;
+}
+
+.chatActionModalIcon {
+  color: #1688ff;
+
+  background:
+    rgba(22, 136, 255, 0.1);
+}
+
+.chatActionModalIconDanger {
+  color: #e5484d;
+
+  background:
+    rgba(229, 72, 77, 0.1);
+}
+
+.chatActionModalTitle {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.chatActionModalTitle strong {
+  color: #10263a;
+
+  font-size: 0.95rem;
+  font-weight: 800;
+
+  line-height: 1.5;
+}
+
+.chatActionModalTitle span {
+  color: #71869a;
+
+  font-size: 0.72rem;
+  font-weight: 500;
+
+  line-height: 1.7;
+}
+
+.chatActionModalClose {
+  flex: 0 0 auto;
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid #dce7f0;
+  border-radius: 10px;
+
+  color: #71869a;
+
+  background: #f7fafc;
+
+  cursor: pointer;
+
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.chatActionModalClose:hover {
+  color: #1d3448;
+
+  border-color: #c9d9e6;
+
+  background: #edf4f9;
+
+  transform: scale(1.04);
+}
+
+
+/* ========================================
+   EDIT MESSAGE BODY
+======================================== */
+
+.chatActionModalBody {
+  position: relative;
+
+  padding: 18px 18px 12px;
+}
+
+.chatActionModalTextarea {
+  width: 100%;
+  min-height: 130px;
+
+  display: block;
+
+  resize: vertical;
+
+  padding: 14px 15px;
+
+  border: 1px solid #cbdbe8;
+  border-radius: 14px;
+
+  outline: none;
+
+  color: #132b3f;
+
+  background: #f8fbfd;
+
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+
+  line-height: 1.85;
+
+  text-align: right;
+
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.chatActionModalTextarea:hover {
+  border-color: #b6cddd;
+}
+
+.chatActionModalTextarea:focus {
+  border-color: #1688ff;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(22, 136, 255, 0.1);
+}
+
+.chatActionModalCounter {
+  margin-top: 7px;
+
+  direction: ltr;
+
+  color: #91a2b1;
+
+  font-size: 0.65rem;
+  font-weight: 600;
+
+  text-align: left;
+}
+
+
+/* ========================================
+   DELETE WARNING
+======================================== */
+
+.chatActionDeleteWarning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin: 18px;
+
+  padding: 13px 14px;
+
+  border:
+    1px solid
+    rgba(229, 72, 77, 0.18);
+
+  border-radius: 13px;
+
+  color: #c52f3a;
+
+  background:
+    rgba(229, 72, 77, 0.06);
+}
+
+.chatActionDeleteWarning svg {
+  flex: 0 0 auto;
+}
+
+.chatActionDeleteWarning p {
+  margin: 0;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  line-height: 1.7;
+}
+
+
+/* ========================================
+   ACTION BUTTONS
+======================================== */
+
+.chatActionModalActions {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 15px 18px 18px;
+
+  border-top: 1px solid #e7eef5;
+}
+
+.chatActionModalCancel,
+.chatActionModalSave,
+.chatActionModalDelete {
+  min-height: 43px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  padding: 10px 16px;
+
+  border-radius: 12px;
+
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.chatActionModalCancel {
+  flex: 1;
+
+  border: 1px solid #d5e1ea;
+
+  color: #52697d;
+
+  background: #f7fafc;
+}
+
+.chatActionModalSave {
+  flex: 1.45;
+
+  border: 0;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #1688ff,
+      #159fe2
+    );
+
+  box-shadow:
+    0 8px 18px
+    rgba(22, 136, 255, 0.2);
+}
+
+.chatActionModalDelete {
+  flex: 1.45;
+
+  border: 0;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #e5484d,
+      #cc303c
+    );
+
+  box-shadow:
+    0 8px 18px
+    rgba(229, 72, 77, 0.2);
+}
+
+.chatActionModalCancel:hover {
+  color: #263f54;
+
+  border-color: #c4d5e2;
+
+  background: #edf4f8;
+
+  transform: translateY(-1px);
+}
+
+.chatActionModalSave:hover {
+  box-shadow:
+    0 10px 22px
+    rgba(22, 136, 255, 0.28);
+
+  transform: translateY(-1px);
+}
+
+.chatActionModalDelete:hover {
+  box-shadow:
+    0 10px 22px
+    rgba(229, 72, 77, 0.28);
+
+  transform: translateY(-1px);
+}
+
+.chatActionModalCancel:active,
+.chatActionModalSave:active,
+.chatActionModalDelete:active {
+  transform: translateY(0);
+}
+
+.chatActionModalCancel:disabled,
+.chatActionModalSave:disabled,
+.chatActionModalDelete:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+
+  box-shadow: none;
+
+  transform: none;
+}
+
+
+/* ========================================
+   DARK MODE
+======================================== */
+
+:global(html[data-theme="dark"])
+.chatActionModalCard,
+:global(.dark)
+.chatActionModalCard,
+:global(body.dark)
+.chatActionModalCard {
+  border-color:
+    rgba(114, 176, 220, 0.14);
+
+  background:
+    linear-gradient(
+      180deg,
+      #112b40 0%,
+      #0d2437 100%
+    );
+
+  box-shadow:
+    0 30px 80px
+    rgba(0, 0, 0, 0.48);
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalHead,
+:global(.dark)
+.chatActionModalHead,
+:global(body.dark)
+.chatActionModalHead {
+  border-bottom-color:
+    rgba(134, 187, 226, 0.11);
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalTitle strong,
+:global(.dark)
+.chatActionModalTitle strong,
+:global(body.dark)
+.chatActionModalTitle strong {
+  color: #f1f7fb;
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalTitle span,
+:global(.dark)
+.chatActionModalTitle span,
+:global(body.dark)
+.chatActionModalTitle span {
+  color: #8fa8ba;
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalClose,
+:global(.dark)
+.chatActionModalClose,
+:global(body.dark)
+.chatActionModalClose {
+  color: #9db3c4;
+
+  border-color:
+    rgba(116, 174, 215, 0.16);
+
+  background: #143149;
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalClose:hover,
+:global(.dark)
+.chatActionModalClose:hover,
+:global(body.dark)
+.chatActionModalClose:hover {
+  color: #ffffff;
+
+  border-color:
+    rgba(127, 189, 233, 0.25);
+
+  background: #193c58;
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalTextarea,
+:global(.dark)
+.chatActionModalTextarea,
+:global(body.dark)
+.chatActionModalTextarea {
+  color: #edf6fc;
+
+  border-color:
+    rgba(108, 171, 215, 0.2);
+
+  background: #091e30;
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalTextarea:hover,
+:global(.dark)
+.chatActionModalTextarea:hover,
+:global(body.dark)
+.chatActionModalTextarea:hover {
+  border-color:
+    rgba(117, 185, 232, 0.32);
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalTextarea:focus,
+:global(.dark)
+.chatActionModalTextarea:focus,
+:global(body.dark)
+.chatActionModalTextarea:focus {
+  border-color: #1688ff;
+
+  background: #0b2236;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(22, 136, 255, 0.12);
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalCounter,
+:global(.dark)
+.chatActionModalCounter,
+:global(body.dark)
+.chatActionModalCounter {
+  color: #718ca0;
+}
+
+:global(html[data-theme="dark"])
+.chatActionDeleteWarning,
+:global(.dark)
+.chatActionDeleteWarning,
+:global(body.dark)
+.chatActionDeleteWarning {
+  color: #ff7479;
+
+  border-color:
+    rgba(239, 82, 88, 0.2);
+
+  background:
+    rgba(229, 72, 77, 0.08);
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalActions,
+:global(.dark)
+.chatActionModalActions,
+:global(body.dark)
+.chatActionModalActions {
+  border-top-color:
+    rgba(134, 187, 226, 0.11);
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalCancel,
+:global(.dark)
+.chatActionModalCancel,
+:global(body.dark)
+.chatActionModalCancel {
+  color: #b5c7d5;
+
+  border-color:
+    rgba(116, 174, 215, 0.18);
+
+  background: #132f46;
+}
+
+:global(html[data-theme="dark"])
+.chatActionModalCancel:hover,
+:global(.dark)
+.chatActionModalCancel:hover,
+:global(body.dark)
+.chatActionModalCancel:hover {
+  color: #ffffff;
+
+  border-color:
+    rgba(127, 189, 233, 0.26);
+
+  background: #183a55;
+}
+
+
+/* ========================================
+   ANIMATIONS
+======================================== */
+
+@keyframes chatActionOverlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes chatActionModalIn {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(10px)
+      scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+/* ========================================
+   MOBILE
+======================================== */
+
+@media (max-width: 520px) {
+  .chatActionModalOverlay {
+    padding: 14px;
+  }
+
+  .chatActionModalCard {
+    width: 100%;
+
+    border-radius: 17px;
+  }
+
+  .chatActionModalHead {
+    padding: 16px;
+  }
+
+  .chatActionModalBody {
+    padding: 16px 16px 10px;
+  }
+
+  .chatActionDeleteWarning {
+    margin: 16px;
+  }
+
+  .chatActionModalActions {
+    padding: 14px 16px 16px;
+  }
+
+  .chatActionModalCancel,
+  .chatActionModalSave,
+  .chatActionModalDelete {
+    padding-inline: 10px;
+
+    font-size: 0.72rem;
+  }
+}
+
+/* =========================================================
+   REPLY PREVIEW FIX
+   Dark Mode + Close Button Position
+========================================================= */
+
+.composerReplyPreview {
+  position: relative;
+
+  width: 100%;
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding:
+    10px
+    52px
+    10px
+    12px;
+
+  border:
+    1px solid
+    rgba(22, 136, 255, 0.16);
+
+  border-radius: 14px;
+
+  background:
+    rgba(243, 248, 252, 0.96);
+
+  color: #173148;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 4px 14px
+    rgba(8, 42, 74, 0.05);
+}
+
+
+/* أيقونة الرد */
+
+.composerReplyIcon {
+  flex: 0 0 auto;
+
+  width: 32px;
+  height: 32px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  color: #1688ff;
+
+  background:
+    rgba(22, 136, 255, 0.09);
+}
+
+
+/* النص */
+
+.composerReplyCopy {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.composerReplyCopy strong {
+  color: #1688ff;
+
+  font-size: 0.73rem;
+  font-weight: 900;
+
+  line-height: 1.5;
+}
+
+.composerReplyCopy span {
+  display: block;
+
+  min-width: 0;
+
+  color: #60768a;
+
+  font-size: 0.7rem;
+  font-weight: 600;
+
+  line-height: 1.5;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   X BUTTON
+   نرفع الـspecificity حتى ما يأخذ حجم أزرار composer العامة
+========================================================= */
+
+.composer .composerReplyClose {
+  position: absolute;
+
+  left: 11px;
+  top: 50%;
+
+  transform:
+    translateY(-50%);
+
+  width: 32px;
+  min-width: 32px;
+
+  height: 32px;
+  min-height: 32px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+  margin: 0;
+
+  border:
+    1px solid
+    rgba(22, 136, 255, 0.14);
+
+  border-radius: 10px;
+
+  color: #597186;
+
+  background:
+    rgba(255, 255, 255, 0.7);
+
+  box-shadow: none;
+
+  cursor: pointer;
+
+  z-index: 2;
+
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.composer .composerReplyClose svg {
+  width: 17px;
+  height: 17px;
+}
+
+.composer .composerReplyClose:hover {
+  color: #dc3545;
+
+  border-color:
+    rgba(220, 53, 69, 0.2);
+
+  background:
+    rgba(220, 53, 69, 0.08);
+
+  transform:
+    translateY(-50%)
+    scale(1.04);
+}
+
+
+/* =========================================================
+   DARK MODE
+========================================================= */
+
+:global(html[data-theme="dark"])
+.composerReplyPreview,
+:global(.dark)
+.composerReplyPreview,
+:global(body.dark)
+.composerReplyPreview {
+  border-color:
+    rgba(76, 161, 224, 0.18);
+
+  background:
+    linear-gradient(
+      135deg,
+      #102b40,
+      #0c2335
+    );
+
+  color: #eef7ff;
+
+  box-shadow:
+    0 5px 18px
+    rgba(0, 0, 0, 0.18);
+}
+
+
+:global(html[data-theme="dark"])
+.composerReplyIcon,
+:global(.dark)
+.composerReplyIcon,
+:global(body.dark)
+.composerReplyIcon {
+  color: #59b4ff;
+
+  background:
+    rgba(22, 136, 255, 0.12);
+}
+
+
+:global(html[data-theme="dark"])
+.composerReplyCopy strong,
+:global(.dark)
+.composerReplyCopy strong,
+:global(body.dark)
+.composerReplyCopy strong {
+  color: #55b2ff;
+}
+
+
+:global(html[data-theme="dark"])
+.composerReplyCopy span,
+:global(.dark)
+.composerReplyCopy span,
+:global(body.dark)
+.composerReplyCopy span {
+  color: #9bb2c5;
+}
+
+
+:global(html[data-theme="dark"])
+.composer
+.composerReplyClose,
+:global(.dark)
+.composer
+.composerReplyClose,
+:global(body.dark)
+.composer
+.composerReplyClose {
+  color: #a5bbcb;
+
+  border-color:
+    rgba(93, 164, 215, 0.17);
+
+  background:
+    #15344c;
+}
+
+
+:global(html[data-theme="dark"])
+.composer
+.composerReplyClose:hover,
+:global(.dark)
+.composer
+.composerReplyClose:hover,
+:global(body.dark)
+.composer
+.composerReplyClose:hover {
+  color: #ff747c;
+
+  border-color:
+    rgba(255, 91, 99, 0.24);
+
+  background:
+    rgba(229, 72, 77, 0.1);
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+  .composerReplyPreview {
+    padding:
+      9px
+      48px
+      9px
+      10px;
+
+    border-radius: 12px;
+  }
+
+  .composer .composerReplyClose {
+    left: 9px;
+
+    width: 30px;
+    min-width: 30px;
+
+    height: 30px;
+    min-height: 30px;
+  }
+
+  .composerReplyIcon {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* =========================================================
+   MOBILE + TABLET CHAT DARK MODE FIX
+   <= 1024px
+========================================================= */
+
+@media (max-width: 1024px) {
+
+  /* =========================================
+     MAIN CHAT BACKGROUND
+  ========================================= */
+
+  :global(html[data-theme="dark"]) .page,
+  :global(html[data-theme="dark"]) .shell,
+  :global(html[data-theme="dark"]) .content,
+  :global(html[data-theme="dark"]) .conversation,
+  :global(html[data-theme="dark"]) .messages,
+
+  :global(.dark) .page,
+  :global(.dark) .shell,
+  :global(.dark) .content,
+  :global(.dark) .conversation,
+  :global(.dark) .messages,
+
+  :global(body.dark) .page,
+  :global(body.dark) .shell,
+  :global(body.dark) .content,
+  :global(body.dark) .conversation,
+  :global(body.dark) .messages {
+    background:
+      linear-gradient(
+        180deg,
+        #071d2d 0%,
+        #061827 100%
+      ) !important;
+
+    color: #edf7ff;
+  }
+
+
+  /* =========================================
+     MESSAGES AREA
+  ========================================= */
+
+  :global(html[data-theme="dark"]) .messages,
+  :global(.dark) .messages,
+  :global(body.dark) .messages {
+    background:
+      radial-gradient(
+        circle at 80% 0%,
+        rgba(22, 136, 255, 0.07),
+        transparent 34%
+      ),
+      linear-gradient(
+        180deg,
+        #071d2d,
+        #061827
+      ) !important;
+  }
+
+
+  /* =========================================
+     OTHER USER MESSAGE
+  ========================================= */
+
+  :global(html[data-theme="dark"]) .messageOther,
+  :global(.dark) .messageOther,
+  :global(body.dark) .messageOther {
+    color: #edf6fc !important;
+
+    background:
+      linear-gradient(
+        135deg,
+        #102d43,
+        #0c2538
+      ) !important;
+
+    border-color:
+      rgba(
+        111,
+        176,
+        221,
+        0.16
+      ) !important;
+
+    box-shadow:
+      0 5px 16px
+      rgba(
+        0,
+        0,
+        0,
+        0.18
+      ) !important;
+  }
+
+
+  /* =========================================
+     OTHER USER NAME
+  ========================================= */
+
+  :global(html[data-theme="dark"]) .messageOther .senderName,
+  :global(.dark) .messageOther .senderName,
+  :global(body.dark) .messageOther .senderName {
+    color: #5bb7ff !important;
+  }
+
+
+  /* =========================================
+     OTHER MESSAGE TIME
+  ========================================= */
+
+  :global(html[data-theme="dark"]) .messageOther time,
+  :global(.dark) .messageOther time,
+  :global(body.dark) .messageOther time {
+    color:
+      rgba(
+        191,
+        216,
+        235,
+        0.7
+      ) !important;
+  }
+
+
+  /* =========================================
+     DAY DIVIDER
+  ========================================= */
+
+  :global(html[data-theme="dark"]) .dayDivider span,
+  :global(.dark) .dayDivider span,
+  :global(body.dark) .dayDivider span {
+    color: #91aabd !important;
+
+    border-color:
+      rgba(
+        106,
+        170,
+        216,
+        0.16
+      ) !important;
+
+    background:
+      rgba(
+        12,
+        39,
+        59,
+        0.94
+      ) !important;
+  }
+
+
+  /* =========================================
+     REPLY QUOTE INSIDE MESSAGE
+  ========================================= */
+
+  :global(html[data-theme="dark"]) .replyContext,
+  :global(.dark) .replyContext,
+  :global(body.dark) .replyContext {
+    color: #dcebf6 !important;
+
+    border-color:
+      rgba(
+        101,
+        172,
+        222,
+        0.18
+      ) !important;
+
+    background:
+      rgba(
+        3,
+        18,
+        30,
+        0.28
+      ) !important;
+  }
+
+
+  /* =========================================
+     COMPOSER AREA
+  ========================================= */
+
+  :global(html[data-theme="dark"]) .composer,
+  :global(html[data-theme="dark"]) .composerEnhanced,
+
+  :global(.dark) .composer,
+  :global(.dark) .composerEnhanced,
+
+  :global(body.dark) .composer,
+  :global(body.dark) .composerEnhanced {
+    border-top-color:
+      rgba(
+        105,
+        171,
+        219,
+        0.13
+      ) !important;
+
+    background:
+      #071c2c !important;
+
+    box-shadow:
+      0 -10px 28px
+      rgba(
+        0,
+        0,
+        0,
+        0.22
+      ) !important;
+  }
+
+
+  /* =========================================
+     MESSAGE INPUT
+  ========================================= */
+
+  :global(html[data-theme="dark"]) .composer textarea,
+  :global(html[data-theme="dark"]) .composerEnhanced textarea,
+
+  :global(.dark) .composer textarea,
+  :global(.dark) .composerEnhanced textarea,
+
+  :global(body.dark) .composer textarea,
+  :global(body.dark) .composerEnhanced textarea {
+    color: #edf7ff !important;
+
+    border-color:
+      rgba(
+        101,
+        170,
+        219,
+        0.2
+      ) !important;
+
+    background:
+      #0a263a !important;
+  }
+
+
+  :global(html[data-theme="dark"]) .composer textarea::placeholder,
+  :global(html[data-theme="dark"]) .composerEnhanced textarea::placeholder,
+
+  :global(.dark) .composer textarea::placeholder,
+  :global(.dark) .composerEnhanced textarea::placeholder,
+
+  :global(body.dark) .composer textarea::placeholder,
+  :global(body.dark) .composerEnhanced textarea::placeholder {
+    color: #7893a8 !important;
+
+    opacity: 1;
+  }
+
+
+  /* =========================================
+     COMPOSER TOOL BUTTONS
+  ========================================= */
+
+  :global(html[data-theme="dark"]) .composerToolButton,
+  :global(.dark) .composerToolButton,
+  :global(body.dark) .composerToolButton {
+    color: #9ab5c8 !important;
+
+    border-color:
+      rgba(
+        106,
+        171,
+        219,
+        0.17
+      ) !important;
+
+    background:
+      #0e2c42 !important;
+  }
+
+
+  :global(html[data-theme="dark"]) .composerToolButton:hover,
+  :global(.dark) .composerToolButton:hover,
+  :global(body.dark) .composerToolButton:hover {
+    color: #ffffff !important;
+
+    border-color:
+      rgba(
+        72,
+        164,
+        230,
+        0.32
+      ) !important;
+
+    background:
+      #133a55 !important;
+  }
+
+
+  /* =========================================
+     EMPTY CHAT
+  ========================================= */
+
+  :global(html[data-theme="dark"]) .noMessages,
+  :global(.dark) .noMessages,
+  :global(body.dark) .noMessages {
+    color: #8ea8bb !important;
+
+    background: transparent !important;
+  }
+
+  :global(html[data-theme="dark"]) .noMessages strong,
+  :global(.dark) .noMessages strong,
+  :global(body.dark) .noMessages strong {
+    color: #eef7ff !important;
+  }
+}
+
+
+/* =========================================================
+   EXTRA MOBILE FIX
+   <= 520px
+========================================================= */
+
+@media (max-width: 520px) {
+
+  :global(html[data-theme="dark"]) .messages,
+  :global(.dark) .messages,
+  :global(body.dark) .messages {
+    background:
+      linear-gradient(
+        180deg,
+        #071d2d,
+        #051724
+      ) !important;
+  }
+
+  :global(html[data-theme="dark"]) .conversation,
+  :global(.dark) .conversation,
+  :global(body.dark) .conversation {
+    background: #061827 !important;
+  }
+}

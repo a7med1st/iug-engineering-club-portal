@@ -928,3 +928,233 @@ export async function togglePinnedDirectMessage(
     "/member/chat",
   );
 }
+/* =========================================================
+   EDIT CHAT MESSAGE
+========================================================= */
+
+export async function editChatMessage(
+  formData: FormData,
+) {
+  const { user } = await requirePermission(
+    PERMISSIONS.MEMBER_DASHBOARD,
+  );
+
+  const messageId = text(
+    formData,
+    "messageId",
+  );
+
+  const body = text(
+    formData,
+    "body",
+  );
+
+  if (!messageId || !body) {
+    return;
+  }
+
+  if (body.length > 3000) {
+    return;
+  }
+
+  const message =
+    await prisma.chatMessage.findFirst({
+      where: {
+        id: messageId,
+        senderId: user.id,
+
+        conversation: {
+          participants: {
+            some: {
+              userId: user.id,
+            },
+          },
+        },
+      },
+
+      select: {
+        id: true,
+        conversationId: true,
+        kind: true,
+
+        attachments: {
+          select: {
+            id: true,
+          },
+        },
+
+        conversation: {
+          select: {
+            type: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+  if (
+    !message ||
+    message.kind !== "TEXT" ||
+    message.attachments.length > 0
+  ) {
+    return;
+  }
+
+  await prisma.$transaction([
+    prisma.chatMessage.update({
+      where: {
+        id: message.id,
+      },
+
+      data: {
+        body,
+      },
+    }),
+
+    prisma.notification.updateMany({
+      where: {
+        chatMessageId: message.id,
+      },
+
+      data: {
+        body:
+          message.conversation.type === "GROUP"
+            ? `${user.name}: ${messagePreview(body)}`
+            : messagePreview(body),
+      },
+    }),
+  ]);
+
+  const href =
+    message.conversation.type === "GROUP"
+      ? `/member/chat/groups/${message.conversationId}`
+      : `/member/chat/${message.conversationId}`;
+
+  revalidatePath(href);
+  revalidatePath("/member/chat");
+  revalidatePath("/notifications");
+}
+
+
+/* =========================================================
+   DELETE CHAT MESSAGE FOR EVERYONE
+========================================================= */
+
+export async function deleteChatMessageForEveryone(
+  formData: FormData,
+) {
+  const { user } = await requirePermission(
+    PERMISSIONS.MEMBER_DASHBOARD,
+  );
+
+  const messageId = text(
+    formData,
+    "messageId",
+  );
+
+  if (!messageId) {
+    return;
+  }
+
+  const message =
+    await prisma.chatMessage.findFirst({
+      where: {
+        id: messageId,
+        senderId: user.id,
+
+        conversation: {
+          participants: {
+            some: {
+              userId: user.id,
+            },
+          },
+        },
+      },
+
+      select: {
+        id: true,
+        conversationId: true,
+
+        conversation: {
+          select: {
+            type: true,
+          },
+        },
+
+        attachments: {
+          select: {
+            url: true,
+            pathname: true,
+          },
+        },
+      },
+    });
+
+  if (!message) {
+    return;
+  }
+
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.notification.deleteMany({
+        where: {
+          chatMessageId: message.id,
+        },
+      });
+
+      await tx.chatMessage.delete({
+        where: {
+          id: message.id,
+        },
+      });
+
+      const latest =
+        await tx.chatMessage.findFirst({
+          where: {
+            conversationId:
+              message.conversationId,
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+
+          select: {
+            createdAt: true,
+          },
+        });
+
+      await tx.chatConversation.update({
+        where: {
+          id:
+            message.conversationId,
+        },
+
+        data: {
+          lastMessageAt:
+            latest?.createdAt ??
+            null,
+        },
+      });
+    },
+  );
+
+  await Promise.all(
+    message.attachments.map(
+      (attachment) =>
+        tryDeleteChatAttachment(
+          attachment,
+          `delete-chat-message:${message.id}`,
+        ),
+    ),
+  );
+
+  const href =
+    message.conversation.type === "GROUP"
+      ? `/member/chat/groups/${message.conversationId}`
+      : `/member/chat/${message.conversationId}`;
+
+  revalidatePath(href);
+  revalidatePath("/member/chat");
+  revalidatePath("/notifications");
+}
