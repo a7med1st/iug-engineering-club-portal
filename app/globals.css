@@ -8238,3 +8238,7 @@ p {
     color: #35d4ff;
     background: rgba(53, 212, 255, .08);
 }
+.activity-registration-hero p {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
