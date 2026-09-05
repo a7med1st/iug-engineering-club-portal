@@ -80,6 +80,7 @@ export async function syncSystemChatGroups() {
         id: true,
         role: true,
         departmentId: true,
+        managedDepartmentIds: true,
         position: true,
       },
     }),
@@ -238,11 +239,25 @@ export async function syncSystemChatGroups() {
     const memberIds =
       users
         .filter(
-          (user) =>
-            user.role ===
-              "MEMBER" &&
-            user.departmentId ===
+          (user) => {
+            if (
+              user.role !==
+              "MEMBER"
+            ) {
+              return false;
+            }
+
+            const managedIds =
+              user.managedDepartmentIds.length
+                ? user.managedDepartmentIds
+                : user.departmentId
+                  ? [user.departmentId]
+                  : [];
+
+            return managedIds.includes(
               department.id,
+            );
+          },
         )
         .map(
           (user) => user.id,

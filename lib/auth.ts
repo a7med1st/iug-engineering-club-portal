@@ -35,6 +35,7 @@ export type CurrentUser = {
   role: Role;
   position: string | null;
   departmentId: string | null;
+  managedDepartmentIds: string[];
   memberPermissions: string[];
   sessionVersion: number;
   mustChangePassword: boolean;
@@ -143,6 +144,7 @@ export async function getCurrentUser(): Promise<{
       role: true,
       position: true,
       departmentId: true,
+      managedDepartmentIds: true,
       memberPermissions: true,
       sessionVersion: true,
       mustChangePassword: true,

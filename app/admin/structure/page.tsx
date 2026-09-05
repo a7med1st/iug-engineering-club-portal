@@ -6,6 +6,7 @@ import {
   PERMISSIONS,
   isClubLeadership,
   requirePermission,
+  managedDepartmentIdsForUser,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -39,14 +40,22 @@ export default async function StructureAdminPage({
   const feedback = await searchParams;
   const isAdmin = user.role === "ADMIN" || isClubLeadership(user.position);
 
+  const managedDepartmentIds =
+    managedDepartmentIdsForUser(
+      user,
+    );
+
   const [items, accounts] = await Promise.all([
     prisma.clubStructureItem.findMany({
       where: isAdmin
         ? undefined
         : {
-            departmentId:
-              user.departmentId ??
-              "__NO_DEPARTMENT__",
+            departmentId: {
+              in:
+                managedDepartmentIds.length
+                  ? managedDepartmentIds
+                  : ["__NO_DEPARTMENT__"],
+            },
           },
       include: {
         department: true,
@@ -87,9 +96,12 @@ export default async function StructureAdminPage({
         ...(isAdmin
           ? {}
           : {
-              departmentId:
-                user.departmentId ??
-                "__NO_DEPARTMENT__",
+              departmentId: {
+                in:
+                  managedDepartmentIds.length
+                    ? managedDepartmentIds
+                    : ["__NO_DEPARTMENT__"],
+              },
             }),
       },
       select: {
@@ -127,7 +139,7 @@ export default async function StructureAdminPage({
           <p className="muted">
             {isAdmin
               ? "اربط حسابات الأعضاء داخل شجرة تنظيمية تبدأ من رئيس النادي وتنتهي بأعضاء الأقسام."
-              : `يمكنك إدارة أعضاء ${user.department?.nameAr ?? "قسمك"} فقط وربطهم بعناصر القسم.`}
+              : `يمكنك إدارة أعضاء الأقسام المرتبطة بحسابك وربطهم بعناصر الهيكلية.`}
           </p>
         </div>
       </div>

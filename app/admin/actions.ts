@@ -30,6 +30,7 @@ import {
     requireActivityPermission,
 
   requirePermission,
+  managedDepartmentIdsForUser,
 } from "@/lib/permissions";
 
 /* =========================================================
@@ -107,6 +108,50 @@ function optionalId(
       formData.get(field) ?? "",
     ).trim() || null
   );
+}
+
+function readManagedDepartmentIds(
+  formData: FormData,
+) {
+  return [
+    ...new Set(
+      formData
+        .getAll("managedDepartmentIds")
+        .map((value) =>
+          String(value).trim(),
+        )
+        .filter(Boolean),
+    ),
+  ];
+}
+
+async function ensureManagedDepartmentsExist(
+  departmentIds: readonly string[],
+) {
+  if (departmentIds.length === 0) {
+    return;
+  }
+
+  const rows =
+    await prisma.department.findMany({
+      where: {
+        id: {
+          in: [...departmentIds],
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+  if (
+    rows.length !==
+    new Set(departmentIds).size
+  ) {
+    throw new AdminActionError(
+      "يتضمن اختيار الأقسام قسمًا غير موجود.",
+    );
+  }
 }
 
 async function ensureDepartmentExists(
@@ -405,7 +450,7 @@ function readMemberPermissions(
 }
 
 function ensureMemberDepartmentForPermissions(
-  departmentId: string | null,
+  departmentIds: readonly string[],
   permissions: ReturnType<
     typeof readMemberPermissions
   >,
@@ -417,10 +462,10 @@ function ensureMemberDepartmentForPermissions(
 
   if (
     needsDepartment &&
-    !departmentId
+    departmentIds.length === 0
   ) {
     throw new AdminActionError(
-      "الصلاحيات المرتبطة بالقسم تحتاج إلى تحديد قسم للعضو.",
+      "الصلاحيات المرتبطة بالقسم تحتاج إلى تحديد قسم واحد على الأقل للعضو.",
     );
   }
 }
@@ -478,11 +523,14 @@ export async function createMember(
           ) ?? "",
         ).trim() || null;
 
-      const departmentId =
-        optionalId(
+      const managedDepartmentIds =
+        readManagedDepartmentIds(
           formData,
-          "departmentId",
         );
+
+      const departmentId =
+        managedDepartmentIds[0] ??
+        null;
 
       const memberPermissions =
         readMemberPermissions(
@@ -518,12 +566,12 @@ export async function createMember(
         );
       }
 
-      await ensureDepartmentExists(
-        departmentId,
+      await ensureManagedDepartmentsExist(
+        managedDepartmentIds,
       );
 
       ensureMemberDepartmentForPermissions(
-        departmentId,
+        managedDepartmentIds,
         memberPermissions,
       );
 
@@ -590,6 +638,7 @@ export async function createMember(
                     mustChangePassword: true,
                     position,
                     departmentId,
+                    managedDepartmentIds,
                     memberPermissions,
                   },
                   select: {
@@ -662,7 +711,7 @@ export async function updateMemberAccess(
   return runAdminAction(
     "/admin/members",
 
-    "تم تحديث قسم العضو وصلاحياته بنجاح.",
+    "تم تحديث أقسام العضو وصلاحياته بنجاح.",
 
     "تعذر تحديث صلاحيات العضو.",
 
@@ -681,23 +730,26 @@ export async function updateMemberAccess(
           ) ?? "",
         ).trim() || null;
 
-      const departmentId =
-        optionalId(
+      const managedDepartmentIds =
+        readManagedDepartmentIds(
           formData,
-          "departmentId",
         );
+
+      const departmentId =
+        managedDepartmentIds[0] ??
+        null;
 
       const memberPermissions =
         readMemberPermissions(
           formData,
         );
 
-      await ensureDepartmentExists(
-        departmentId,
+      await ensureManagedDepartmentsExist(
+        managedDepartmentIds,
       );
 
       ensureMemberDepartmentForPermissions(
-        departmentId,
+        managedDepartmentIds,
         memberPermissions,
       );
 
@@ -711,6 +763,7 @@ export async function updateMemberAccess(
             id: true,
             role: true,
             departmentId: true,
+            managedDepartmentIds: true,
             memberPermissions: true,
           },
         });
@@ -724,13 +777,34 @@ export async function updateMemberAccess(
         );
       }
 
-      const previousPermissions = [...member.memberPermissions].sort();
-      const nextPermissions = [...memberPermissions].sort();
+      const previousPermissions =
+        [...member.memberPermissions].sort();
+
+      const nextPermissions =
+        [...memberPermissions].sort();
+
+      const previousDepartments =
+        managedDepartmentIdsForUser(
+          member,
+        ).sort();
+
+      const nextDepartments =
+        [...managedDepartmentIds].sort();
+
       const accessChanged =
-        member.departmentId !== departmentId ||
-        previousPermissions.length !== nextPermissions.length ||
+        previousDepartments.length !==
+          nextDepartments.length ||
+        previousDepartments.some(
+          (departmentId, index) =>
+            departmentId !==
+            nextDepartments[index],
+        ) ||
+        previousPermissions.length !==
+          nextPermissions.length ||
         previousPermissions.some(
-          (permission, index) => permission !== nextPermissions[index],
+          (permission, index) =>
+            permission !==
+            nextPermissions[index],
         );
 
       await prisma.user.update({
@@ -741,6 +815,7 @@ export async function updateMemberAccess(
         data: {
           position,
           departmentId,
+          managedDepartmentIds,
           memberPermissions,
           ...(accessChanged
             ? { sessionVersion: { increment: 1 } }
@@ -1051,16 +1126,29 @@ export async function createActivity(
 
       if (
         user.role === "MEMBER" &&
-        !isClubLeadership(user.position)
+        !isClubLeadership(
+          user.position,
+        )
       ) {
+        const managedIds =
+          new Set(
+            managedDepartmentIdsForUser(
+              user,
+            ),
+          );
+
         if (
-          !user.departmentId ||
           selectAll ||
-          departmentIds.length !== 1 ||
-          departmentIds[0] !== user.departmentId
+          departmentIds.length === 0 ||
+          departmentIds.some(
+            (departmentId) =>
+              !managedIds.has(
+                departmentId,
+              ),
+          )
         ) {
           throw new AdminActionError(
-            "يمكنك إنشاء نشاط لقسمك فقط.",
+            "يمكنك إنشاء نشاط ضمن الأقسام المسؤول عنها فقط.",
           );
         }
       }
@@ -1892,22 +1980,30 @@ export async function updateActivityText(
           : explicitDepartmentIds;
 
       if (
-        user.role ===
-          "MEMBER" &&
+        user.role === "MEMBER" &&
         !isClubLeadership(
           user.position,
         )
       ) {
+        const managedIds =
+          new Set(
+            managedDepartmentIdsForUser(
+              user,
+            ),
+          );
+
         if (
-          !user.departmentId ||
           selectAll ||
-          departmentIds.length !==
-            1 ||
-          departmentIds[0] !==
-            user.departmentId
+          departmentIds.length === 0 ||
+          departmentIds.some(
+            (departmentId) =>
+              !managedIds.has(
+                departmentId,
+              ),
+          )
         ) {
           throw new AdminActionError(
-            "يمكنك تعديل نشاط قسمك فقط.",
+            "يمكنك تعديل نشاط ضمن الأقسام المسؤول عنها فقط.",
           );
         }
       }

@@ -353,6 +353,7 @@ export type PermissionUser = {
   id: string;
   role: Role;
   departmentId: string | null;
+  managedDepartmentIds?: string[];
   memberPermissions: string[];
   position?: string | null;
 };
@@ -361,6 +362,34 @@ export type PermissionUser = {
  * Check if a member is a club president or vice president.
  * They have full permissions across all departments.
  */
+export function managedDepartmentIdsForUser(
+  user: {
+    departmentId: string | null;
+    managedDepartmentIds?: readonly string[];
+  },
+): string[] {
+  const explicit = [
+    ...new Set(
+      (
+        user.managedDepartmentIds ??
+        []
+      )
+        .map((id) =>
+          id.trim(),
+        )
+        .filter(Boolean),
+    ),
+  ];
+
+  if (explicit.length > 0) {
+    return explicit;
+  }
+
+  return user.departmentId
+    ? [user.departmentId]
+    : [];
+}
+
 export function isClubLeadership(
   position: string | null | undefined,
 ): boolean {
@@ -396,7 +425,10 @@ export function hasGlobalContactAccess(
 export function canAccessDepartment(
   user: Pick<
     PermissionUser,
-    "role" | "departmentId" | "position"
+    | "role"
+    | "departmentId"
+    | "managedDepartmentIds"
+    | "position"
   >,
   departmentId: string,
 ) {
@@ -404,17 +436,17 @@ export function canAccessDepartment(
     return true;
   }
 
-  // Club leaders have access to all departments
   if (isClubLeadership(user.position)) {
     return true;
   }
 
-  return (
-    user.role === "MEMBER" &&
-    Boolean(user.departmentId) &&
-    user.departmentId ===
-      departmentId
-  );
+  if (user.role !== "MEMBER") {
+    return false;
+  }
+
+  return managedDepartmentIdsForUser(
+    user,
+  ).includes(departmentId);
 }
 
 /*
@@ -429,7 +461,10 @@ export function canAccessDepartment(
 export function canAccessActivityDepartments(
   user: Pick<
     PermissionUser,
-    "role" | "departmentId" | "position"
+    | "role"
+    | "departmentId"
+    | "managedDepartmentIds"
+    | "position"
   >,
   departmentIds: readonly string[],
 ) {
@@ -437,17 +472,27 @@ export function canAccessActivityDepartments(
     return true;
   }
 
-  // Club leaders can access activities from any department
   if (isClubLeadership(user.position)) {
     return true;
   }
 
-  return (
-    user.role === "MEMBER" &&
-    Boolean(user.departmentId) &&
-    departmentIds.length === 1 &&
-    departmentIds[0] ===
-      user.departmentId
+  if (
+    user.role !== "MEMBER" ||
+    departmentIds.length === 0
+  ) {
+    return false;
+  }
+
+  const managedIds =
+    new Set(
+      managedDepartmentIdsForUser(
+        user,
+      ),
+    );
+
+  return departmentIds.every(
+    (departmentId) =>
+      managedIds.has(departmentId),
   );
 }
 

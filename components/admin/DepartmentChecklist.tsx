@@ -13,9 +13,11 @@ type DepartmentOption = {
 export default function DepartmentChecklist({
   departments,
   initialSelectedIds,
+  allowGeneral = true,
 }: {
   departments: DepartmentOption[];
   initialSelectedIds?: string[];
+  allowGeneral?: boolean;
 }) {
   const allIds = useMemo(
     () =>
@@ -101,8 +103,16 @@ export default function DepartmentChecklist({
       <label className="department-checklist-head">
         <input
           type="checkbox"
-          name="departmentIds"
-          value="all"
+          name={
+            allowGeneral
+              ? "departmentIds"
+              : undefined
+          }
+          value={
+            allowGeneral
+              ? "all"
+              : undefined
+          }
           required={
             !selectedIds.length
           }
@@ -116,11 +126,15 @@ export default function DepartmentChecklist({
 
         <span>
           <strong>
-            جميع الأقسام
+            {allowGeneral
+              ? "جميع الأقسام"
+              : "كل الأقسام المسموحة لك"}
           </strong>
 
           <small>
-            سيظهر النشاط للطلاب باعتباره نشاطًا عامًا.
+            {allowGeneral
+              ? "سيظهر النشاط للطلاب باعتباره نشاطًا عامًا."
+              : "سيتم استهداف جميع الأقسام المرتبطة بحسابك."}
           </small>
         </span>
       </label>

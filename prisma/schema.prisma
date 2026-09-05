@@ -164,6 +164,10 @@ model User {
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
+  // Departments this MEMBER is allowed to manage.
+  // departmentId remains the primary/legacy department for compatibility.
+  managedDepartmentIds String[] @default([])
+
   // =====================================================
   // PROFILE IMAGE
   // =====================================================

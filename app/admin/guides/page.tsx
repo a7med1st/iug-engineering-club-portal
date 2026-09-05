@@ -6,6 +6,7 @@ import {
   PERMISSIONS,
   isClubLeadership,
   requirePermission,
+  managedDepartmentIdsForUser,
 } from "@/lib/permissions";
 
 import { prisma } from "@/lib/prisma";
@@ -25,11 +26,22 @@ export default async function GuidesAdminPage({
 
   const isAdmin = user.role === "ADMIN" || isClubLeadership(user.position);
 
+  const managedDepartmentIds =
+    managedDepartmentIdsForUser(
+      user,
+    );
+
   const departments = await prisma.department.findMany({
     where:
-      !isAdmin && user.role === "MEMBER"
+      !isAdmin &&
+      user.role === "MEMBER"
         ? {
-            id: user.departmentId ?? "__NO_DEPARTMENT__",
+            id: {
+              in:
+                managedDepartmentIds.length
+                  ? managedDepartmentIds
+                  : ["__NO_DEPARTMENT__"],
+            },
           }
         : undefined,
     include: {
@@ -48,9 +60,7 @@ export default async function GuidesAdminPage({
           <p className="muted">
             {isAdmin
               ? "اختر أحد أقسام الهندسة، ثم حدّث محتوى دليله واحفظ التغييرات."
-              : `يمكنك تعديل دليل ${
-                  user.department?.nameAr ?? "القسم المرتبط بحسابك"
-                } فقط.`}
+              : `يمكنك تعديل أدلة الأقسام المرتبطة بحسابك فقط.`}
           </p>
         </div>
       </div>

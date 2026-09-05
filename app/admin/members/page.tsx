@@ -1,5 +1,5 @@
 import AdminFeedback from "@/components/admin/AdminFeedback";
-import DepartmentSelect from "@/components/admin/DepartmentSelect";
+import DepartmentMultiSelect from "@/components/admin/DepartmentMultiSelect";
 import { NonceStyle } from "@/components/security/CspNonce";
 
 import {
@@ -64,7 +64,7 @@ export default async function MembersAdminPage({
         <div>
           <h1>إدارة حسابات الأعضاء</h1>
           <p className="muted">
-            أنشئ حساب عضو، اربطه بقسمه، ثم حدد صلاحياته بدقة. الصلاحيات
+            أنشئ حساب عضو، اربطه بقسم واحد أو أكثر، ثم حدد صلاحياته بدقة. الصلاحيات
             المرتبطة بقسم ستعمل فقط داخل قسم العضو. سيصل رمز تحقق إلى
             بريد العضو، ولن يتمكن من الدخول قبل تأكيده.
           </p>
@@ -128,8 +128,8 @@ export default async function MembersAdminPage({
             </label>
 
             <div className="members-field">
-              <span className="members-field-label">القسم المسؤول عنه</span>
-              <DepartmentSelect
+              <span className="members-field-label">الأقسام المسؤول عنها</span>
+              <DepartmentMultiSelect
                 departments={departments.map(({ id, nameAr }) => ({ id, nameAr }))}
                 defaultValue=""
               />
@@ -200,6 +200,31 @@ export default async function MembersAdminPage({
                 .map((permission) => permissionLabelMap.get(permission))
                 .filter((label): label is string => Boolean(label));
 
+              const managedDepartmentNames =
+                (
+                  member.managedDepartmentIds.length
+                    ? member.managedDepartmentIds
+                    : member.departmentId
+                      ? [member.departmentId]
+                      : []
+                )
+                  .map(
+                    (departmentId) =>
+                      departments.find(
+                        (department) =>
+                          department.id ===
+                          departmentId,
+                      )?.nameAr,
+                  )
+                  .filter(
+                    (
+                      departmentName,
+                    ): departmentName is string =>
+                      Boolean(
+                        departmentName,
+                      ),
+                  );
+
               return (
                 <article
                   className="data-row member-account-card"
@@ -214,7 +239,11 @@ export default async function MembersAdminPage({
 
                         <div className="data-row-meta member-account-meta">
                           <span>{member.position || "عضو"}</span>
-                          <span>{member.department?.nameAr ?? "بدون قسم"}</span>
+                          <span>
+                            {managedDepartmentNames.length
+                              ? managedDepartmentNames.join("، ")
+                              : "بدون قسم"}
+                          </span>
                           <span dir="ltr">{member.email}</span>
                           <span>
                             {member.emailVerifiedAt
@@ -237,7 +266,7 @@ export default async function MembersAdminPage({
                     </div>
 
                     <details className="member-access-details">
-                      <summary>تعديل القسم والصلاحيات</summary>
+                      <summary>تعديل الأقسام والصلاحيات</summary>
 
                       <form
                         action={updateMemberAccess}
@@ -260,14 +289,20 @@ export default async function MembersAdminPage({
 
                           <div className="members-field">
                             <span className="members-field-label">
-                              القسم المسؤول عنه
+                              الأقسام المسؤول عنها
                             </span>
-                            <DepartmentSelect
+                            <DepartmentMultiSelect
                               departments={departments.map(({ id, nameAr }) => ({
                                 id,
                                 nameAr,
                               }))}
-                              defaultValue={member.departmentId ?? ""}
+                              defaultValues={
+                                member.managedDepartmentIds.length
+                                  ? member.managedDepartmentIds
+                                  : member.departmentId
+                                    ? [member.departmentId]
+                                    : []
+                              }
                             />
                           </div>
                         </div>

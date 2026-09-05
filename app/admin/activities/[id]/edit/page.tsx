@@ -14,6 +14,7 @@ import {
   PERMISSIONS,
   isClubLeadership,
   requireActivityPermission,
+  managedDepartmentIdsForUser,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -50,6 +51,11 @@ export default async function EditActivityPage({
     user.role === "ADMIN" ||
     isClubLeadership(
       user.position,
+    );
+
+  const managedDepartmentIds =
+    managedDepartmentIdsForUser(
+      user,
     );
 
   const [
@@ -107,18 +113,17 @@ export default async function EditActivityPage({
             sortOrder: "asc",
           },
         })
-      : user.departmentId
+      : managedDepartmentIds.length
         ? prisma.department.findMany({
             where: {
-              id:
-                user.departmentId,
+              id: {
+                in: managedDepartmentIds,
+              },
             },
-
             select: {
               id: true,
               nameAr: true,
             },
-
             orderBy: {
               sortOrder: "asc",
             },
@@ -358,38 +363,17 @@ export default async function EditActivityPage({
             </label>
           </div>
 
-          {isAdmin ? (
-            <DepartmentChecklist
-              departments={
-                departments
-              }
-              initialSelectedIds={
-                initialDepartmentIds
-              }
-            />
-          ) : (
-            <div className="admin-card">
-              <strong>
-                القسم المستهدف
-              </strong>
-
-              <p className="muted">
-                {departments[0]
-                  ?.nameAr ??
-                  "لا يوجد قسم مرتبط بالحساب"}
-              </p>
-
-              {user.departmentId && (
-                <input
-                  type="hidden"
-                  name="departmentIds"
-                  value={
-                    user.departmentId
-                  }
-                />
-              )}
-            </div>
-          )}
+          <DepartmentChecklist
+            departments={
+              departments
+            }
+            initialSelectedIds={
+              initialDepartmentIds
+            }
+            allowGeneral={
+              isAdmin
+            }
+          />
 
           <ActivityFormBuilder
             initialTitle={
@@ -442,7 +426,8 @@ export default async function EditActivityPage({
             className="primary-btn"
             disabled={
               !isAdmin &&
-              !user.departmentId
+              managedDepartmentIds.length ===
+                0
             }
           >
             حفظ جميع التعديلات

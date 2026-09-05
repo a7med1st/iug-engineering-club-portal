@@ -14,6 +14,7 @@ import {
   hasPermission,
   isClubLeadership,
   requireAnyPermission,
+  managedDepartmentIdsForUser,
 } from "@/lib/permissions";
 
 import { prisma } from "@/lib/prisma";
@@ -43,6 +44,11 @@ export default async function ActivitiesAdminPage({
 
   const isAdmin = user.role === "ADMIN" || isClubLeadership(user.position);
 
+  const managedDepartmentIds =
+    managedDepartmentIdsForUser(
+      user,
+    );
+
   const canManageActivities = hasPermission(
     user.role,
     PERMISSIONS.ACTIVITY_MANAGE,
@@ -59,32 +65,40 @@ export default async function ActivitiesAdminPage({
 
   const departments = isAdmin
     ? await prisma.department.findMany({
-      orderBy: {
-        sortOrder: "asc",
-      },
-    })
-    : user.departmentId
-      ? await prisma.department.findMany({
-        where: {
-          id: user.departmentId,
-        },
         orderBy: {
           sortOrder: "asc",
         },
       })
+    : managedDepartmentIds.length
+      ? await prisma.department.findMany({
+          where: {
+            id: {
+              in: managedDepartmentIds,
+            },
+          },
+          orderBy: {
+            sortOrder: "asc",
+          },
+        })
       : [];
 
   const rawActivities = await prisma.activity.findMany({
     where:
-      isAdmin || !user.departmentId
+      isAdmin
         ? undefined
-        : {
-          departments: {
-            some: {
-              departmentId: user.departmentId,
+        : managedDepartmentIds.length
+          ? {
+              departments: {
+                some: {
+                  departmentId: {
+                    in: managedDepartmentIds,
+                  },
+                },
+              },
+            }
+          : {
+              id: "__NO_ACTIVITY__",
             },
-          },
-        },
 
     include: {
       departments: {
@@ -126,8 +140,7 @@ export default async function ActivitiesAdminPage({
           <p className="muted">
             {isAdmin
               ? "أنشئ الأنشطة وحدد الأقسام المستهدفة، ثم تابع التسجيلات."
-              : `يمكنك إدارة الأنشطة المرتبطة حصريًا بقسم ${user.department?.nameAr ?? "المحدد لحسابك"
-              } فقط.`}
+              : `يمكنك إدارة الأنشطة ضمن الأقسام المرتبطة بحسابك فقط.`}
           </p>
         </div>
       </div>
@@ -198,37 +211,23 @@ export default async function ActivitiesAdminPage({
                 </label>
               </div>
 
-              {isAdmin ? (
-                <DepartmentChecklist
-                  departments={departments.map(({ id, nameAr }) => ({
-                    id,
-                    nameAr,
-                  }))}
-                />
-              ) : (
-                <div className="admin-card">
-                  <strong>القسم المستهدف</strong>
-
-                  <p className="muted">
-                    {user.department?.nameAr ?? "لا يوجد قسم مرتبط بالحساب"}
-                  </p>
-
-                  {user.departmentId && (
-                    <input
-                      type="hidden"
-                      name="departmentIds"
-                      value={user.departmentId}
-                    />
-                  )}
-                </div>
-              )}
+              <DepartmentChecklist
+                departments={departments.map(({ id, nameAr }) => ({
+                  id,
+                  nameAr,
+                }))}
+                allowGeneral={isAdmin}
+              />
 
               <ActivityFormBuilder />
 
               <button
                 className="primary-btn"
                 type="submit"
-                disabled={!isAdmin && !user.departmentId}
+                disabled={
+                  !isAdmin &&
+                  managedDepartmentIds.length === 0
+                }
               >
                 حفظ النشاط ونموذج التسجيل
               </button>
