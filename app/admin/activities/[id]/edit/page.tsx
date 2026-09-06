@@ -104,30 +104,30 @@ export default async function EditActivityPage({
 
     isAdmin
       ? prisma.department.findMany({
+        select: {
+          id: true,
+          nameAr: true,
+        },
+
+        orderBy: {
+          sortOrder: "asc",
+        },
+      })
+      : managedDepartmentIds.length
+        ? prisma.department.findMany({
+          where: {
+            id: {
+              in: managedDepartmentIds,
+            },
+          },
           select: {
             id: true,
             nameAr: true,
           },
-
           orderBy: {
             sortOrder: "asc",
           },
         })
-      : managedDepartmentIds.length
-        ? prisma.department.findMany({
-            where: {
-              id: {
-                in: managedDepartmentIds,
-              },
-            },
-            select: {
-              id: true,
-              nameAr: true,
-            },
-            orderBy: {
-              sortOrder: "asc",
-            },
-          })
         : Promise.resolve([]),
   ]);
 
@@ -146,12 +146,12 @@ export default async function EditActivityPage({
   const end =
     activity.endsAt
       ? activityDateTimeInputValues(
-          activity.endsAt,
-        )
+        activity.endsAt,
+      )
       : {
-          date: "",
-          time: "",
-        };
+        date: "",
+        time: "",
+      };
 
   const allDepartmentIds =
     departments.map(
@@ -165,12 +165,12 @@ export default async function EditActivityPage({
    */
   const initialDepartmentIds =
     activity.departments.length ===
-    0
+      0
       ? allDepartmentIds
       : activity.departments.map(
-          (item) =>
-            item.departmentId,
-        );
+        (item) =>
+          item.departmentId,
+      );
 
   const initialQuestions =
     (
@@ -195,12 +195,12 @@ export default async function EditActivityPage({
             question.options,
           )
             ? question.options.filter(
-                (
-                  option,
-                ): option is string =>
-                  typeof option ===
-                  "string",
-              )
+              (
+                option,
+              ): option is string =>
+                typeof option ===
+                "string",
+            )
             : [],
 
         answerCount:
@@ -280,12 +280,25 @@ export default async function EditActivityPage({
               maxLength={160}
             />
           </label>
+          <label>
+            نبذة بطاقة النشاط
 
+            <textarea
+              name="cardDescription"
+              rows={3}
+              maxLength={500}
+              defaultValue={
+                activity.cardDescription ?? ""
+              }
+              placeholder="نص قصير يظهر في بطاقة النشاط"
+            />
+          </label>
           <label>
             وصف النشاط
 
             <textarea
               name="description"
+
               defaultValue={
                 activity.description
               }
@@ -294,6 +307,7 @@ export default async function EditActivityPage({
               maxLength={10000}
             />
           </label>
+
 
           <ActivitySchedulePicker
             initialStartDate={
@@ -401,10 +415,10 @@ export default async function EditActivityPage({
               question.answerCount >
               0,
           ) && (
-            <p className="muted">
-              ملاحظة: يمكن تعديل الأسئلة التي تحتوي على إجابات سابقة، لكن لا يمكن حذفها حفاظًا على تسجيلات الطلاب.
-            </p>
-          )}
+              <p className="muted">
+                ملاحظة: يمكن تعديل الأسئلة التي تحتوي على إجابات سابقة، لكن لا يمكن حذفها حفاظًا على تسجيلات الطلاب.
+              </p>
+            )}
 
           <label>
             ملخص الفعالية بعد انتهائها
@@ -427,7 +441,7 @@ export default async function EditActivityPage({
             disabled={
               !isAdmin &&
               managedDepartmentIds.length ===
-                0
+              0
             }
           >
             حفظ جميع التعديلات

@@ -65,21 +65,21 @@ export default async function ActivitiesAdminPage({
 
   const departments = isAdmin
     ? await prisma.department.findMany({
+      orderBy: {
+        sortOrder: "asc",
+      },
+    })
+    : managedDepartmentIds.length
+      ? await prisma.department.findMany({
+        where: {
+          id: {
+            in: managedDepartmentIds,
+          },
+        },
         orderBy: {
           sortOrder: "asc",
         },
       })
-    : managedDepartmentIds.length
-      ? await prisma.department.findMany({
-          where: {
-            id: {
-              in: managedDepartmentIds,
-            },
-          },
-          orderBy: {
-            sortOrder: "asc",
-          },
-        })
       : [];
 
   const rawActivities = await prisma.activity.findMany({
@@ -88,17 +88,17 @@ export default async function ActivitiesAdminPage({
         ? undefined
         : managedDepartmentIds.length
           ? {
-              departments: {
-                some: {
-                  departmentId: {
-                    in: managedDepartmentIds,
-                  },
+            departments: {
+              some: {
+                departmentId: {
+                  in: managedDepartmentIds,
                 },
               },
-            }
-          : {
-              id: "__NO_ACTIVITY__",
             },
+          }
+          : {
+            id: "__NO_ACTIVITY__",
+          },
 
     include: {
       departments: {
@@ -164,16 +164,27 @@ export default async function ActivitiesAdminPage({
               </label>
 
               <label>
-                وصف مختصر للنشاط
+                نبذة بطاقة النشاط
+
+                <textarea
+                  name="cardDescription"
+                  rows={3}
+                  maxLength={500}
+                  placeholder="نص قصير يظهر تحت اسم النشاط في صفحة الأنشطة"
+                />
+              </label>
+
+              <label>
+                الوصف الكامل للنشاط
 
                 <textarea
                   name="description"
                   required
                   rows={5}
-                  placeholder="اكتب وصفًا مختصرًا وواضحًا للنشاط"
+                  maxLength={10000}
+                  placeholder="اكتب الوصف الكامل الذي يظهر في صفحة التسجيل والتفاصيل"
                 />
               </label>
-
               <ActivitySchedulePicker />
 
               <div className="form-grid">

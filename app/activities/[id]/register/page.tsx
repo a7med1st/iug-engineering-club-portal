@@ -75,9 +75,9 @@ export default async function ActivityRegisterPage({
             )
             : null;
 
-const isCapacityFull =
-  activity.capacity > 0 &&
-  occupiedSeats >= activity.capacity;
+    const isCapacityFull =
+        activity.capacity > 0 &&
+        occupiedSeats >= activity.capacity;
 
     return (
         <main className="activity-registration-page">
@@ -178,6 +178,12 @@ const isCapacityFull =
                                 <h2>
                                     {form.title}
                                 </h2>
+
+                                {form.description?.trim() && (
+                                    <p>
+                                        {form.description}
+                                    </p>
+                                )}
 
                             </div>
 

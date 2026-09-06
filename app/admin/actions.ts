@@ -27,7 +27,7 @@ import {
   isClubLeadership,
   isDepartmentScopedPermission,
   normalizeMemberPermissions,
-    requireActivityPermission,
+  requireActivityPermission,
 
   requirePermission,
   managedDepartmentIdsForUser,
@@ -793,14 +793,14 @@ export async function updateMemberAccess(
 
       const accessChanged =
         previousDepartments.length !==
-          nextDepartments.length ||
+        nextDepartments.length ||
         previousDepartments.some(
           (departmentId, index) =>
             departmentId !==
             nextDepartments[index],
         ) ||
         previousPermissions.length !==
-          nextPermissions.length ||
+        nextPermissions.length ||
         previousPermissions.some(
           (permission, index) =>
             permission !==
@@ -874,6 +874,13 @@ export async function createActivity(
           "description",
           "وصف النشاط",
         );
+
+      const cardDescription =
+        String(
+          formData.get(
+            "cardDescription",
+          ) ?? "",
+        ).trim() || null;
 
       const location = requiredText(
         formData,
@@ -985,6 +992,15 @@ export async function createActivity(
       ) {
         throw new AdminActionError(
           "وصف النشاط طويل جدًا.",
+        );
+      }
+
+      if (
+        cardDescription &&
+        cardDescription.length > 500
+      ) {
+        throw new AdminActionError(
+          "نبذة بطاقة النشاط طويلة جدًا.",
         );
       }
 
@@ -1160,6 +1176,7 @@ export async function createActivity(
       const activity = await prisma.activity.create({
         data: {
           title,
+          cardDescription,
           description,
           location,
           startsAt,
@@ -1686,6 +1703,13 @@ export async function updateActivityText(
           "وصف النشاط",
         );
 
+      const cardDescription =
+        String(
+          formData.get(
+            "cardDescription",
+          ) ?? "",
+        ).trim() || null;
+
       const location =
         requiredText(
           formData,
@@ -1746,9 +1770,9 @@ export async function updateActivityText(
       const endsAt =
         endDate && endTime
           ? activityDateTimeFromInput(
-              endDate,
-              endTime,
-            )
+            endDate,
+            endTime,
+          )
           : null;
 
       const capacity =
@@ -1836,9 +1860,18 @@ export async function updateActivityText(
       }
 
       if (
+        cardDescription &&
+        cardDescription.length > 500
+      ) {
+        throw new AdminActionError(
+          "نبذة بطاقة النشاط طويلة جدًا.",
+        );
+      }
+
+      if (
         postEventSummary &&
         postEventSummary.length >
-          10_000
+        10_000
       ) {
         throw new AdminActionError(
           "ملخص الفعالية طويل جدًا.",
@@ -1873,7 +1906,7 @@ export async function updateActivityText(
       if (
         endsAt &&
         endsAt.getTime() <=
-          startsAt.getTime()
+        startsAt.getTime()
       ) {
         throw new AdminActionError(
           "يجب أن يكون موعد نهاية النشاط بعد موعد البداية.",
@@ -1957,7 +1990,7 @@ export async function updateActivityText(
 
       if (
         availableDepartments.length ===
-          0 ||
+        0 ||
         explicitDepartmentIds.some(
           (departmentId) =>
             !availableDepartmentIds.has(
@@ -2143,6 +2176,7 @@ export async function updateActivityText(
             data: {
               title,
               description,
+              cardDescription,
               location,
               startsAt,
               endsAt,
@@ -2307,9 +2341,9 @@ export async function updateActivityText(
            */
           if (
             currentActivity.status !==
-              "PUBLISHED" &&
+            "PUBLISHED" &&
             statusValue ===
-              "PUBLISHED"
+            "PUBLISHED"
           ) {
             const students =
               await transaction.user.findMany({
@@ -2318,14 +2352,14 @@ export async function updateActivityText(
                     "STUDENT",
 
                   ...(departmentIds.length >
-                  0
+                    0
                     ? {
-                        departmentId:
-                          {
-                            in:
-                              departmentIds,
-                          },
-                      }
+                      departmentId:
+                      {
+                        in:
+                          departmentIds,
+                      },
+                    }
                     : {}),
                 },
 

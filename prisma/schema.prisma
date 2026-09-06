@@ -334,6 +334,7 @@ model Activity {
   id               String    @id @default(cuid())
   title            String
   description      String
+  cardDescription  String?
   location         String
   startsAt         DateTime
   endsAt           DateTime?
