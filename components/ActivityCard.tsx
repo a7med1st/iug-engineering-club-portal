@@ -2,6 +2,7 @@ import {
   CalendarDays,
   MapPin,
   Users,
+  Banknote,
   ArrowUpLeft,
 } from "lucide-react";
 
@@ -75,6 +76,14 @@ export default function ActivityCard({
             <MapPin size={18} />
             {activity.location}
           </span>
+
+          {activity.price !== null &&
+            activity.price > 0 && (
+              <span>
+                <Banknote size={18} />
+                {activity.price} ₪
+              </span>
+            )}
 
           <span>
             <Users size={18} />

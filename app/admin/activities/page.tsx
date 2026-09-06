@@ -212,6 +212,19 @@ export default async function ActivitiesAdminPage({
                 </label>
 
                 <label>
+                  السعر (₪)
+
+                  <input
+                    type="number"
+                    name="price"
+                    min="0"
+                    max="1000000"
+                    step="1"
+                    placeholder="اتركه فارغًا إذا كان النشاط مجانيًا"
+                  />
+                </label>
+
+                <label>
                   حالة النشاط
 
                   <select name="status" defaultValue="PUBLISHED">

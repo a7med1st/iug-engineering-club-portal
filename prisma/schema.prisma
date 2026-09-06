@@ -339,6 +339,7 @@ model Activity {
   startsAt         DateTime
   endsAt           DateTime?
   capacity         Int
+  price            Int?
   postEventSummary String?
 
   coverImageUrl          String?

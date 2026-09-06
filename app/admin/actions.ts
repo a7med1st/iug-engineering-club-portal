@@ -922,6 +922,15 @@ export async function createActivity(
         formData.get("capacity"),
       );
 
+      const priceRaw = String(
+        formData.get("price") ?? "",
+      ).trim();
+
+      const price =
+        priceRaw === ""
+          ? null
+          : Number(priceRaw);
+
       const statusValue = String(
         formData.get("status") ??
         "PUBLISHED",
@@ -1037,6 +1046,19 @@ export async function createActivity(
       ) {
         throw new AdminActionError(
           "السعة الطلابية يجب أن تكون رقمًا صحيحًا موجبًا.",
+        );
+      }
+
+      if (
+        price !== null &&
+        (
+          !Number.isInteger(price) ||
+          price < 0 ||
+          price > 1_000_000
+        )
+      ) {
+        throw new AdminActionError(
+          "سعر النشاط يجب أن يكون رقمًا صحيحًا بين 0 و1000000 شيكل.",
         );
       }
 
@@ -1182,6 +1204,7 @@ export async function createActivity(
           startsAt,
           endsAt,
           capacity,
+          price,
 
           /*
             Google Forms لم يعد مستخدمًا
@@ -1782,6 +1805,20 @@ export async function updateActivityText(
           ),
         );
 
+      const priceRaw =
+        String(
+          formData.get(
+            "price",
+          ) ?? "",
+        ).trim();
+
+      const price =
+        priceRaw === ""
+          ? null
+          : Number(
+            priceRaw,
+          );
+
       const statusValue =
         String(
           formData.get(
@@ -1922,6 +1959,21 @@ export async function updateActivityText(
       ) {
         throw new AdminActionError(
           "السعة الطلابية يجب أن تكون رقمًا صحيحًا موجبًا.",
+        );
+      }
+
+      if (
+        price !== null &&
+        (
+          !Number.isInteger(
+            price,
+          ) ||
+          price < 0 ||
+          price > 1_000_000
+        )
+      ) {
+        throw new AdminActionError(
+          "سعر النشاط يجب أن يكون رقمًا صحيحًا بين 0 و1000000 شيكل.",
         );
       }
 
@@ -2181,6 +2233,7 @@ export async function updateActivityText(
               startsAt,
               endsAt,
               capacity,
+              price,
               postEventSummary,
 
               status:
