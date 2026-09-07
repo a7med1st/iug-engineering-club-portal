@@ -12,15 +12,66 @@ import {
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
+export type RegistrationFormValues = Record<string, string>;
+
 export type RegistrationFormState = {
   success: boolean;
   message: string;
+  values: RegistrationFormValues;
+  fieldErrors?: Record<string, string>;
 };
 
 const initialFailure: RegistrationFormState = {
   success: false,
   message: "",
+  values: {},
 };
+
+const QUESTION_FIELD_PREFIX = "question_";
+
+class RegistrationValidationError extends Error {
+  constructor(
+    message: string,
+    readonly questionId: string,
+  ) {
+    super(message);
+    this.name = "RegistrationValidationError";
+  }
+}
+
+function getSubmittedValues(formData: FormData): RegistrationFormValues {
+  const values: RegistrationFormValues = {};
+
+  for (const [fieldName, rawValue] of formData.entries()) {
+    if (
+      !fieldName.startsWith(QUESTION_FIELD_PREFIX) ||
+      typeof rawValue !== "string"
+    ) {
+      continue;
+    }
+
+    const questionId = fieldName.slice(QUESTION_FIELD_PREFIX.length);
+
+    if (questionId && values[questionId] === undefined) {
+      values[questionId] = rawValue;
+    }
+  }
+
+  return values;
+}
+
+function failure(
+  message: string,
+  values: RegistrationFormValues,
+  fieldErrors?: Record<string, string>,
+): RegistrationFormState {
+  return {
+    success: false,
+    message,
+    values,
+    ...(fieldErrors ? { fieldErrors } : {}),
+  };
+}
 
 function isOptionQuestion(
   type: ActivityFormQuestionType,
@@ -59,70 +110,28 @@ function validateAndGetAnswer(
     `question_${question.id}`;
 
   /*
-   * CHECKBOX
+   * Every option-based question accepts exactly one value. Checking getAll()
+   * also protects the invariant when a request is crafted outside the UI.
    */
-  if (question.type === "CHECKBOX") {
-    const submittedValues = formData
-      .getAll(fieldName)
-      .map((value) =>
-        String(value).trim(),
-      )
-      .filter(Boolean);
+  const submittedEntries = formData.getAll(fieldName);
 
-    if (
-      question.required &&
-      submittedValues.length === 0
-    ) {
-      throw new Error(
-        `السؤال "${question.label}" مطلوب.`,
-      );
-    }
-
-    const allowedOptions =
-      getQuestionOptions(
-        question.options,
-      );
-
-    const invalidOption =
-      submittedValues.some(
-        (value) =>
-          !allowedOptions.includes(
-            value,
-          ),
-      );
-
-    if (invalidOption) {
-      throw new Error(
-        `تم إرسال خيار غير صالح في السؤال "${question.label}".`,
-      );
-    }
-
-    /*
-     * السؤال الاختياري وغير المجاب
-     * لا نحتاج لتخزين Answer له.
-     */
-    if (
-      submittedValues.length === 0
-    ) {
-      return null;
-    }
-
-    return submittedValues;
+  if (isOptionQuestion(question.type) && submittedEntries.length > 1) {
+    throw new RegistrationValidationError(
+      `السؤال "${question.label}" يسمح باختيار خيار واحد فقط.`,
+      question.id,
+    );
   }
 
-  /*
-   * باقي الأنواع
-   */
-  const value = String(
-    formData.get(fieldName) ?? "",
-  ).trim();
+  const submittedValue = submittedEntries[0];
+  const value = typeof submittedValue === "string" ? submittedValue.trim() : "";
 
   if (
     question.required &&
     !value
   ) {
-    throw new Error(
+    throw new RegistrationValidationError(
       `السؤال "${question.label}" مطلوب.`,
+      question.id,
     );
   }
 
@@ -131,7 +140,7 @@ function validateAndGetAnswer(
   }
 
   /*
-   * SELECT / RADIO
+   * SELECT / RADIO / legacy CHECKBOX
    */
   if (isOptionQuestion(question.type)) {
     const allowedOptions =
@@ -142,8 +151,9 @@ function validateAndGetAnswer(
     if (
       !allowedOptions.includes(value)
     ) {
-      throw new Error(
+      throw new RegistrationValidationError(
         `تم إرسال خيار غير صالح في السؤال "${question.label}".`,
+        question.id,
       );
     }
   }
@@ -157,8 +167,9 @@ function validateAndGetAnswer(
       value,
     )
   ) {
-    throw new Error(
+    throw new RegistrationValidationError(
       `أدخل بريدًا إلكترونيًا صالحًا في السؤال "${question.label}".`,
+      question.id,
     );
   }
 
@@ -171,8 +182,9 @@ function validateAndGetAnswer(
       Number(value),
     )
   ) {
-    throw new Error(
+    throw new RegistrationValidationError(
       `أدخل رقمًا صالحًا في السؤال "${question.label}".`,
+      question.id,
     );
   }
 
@@ -180,8 +192,9 @@ function validateAndGetAnswer(
    * حماية من نصوص ضخمة بشكل غير منطقي.
    */
   if (value.length > 10_000) {
-    throw new Error(
+    throw new RegistrationValidationError(
       `الإجابة على السؤال "${question.label}" طويلة جدًا.`,
+      question.id,
     );
   }
 
@@ -193,6 +206,8 @@ export async function submitActivityRegistration(
     initialFailure,
   formData: FormData,
 ): Promise<RegistrationFormState> {
+  const submittedValues = getSubmittedValues(formData);
+
   /*
    * سيحوّل المستخدم إلى صفحة Login
    * لو مش Student.
@@ -212,11 +227,10 @@ export async function submitActivityRegistration(
   ).trim();
 
   if (!activityId || !formId) {
-    return {
-      success: false,
-      message:
-        "بيانات نموذج التسجيل غير مكتملة.",
-    };
+    return failure(
+      "بيانات نموذج التسجيل غير مكتملة.",
+      submittedValues,
+    );
   }
 
   try {
@@ -255,30 +269,27 @@ export async function submitActivityRegistration(
       form.activity.id !==
         activityId
     ) {
-      return {
-        success: false,
-        message:
-          "نموذج التسجيل غير موجود أو لا يتبع لهذا النشاط.",
-      };
+      return failure(
+        "نموذج التسجيل غير موجود أو لا يتبع لهذا النشاط.",
+        submittedValues,
+      );
     }
 
     if (
       form.activity.status !==
       "PUBLISHED"
     ) {
-      return {
-        success: false,
-        message:
-          "هذا النشاط غير متاح للتسجيل حاليًا.",
-      };
+      return failure(
+        "هذا النشاط غير متاح للتسجيل حاليًا.",
+        submittedValues,
+      );
     }
 
     if (!form.isOpen) {
-      return {
-        success: false,
-        message:
-          "التسجيل في هذا النشاط مغلق.",
-      };
+      return failure(
+        "التسجيل في هذا النشاط مغلق.",
+        submittedValues,
+      );
     }
 
     /*
@@ -486,44 +497,40 @@ const currentCount =
             error.message ===
             "ALREADY_REGISTERED"
           ) {
-            return {
-              success: false,
-              message:
-                "أنت مسجل مسبقًا في هذا النشاط.",
-            };
+            return failure(
+              "أنت مسجل مسبقًا في هذا النشاط.",
+              submittedValues,
+            );
           }
 
           if (
             error.message ===
             "REGISTRATION_CLOSED"
           ) {
-            return {
-              success: false,
-              message:
-                "تم إغلاق التسجيل في هذا النشاط.",
-            };
+            return failure(
+              "تم إغلاق التسجيل في هذا النشاط.",
+              submittedValues,
+            );
           }
 
           if (
             error.message ===
             "ACTIVITY_NOT_AVAILABLE"
           ) {
-            return {
-              success: false,
-              message:
-                "هذا النشاط غير متاح للتسجيل حاليًا.",
-            };
+            return failure(
+              "هذا النشاط غير متاح للتسجيل حاليًا.",
+              submittedValues,
+            );
           }
 
           if (
             error.message ===
             "CAPACITY_FULL"
           ) {
-            return {
-              success: false,
-              message:
-                "عذرًا، اكتمل العدد في هذا النشاط.",
-            };
+            return failure(
+              "عذرًا، اكتمل العدد في هذا النشاط.",
+              submittedValues,
+            );
           }
         }
 
@@ -560,33 +567,13 @@ const currentCount =
       success: true,
       message:
         "تم تسجيلك في النشاط بنجاح ✅",
+      values: {},
     };
   } catch (error) {
-    /*
-     * Validation messages
-     */
-    if (error instanceof Error) {
-      const safeMessages = [
-        "مطلوب.",
-        "غير صالح",
-        "صالحًا",
-        "طويلة جدًا",
-      ];
-
-      if (
-        safeMessages.some(
-          (part) =>
-            error.message.includes(
-              part,
-            ),
-        )
-      ) {
-        return {
-          success: false,
-          message:
-            error.message,
-        };
-      }
+    if (error instanceof RegistrationValidationError) {
+      return failure(error.message, submittedValues, {
+        [error.questionId]: error.message,
+      });
     }
 
     console.error(
@@ -594,10 +581,9 @@ const currentCount =
       error,
     );
 
-    return {
-      success: false,
-      message:
-        "حدث خطأ أثناء حفظ التسجيل. حاول مرة أخرى.",
-    };
+    return failure(
+      "حدث خطأ أثناء حفظ التسجيل. حاول مرة أخرى.",
+      submittedValues,
+    );
   }
 }

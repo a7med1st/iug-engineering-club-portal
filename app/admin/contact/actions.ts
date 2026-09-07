@@ -68,10 +68,7 @@ const collaborationStatuses:
     "NEW",
     "IN_REVIEW",
     "IN_PROGRESS",
-    "CONTACTED",
-    "ACCEPTED",
     "RESOLVED",
-    "REJECTED",
   ];
 
 function isContactKind(
@@ -103,6 +100,21 @@ function kindLabel(kind: ContactKind) {
   if (kind === "complaint") return "الشكوى";
   if (kind === "suggestion") return "الاقتراح";
   return "طلب التعاون";
+}
+
+function revalidateContactPages() {
+  revalidatePath("/admin/contact");
+  revalidatePath(
+    "/admin/contact/complaints",
+  );
+  revalidatePath(
+    "/admin/contact/suggestions",
+  );
+  revalidatePath(
+    "/admin/contact/collaborations",
+  );
+  revalidatePath("/contact");
+  revalidatePath("/notifications");
 }
 
 async function notifyStatusChange(
@@ -255,9 +267,7 @@ export async function updateContactStatus(
     },
   );
 
-  revalidatePath("/admin/contact");
-  revalidatePath("/contact");
-  revalidatePath("/notifications");
+revalidateContactPages();
 }
 
 export async function sendComplaintReply(
@@ -379,9 +389,7 @@ export async function sendComplaintReply(
     };
   }
 
-  revalidatePath("/admin/contact");
-  revalidatePath("/contact");
-  revalidatePath("/notifications");
+  revalidateContactPages();
 
   return {
     success: true,

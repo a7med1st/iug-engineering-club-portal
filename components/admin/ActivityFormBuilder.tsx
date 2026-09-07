@@ -63,7 +63,11 @@ const QUESTION_TYPES: {
   { value: "NUMBER", label: "رقم", hint: "إدخال أرقام فقط" },
   { value: "SELECT", label: "قائمة منسدلة", hint: "اختيار خيار واحد من قائمة" },
   { value: "RADIO", label: "اختيار واحد", hint: "Radio · خيار واحد ظاهر" },
-  { value: "CHECKBOX", label: "اختيارات متعددة", hint: "Checkbox · أكثر من خيار" },
+  {
+    value: "CHECKBOX",
+    label: "خيارات ظاهرة",
+    hint: "اختيار خيار واحد فقط من المجموعة",
+  },
 ];
 
 function createQuestion(): BuilderQuestion {

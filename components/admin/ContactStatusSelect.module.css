@@ -1,0 +1,295 @@
+.root {
+  width: 100%;
+  min-width: 0;
+}
+
+.trigger {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 12px;
+  border: 1px solid #c9dced;
+  border-radius: 13px;
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #f8fbff 100%
+    );
+  color: #183650;
+  cursor: pointer;
+  text-align: right;
+  box-shadow:
+    0 5px 14px rgba(14, 52, 87, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.trigger:hover {
+  transform: translateY(-1px);
+  border-color: #8fc4ef;
+  background: #ffffff;
+  box-shadow:
+    0 9px 20px rgba(22, 136, 255, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.triggerOpen {
+  border-color: #1688ff;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 3px rgba(22, 136, 255, 0.1),
+    0 10px 24px rgba(22, 136, 255, 0.11);
+}
+
+.triggerLabel {
+  min-width: 0;
+  flex: 1;
+  font-family: "Alexandria", sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.chevron {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #edf6ff;
+  color: #1688ff;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.triggerOpen .chevron {
+  transform: rotate(180deg);
+  background:
+    linear-gradient(
+      135deg,
+      #1688ff,
+      #35d4ff
+    );
+  color: #ffffff;
+}
+
+.menu {
+  overflow: hidden;
+  padding: 7px;
+  border: 1px solid #c5dff3;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.985);
+  box-shadow:
+    0 22px 56px rgba(5, 31, 61, 0.2),
+    0 4px 14px rgba(22, 136, 255, 0.08);
+  backdrop-filter: blur(14px);
+  animation:
+    contactStatusMenuIn
+    0.16s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+.option {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: #29445f;
+  cursor: pointer;
+  text-align: right;
+  font-family: "Alexandria", sans-serif;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    color 0.18s ease;
+}
+
+.option + .option {
+  margin-top: 3px;
+}
+
+.option:hover {
+  transform: translateX(-2px);
+  border-color: rgba(22, 136, 255, 0.12);
+  background:
+    linear-gradient(
+      135deg,
+      #eef8ff,
+      #f9fdff
+    );
+}
+
+.optionActive {
+  border-color: rgba(22, 136, 255, 0.2);
+  background:
+    linear-gradient(
+      135deg,
+      #eaf5ff,
+      #f2fbff
+    );
+  color: #0f6fc5;
+}
+
+.optionLabel {
+  min-width: 0;
+  flex: 1;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.check {
+  flex: 0 0 auto;
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: transparent;
+}
+
+.optionActive .check {
+  background:
+    linear-gradient(
+      135deg,
+      #1688ff,
+      #35d4ff
+    );
+  color: #ffffff;
+  box-shadow:
+    0 6px 13px
+    rgba(22, 136, 255, 0.18);
+}
+
+.dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #91a4b8;
+  box-shadow:
+    0 0 0 4px
+    rgba(145, 164, 184, 0.11);
+}
+
+.statusNew {
+  background: #1688ff;
+  box-shadow:
+    0 0 0 4px
+    rgba(22, 136, 255, 0.11);
+}
+
+.statusReview {
+  background: #e8a521;
+  box-shadow:
+    0 0 0 4px
+    rgba(232, 165, 33, 0.12);
+}
+
+.statusProgress {
+  background: #159acb;
+  box-shadow:
+    0 0 0 4px
+    rgba(21, 154, 203, 0.12);
+}
+
+.statusResolved {
+  background: #27a45d;
+  box-shadow:
+    0 0 0 4px
+    rgba(39, 164, 93, 0.12);
+}
+
+.statusDefault {
+  background: #91a4b8;
+}
+
+@keyframes contactStatusMenuIn {
+  from {
+    opacity: 0;
+    transform:
+      translateY(-5px)
+      scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+:global(html[data-theme="dark"]) .trigger {
+  border-color: rgba(91, 169, 224, 0.36);
+  background:
+    linear-gradient(
+      180deg,
+      #102f48 0%,
+      #0b263d 100%
+    );
+  color: #e8f3fb;
+  box-shadow:
+    0 7px 18px rgba(0, 7, 18, 0.22),
+    inset 0 1px 0 rgba(157, 211, 248, 0.07);
+}
+
+:global(html[data-theme="dark"]) .trigger:hover,
+:global(html[data-theme="dark"]) .triggerOpen {
+  border-color: rgba(103, 199, 255, 0.62);
+  background: #123550;
+}
+
+:global(html[data-theme="dark"]) .chevron {
+  background: #163a55;
+  color: #74cbff;
+}
+
+:global(html[data-theme="dark"]) .menu {
+  border-color: rgba(91, 169, 224, 0.42);
+  background: rgba(9, 34, 56, 0.985);
+  box-shadow:
+    0 24px 60px rgba(0, 7, 18, 0.48),
+    0 4px 14px rgba(22, 136, 255, 0.12);
+}
+
+:global(html[data-theme="dark"]) .option {
+  color: #cfe1ef;
+}
+
+:global(html[data-theme="dark"]) .option:hover {
+  border-color: rgba(103, 199, 255, 0.2);
+  background: #123550;
+}
+
+:global(html[data-theme="dark"]) .optionActive {
+  border-color: rgba(103, 199, 255, 0.32);
+  background: #143b59;
+  color: #8dd7ff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .chevron,
+  .option,
+  .menu {
+    transition: none !important;
+    animation: none !important;
+  }
+}

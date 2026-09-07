@@ -5344,6 +5344,17 @@ p {
     line-height: 1.7;
 }
 
+.activity-form-field-error {
+    margin: 0;
+
+    color: #b91c1c;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    line-height: 1.7;
+}
+
 .activity-form-field input[type="text"],
 .activity-form-field input[type="email"],
 .activity-form-field input[type="tel"],

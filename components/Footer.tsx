@@ -118,12 +118,15 @@ export default function Footer() {
             </div>
             <div className={styles.legalBlock}>
               <p className={styles.copyright} dir="ltr">© 2026 Engineering Club</p>
-              <span className={styles.developer} dir="ltr">
-                <span className={styles.developerLabel}>Designed &amp; Developed by</span>{" "}
-                <span className={styles.developerName}>Ahmed M. Al-Shaikh Khalil</span>
-              </span>
             </div>
           </section>
+        </div>
+
+        <div className={styles.creditBar} aria-label="اعتماد التصميم والتطوير">
+          <span className={styles.developer} dir="ltr">
+            <span className={styles.developerLabel}>Designed &amp; Developed by</span>{" "}
+            <span className={styles.developerName}>Ahmed M. Al-Shaikh Khalil</span>
+          </span>
         </div>
       </div>
     </footer>
