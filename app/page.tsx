@@ -88,7 +88,7 @@ export default async function HomePage() {
         (registrationIsOpen
           ? `التسجيل متاح الآن: ${activity.title}`
           : `جديد النادي: ${activity.title}`),
-      href: `/activities/${activity.id}`,
+      href: `/activities/${activity.id}/register`,
       createdAt: activity.createdAt.toISOString(),
     };
   });
