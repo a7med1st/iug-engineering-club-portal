@@ -140,7 +140,7 @@ export default function StructureSelect({
         </div>
       )}
 
-      <style jsx nonce={nonce}>{`
+      <style jsx nonce={nonce} suppressHydrationWarning>{`
         .structure-select {
           position: relative;
           width: 100%;

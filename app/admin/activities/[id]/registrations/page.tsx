@@ -16,6 +16,7 @@ import {
     requireActivityPermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { registrationWindowStatus } from "@/lib/registration-window";
 
 import {
     updateActivityArchiveState,
@@ -335,6 +336,16 @@ export default async function ActivityRegistrationsPage({
         );
     }
 
+    const registrationStatus = registrationWindowStatus(form);
+    const registrationCurrentlyOpen = registrationStatus === "OPEN";
+    const registrationStatusLabel = registrationStatus === "OPEN"
+        ? "التسجيل مفتوح"
+        : registrationStatus === "NOT_STARTED"
+            ? "يفتح التسجيل لاحقًا"
+            : registrationStatus === "ENDED"
+                ? "انتهى التسجيل"
+                : "التسجيل مغلق";
+
     /*
      * نحتاج إحصائيات جميع التسجيلات
      * بدون التأثر بالبحث والفلترة.
@@ -427,9 +438,11 @@ export default async function ActivityRegistrationsPage({
         "ARCHIVED";
 
     const activityDateTime =
-        activityDateTimeInputValues(
-            activity.startsAt,
-        );
+        activity.startsAt
+            ? activityDateTimeInputValues(
+                activity.startsAt,
+            )
+            : null;
 
     const activityEndDateTime = activity.endsAt
         ? activityDateTimeInputValues(activity.endsAt)
@@ -482,11 +495,13 @@ export default async function ActivityRegistrationsPage({
 
                         <span>
                             <CalendarDays size={16} aria-hidden="true" />
-                            {new Intl.DateTimeFormat("ar-PS", {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                                timeZone: ACTIVITY_TIME_ZONE,
-                            }).format(activity.startsAt)}
+                            {activity.startsAt
+                                ? new Intl.DateTimeFormat("ar-PS", {
+                                    dateStyle: "medium",
+                                    timeStyle: "short",
+                                    timeZone: ACTIVITY_TIME_ZONE,
+                                }).format(activity.startsAt)
+                                : "الموعد غير محدد"}
                         </span>
 
                         <span>
@@ -644,38 +659,41 @@ export default async function ActivityRegistrationsPage({
                         attendanceStyles.activityMetaRow
                     }
                 >
-                    <div>
-                        <CalendarDays
-                            size={18}
-                        />
+                    {activity.startsAt ? (
+                        <>
+                            <div>
+                                <CalendarDays size={18} />
 
-                        <span className={attendanceStyles.activityMetaValue}>
-                            <small>تاريخ البداية</small>
-                            {new Intl.DateTimeFormat(
-                                "ar-PS",
-                                {
-                                    dateStyle:
-                                        "medium",
-                                    timeZone:
-                                        ACTIVITY_TIME_ZONE,
-                                },
-                            ).format(
-                                activity.startsAt,
-                            )}
-                        </span>
-                    </div>
+                                <span className={attendanceStyles.activityMetaValue}>
+                                    <small>تاريخ البداية</small>
+                                    {new Intl.DateTimeFormat("ar-PS", {
+                                        dateStyle: "medium",
+                                        timeZone: ACTIVITY_TIME_ZONE,
+                                    }).format(activity.startsAt)}
+                                </span>
+                            </div>
 
-                    <div>
-                        <Clock3 size={18} />
+                            <div>
+                                <Clock3 size={18} />
 
-                        <span className={attendanceStyles.activityMetaValue}>
-                            <small>وقت البداية</small>
-                            {new Intl.DateTimeFormat("ar-PS", {
-                                timeStyle: "short",
-                                timeZone: ACTIVITY_TIME_ZONE,
-                            }).format(activity.startsAt)}
-                        </span>
-                    </div>
+                                <span className={attendanceStyles.activityMetaValue}>
+                                    <small>وقت البداية</small>
+                                    {new Intl.DateTimeFormat("ar-PS", {
+                                        timeStyle: "short",
+                                        timeZone: ACTIVITY_TIME_ZONE,
+                                    }).format(activity.startsAt)}
+                                </span>
+                            </div>
+                        </>
+                    ) : (
+                        <div>
+                            <CalendarDays size={18} />
+                            <span className={attendanceStyles.activityMetaValue}>
+                                <small>موعد النشاط</small>
+                                غير محدد
+                            </span>
+                        </div>
+                    )}
 
                     {activity.endsAt && (
                         <>
@@ -708,8 +726,8 @@ export default async function ActivityRegistrationsPage({
                     {canEditActivity && (
                         <ActivityDateEditor
                             activityId={activity.id}
-                            currentStartDate={activityDateTime.date}
-                            currentStartTime={activityDateTime.time}
+                            currentStartDate={activityDateTime?.date ?? ""}
+                            currentStartTime={activityDateTime?.time ?? ""}
                             currentEndDate={activityEndDateTime?.date}
                             currentEndTime={activityEndDateTime?.time}
                         />
@@ -854,16 +872,14 @@ export default async function ActivityRegistrationsPage({
 
         <span
             className={`activity-registration-open-state ${
-                form.isOpen
+                registrationCurrentlyOpen
                     ? "is-open"
                     : "is-closed"
             }`}
         >
             <span className="registration-state-dot" />
 
-            {form.isOpen
-                ? "التسجيل مفتوح"
-                : "التسجيل مغلق"}
+            {registrationStatusLabel}
         </span>
 
     </div>
@@ -968,8 +984,8 @@ export default async function ActivityRegistrationsPage({
 
                     <span>
                         {form.isOpen
-                            ? "يمكن للطلاب التسجيل في النشاط حاليًا"
-                            : "التسجيل متوقف أمام الطلاب حاليًا"}
+                            ? "التسجيل مفعّل ويعمل تلقائيًا ضمن الموعد المحدد"
+                            : "التسجيل متوقف يدويًا أمام الطلاب"}
                     </span>
 
                 </div>

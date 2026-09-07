@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { useCspNonce } from "@/components/security/CspNonce";
+import ActivitySchedulePicker from "./ActivitySchedulePicker";
 
 type QuestionType =
   | "SHORT_TEXT"
@@ -48,6 +49,10 @@ type ActivityFormBuilderProps = {
   initialTitle?: string;
   initialDescription?: string;
   initialIsOpen?: boolean;
+  initialOpenDate?: string;
+  initialOpenTime?: string;
+  initialCloseDate?: string;
+  initialCloseTime?: string;
   initialQuestions?: ActivityFormBuilderInitialQuestion[];
 };
 
@@ -92,6 +97,10 @@ export default function ActivityFormBuilder({
   initialTitle = "نموذج التسجيل",
   initialDescription = "",
   initialIsOpen = true,
+  initialOpenDate = "",
+  initialOpenTime = "",
+  initialCloseDate = "",
+  initialCloseTime = "",
   initialQuestions = [],
 }: ActivityFormBuilderProps) {
   const nonce = useCspNonce();
@@ -262,6 +271,14 @@ export default function ActivityFormBuilder({
         value={serializedQuestions}
       />
 
+      <ActivitySchedulePicker
+        kind="registration"
+        initialStartDate={initialOpenDate}
+        initialStartTime={initialOpenTime}
+        initialEndDate={initialCloseDate}
+        initialEndTime={initialCloseTime}
+      />
+
       <div className="activity-builder-heading">
         <div>
           <span className="activity-builder-eyebrow">نموذج التسجيل الداخلي</span>
@@ -311,7 +328,7 @@ export default function ActivityFormBuilder({
             name="registrationFormIsOpen"
             defaultChecked={initialIsOpen}
           />
-          <span>فتح التسجيل مباشرة بعد نشر النشاط</span>
+          <span>تفعيل التسجيل ضمن الموعد المحدد</span>
         </label>
       </div>
 
@@ -593,7 +610,7 @@ export default function ActivityFormBuilder({
         </button>
       )}
 
-      <style nonce={nonce}>{`
+      <style nonce={nonce} suppressHydrationWarning>{`
 
         .activity-builder-question-top {
           display: flex;

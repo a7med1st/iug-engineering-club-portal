@@ -40,7 +40,8 @@ function single(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function formatDate(value: Date) {
+function formatDate(value: Date | null) {
+  if (!value) return "الموعد غير محدد";
   return new Intl.DateTimeFormat("ar-PS", {
     dateStyle: "medium",
     timeStyle: "short",

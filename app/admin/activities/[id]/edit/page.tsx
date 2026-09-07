@@ -139,9 +139,14 @@ export default async function EditActivityPage({
     await searchParams;
 
   const start =
-    activityDateTimeInputValues(
-      activity.startsAt,
-    );
+    activity.startsAt
+      ? activityDateTimeInputValues(
+        activity.startsAt,
+      )
+      : {
+        date: "",
+        time: "",
+      };
 
   const end =
     activity.endsAt
@@ -152,6 +157,20 @@ export default async function EditActivityPage({
         date: "",
         time: "",
       };
+
+  const registrationOpen =
+    activity.registrationForm
+      ? activityDateTimeInputValues(
+        activity.registrationForm.opensAt,
+      )
+      : { date: "", time: "" };
+
+  const registrationClose =
+    activity.registrationForm
+      ? activityDateTimeInputValues(
+        activity.registrationForm.closesAt,
+      )
+      : { date: "", time: "" };
 
   const allDepartmentIds =
     departments.map(
@@ -294,6 +313,19 @@ export default async function EditActivityPage({
             />
           </label>
           <label>
+            وصف شريط الإعلانات
+
+            <textarea
+              name="tickerDescription"
+              rows={2}
+              maxLength={300}
+              defaultValue={
+                activity.tickerDescription ?? ""
+              }
+              placeholder="نص قصير ومباشر يتحرك داخل شريط آخر تحديثات النادي"
+            />
+          </label>
+          <label>
             وصف النشاط
 
             <textarea
@@ -421,6 +453,10 @@ export default async function EditActivityPage({
                 ?.isOpen ??
               true
             }
+            initialOpenDate={registrationOpen.date}
+            initialOpenTime={registrationOpen.time}
+            initialCloseDate={registrationClose.date}
+            initialCloseTime={registrationClose.time}
             initialQuestions={
               initialQuestions
             }

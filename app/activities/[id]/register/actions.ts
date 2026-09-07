@@ -11,6 +11,7 @@ import {
   requirePermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { registrationWindowStatus } from "@/lib/registration-window";
 
 export type RegistrationFormValues = Record<string, string>;
 
@@ -285,9 +286,17 @@ export async function submitActivityRegistration(
       );
     }
 
-    if (!form.isOpen) {
+    const registrationStatus = registrationWindowStatus(form);
+
+    if (registrationStatus !== "OPEN") {
+      const message = registrationStatus === "NOT_STARTED"
+        ? "لم يبدأ موعد التسجيل في هذا النشاط بعد."
+        : registrationStatus === "ENDED"
+          ? "انتهى موعد التسجيل في هذا النشاط."
+          : "التسجيل في هذا النشاط مغلق.";
+
       return failure(
-        "التسجيل في هذا النشاط مغلق.",
+        message,
         submittedValues,
       );
     }
@@ -374,6 +383,8 @@ export async function submitActivityRegistration(
 
                 select: {
                   isOpen: true,
+                  opensAt: true,
+                  closesAt: true,
 
                   activity: {
                     select: {
@@ -388,7 +399,7 @@ export async function submitActivityRegistration(
 
             if (
               !latestForm ||
-              !latestForm.isOpen
+              registrationWindowStatus(latestForm) !== "OPEN"
             ) {
               throw new Error(
                 "REGISTRATION_CLOSED",

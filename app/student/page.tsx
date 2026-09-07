@@ -26,7 +26,8 @@ const statusLabels = {
   REJECTED: "مرفوض",
 } as const;
 
-function formatDate(date: Date) {
+function formatDate(date: Date | null) {
+  if (!date) return "الموعد غير محدد";
   return new Intl.DateTimeFormat("ar-PS", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -202,24 +203,26 @@ export default async function StudentDashboardPage({
     submissions.filter(
       (item) =>
         item.status !== "REJECTED" &&
-        item.form.activity.startsAt >=
-        now,
+        (!item.form.activity.startsAt ||
+          item.form.activity.startsAt >= now),
     ).length;
 
   const upcomingSubmissions =
     submissions.filter(
       (item) =>
         item.status !== "REJECTED" &&
-        item.form.activity.startsAt >=
-        now,
+        (!item.form.activity.startsAt ||
+          item.form.activity.startsAt >= now),
     );
 
   const pastSubmissions =
     submissions.filter(
       (item) =>
         item.status !== "REJECTED" &&
-        item.form.activity.startsAt <
-        now,
+        Boolean(
+          item.form.activity.startsAt &&
+          item.form.activity.startsAt < now,
+        ),
     );
 
   const rejectedSubmissions =
@@ -612,8 +615,8 @@ export default async function StudentDashboardPage({
                         .activity;
 
                     const isUpcoming =
-                      activity.startsAt >=
-                      now;
+                      !activity.startsAt ||
+                      activity.startsAt >= now;
 
                     const answers = [
                       ...submission.answers,

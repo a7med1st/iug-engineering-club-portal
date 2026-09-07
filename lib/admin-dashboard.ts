@@ -254,10 +254,9 @@ export async function getAdminDashboardData({
         }
 
         return (
-          activity.startsAt >=
-            from &&
-          activity.startsAt <=
-            now
+          Boolean(activity.startsAt) &&
+          activity.startsAt! >= from &&
+          activity.startsAt! <= now
         );
       },
     );
@@ -268,13 +267,14 @@ export async function getAdminDashboardData({
         (activity) =>
           activity.status ===
             "PUBLISHED" &&
-          activity.startsAt >
+          Boolean(activity.startsAt) &&
+          activity.startsAt! >
             now,
       )
       .sort(
         (a, b) =>
-          a.startsAt.getTime() -
-          b.startsAt.getTime(),
+          a.startsAt!.getTime() -
+          b.startsAt!.getTime(),
       );
 
   const submissions =
@@ -386,8 +386,9 @@ export async function getAdminDashboardData({
       (submission) =>
         submission.status ===
           "APPROVED" &&
+        Boolean(submission.activity.startsAt) &&
         submission.activity
-          .startsAt <= now,
+          .startsAt! <= now,
     );
 
   const attendedCount =

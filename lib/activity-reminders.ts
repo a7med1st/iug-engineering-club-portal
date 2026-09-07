@@ -125,6 +125,10 @@ export async function sendActivityReminders(
     const activity =
       registration.form.activity;
 
+    if (!activity.startsAt) {
+      continue;
+    }
+
     const key =
       `${registration.userId}:${activity.id}`;
 

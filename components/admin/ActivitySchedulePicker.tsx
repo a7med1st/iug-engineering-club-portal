@@ -11,6 +11,7 @@ import "react-day-picker/style.css";
 import styles from "./ActivitySchedulePicker.module.css";
 
 type PickerName = "startDate" | "startTime" | "endDate" | "endTime";
+type ScheduleKind = "activity" | "registration";
 
 type Props = {
   initialStartDate?: string;
@@ -18,13 +19,28 @@ type Props = {
   initialEndDate?: string;
   initialEndTime?: string;
   compact?: boolean;
+  kind?: ScheduleKind;
 };
 
-const pickerLabels: Record<PickerName, string> = {
+const activityPickerLabels: Record<PickerName, string> = {
   startDate: "تاريخ البداية",
   startTime: "وقت البداية",
   endDate: "تاريخ النهاية",
   endTime: "وقت النهاية",
+};
+
+const registrationPickerLabels: Record<PickerName, string> = {
+  startDate: "تاريخ فتح التسجيل",
+  startTime: "وقت فتح التسجيل",
+  endDate: "تاريخ إغلاق التسجيل",
+  endTime: "وقت إغلاق التسجيل",
+};
+
+const registrationInputNames: Record<PickerName, string> = {
+  startDate: "registrationOpenDate",
+  startTime: "registrationOpenTime",
+  endDate: "registrationCloseDate",
+  endTime: "registrationCloseTime",
 };
 
 const timePresets = ["09:00", "10:00", "12:00", "14:00", "16:00", "18:00"];
@@ -73,6 +89,7 @@ export default function ActivitySchedulePicker({
   initialEndDate = "",
   initialEndTime = "",
   compact = false,
+  kind = "activity",
 }: Props) {
   const titleId = useId();
   const [values, setValues] = useState<Record<PickerName, string>>({
@@ -84,6 +101,10 @@ export default function ActivitySchedulePicker({
   const [openPicker, setOpenPicker] = useState<PickerName | null>(null);
   const [draftTime, setDraftTime] = useState("09:00");
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  const registrationSchedule = kind === "registration";
+  const pickerLabels = registrationSchedule
+    ? registrationPickerLabels
+    : activityPickerLabels;
 
   useEffect(() => {
     setPortalTarget(document.getElementById("app-portal-root"));
@@ -107,7 +128,8 @@ export default function ActivitySchedulePicker({
     setValues((current) => ({ ...current, [name]: value }));
   }
 
-  const optionalPicker = openPicker === "endDate" || openPicker === "endTime";
+  const canClearSchedule =
+    !registrationSchedule && Object.values(values).some(Boolean);
 
   return (
     <section
@@ -117,14 +139,20 @@ export default function ActivitySchedulePicker({
     >
       {!compact && (
         <header className={styles.heading}>
-          <h3 id={titleId}>موعد النشاط</h3>
-          <p>حدد البداية، ويمكنك إضافة موعد نهاية اختياري أو تعديله لاحقًا.</p>
+          <h3 id={titleId}>
+            {registrationSchedule ? "موعد التسجيل" : "موعد النشاط (اختياري)"}
+          </h3>
+          <p>
+            {registrationSchedule
+              ? "حدد متى يبدأ استقبال التسجيلات ومتى يتوقف تلقائيًا."
+              : "يمكنك تحديد بداية النشاط ونهايته الآن أو إضافتهما لاحقًا."}
+          </p>
         </header>
       )}
 
       {(Object.keys(values) as PickerName[]).map((name) => {
         const isDate = name.endsWith("Date");
-        const optional = name.startsWith("end");
+        const optional = !registrationSchedule;
         const value = values[name];
 
         return (
@@ -146,7 +174,11 @@ export default function ActivitySchedulePicker({
               <ChevronDown size={17} className={styles.triggerChevron} />
             </button>
 
-            <input type="hidden" name={name} value={value} />
+            <input
+              type="hidden"
+              name={registrationSchedule ? registrationInputNames[name] : name}
+              value={value}
+            />
           </div>
         );
       })}
@@ -245,20 +277,21 @@ export default function ActivitySchedulePicker({
               </div>
             )}
 
-            {optionalPicker && values[openPicker] && (
+            {canClearSchedule && (
               <button
                 type="button"
                 className={styles.clearButton}
                 onClick={() => {
-                  setValues((current) => ({
-                    ...current,
+                  setValues({
+                    startDate: "",
+                    startTime: "",
                     endDate: "",
                     endTime: "",
-                  }));
+                  });
                   setOpenPicker(null);
                 }}
               >
-                مسح موعد النهاية
+                مسح موعد النشاط
               </button>
             )}
           </div>

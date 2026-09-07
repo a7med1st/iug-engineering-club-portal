@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import ActivityRegistrationForm from "@/components/activities/ActivityRegistrationForm";
 import { formatActivitySchedule } from "@/lib/activities";
 import { prisma } from "@/lib/prisma";
+import { registrationWindowStatus } from "@/lib/registration-window";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,14 @@ export default async function ActivityRegisterPage({
     }
 
     const form = activity.registrationForm;
+    const registrationStatus = form
+        ? registrationWindowStatus(form)
+        : null;
+    const registrationDateFormatter = new Intl.DateTimeFormat("ar-PS", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "Asia/Hebron",
+    });
 
     const occupiedSeats = form
         ? await prisma.activityFormSubmission.count({
@@ -150,7 +159,7 @@ export default async function ActivityRegisterPage({
                                 لم يتم إنشاء نموذج تسجيل لهذا النشاط حتى الآن.
                             </p>
                         </div>
-                    ) : !form.isOpen ? (
+                    ) : registrationStatus === "DISABLED" ? (
                         <div className="activity-registration-state">
                             <h2>
                                 التسجيل مغلق
@@ -158,6 +167,20 @@ export default async function ActivityRegisterPage({
 
                             <p>
                                 قام النادي بإغلاق التسجيل في هذا النشاط.
+                            </p>
+                        </div>
+                    ) : registrationStatus === "NOT_STARTED" ? (
+                        <div className="activity-registration-state">
+                            <h2>التسجيل لم يبدأ بعد</h2>
+                            <p>
+                                يفتح التسجيل في {registrationDateFormatter.format(form.opensAt)}.
+                            </p>
+                        </div>
+                    ) : registrationStatus === "ENDED" ? (
+                        <div className="activity-registration-state">
+                            <h2>انتهى موعد التسجيل</h2>
+                            <p>
+                                أُغلق التسجيل في {registrationDateFormatter.format(form.closesAt)}.
                             </p>
                         </div>
                     ) : isCapacityFull ? (

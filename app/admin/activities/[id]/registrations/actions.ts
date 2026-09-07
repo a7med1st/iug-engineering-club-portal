@@ -130,7 +130,7 @@ export async function updateActivityLocation(
 export type UpdateActivityDateState = {
   success: boolean;
   message: string;
-  startsAt?: string;
+  startsAt?: string | null;
   endsAt?: string | null;
 };
 
@@ -151,12 +151,21 @@ export async function updateActivityDate(
     };
   }
 
-  const startsAt = activityDateTimeFromInput(dateValue, timeValue);
-
-  if (!startsAt) {
+  if (Boolean(dateValue) !== Boolean(timeValue)) {
     return {
       success: false,
-      message: "يرجى إدخال تاريخ ووقت صالحين.",
+      message: "أدخل تاريخ ووقت بداية النشاط معًا، أو اترك الحقلين فارغين.",
+    };
+  }
+
+  const startsAt = dateValue && timeValue
+    ? activityDateTimeFromInput(dateValue, timeValue)
+    : null;
+
+  if (dateValue && timeValue && !startsAt) {
+    return {
+      success: false,
+      message: "يرجى إدخال تاريخ ووقت بداية صالحين.",
     };
   }
 
@@ -178,7 +187,14 @@ export async function updateActivityDate(
     };
   }
 
-  if (endsAt && endsAt.getTime() <= startsAt.getTime()) {
+  if (endsAt && !startsAt) {
+    return {
+      success: false,
+      message: "حدد موعد بداية النشاط قبل إضافة موعد النهاية.",
+    };
+  }
+
+  if (startsAt && endsAt && endsAt.getTime() <= startsAt.getTime()) {
     return {
       success: false,
       message: "يجب أن يكون موعد نهاية النشاط بعد موعد البداية.",
@@ -202,7 +218,7 @@ export async function updateActivityDate(
     return {
       success: true,
       message: "تم تحديث تاريخ ووقت النشاط بنجاح.",
-      startsAt: activity.startsAt.toISOString(),
+      startsAt: activity.startsAt?.toISOString() ?? null,
       endsAt: activity.endsAt?.toISOString() ?? null,
     };
   } catch (error) {

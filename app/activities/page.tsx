@@ -63,7 +63,11 @@ export default async function Activities({
     : "";
 
   const years = [
-    ...new Set(pastActivityDates.map(({ startsAt }) => activityYear(startsAt))),
+    ...new Set(
+      pastActivityDates.flatMap(({ startsAt }) =>
+        startsAt ? [activityYear(startsAt)] : [],
+      ),
+    ),
   ].sort((first, second) => second - first);
   const requestedYear = Number(one(params.year));
   const year = years.includes(requestedYear) ? requestedYear : null;

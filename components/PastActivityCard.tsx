@@ -20,11 +20,13 @@ export default function PastActivityCard({
   activity: PastActivityCardData;
   departmentCount: number;
 }) {
-  const date = new Intl.DateTimeFormat("ar-PS", {
-    dateStyle: "long",
-    timeStyle: "short",
-    timeZone: ACTIVITY_TIME_ZONE,
-  }).format(activity.startsAt);
+  const date = activity.startsAt
+    ? new Intl.DateTimeFormat("ar-PS", {
+      dateStyle: "long",
+      timeStyle: "short",
+      timeZone: ACTIVITY_TIME_ZONE,
+    }).format(activity.startsAt)
+    : "الموعد غير محدد";
 
   return (
     <Link

@@ -29,7 +29,10 @@ export function isPastActivity(
   activity: Pick<Activity, "startsAt" | "endsAt">,
   referenceTime: Date = new Date(),
 ) {
-  return (activity.endsAt ?? activity.startsAt).getTime() < referenceTime.getTime();
+  const activityEnd = activity.endsAt ?? activity.startsAt;
+  return activityEnd
+    ? activityEnd.getTime() < referenceTime.getTime()
+    : false;
 }
 
 export function pastActivityWhere(
@@ -52,16 +55,19 @@ export function currentActivityWhere(
     OR: [
       { startsAt: { gte: referenceTime } },
       { endsAt: { gte: referenceTime } },
+      { startsAt: null, endsAt: null },
     ],
   };
 }
 
 export function formatActivitySchedule(
-  startsAt: Date,
+  startsAt: Date | null,
   endsAt?: Date | null,
   locale = "ar-PS",
   timeZone = ACTIVITY_TIME_ZONE,
 ) {
+  if (!startsAt) return "يُحدد الموعد لاحقًا";
+
   const formatter = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",

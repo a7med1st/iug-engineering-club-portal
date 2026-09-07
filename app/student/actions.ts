@@ -501,6 +501,7 @@ export async function cancelActivityRegistration(
   }
 
   if (
+    activity.startsAt &&
     activity.startsAt <= new Date()
   ) {
     return {

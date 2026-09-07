@@ -19,6 +19,7 @@ import {
 
 import { prisma } from "@/lib/prisma";
 import { formatActivitySchedule } from "@/lib/activities";
+import { registrationWindowStatus } from "@/lib/registration-window";
 
 import { createActivity } from "../actions";
 
@@ -175,6 +176,17 @@ export default async function ActivitiesAdminPage({
               </label>
 
               <label>
+                وصف شريط الإعلانات
+
+                <textarea
+                  name="tickerDescription"
+                  rows={2}
+                  maxLength={300}
+                  placeholder="نص قصير ومباشر يتحرك داخل شريط آخر تحديثات النادي"
+                />
+              </label>
+
+              <label>
                 الوصف الكامل للنشاط
 
                 <textarea
@@ -285,6 +297,17 @@ export default async function ActivitiesAdminPage({
 
                 const isGeneral = departmentNames.length === 0;
                 const form = activity.registrationForm;
+                const formStatus = form
+                  ? registrationWindowStatus(form)
+                  : null;
+                const registrationOpen = formStatus === "OPEN";
+                const registrationLabel = formStatus === "OPEN"
+                  ? "التسجيل مفتوح"
+                  : formStatus === "NOT_STARTED"
+                    ? "يفتح التسجيل لاحقًا"
+                    : formStatus === "ENDED"
+                      ? "انتهى التسجيل"
+                      : "التسجيل مغلق";
 
                 return (
                   <article
@@ -333,12 +356,12 @@ export default async function ActivitiesAdminPage({
                               </span>
                               <span
                                 className={
-                                  form.isOpen
+                                  registrationOpen
                                     ? "activity-info-item registration-state is-open"
                                     : "activity-info-item registration-state is-closed"
                                 }
                               >
-                                {form.isOpen ? "التسجيل مفتوح" : "التسجيل مغلق"}
+                                {registrationLabel}
                               </span>
                             </>
                           ) : (

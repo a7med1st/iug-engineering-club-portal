@@ -20,8 +20,9 @@ export const dynamic =
   "force-dynamic";
 
 function formatDate(
-  value: Date,
+  value: Date | null,
 ) {
+  if (!value) return "الموعد غير محدد";
   return new Intl.DateTimeFormat(
     "ar-PS",
     {

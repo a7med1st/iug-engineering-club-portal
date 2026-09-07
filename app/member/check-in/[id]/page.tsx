@@ -29,8 +29,9 @@ type Props = {
 };
 
 function formatDate(
-  date: Date,
+  date: Date | null,
 ) {
+  if (!date) return "الموعد غير محدد";
   return new Intl.DateTimeFormat(
     "ar-PS",
     {

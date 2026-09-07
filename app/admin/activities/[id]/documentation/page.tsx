@@ -47,11 +47,13 @@ export default async function ActivityDocumentationPage({
 
   if (!activity) notFound();
 
-  const date = new Intl.DateTimeFormat("ar-PS", {
-    dateStyle: "full",
-    timeStyle: "short",
-    timeZone: ACTIVITY_TIME_ZONE,
-  }).format(activity.startsAt);
+  const date = activity.startsAt
+    ? new Intl.DateTimeFormat("ar-PS", {
+      dateStyle: "full",
+      timeStyle: "short",
+      timeZone: ACTIVITY_TIME_ZONE,
+    }).format(activity.startsAt)
+    : "الموعد غير محدد";
 
   return (
     <section className={`admin-page ${styles.page}`}>

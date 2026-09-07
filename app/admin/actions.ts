@@ -882,28 +882,31 @@ export async function createActivity(
           ) ?? "",
         ).trim() || null;
 
+      const tickerDescription =
+        String(
+          formData.get(
+            "tickerDescription",
+          ) ?? "",
+        ).trim() || null;
+
       const location = requiredText(
         formData,
         "location",
         "مكان النشاط",
       );
 
-      const startDate = requiredText(
-        formData,
-        "startDate",
-        "تاريخ بداية النشاط",
-      );
+      const startDate = String(formData.get("startDate") ?? "").trim();
+      const startTime = String(formData.get("startTime") ?? "").trim();
 
-      const startTime = requiredText(
-        formData,
-        "startTime",
-        "وقت بداية النشاط",
-      );
+      if (Boolean(startDate) !== Boolean(startTime)) {
+        throw new AdminActionError(
+          "أدخل تاريخ ووقت بداية النشاط معًا، أو اترك الحقلين فارغين.",
+        );
+      }
 
-      const startsAt = activityDateTimeFromInput(
-        startDate,
-        startTime,
-      );
+      const startsAt = startDate && startTime
+        ? activityDateTimeFromInput(startDate, startTime)
+        : null;
 
       const endDate = String(formData.get("endDate") ?? "").trim();
       const endTime = String(formData.get("endTime") ?? "").trim();
@@ -960,6 +963,40 @@ export async function createActivity(
           "registrationFormIsOpen",
         ) === "on";
 
+      const registrationOpenDate = requiredText(
+        formData,
+        "registrationOpenDate",
+        "تاريخ فتح التسجيل",
+      );
+
+      const registrationOpenTime = requiredText(
+        formData,
+        "registrationOpenTime",
+        "وقت فتح التسجيل",
+      );
+
+      const registrationCloseDate = requiredText(
+        formData,
+        "registrationCloseDate",
+        "تاريخ إغلاق التسجيل",
+      );
+
+      const registrationCloseTime = requiredText(
+        formData,
+        "registrationCloseTime",
+        "وقت إغلاق التسجيل",
+      );
+
+      const registrationOpensAt = activityDateTimeFromInput(
+        registrationOpenDate,
+        registrationOpenTime,
+      );
+
+      const registrationClosesAt = activityDateTimeFromInput(
+        registrationCloseDate,
+        registrationCloseTime,
+      );
+
       const registrationQuestions =
         parseRegistrationQuestions(
           formData,
@@ -1014,6 +1051,15 @@ export async function createActivity(
       }
 
       if (
+        tickerDescription &&
+        tickerDescription.length > 300
+      ) {
+        throw new AdminActionError(
+          "وصف شريط الإعلانات طويل جدًا.",
+        );
+      }
+
+      if (
         location.length > 250
       ) {
         throw new AdminActionError(
@@ -1021,7 +1067,7 @@ export async function createActivity(
         );
       }
 
-      if (!startsAt) {
+      if (startDate && startTime && !startsAt) {
         throw new AdminActionError(
           "تاريخ أو وقت بداية النشاط غير صالح.",
         );
@@ -1033,9 +1079,27 @@ export async function createActivity(
         );
       }
 
-      if (endsAt && endsAt.getTime() <= startsAt.getTime()) {
+      if (endsAt && !startsAt) {
+        throw new AdminActionError(
+          "حدد موعد بداية النشاط قبل إضافة موعد النهاية.",
+        );
+      }
+
+      if (startsAt && endsAt && endsAt.getTime() <= startsAt.getTime()) {
         throw new AdminActionError(
           "يجب أن يكون موعد نهاية النشاط بعد موعد البداية.",
+        );
+      }
+
+      if (!registrationOpensAt || !registrationClosesAt) {
+        throw new AdminActionError(
+          "موعد فتح أو إغلاق التسجيل غير صالح.",
+        );
+      }
+
+      if (registrationClosesAt.getTime() <= registrationOpensAt.getTime()) {
+        throw new AdminActionError(
+          "يجب أن يكون موعد إغلاق التسجيل بعد موعد فتحه.",
         );
       }
 
@@ -1199,6 +1263,7 @@ export async function createActivity(
         data: {
           title,
           cardDescription,
+          tickerDescription,
           description,
           location,
           startsAt,
@@ -1248,6 +1313,12 @@ export async function createActivity(
 
               description:
                 registrationFormDescription,
+
+              opensAt:
+                registrationOpensAt,
+
+              closesAt:
+                registrationClosesAt,
 
               isOpen:
                 registrationFormIsOpen,
@@ -1329,14 +1400,15 @@ export async function createActivity(
           });
 
         if (students.length > 0) {
-          const activityDate =
-            new Intl.DateTimeFormat(
+          const activityDate = startsAt
+            ? new Intl.DateTimeFormat(
               "ar-PS",
               {
                 dateStyle: "medium",
                 timeStyle: "short",
               },
-            ).format(startsAt);
+            ).format(startsAt)
+            : "سيتم تحديد الموعد لاحقًا";
 
           await prisma.notification.createMany({
             data: students.map(
@@ -1733,6 +1805,13 @@ export async function updateActivityText(
           ) ?? "",
         ).trim() || null;
 
+      const tickerDescription =
+        String(
+          formData.get(
+            "tickerDescription",
+          ) ?? "",
+        ).trim() || null;
+
       const location =
         requiredText(
           formData,
@@ -1748,24 +1827,27 @@ export async function updateActivityText(
         ).trim() || null;
 
       const startDate =
-        requiredText(
-          formData,
-          "startDate",
-          "تاريخ بداية النشاط",
-        );
+        String(formData.get("startDate") ?? "").trim();
 
       const startTime =
-        requiredText(
-          formData,
-          "startTime",
-          "وقت بداية النشاط",
+        String(formData.get("startTime") ?? "").trim();
+
+      if (
+        Boolean(startDate) !==
+        Boolean(startTime)
+      ) {
+        throw new AdminActionError(
+          "أدخل تاريخ ووقت بداية النشاط معًا، أو اترك الحقلين فارغين.",
         );
+      }
 
       const startsAt =
-        activityDateTimeFromInput(
-          startDate,
-          startTime,
-        );
+        startDate && startTime
+          ? activityDateTimeFromInput(
+            startDate,
+            startTime,
+          )
+          : null;
 
       const endDate =
         String(
@@ -1850,6 +1932,40 @@ export async function updateActivityText(
           "registrationFormIsOpen",
         ) === "on";
 
+      const registrationOpenDate = requiredText(
+        formData,
+        "registrationOpenDate",
+        "تاريخ فتح التسجيل",
+      );
+
+      const registrationOpenTime = requiredText(
+        formData,
+        "registrationOpenTime",
+        "وقت فتح التسجيل",
+      );
+
+      const registrationCloseDate = requiredText(
+        formData,
+        "registrationCloseDate",
+        "تاريخ إغلاق التسجيل",
+      );
+
+      const registrationCloseTime = requiredText(
+        formData,
+        "registrationCloseTime",
+        "وقت إغلاق التسجيل",
+      );
+
+      const registrationOpensAt = activityDateTimeFromInput(
+        registrationOpenDate,
+        registrationOpenTime,
+      );
+
+      const registrationClosesAt = activityDateTimeFromInput(
+        registrationCloseDate,
+        registrationCloseTime,
+      );
+
       const registrationQuestions =
         parseRegistrationQuestions(
           formData,
@@ -1906,6 +2022,15 @@ export async function updateActivityText(
       }
 
       if (
+        tickerDescription &&
+        tickerDescription.length > 300
+      ) {
+        throw new AdminActionError(
+          "وصف شريط الإعلانات طويل جدًا.",
+        );
+      }
+
+      if (
         postEventSummary &&
         postEventSummary.length >
         10_000
@@ -1924,7 +2049,7 @@ export async function updateActivityText(
         );
       }
 
-      if (!startsAt) {
+      if (startDate && startTime && !startsAt) {
         throw new AdminActionError(
           "تاريخ أو وقت بداية النشاط غير صالح.",
         );
@@ -1940,13 +2065,31 @@ export async function updateActivityText(
         );
       }
 
+      if (endsAt && !startsAt) {
+        throw new AdminActionError(
+          "حدد موعد بداية النشاط قبل إضافة موعد النهاية.",
+        );
+      }
+
       if (
+        startsAt &&
         endsAt &&
-        endsAt.getTime() <=
-        startsAt.getTime()
+        endsAt.getTime() <= startsAt.getTime()
       ) {
         throw new AdminActionError(
           "يجب أن يكون موعد نهاية النشاط بعد موعد البداية.",
+        );
+      }
+
+      if (!registrationOpensAt || !registrationClosesAt) {
+        throw new AdminActionError(
+          "موعد فتح أو إغلاق التسجيل غير صالح.",
+        );
+      }
+
+      if (registrationClosesAt.getTime() <= registrationOpensAt.getTime()) {
+        throw new AdminActionError(
+          "يجب أن يكون موعد إغلاق التسجيل بعد موعد فتحه.",
         );
       }
 
@@ -2229,6 +2372,7 @@ export async function updateActivityText(
               title,
               description,
               cardDescription,
+              tickerDescription,
               location,
               startsAt,
               endsAt,
@@ -2285,6 +2429,12 @@ export async function updateActivityText(
                 description:
                   registrationFormDescription,
 
+                opensAt:
+                  registrationOpensAt,
+
+                closesAt:
+                  registrationClosesAt,
+
                 isOpen:
                   registrationFormIsOpen,
               },
@@ -2319,6 +2469,12 @@ export async function updateActivityText(
 
                   description:
                     registrationFormDescription,
+
+                  opensAt:
+                    registrationOpensAt,
+
+                  closesAt:
+                    registrationClosesAt,
 
                   isOpen:
                     registrationFormIsOpen,
@@ -2425,8 +2581,8 @@ export async function updateActivityText(
               students.length >
               0
             ) {
-              const activityDate =
-                new Intl.DateTimeFormat(
+              const activityDate = startsAt
+                ? new Intl.DateTimeFormat(
                   "ar-PS",
                   {
                     dateStyle:
@@ -2438,7 +2594,8 @@ export async function updateActivityText(
                   },
                 ).format(
                   startsAt,
-                );
+                )
+                : "سيتم تحديد الموعد لاحقًا";
 
               await transaction.notification.createMany({
                 data:

@@ -19,7 +19,8 @@ import styles from "./member-checkin.module.css";
 
 export const dynamic = "force-dynamic";
 
-function formatDate(date: Date) {
+function formatDate(date: Date | null) {
+  if (!date) return "الموعد غير محدد";
   return new Intl.DateTimeFormat("ar-PS", {
     dateStyle: "medium",
     timeStyle: "short",

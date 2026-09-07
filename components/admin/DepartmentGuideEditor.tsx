@@ -192,7 +192,7 @@ export default function DepartmentGuideEditor({
         </form>
       )}
 
-      <style nonce={nonce}>{`
+      <style nonce={nonce} suppressHydrationWarning>{`
         .guide-redesign {
           position: relative;
           isolation: isolate;

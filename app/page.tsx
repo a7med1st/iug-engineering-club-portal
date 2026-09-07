@@ -12,11 +12,21 @@ import {
 import { prisma } from "@/lib/prisma";
 import { departmentFontClass } from "@/lib/departments";
 import { currentActivityWhere, pastActivityWhere } from "@/lib/activities";
+import { isRegistrationOpen } from "@/lib/registration-window";
 import PastActivityCard from "@/components/PastActivityCard";
+import ClubUpdatesTicker, {
+  type ClubUpdate,
+} from "@/components/ClubUpdatesTicker";
 
 export default async function HomePage() {
   const now = new Date();
-  const [departments, upcoming, pastActivities, departmentCount] =
+  const [
+    departments,
+    upcoming,
+    pastActivities,
+    departmentCount,
+    recentActivities,
+  ] =
     await Promise.all([
       prisma.department.findMany({
         orderBy: { sortOrder: "asc" },
@@ -45,7 +55,43 @@ export default async function HomePage() {
         take: 3,
       }),
       prisma.department.count(),
+      prisma.activity.findMany({
+        where: currentActivityWhere(now),
+        select: {
+          id: true,
+          title: true,
+          tickerDescription: true,
+          startsAt: true,
+          endsAt: true,
+          createdAt: true,
+          registrationForm: {
+            select: {
+              isOpen: true,
+              opensAt: true,
+              closesAt: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+      }),
     ]);
+
+  const latestUpdates: ClubUpdate[] = recentActivities.map((activity) => {
+    const registrationIsOpen =
+      isRegistrationOpen(activity.registrationForm, now);
+
+    return {
+      id: activity.id,
+      title:
+        activity.tickerDescription?.trim() ||
+        (registrationIsOpen
+          ? `التسجيل متاح الآن: ${activity.title}`
+          : `جديد النادي: ${activity.title}`),
+      href: `/activities/${activity.id}`,
+      createdAt: activity.createdAt.toISOString(),
+    };
+  });
 
   return (
     <>
@@ -115,6 +161,8 @@ export default async function HomePage() {
           </div>
         </div>
       </div>
+
+      <ClubUpdatesTicker updates={latestUpdates} />
 
       <section className="section">
         <div className="shell">

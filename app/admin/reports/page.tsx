@@ -49,7 +49,8 @@ function statusLabel(
   return "منشور";
 }
 
-function formatDate(value: Date) {
+function formatDate(value: Date | null) {
+  if (!value) return "الموعد غير محدد";
   return new Intl.DateTimeFormat("ar-PS", {
     dateStyle: "medium",
     timeStyle: "short",

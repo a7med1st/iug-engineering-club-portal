@@ -250,8 +250,8 @@ export async function getAdminReportsData({
 
         if (
           from &&
-          activity.startsAt <
-            from
+          (!activity.startsAt ||
+            activity.startsAt < from)
         ) {
           return false;
         }
@@ -324,8 +324,8 @@ export async function getAdminReportsData({
               submission.status ===
                 "APPROVED" &&
               !submission.checkedInAt &&
-              activity.startsAt <=
-                now,
+              Boolean(activity.startsAt) &&
+              activity.startsAt! <= now,
           ).length;
 
         const occupied =
