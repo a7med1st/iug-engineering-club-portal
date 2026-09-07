@@ -843,6 +843,314 @@ html[data-theme="dark"] .status-rejected {
   color: #ff9ca3;
 }
 
+/* Suggestions and collaboration request lists share the same complete dark
+   treatment while keeping the accent color of each request type. */
+html[data-theme="dark"] .contact-suggestions-page {
+  --contact-request-accent: #35d4ff;
+  --contact-request-accent-muted: #80ddf5;
+  --contact-request-accent-border: rgb(53 212 255 / 62%);
+  --contact-request-accent-soft: rgb(53 212 255 / 11%);
+  --contact-request-active-start: #103b54;
+  --contact-request-active-end: #0b2c43;
+  --contact-request-badge-start: #159acb;
+  --contact-request-badge-end: #35d4ff;
+}
+
+html[data-theme="dark"] .contact-collaborations-page {
+  --contact-request-accent: #ff8b32;
+  --contact-request-accent-muted: #ffbc82;
+  --contact-request-accent-border: rgb(255 166 94 / 64%);
+  --contact-request-accent-soft: rgb(255 139 50 / 12%);
+  --contact-request-active-start: #3a2b20;
+  --contact-request-active-end: #2c241f;
+  --contact-request-badge-start: #ff7a1a;
+  --contact-request-badge-end: #ffb65e;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) :is(
+  .contact-page-head h1,
+  .contact-admin-heading h2,
+  .contact-admin-summary-copy strong
+) {
+  color: #eef7ff !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) :is(
+  .contact-page-head p,
+  .contact-admin-summary-copy small
+) {
+  color: #a9bfd2 !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-back-link {
+  color: #72caff !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-status-tab {
+  border-color: rgb(91 169 224 / 34%) !important;
+  background: linear-gradient(145deg, #0d2d46, #0a2439) !important;
+  color: #b9cfdf !important;
+  box-shadow:
+    0 10px 26px rgb(0 7 18 / 22%),
+    inset 0 1px 0 rgb(157 211 248 / 6%) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-status-tab:hover {
+  border-color: var(--contact-request-accent-border) !important;
+  background: linear-gradient(145deg, #123650, #0d2a42) !important;
+  box-shadow: 0 14px 32px rgb(0 7 18 / 30%) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-status-tab strong {
+  border: 1px solid rgb(91 169 224 / 25%);
+  background: #123650 !important;
+  color: var(--contact-request-accent-muted) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-status-tab.is-active {
+  border-color: var(--contact-request-accent-border) !important;
+  background:
+    radial-gradient(circle at 8% 10%, var(--contact-request-accent-soft), transparent 34%),
+    linear-gradient(
+      145deg,
+      var(--contact-request-active-start),
+      var(--contact-request-active-end)
+    ) !important;
+  color: var(--contact-request-accent-muted) !important;
+  box-shadow:
+    0 15px 34px rgb(0 7 18 / 34%),
+    inset 0 0 0 1px var(--contact-request-accent-soft) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-status-tab.is-active strong {
+  border-color: transparent;
+  background: linear-gradient(
+    135deg,
+    var(--contact-request-badge-start),
+    var(--contact-request-badge-end)
+  ) !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-admin-section {
+  border-color: rgb(91 169 224 / 34%) !important;
+  background:
+    radial-gradient(circle at 92% 0%, var(--contact-request-accent-soft), transparent 28%),
+    linear-gradient(180deg, #0b2941 0%, #082238 100%) !important;
+  box-shadow:
+    0 20px 50px rgb(0 7 18 / 30%),
+    inset 0 1px 0 rgb(157 211 248 / 6%) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-admin-heading {
+  border-bottom-color: rgb(120 176 218 / 22%) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-count-pill {
+  border-color: var(--contact-request-accent-border) !important;
+  background: var(--contact-request-active-start) !important;
+  color: var(--contact-request-accent-muted) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) :is(.contact-export-btn, .contact-print-btn) {
+  border-color: rgb(91 169 224 / 36%) !important;
+  background: #0f3049 !important;
+  color: #cfe5f5 !important;
+  box-shadow: 0 7px 18px rgb(0 7 18 / 20%) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) :is(.contact-export-btn, .contact-print-btn):hover {
+  border-color: var(--contact-request-accent-border) !important;
+  background: #153d59 !important;
+  color: var(--contact-request-accent-muted) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-request-card {
+  border-color: rgb(91 169 224 / 34%) !important;
+  border-inline-start-color: var(--contact-request-accent) !important;
+  background: #0c2b43 !important;
+  box-shadow:
+    0 9px 24px rgb(0 7 18 / 22%),
+    inset 0 1px 0 rgb(157 211 248 / 4.5%) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) :is(.contact-request-card:hover, .contact-request-card[open]) {
+  border-color: var(--contact-request-accent-border) !important;
+  background: #0e304a !important;
+  box-shadow: 0 16px 38px rgb(0 7 18 / 30%) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-card-chevron {
+  border-color: rgb(91 169 224 / 32%) !important;
+  background: #123650 !important;
+  color: var(--contact-request-accent-muted) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-admin-details {
+  border-top-color: rgb(91 169 224 / 26%) !important;
+  background: linear-gradient(180deg, #09263d, #082238) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) :is(
+  .contact-admin-info,
+  .contact-admin-description,
+  .contact-routing-history
+) {
+  border-color: rgb(91 169 224 / 30%) !important;
+  background: #0d2d46 !important;
+  color: #dcebf6 !important;
+  box-shadow: inset 0 1px 0 rgb(157 211 248 / 4%) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) :is(
+  .contact-admin-info strong,
+  .contact-admin-description strong,
+  .contact-routing-history > strong
+) {
+  color: #8faabd !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) :is(
+  .contact-admin-info span,
+  .contact-admin-description p,
+  .contact-routing-history p
+) {
+  color: #d9e8f3 !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-routing-history time {
+  color: #8da7bb !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-status-form {
+  border-color: rgb(91 169 224 / 34%) !important;
+  background: linear-gradient(135deg, #0d2d46, #09263d) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(157 211 248 / 5%),
+    0 9px 22px rgb(0 7 18 / 18%) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-status-form:has(.contact-status-select.is-open) {
+  border-color: var(--contact-request-accent-border) !important;
+  box-shadow:
+    0 0 0 3px var(--contact-request-accent-soft),
+    0 12px 28px rgb(0 7 18 / 24%) !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-admin-empty {
+  border-color: rgb(91 169 224 / 30%) !important;
+  background: linear-gradient(135deg, #0c2a42, #09243a) !important;
+  color: #9fb8ca !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-status.status-new {
+  border-color: rgb(22 136 255 / 36%) !important;
+  background: rgb(22 136 255 / 12%) !important;
+  color: #80cbff !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-status.status-in_review {
+  border-color: rgb(232 165 33 / 34%) !important;
+  background: rgb(232 165 33 / 11%) !important;
+  color: #f0c566 !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-status.status-in_progress {
+  border-color: rgb(53 212 255 / 32%) !important;
+  background: rgb(53 212 255 / 10%) !important;
+  color: #80ddf5 !important;
+}
+
+html[data-theme="dark"] :is(
+  .contact-suggestions-page,
+  .contact-collaborations-page
+) .contact-status.status-resolved {
+  border-color: rgb(39 164 93 / 34%) !important;
+  background: rgb(39 164 93 / 12%) !important;
+  color: #72d99b !important;
+}
+
 /* Admin workspace
    Several admin screens use late styled-jsx rules, so these declarations need
    explicit priority to keep the whole workspace on the same dark surface. */

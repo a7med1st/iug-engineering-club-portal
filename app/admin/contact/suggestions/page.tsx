@@ -170,7 +170,7 @@ export default async function SuggestionsPage({
   };
 
   return (
-    <main className="admin-contact-page contact-requests-page shell">
+    <main className="admin-contact-page contact-requests-page contact-suggestions-page shell">
       <div className="contact-page-head">
         <div>
           <Link
