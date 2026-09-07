@@ -347,7 +347,11 @@ export default async function ActivitiesAdminPage({
                         <div className="activity-info-row activity-info-form-row">
                           {form ? (
                             <>
-                              <span className="activity-info-item">نموذج داخلي</span>
+                              <span className="activity-info-item">
+                                {form.requiresAccount
+                                  ? "دخول الطالب مطلوب"
+                                  : "متاح دون حساب"}
+                              </span>
                               <span className="activity-info-item">
                                 {form._count.questions} سؤال
                               </span>

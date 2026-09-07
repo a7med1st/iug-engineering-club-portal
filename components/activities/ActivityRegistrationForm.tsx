@@ -29,6 +29,11 @@ type Props = {
   activityId: string;
   formId: string;
   questions: Question[];
+  requiresGuestIdentity: boolean;
+  departments: Array<{
+    id: string;
+    nameAr: string;
+  }>;
 };
 
 const initialState: RegistrationFormState = {
@@ -37,14 +42,28 @@ const initialState: RegistrationFormState = {
   values: {},
 };
 
-function emptyValues(questions: Question[]): RegistrationFormValues {
-  return Object.fromEntries(questions.map((question) => [question.id, ""]));
+function emptyValues(
+  questions: Question[],
+  requiresGuestIdentity: boolean,
+): RegistrationFormValues {
+  return {
+    ...Object.fromEntries(questions.map((question) => [question.id, ""])),
+    ...(requiresGuestIdentity
+      ? {
+        studentName: "",
+        studentEmail: "",
+        studentDepartmentId: "",
+      }
+      : {}),
+  };
 }
 
 export default function ActivityRegistrationForm({
   activityId,
   formId,
   questions,
+  requiresGuestIdentity,
+  departments,
 }: Props) {
   const [state, formAction] = useActionState(
     submitActivityRegistration,
@@ -52,13 +71,13 @@ export default function ActivityRegistrationForm({
   );
   const [pending, startTransition] = useTransition();
   const [values, setValues] = useState<RegistrationFormValues>(() =>
-    emptyValues(questions),
+    emptyValues(questions, requiresGuestIdentity),
   );
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (state.success) {
-      setValues(emptyValues(questions));
+      setValues(emptyValues(questions, requiresGuestIdentity));
       formRef.current?.reset();
       return;
     }
@@ -69,7 +88,7 @@ export default function ActivityRegistrationForm({
         ...state.values,
       }));
     }
-  }, [questions, state.success, state.values]);
+  }, [questions, requiresGuestIdentity, state.success, state.values]);
 
   function updateAnswer(questionId: string, value: string) {
     setValues((current) => ({
@@ -107,6 +126,128 @@ export default function ActivityRegistrationForm({
     >
       <input type="hidden" name="activityId" value={activityId} />
       <input type="hidden" name="formId" value={formId} />
+      <input
+        type="text"
+        name="website"
+        className="contact-honeypot"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+      />
+
+      {requiresGuestIdentity && (
+        <div className="activity-registration-identity">
+          <div className="activity-registration-identity-head">
+            <h3>بيانات الطالب</h3>
+            <p>
+              لا تحتاج إلى إنشاء حساب. أدخل بياناتك الأساسية لإكمال التسجيل.
+            </p>
+          </div>
+
+          <div className="activity-form-field">
+            <label className="activity-form-label" htmlFor="studentName">
+              الاسم الكامل
+              <span className="activity-required-mark" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="studentName"
+              type="text"
+              name="studentName"
+              value={values.studentName ?? ""}
+              required
+              minLength={2}
+              maxLength={160}
+              autoComplete="name"
+              disabled={pending || state.success}
+              aria-invalid={Boolean(state.fieldErrors?.studentName) || undefined}
+              aria-describedby={
+                state.fieldErrors?.studentName ? "studentName_error" : undefined
+              }
+              onChange={(event) => updateAnswer("studentName", event.target.value)}
+            />
+            {state.fieldErrors?.studentName && (
+              <p
+                id="studentName_error"
+                className="activity-form-field-error"
+                role="alert"
+              >
+                {state.fieldErrors.studentName}
+              </p>
+            )}
+          </div>
+
+          <div className="activity-form-field">
+            <label className="activity-form-label" htmlFor="studentEmail">
+              البريد الإلكتروني
+              <span className="activity-required-mark" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="studentEmail"
+              type="email"
+              name="studentEmail"
+              value={values.studentEmail ?? ""}
+              required
+              maxLength={254}
+              autoComplete="email"
+              placeholder="example@email.com"
+              disabled={pending || state.success}
+              aria-invalid={Boolean(state.fieldErrors?.studentEmail) || undefined}
+              aria-describedby={
+                state.fieldErrors?.studentEmail ? "studentEmail_error" : undefined
+              }
+              onChange={(event) => updateAnswer("studentEmail", event.target.value)}
+            />
+            {state.fieldErrors?.studentEmail && (
+              <p
+                id="studentEmail_error"
+                className="activity-form-field-error"
+                role="alert"
+              >
+                {state.fieldErrors.studentEmail}
+              </p>
+            )}
+          </div>
+
+          <div className="activity-form-field">
+            <label className="activity-form-label" htmlFor="studentDepartmentId">
+              التخصص <span className="muted">(اختياري)</span>
+            </label>
+            <select
+              id="studentDepartmentId"
+              name="studentDepartmentId"
+              value={values.studentDepartmentId ?? ""}
+              disabled={pending || state.success}
+              aria-invalid={
+                Boolean(state.fieldErrors?.studentDepartmentId) || undefined
+              }
+              aria-describedby={
+                state.fieldErrors?.studentDepartmentId
+                  ? "studentDepartmentId_error"
+                  : undefined
+              }
+              onChange={(event) =>
+                updateAnswer("studentDepartmentId", event.target.value)
+              }
+            >
+              <option value="">اختر التخصص</option>
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.nameAr}
+                </option>
+              ))}
+            </select>
+            {state.fieldErrors?.studentDepartmentId && (
+              <p
+                id="studentDepartmentId_error"
+                className="activity-form-field-error"
+                role="alert"
+              >
+                {state.fieldErrors.studentDepartmentId}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {questions.map((question) => (
         <QuestionField

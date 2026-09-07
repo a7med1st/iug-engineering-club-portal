@@ -49,6 +49,7 @@ type ActivityFormBuilderProps = {
   initialTitle?: string;
   initialDescription?: string;
   initialIsOpen?: boolean;
+  initialRequiresAccount?: boolean;
   initialOpenDate?: string;
   initialOpenTime?: string;
   initialCloseDate?: string;
@@ -97,6 +98,7 @@ export default function ActivityFormBuilder({
   initialTitle = "نموذج التسجيل",
   initialDescription = "",
   initialIsOpen = true,
+  initialRequiresAccount = true,
   initialOpenDate = "",
   initialOpenTime = "",
   initialCloseDate = "",
@@ -329,6 +331,17 @@ export default function ActivityFormBuilder({
             defaultChecked={initialIsOpen}
           />
           <span>تفعيل التسجيل ضمن الموعد المحدد</span>
+        </label>
+
+        <label className="activity-builder-open-toggle">
+          <input
+            type="checkbox"
+            name="registrationFormRequiresAccount"
+            defaultChecked={initialRequiresAccount}
+          />
+          <span>
+            هل يجب أن يكون الطالب مسجلًا في الموقع؟ (فعّله لفعاليات QR)
+          </span>
         </label>
       </div>
 

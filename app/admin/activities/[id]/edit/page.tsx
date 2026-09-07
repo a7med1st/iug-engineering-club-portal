@@ -453,6 +453,11 @@ export default async function EditActivityPage({
                 ?.isOpen ??
               true
             }
+            initialRequiresAccount={
+              activity.registrationForm
+                ?.requiresAccount ??
+              true
+            }
             initialOpenDate={registrationOpen.date}
             initialOpenTime={registrationOpen.time}
             initialCloseDate={registrationClose.date}

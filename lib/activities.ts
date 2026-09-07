@@ -5,7 +5,7 @@ import type {
   Prisma,
 } from "@prisma/client";
 
-export const ACTIVITY_TIME_ZONE = "Asia/Hebron";
+export const ACTIVITY_TIME_ZONE = "Asia/Gaza";
 
 export type PublicActivity = Activity & {
   departments: Array<ActivityDepartment & { department: Department }>;

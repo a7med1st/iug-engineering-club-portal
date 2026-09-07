@@ -6,7 +6,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
-import { activityDateTimeFromInput } from "@/lib/activities";
+import {
+  ACTIVITY_TIME_ZONE,
+  activityDateTimeFromInput,
+} from "@/lib/activities";
 import { tryDeleteActivityImages } from "@/lib/activity-image-storage";
 import {
   getEmailValidationMessage,
@@ -963,6 +966,11 @@ export async function createActivity(
           "registrationFormIsOpen",
         ) === "on";
 
+      const registrationFormRequiresAccount =
+        formData.get(
+          "registrationFormRequiresAccount",
+        ) === "on";
+
       const registrationOpenDate = requiredText(
         formData,
         "registrationOpenDate",
@@ -1322,6 +1330,9 @@ export async function createActivity(
 
               isOpen:
                 registrationFormIsOpen,
+
+              requiresAccount:
+                registrationFormRequiresAccount,
 
               /* -------------------------------------
                  QUESTIONS
@@ -1932,6 +1943,11 @@ export async function updateActivityText(
           "registrationFormIsOpen",
         ) === "on";
 
+      const registrationFormRequiresAccount =
+        formData.get(
+          "registrationFormRequiresAccount",
+        ) === "on";
+
       const registrationOpenDate = requiredText(
         formData,
         "registrationOpenDate",
@@ -2437,6 +2453,9 @@ export async function updateActivityText(
 
                 isOpen:
                   registrationFormIsOpen,
+
+                requiresAccount:
+                  registrationFormRequiresAccount,
               },
             });
 
@@ -2478,6 +2497,9 @@ export async function updateActivityText(
 
                   isOpen:
                     registrationFormIsOpen,
+
+                  requiresAccount:
+                    registrationFormRequiresAccount,
                 },
 
                 select: {
@@ -2590,7 +2612,7 @@ export async function updateActivityText(
                     timeStyle:
                       "short",
                     timeZone:
-                      "Asia/Hebron",
+                      ACTIVITY_TIME_ZONE,
                   },
                 ).format(
                   startsAt,

@@ -5313,6 +5313,41 @@ p {
     gap: 27px;
 }
 
+.activity-registration-identity {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--blue) 4%, #fff);
+}
+
+.activity-registration-identity-head {
+    grid-column: 1 / -1;
+}
+
+.activity-registration-identity-head h3,
+.activity-registration-identity-head p {
+    margin: 0;
+}
+
+.activity-registration-identity-head h3 {
+    color: var(--ink);
+    font-size: 18px;
+}
+
+.activity-registration-identity-head p {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.activity-registration-identity .activity-form-field:last-child {
+    grid-column: 1 / -1;
+}
+
 .activity-form-field {
     display: flex;
     flex-direction: column;
@@ -5552,6 +5587,8 @@ p {
     justify-content: space-between;
 
     gap: 24px;
+
+    margin-top: 30px;
 
     padding-bottom: 24px;
 
@@ -6031,6 +6068,7 @@ p {
 
     .activity-builder-heading {
         flex-direction: column;
+        margin-top: 24px;
     }
 
     .activity-builder-add {
@@ -8252,4 +8290,16 @@ p {
 .activity-registration-hero p {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+    .activity-registration-identity {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 18px;
+    }
+
+    .activity-registration-identity-head,
+    .activity-registration-identity .activity-form-field:last-child {
+        grid-column: auto;
+    }
 }

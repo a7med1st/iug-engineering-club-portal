@@ -5,13 +5,16 @@ import {
   type ActivityFormQuestionType,
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
-import {
-  PERMISSIONS,
-  requirePermission,
-} from "@/lib/permissions";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  consumeRateLimits,
+  createRateLimitKey,
+} from "@/lib/rate-limit";
 import { registrationWindowStatus } from "@/lib/registration-window";
+import { clientIpFromHeaders } from "@/lib/upload-rate-limit";
 
 export type RegistrationFormValues = Record<string, string>;
 
@@ -29,6 +32,11 @@ const initialFailure: RegistrationFormState = {
 };
 
 const QUESTION_FIELD_PREFIX = "question_";
+const IDENTITY_FIELDS = new Set([
+  "studentName",
+  "studentEmail",
+  "studentDepartmentId",
+]);
 
 class RegistrationValidationError extends Error {
   constructor(
@@ -45,13 +53,16 @@ function getSubmittedValues(formData: FormData): RegistrationFormValues {
 
   for (const [fieldName, rawValue] of formData.entries()) {
     if (
-      !fieldName.startsWith(QUESTION_FIELD_PREFIX) ||
+      (!fieldName.startsWith(QUESTION_FIELD_PREFIX) &&
+        !IDENTITY_FIELDS.has(fieldName)) ||
       typeof rawValue !== "string"
     ) {
       continue;
     }
 
-    const questionId = fieldName.slice(QUESTION_FIELD_PREFIX.length);
+    const questionId = fieldName.startsWith(QUESTION_FIELD_PREFIX)
+      ? fieldName.slice(QUESTION_FIELD_PREFIX.length)
+      : fieldName;
 
     if (questionId && values[questionId] === undefined) {
       values[questionId] = rawValue;
@@ -209,15 +220,6 @@ export async function submitActivityRegistration(
 ): Promise<RegistrationFormState> {
   const submittedValues = getSubmittedValues(formData);
 
-  /*
-   * سيحوّل المستخدم إلى صفحة Login
-   * لو مش Student.
-   */
-  const { user } =
-    await requirePermission(
-      PERMISSIONS.ACTIVITY_REGISTER,
-    );
-
   const activityId = String(
     formData.get("activityId") ??
       "",
@@ -232,6 +234,15 @@ export async function submitActivityRegistration(
       "بيانات نموذج التسجيل غير مكتملة.",
       submittedValues,
     );
+  }
+
+  // Hidden from people, but commonly filled by automated spam bots.
+  if (String(formData.get("website") ?? "").trim()) {
+    return {
+      success: true,
+      message: "تم استلام التسجيل.",
+      values: {},
+    };
   }
 
   try {
@@ -301,6 +312,110 @@ export async function submitActivityRegistration(
       );
     }
 
+    type RegistrationStudent = {
+      id: string;
+      name: string;
+      email: string;
+      department: { nameAr: string } | null;
+    };
+
+    const currentAuth = await getCurrentUser();
+    let studentUser: RegistrationStudent | null =
+      currentAuth?.user.role === "STUDENT"
+        ? currentAuth.user
+        : null;
+
+    if (form.requiresAccount && !studentUser) {
+      return failure(
+        "يجب تسجيل الدخول بحساب طالب لتعبئة هذا النموذج.",
+        submittedValues,
+      );
+    }
+
+    const submittedName = String(
+      formData.get("studentName") ?? "",
+    ).trim();
+    const submittedEmail = String(
+      formData.get("studentEmail") ?? "",
+    ).trim().toLowerCase();
+    const submittedDepartmentId = String(
+      formData.get("studentDepartmentId") ?? "",
+    ).trim();
+
+    const studentName = studentUser?.name.trim() ?? submittedName;
+    const studentEmail =
+      studentUser?.email.trim().toLowerCase() ?? submittedEmail;
+    let studentDepartment = studentUser?.department?.nameAr ?? null;
+
+    if (!studentUser) {
+      const identityErrors: Record<string, string> = {};
+
+      if (studentName.length < 2 || studentName.length > 160) {
+        identityErrors.studentName =
+          "أدخل الاسم الكامل (من حرفين إلى 160 حرفًا).";
+      }
+
+      if (
+        studentEmail.length > 254 ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(studentEmail)
+      ) {
+        identityErrors.studentEmail =
+          "أدخل بريدًا إلكترونيًا صالحًا.";
+      }
+
+      if (submittedDepartmentId) {
+        const department = await prisma.department.findUnique({
+          where: { id: submittedDepartmentId },
+          select: { nameAr: true },
+        });
+
+        if (!department) {
+          identityErrors.studentDepartmentId =
+            "اختر تخصصًا صحيحًا من القائمة.";
+        } else {
+          studentDepartment = department.nameAr;
+        }
+      }
+
+      if (Object.keys(identityErrors).length > 0) {
+        return failure(
+          "تحقق من بيانات الطالب ثم أرسل التسجيل مرة أخرى.",
+          submittedValues,
+          identityErrors,
+        );
+      }
+
+      const requestHeaders = await headers();
+      const clientIp = clientIpFromHeaders(requestHeaders);
+      const rateLimit = await consumeRateLimits([
+        {
+          key: createRateLimitKey(
+            "activity-registration:ip-form",
+            clientIp,
+            form.id,
+          ),
+          limit: 30,
+          windowSeconds: 15 * 60,
+        },
+        {
+          key: createRateLimitKey(
+            "activity-registration:email-form",
+            studentEmail,
+            form.id,
+          ),
+          limit: 5,
+          windowSeconds: 60 * 60,
+        },
+      ]);
+
+      if (!rateLimit.allowed) {
+        return failure(
+          "تم إرسال محاولات كثيرة. حاول مرة أخرى لاحقًا.",
+          submittedValues,
+        );
+      }
+    }
+
     /*
      * نتحقق من الإجابات قبل بدء عملية الحفظ.
      */
@@ -353,12 +468,26 @@ export async function submitActivityRegistration(
              */
             const existing =
               await tx.activityFormSubmission.findFirst({
-                where: {
-                  formId:
-                    form.id,
-                  userId:
-                    user.id,
-                },
+                where: studentUser
+                  ? {
+                    formId: form.id,
+                    OR: [
+                      { userId: studentUser.id },
+                      {
+                        studentEmail: {
+                          equals: studentEmail,
+                          mode: "insensitive",
+                        },
+                      },
+                    ],
+                  }
+                  : {
+                    formId: form.id,
+                    studentEmail: {
+                      equals: studentEmail,
+                      mode: "insensitive",
+                    },
+                  },
 
                 select: {
                   id: true,
@@ -385,6 +514,7 @@ export async function submitActivityRegistration(
                   isOpen: true,
                   opensAt: true,
                   closesAt: true,
+                  requiresAccount: true,
 
                   activity: {
                     select: {
@@ -413,6 +543,12 @@ export async function submitActivityRegistration(
             ) {
               throw new Error(
                 "ACTIVITY_NOT_AVAILABLE",
+              );
+            }
+
+            if (latestForm.requiresAccount && !studentUser) {
+              throw new Error(
+                "ACCOUNT_REQUIRED",
               );
             }
 
@@ -451,18 +587,17 @@ const currentCount =
                   form.id,
 
                 userId:
-                  user.id,
+                  studentUser?.id ??
+                  null,
 
                 studentName:
-                  user.name,
+                  studentName,
 
                 studentEmail:
-                  user.email,
+                  studentEmail,
 
                 studentDepartment:
-                  user.department
-                    ?.nameAr ??
-                  null,
+                  studentDepartment,
 
                 answers:
                   answers.length >
@@ -509,7 +644,7 @@ const currentCount =
             "ALREADY_REGISTERED"
           ) {
             return failure(
-              "أنت مسجل مسبقًا في هذا النشاط.",
+              "يوجد تسجيل سابق بهذا البريد الإلكتروني في هذا النشاط.",
               submittedValues,
             );
           }
@@ -530,6 +665,16 @@ const currentCount =
           ) {
             return failure(
               "هذا النشاط غير متاح للتسجيل حاليًا.",
+              submittedValues,
+            );
+          }
+
+          if (
+            error.message ===
+            "ACCOUNT_REQUIRED"
+          ) {
+            return failure(
+              "أصبح تسجيل الدخول مطلوبًا لهذا النموذج. سجّل دخولك ثم حاول مرة أخرى.",
               submittedValues,
             );
           }

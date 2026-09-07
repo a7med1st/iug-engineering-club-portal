@@ -8,6 +8,7 @@ import { DayPicker } from "react-day-picker";
 import { ar } from "react-day-picker/locale";
 import "react-day-picker/style.css";
 
+import { ACTIVITY_TIME_ZONE } from "@/lib/activities";
 import styles from "./ActivitySchedulePicker.module.css";
 
 type PickerName = "startDate" | "startTime" | "endDate" | "endTime";
@@ -71,8 +72,21 @@ function displayTime(value: string) {
   }).format(date);
 }
 
+function currentTimeInGaza() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: ACTIVITY_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const hour = parts.find((part) => part.type === "hour")?.value ?? "00";
+  const minute = parts.find((part) => part.type === "minute")?.value ?? "00";
+
+  return `${hour}:${minute}`;
+}
+
 function normalizeTime(value: string) {
-  return /^\d{2}:\d{2}$/.test(value) ? value : "09:00";
+  return /^\d{2}:\d{2}$/.test(value) ? value : currentTimeInGaza();
 }
 
 function adjustTime(value: string, part: "hour" | "minute", amount: number) {

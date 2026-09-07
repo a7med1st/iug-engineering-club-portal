@@ -2,7 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import ActivityRegistrationForm from "@/components/activities/ActivityRegistrationForm";
-import { formatActivitySchedule } from "@/lib/activities";
+import {
+    ACTIVITY_TIME_ZONE,
+    formatActivitySchedule,
+} from "@/lib/activities";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { registrationWindowStatus } from "@/lib/registration-window";
 
@@ -19,48 +23,66 @@ export default async function ActivityRegisterPage({
 }: Props) {
     const { id } = await params;
 
-    const activity = await prisma.activity.findUnique({
-        where: {
-            id,
-        },
-
-        include: {
-            departments: {
-                include: {
-                    department: true,
-                },
+    const [activity, auth] = await Promise.all([
+        prisma.activity.findUnique({
+            where: {
+                id,
             },
 
-            registrationForm: {
-                include: {
-                    questions: {
-                        orderBy: {
-                            sortOrder: "asc",
-                        },
+            include: {
+                departments: {
+                    include: {
+                        department: true,
                     },
+                },
 
-                    _count: {
-                        select: {
-                            submissions: true,
+                registrationForm: {
+                    include: {
+                        questions: {
+                            orderBy: {
+                                sortOrder: "asc",
+                            },
+                        },
+
+                        _count: {
+                            select: {
+                                submissions: true,
+                            },
                         },
                     },
                 },
             },
-        },
-    });
+        }),
+        getCurrentUser(),
+    ]);
 
     if (!activity) {
         notFound();
     }
 
     const form = activity.registrationForm;
+    const isStudentSignedIn = auth?.user.role === "STUDENT";
+    const requiresGuestIdentity = Boolean(
+        form && !form.requiresAccount && !isStudentSignedIn,
+    );
+    const departments = requiresGuestIdentity
+        ? await prisma.department.findMany({
+            select: {
+                id: true,
+                nameAr: true,
+            },
+            orderBy: {
+                sortOrder: "asc",
+            },
+        })
+        : [];
     const registrationStatus = form
         ? registrationWindowStatus(form)
         : null;
     const registrationDateFormatter = new Intl.DateTimeFormat("ar-PS", {
         dateStyle: "medium",
         timeStyle: "short",
-        timeZone: "Asia/Hebron",
+        timeZone: ACTIVITY_TIME_ZONE,
     });
 
     const occupiedSeats = form
@@ -198,6 +220,12 @@ export default async function ActivityRegisterPage({
 
                             <div className="activity-registration-card-head">
 
+                                <span>
+                                    {form.requiresAccount
+                                        ? "يتطلب تسجيل الدخول بحساب طالب"
+                                        : "التسجيل متاح دون إنشاء حساب"}
+                                </span>
+
                                 <h2>
                                     {form.title}
                                 </h2>
@@ -210,7 +238,26 @@ export default async function ActivityRegisterPage({
 
                             </div>
 
-                            {form.questions.length === 0 ? (
+                            {form.requiresAccount && !isStudentSignedIn ? (
+                                <div className="activity-registration-state">
+                                    <h3>
+                                        سجّل الدخول لإكمال التسجيل
+                                    </h3>
+
+                                    <p>
+                                        هذه الفعالية تستخدم تسجيلًا مرتبطًا بحساب الطالب وميزة QR.
+                                    </p>
+
+                                    <Link
+                                        href={`/login?portal=student&returnTo=${encodeURIComponent(
+                                            `/activities/${activity.id}/register`,
+                                        )}`}
+                                        className="primary-btn"
+                                    >
+                                        تسجيل دخول الطالب
+                                    </Link>
+                                </div>
+                            ) : form.questions.length === 0 && form.requiresAccount ? (
                                 <div className="activity-registration-state">
                                     <h3>
                                         لا توجد أسئلة بعد
@@ -224,6 +271,8 @@ export default async function ActivityRegisterPage({
                                 <ActivityRegistrationForm
                                     activityId={activity.id}
                                     formId={form.id}
+                                    requiresGuestIdentity={requiresGuestIdentity}
+                                    departments={departments}
                                     questions={form.questions.map(
                                         (question) => ({
                                             id: question.id,
