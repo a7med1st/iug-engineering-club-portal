@@ -100,6 +100,8 @@ export default async function MembersAdminPage({
               />
               <small className="field-hint">
                 استخدم بريدًا من Gmail أو Outlook أو مزود معتمد آخر.
+                <br />
+                إذا كان البريد مرتبطًا بحساب طالب، فسيُحوّل الحساب نفسه إلى عضو وتُزال بيانات ملف الطالب.
               </small>
             </label>
 
@@ -266,7 +268,7 @@ export default async function MembersAdminPage({
                     </div>
 
                     <details className="member-access-details">
-                      <summary>تعديل الأقسام والصلاحيات</summary>
+                      <summary>تعديل بيانات العضو والصلاحيات</summary>
 
                       <form
                         action={updateMemberAccess}
@@ -279,6 +281,18 @@ export default async function MembersAdminPage({
                         />
 
                         <div className="form-grid members-form-grid">
+                          <label>
+                            اسم العضو
+                            <input
+                              name="name"
+                              defaultValue={member.name}
+                              minLength={2}
+                              maxLength={120}
+                              required
+                              autoComplete="name"
+                            />
+                          </label>
+
                           <label>
                             المسمى داخل النادي
                             <input
@@ -343,7 +357,7 @@ export default async function MembersAdminPage({
                           type="submit"
                           className="primary-btn members-primary-btn"
                         >
-                          حفظ الصلاحيات
+                          حفظ التعديلات
                         </button>
                       </form>
                     </details>

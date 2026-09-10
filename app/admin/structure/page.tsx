@@ -329,6 +329,18 @@ export default async function StructureAdminPage({
                         </label>
 
                         <label>
+                          اسم العضو
+                          <input
+                            name="name"
+                            defaultValue={item.user?.name ?? item.name}
+                            minLength={2}
+                            maxLength={120}
+                            required
+                            autoComplete="name"
+                          />
+                        </label>
+
+                        <label>
                           المسمى
                           <input
                             name="title"
@@ -378,10 +390,14 @@ export default async function StructureAdminPage({
                         <button
                           type="submit"
                           className="ghost-btn structure-delete-btn"
-                          disabled={item._count.children > 0}
                         >
-                          حذف من الهيكلية
+                          حذف نهائيًا من الهيكلية
                         </button>
+                        {item._count.children > 0 && (
+                          <small className="muted">
+                            ستبقى العناصر التابعة في الشجرة وستنتقل إلى المسؤول الأعلى لهذا العضو.
+                          </small>
+                        )}
                       </form>
                     </div>
                     </details>

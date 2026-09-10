@@ -118,6 +118,7 @@ async function assertParentAllowed(
 
 function revalidateStructure(userId?: string) {
   revalidatePath("/admin/structure");
+  revalidatePath("/admin/members");
   revalidatePath("/delegates");
 
   if (userId) {
@@ -236,6 +237,7 @@ export async function updateStructureMember(
 
   const itemId = text(formData, "itemId");
   const targetUserId = text(formData, "userId");
+  const name = text(formData, "name");
   const title = text(formData, "title");
   const parentId = optionalId(formData, "parentId");
 
@@ -245,6 +247,10 @@ export async function updateStructureMember(
 
   if (!title || title.length > 160) {
     fail("اكتب مسمى تنظيمي صالحًا لا يتجاوز 160 حرفًا.");
+  }
+
+  if (name.length < 2 || name.length > 120) {
+    fail("يجب أن يكون اسم العضو بين حرفين و120 حرفًا.");
   }
 
   const item = await prisma.clubStructureItem.findUnique({
@@ -304,10 +310,15 @@ export async function updateStructureMember(
   const nextLevel = parent ? parent.level + 1 : 1;
 
   await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: targetUser.id },
+      data: { name },
+    });
+
     await tx.clubStructureItem.update({
       where: { id: itemId },
       data: {
-        name: targetUser.name,
+        name,
         title,
         userId: targetUser.id,
         departmentId: targetUser.departmentId,
@@ -393,8 +404,12 @@ export async function deleteStructureMember(
       id: true,
       userId: true,
       departmentId: true,
+      parentId: true,
       children: {
-        select: { id: true },
+        select: {
+          id: true,
+          departmentId: true,
+        },
       },
     },
   });
@@ -411,14 +426,45 @@ export async function deleteStructureMember(
     fail("لا يمكنك حذف عنصر خارج قسمك.");
   }
 
-  if (item.children.length > 0) {
-    fail("انقل العناصر التابعة أولًا قبل حذف هذا العنصر.");
+  if (
+    user.role !== "ADMIN" &&
+    item.children.some(
+      (child) =>
+        !child.departmentId ||
+        !canAccessDepartment(user, child.departmentId),
+    )
+  ) {
+    fail("لا يمكن حذف هذا العنصر لأن بعض العناصر التابعة له خارج نطاق أقسامك.");
   }
 
-  await prisma.clubStructureItem.delete({
-    where: { id: itemId },
+  const descendantIds = [
+    ...(await getDescendantIds(itemId)),
+  ];
+
+  await prisma.$transaction(async (tx) => {
+    // Preserve the rest of the tree: direct children move to the deleted
+    // member's parent, while the deleted member disappears completely.
+    await tx.clubStructureItem.updateMany({
+      where: { parentId: itemId },
+      data: { parentId: item.parentId },
+    });
+
+    if (descendantIds.length > 0) {
+      await tx.clubStructureItem.updateMany({
+        where: {
+          id: { in: descendantIds },
+        },
+        data: {
+          level: { decrement: 1 },
+        },
+      });
+    }
+
+    await tx.clubStructureItem.delete({
+      where: { id: itemId },
+    });
   });
 
   revalidateStructure(item.userId ?? undefined);
-  success("تم حذف العضو من الهيكلية.");
+  success("تم حذف العضو نهائيًا من الهيكلية، مع إبقاء العناصر التابعة في الشجرة.");
 }

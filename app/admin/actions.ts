@@ -486,7 +486,7 @@ export async function createMember(
 
   return runAdminAction(
     "/admin/members",
-    "تم إنشاء حساب العضو وإرسال رمز التحقق إلى بريده بنجاح.",
+    "تم تجهيز حساب العضو بنجاح. إذا كان مسجلًا كطالب، فقد تم تحويل حسابه إلى عضو.",
     "تعذر إنشاء حساب العضو. تحقق من البيانات وحاول مجددًا.",
 
     async () => {
@@ -589,12 +589,17 @@ export async function createMember(
 
           select: {
             id: true,
+            role: true,
+            emailVerifiedAt: true,
           },
         });
 
-      if (existingUser) {
+      if (
+        existingUser &&
+        existingUser.role !== "STUDENT"
+      ) {
         throw new AdminActionError(
-          "هذا البريد الإلكتروني مستخدم بالفعل.",
+          "هذا البريد الإلكتروني مرتبط بالفعل بحساب عضو أو إدارة.",
         );
       }
 
@@ -604,12 +609,17 @@ export async function createMember(
           12,
         );
 
-      try {
-        assertEmailDeliveryConfigured();
-      } catch {
-        throw new AdminActionError(
-          "خدمة إرسال البريد غير مهيأة. لم يتم إنشاء حساب العضو.",
-        );
+      const needsEmailVerification =
+        !existingUser?.emailVerifiedAt;
+
+      if (needsEmailVerification) {
+        try {
+          assertEmailDeliveryConfigured();
+        } catch {
+          throw new AdminActionError(
+            "خدمة إرسال البريد غير مهيأة. لم يتم إنشاء حساب العضو.",
+          );
+        }
       }
 
       let registration:
@@ -622,7 +632,7 @@ export async function createMember(
           verification: {
             code: string;
             codeHash: string;
-          };
+          } | null;
         }
         | undefined;
 
@@ -630,8 +640,36 @@ export async function createMember(
         registration =
           await prisma.$transaction(
             async (transaction) => {
-              const user =
-                await transaction.user.create({
+              const user = existingUser
+                ? await transaction.user.update({
+                    where: {
+                      id: existingUser.id,
+                      role: "STUDENT",
+                    },
+                    data: {
+                      name,
+                      email,
+                      passwordHash,
+                      role: "MEMBER",
+                      mustChangePassword: true,
+                      position,
+                      departmentId,
+                      managedDepartmentIds,
+                      memberPermissions,
+                      studentNumber: null,
+                      phone: null,
+                      studyLevel: null,
+                      sessionVersion: {
+                        increment: 1,
+                      },
+                    },
+                    select: {
+                      id: true,
+                      email: true,
+                      name: true,
+                    },
+                  })
+                : await transaction.user.create({
                   data: {
                     name,
                     email,
@@ -651,11 +689,31 @@ export async function createMember(
                   },
                 });
 
-              const verification =
-                await createInitialEmailVerificationCode(
-                  transaction,
-                  user.id,
-                );
+              // The temporary member password replaces any student recovery
+              // flow that may still be active.
+              await transaction.passwordResetCode.deleteMany({
+                where: { userId: user.id },
+              });
+
+              let verification = null;
+
+              if (needsEmailVerification) {
+                // A student account may already have an old or expired code.
+                // Replace it so the converted member receives a fresh one.
+                await transaction.emailVerificationCode.deleteMany({
+                  where: { userId: user.id },
+                });
+
+                verification =
+                  await createInitialEmailVerificationCode(
+                    transaction,
+                    user.id,
+                  );
+              } else {
+                await transaction.emailVerificationCode.deleteMany({
+                  where: { userId: user.id },
+                });
+              }
 
               return { user, verification };
             },
@@ -674,23 +732,25 @@ export async function createMember(
         throw error;
       }
 
-      try {
-        await sendEmailVerificationCode({
-          email: registration.user.email,
-          name: registration.user.name,
-          code: registration.verification.code,
-        });
-      } catch {
-        await invalidateUndeliveredVerificationCode(
-          registration.user.id,
-          registration.verification.codeHash,
-        );
+      if (registration.verification) {
+        try {
+          await sendEmailVerificationCode({
+            email: registration.user.email,
+            name: registration.user.name,
+            code: registration.verification.code,
+          });
+        } catch {
+          await invalidateUndeliveredVerificationCode(
+            registration.user.id,
+            registration.verification.codeHash,
+          );
 
-        revalidatePath("/admin/members");
+          revalidatePath("/admin/members");
 
-        throw new AdminActionError(
-          "تم إنشاء حساب العضو، لكن تعذر إرسال رمز التحقق. يمكن للعضو طلب رمز جديد عند محاولة تسجيل الدخول.",
-        );
+          throw new AdminActionError(
+            "تم تجهيز حساب العضو، لكن تعذر إرسال رمز التحقق. يمكن للعضو طلب رمز جديد عند محاولة تسجيل الدخول.",
+          );
+        }
       }
 
       revalidatePath(
@@ -714,9 +774,9 @@ export async function updateMemberAccess(
   return runAdminAction(
     "/admin/members",
 
-    "تم تحديث أقسام العضو وصلاحياته بنجاح.",
+    "تم تحديث بيانات العضو وأقسامه وصلاحياته بنجاح.",
 
-    "تعذر تحديث صلاحيات العضو.",
+    "تعذر تحديث بيانات العضو وصلاحياته.",
 
     async () => {
       const memberId =
@@ -725,6 +785,21 @@ export async function updateMemberAccess(
           "memberId",
           "معرّف العضو",
         );
+
+      const name = requiredText(
+        formData,
+        "name",
+        "اسم العضو",
+      );
+
+      if (
+        name.length < 2 ||
+        name.length > 120
+      ) {
+        throw new AdminActionError(
+          "يجب أن يكون اسم العضو بين حرفين و120 حرفًا.",
+        );
+      }
 
       const position =
         String(
@@ -810,20 +885,29 @@ export async function updateMemberAccess(
             nextPermissions[index],
         );
 
-      await prisma.user.update({
-        where: {
-          id: memberId,
-        },
+      await prisma.$transaction(async (transaction) => {
+        await transaction.user.update({
+          where: {
+            id: memberId,
+          },
 
-        data: {
-          position,
-          departmentId,
-          managedDepartmentIds,
-          memberPermissions,
-          ...(accessChanged
-            ? { sessionVersion: { increment: 1 } }
-            : {}),
-        },
+          data: {
+            name,
+            position,
+            departmentId,
+            managedDepartmentIds,
+            memberPermissions,
+            ...(accessChanged
+              ? { sessionVersion: { increment: 1 } }
+              : {}),
+          },
+        });
+
+        // Keep the denormalized structure name aligned with the account name.
+        await transaction.clubStructureItem.updateMany({
+          where: { userId: memberId },
+          data: { name },
+        });
       });
 
       revalidatePath(
@@ -837,6 +921,10 @@ export async function updateMemberAccess(
       revalidatePath(
         "/member/check-in",
       );
+
+      revalidatePath("/admin/structure");
+      revalidatePath("/delegates");
+      revalidatePath(`/members/${memberId}`);
     },
   );
 }
