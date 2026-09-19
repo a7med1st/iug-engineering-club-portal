@@ -323,6 +323,9 @@ export async function getAdminDashboardData({
         "STUDENT",
     ).length;
 
+  const totalUserCount =
+    scopedUsers.length;
+
   const memberCount =
     scopedUsers.filter(
       (user) =>
@@ -694,6 +697,7 @@ export async function getAdminDashboardData({
     departments,
 
     summary: {
+      totalUserCount,
       studentCount,
       memberCount,
       adminCount,

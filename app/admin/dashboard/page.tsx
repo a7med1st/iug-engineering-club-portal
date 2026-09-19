@@ -9,6 +9,7 @@ import {
   Inbox,
   MapPin,
   TrendingUp,
+  UserPlus,
   UserRoundCheck,
   Users,
 } from "lucide-react";
@@ -136,6 +137,13 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
       />
 
       <div className={styles.metrics} data-reveal-group="scale">
+        <Metric
+          title="إجمالي المسجلين"
+          value={summary.totalUserCount}
+          hint={`${summary.studentCount} طالب · ${summary.memberCount} عضو · ${summary.adminCount} إداري`}
+          icon={UserPlus}
+          accent="green"
+        />
         <Metric
           title="الطلاب"
           value={summary.studentCount}
