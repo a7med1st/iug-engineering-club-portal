@@ -194,6 +194,8 @@ export async function checkInByQrCode(
 
           checkedInById:
             user.id,
+          attendanceSource: "STAFF_QR",
+          attendanceLinkId: null,
         },
       });
 

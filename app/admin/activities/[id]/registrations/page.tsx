@@ -46,6 +46,7 @@ import {
     XCircle,
 } from "lucide-react";
 import attendanceStyles from "./attendance.module.css";
+import AttendanceLinkPanel from "./AttendanceLinkPanel";
 export const dynamic = "force-dynamic";
 
 type Props = {
@@ -200,6 +201,7 @@ export default async function ActivityRegistrationsPage({
             },
 
             include: {
+                attendanceLink: true,
                 registrationForm: {
                     include: {
                         questions: {
@@ -433,6 +435,28 @@ export default async function ActivityRegistrationsPage({
             )
             : 0;
 
+    const exportParams = new URLSearchParams();
+
+    if (query) {
+        exportParams.set("q", query);
+    }
+
+    if (status !== "ALL") {
+        exportParams.set("status", status);
+    }
+
+    if (attendance !== "ALL") {
+        exportParams.set("attendance", attendance);
+    }
+
+    const hasActiveFilters = exportParams.size > 0;
+    const exportHref =
+        `/admin/activities/${activity.id}/registrations/export${
+            hasActiveFilters
+                ? `?${exportParams.toString()}`
+                : ""
+        }`;
+
     const isArchived =
         activity.status ===
         "ARCHIVED";
@@ -512,6 +536,18 @@ export default async function ActivityRegistrationsPage({
                 </div>
             </header>
 
+            {canManualAttendance && (
+                <AttendanceLinkPanel
+                    activityId={activity.id}
+                    link={activity.attendanceLink ? {
+                        isActive: activity.attendanceLink.isActive,
+                        opensAt: activity.attendanceLink.opensAt?.toISOString().slice(0, 16) ?? "",
+                        closesAt: activity.attendanceLink.closesAt?.toISOString().slice(0, 16) ?? "",
+                        tokenPrefix: activity.attendanceLink.tokenPrefix,
+                    } : null}
+                />
+            )}
+
             <section className={attendanceStyles.actionToolbar}>
                 <div className={attendanceStyles.toolbarHeading}>
                     <span aria-hidden="true">
@@ -547,12 +583,19 @@ export default async function ActivityRegistrationsPage({
 
                     {canExport && (
                         <Link
-                            href={`/admin/activities/${activity.id}/registrations/export`}
+                            href={exportHref}
                             className={`ghost-btn activity-registration-export ${attendanceStyles.secondaryAction}`}
                             data-no-page-transition
+                            title={
+                                hasActiveFilters
+                                    ? `تصدير ${form.submissions.length} نتيجة ظاهرة إلى Excel`
+                                    : "تصدير جميع التسجيلات إلى Excel"
+                            }
                         >
                             <Download size={17} />
-                            تصدير Excel
+                            {hasActiveFilters
+                                ? `تصدير النتائج (${form.submissions.length})`
+                                : "تصدير Excel"}
                         </Link>
                     )}
 

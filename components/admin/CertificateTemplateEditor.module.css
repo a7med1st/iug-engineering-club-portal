@@ -1,0 +1,76 @@
+.editor { display: grid; grid-template-columns: minmax(400px, .9fr) minmax(0, 1.1fr); gap: 24px; width: 100%; align-items: start; }
+.previewColumn, .settings { min-width: 0; display: grid; align-content: start; gap: 12px; }
+.upload { min-height: 66px; padding: 11px 13px; display: flex; align-items: center; gap: 11px; border: 1px dashed rgba(22,136,255,.38); border-radius: 8px; background: #f7fbff; cursor: pointer; }
+.upload:hover { border-color: #1688ff; background: #eef8ff; }
+.uploadIcon { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 7px; background: #e8f5ff; color: #1688ff; }
+.uploadCopy { min-width: 0; display: grid; gap: 2px; }
+.uploadCopy strong { color: #173957; font-size: .76rem; }
+.uploadCopy small { overflow: hidden; color: #7a8fa3; font-size: .62rem; text-overflow: ellipsis; white-space: nowrap; }
+.upload input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.dimensions { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #71879b; font-size: .61rem; }
+.dimensions span { display: inline-flex; align-items: center; gap: 5px; }
+.preview { position: relative; width: 100%; overflow: hidden; display: grid; place-items: center; border: 1px solid #d7e4ef; border-radius: 8px; background: #eef4f8; touch-action: none; user-select: none; }
+.preview img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+.draggableText { position: absolute; z-index: 2; transform: translate(var(--anchor), -.82em); line-height: 1; white-space: nowrap; cursor: grab; touch-action: none; }
+.draggableText::after { content: ""; position: absolute; inset: -7px; border: 1px dashed transparent; border-radius: 4px; }
+.draggableText:hover::after, .dragging::after { border-color: #1688ff; }
+.dragging { cursor: grabbing; }
+.emptyPreview { display: grid; justify-items: center; gap: 6px; color: #8ca0b2; text-align: center; }
+.emptyPreview strong { color: #536f88; font-size: .76rem; }
+.emptyPreview span { font-size: .62rem; }
+.settingSection { min-width: 0; margin: 0; padding: 16px; overflow: hidden; border: 1px solid #dbe7f1; border-radius: 8px; background: #fbfdff; }
+.sectionHeading { margin-bottom: 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sectionHeading strong { color: #163a5a; font-size: .78rem; }
+.required { padding: 4px 8px; border-radius: 999px; background: #eaf5ff; color: #1688ff; font-size: .58rem; font-weight: 850; }
+.fieldGrid { display: grid; grid-template-columns: repeat(3, minmax(72px, 1fr)) minmax(150px, 1.35fr); gap: 10px; align-items: end; }
+.fieldGrid > label, .alignmentField { min-width: 0; display: grid; gap: 6px; color: #627b91; font-size: .62rem; font-weight: 750; }
+.fieldGrid > label:nth-child(5) { grid-column: 1 / 2; grid-row: 2; }
+.alignmentField { grid-column: 2 / 5; grid-row: 2; }
+.numberField { min-width: 0; height: 40px; display: flex; align-items: center; overflow: hidden; border: 1px solid #cfdeea; border-radius: 7px; background: #fff; }
+.numberField:focus-within { border-color: #1688ff; box-shadow: 0 0 0 3px rgba(22,136,255,.09); }
+.numberField input { width: 100%; min-width: 0; height: 100%; padding: 0 8px; border: 0; outline: 0; background: transparent; color: #173957; font: inherit; }
+.numberField small { padding-inline-end: 7px; color: #91a4b5; }
+.fontField select { width: 100%; height: 40px; padding: 0 8px; border: 1px solid #cfdeea; border-radius: 7px; background: #fff; color: #173957; font-size: .7rem; }
+.colorInput { width: 100%; height: 40px; padding: 4px; border: 1px solid #cfdeea; border-radius: 7px; background: #fff; cursor: pointer; }
+.alignments { height: 40px; padding: 3px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; border: 1px solid #cfdeea; border-radius: 7px; background: #fff; }
+.alignments label { position: relative; min-width: 0; cursor: pointer; }
+.alignments input { position: absolute; opacity: 0; }
+.alignments span { height: 32px; display: grid; place-items: center; border-radius: 5px; color: #7590a6; }
+.alignments input:checked + span { background: #eaf5ff; color: #1688ff; }
+.switch { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
+.switch input { position: absolute; opacity: 0; }
+.switch > span { position: relative; width: 35px; height: 20px; border-radius: 999px; background: #c8d5df; }
+.switch > span::after { content: ""; position: absolute; top: 3px; right: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.switch input:checked + span { background: #1688ff; }
+.switch input:checked + span::after { transform: translateX(-15px); }
+.switch small { color: #687f93; font-size: .62rem; }
+.saveButton { min-height: 44px; padding: 0 18px; justify-self: end; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 8px; background: linear-gradient(118deg,#0f72dc,#1688ff 55%,#24b8f2); color: #fff; box-shadow: 0 10px 22px rgba(22,136,255,.22); cursor: pointer; font: inherit; font-size: .72rem; font-weight: 850; }
+.saveButton:hover { transform: translateY(-2px); }
+
+@media (max-width: 1180px) {
+  .editor { grid-template-columns: 1fr; }
+  .previewColumn { width: min(100%, 760px); justify-self: center; }
+}
+@media (max-width: 760px) {
+  .settingSection { padding: 13px; }
+  .fieldGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fieldGrid > label:nth-child(5) { grid-column: auto; grid-row: auto; }
+  .fontField, .alignmentField { grid-column: span 2; grid-row: auto; }
+  .saveButton { width: 100%; }
+  .dimensions { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 390px) {
+  .fieldGrid { grid-template-columns: 1fr; }
+  .fontField, .alignmentField { grid-column: auto; }
+}
+
+:global(html[data-theme="dark"]) .upload,
+:global(html[data-theme="dark"]) .settingSection { border-color: var(--line); background: var(--surface-2); }
+:global(html[data-theme="dark"]) .preview { border-color: var(--line); background: var(--surface-3); }
+:global(html[data-theme="dark"]) .numberField,
+:global(html[data-theme="dark"]) .colorInput,
+:global(html[data-theme="dark"]) .alignments,
+:global(html[data-theme="dark"]) .fontField select { border-color: var(--line); background: var(--surface); color: var(--ink); }
+:global(html[data-theme="dark"]) .numberField input,
+:global(html[data-theme="dark"]) .sectionHeading strong,
+:global(html[data-theme="dark"]) .uploadCopy strong { color: var(--ink); }

@@ -84,7 +84,7 @@ export default function AuthForm() {
         {error && <div className="form-error">{error}</div>}
         <button className="primary-btn" disabled={loading}>{loading ? "جارٍ التحقق..." : "دخول"}</button>
       </form>
-      {portal === "student" && <p className="auth-foot">لا تملك حسابًا؟ <Link href="/student/register">إنشاء حساب طالب</Link></p>}
+      {portal === "student" && <p className="auth-foot">لا تملك حسابًا؟ <Link href={appendReturnTo("/student/register", returnTo)}>إنشاء حساب طالب</Link></p>}
     </div>
   );
 }

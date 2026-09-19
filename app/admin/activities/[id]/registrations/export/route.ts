@@ -21,6 +21,17 @@ const statusLabels = {
   REJECTED: "مرفوض",
 } as const;
 
+const allowedStatuses = new Set([
+  "SUBMITTED",
+  "APPROVED",
+  "REJECTED",
+]);
+
+const allowedAttendanceFilters = new Set([
+  "PRESENT",
+  "ABSENT",
+]);
+
 function formatAnswer(
   value: Prisma.JsonValue,
 ) {
@@ -70,10 +81,66 @@ function safeFileName(
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: RouteContext,
 ) {
   const { id } = await params;
+
+  const searchParams = new URL(request.url).searchParams;
+  const query = (searchParams.get("q") ?? "")
+    .trim()
+    .slice(0, 200);
+  const requestedStatus = searchParams.get("status") ?? "ALL";
+  const status = allowedStatuses.has(requestedStatus)
+    ? requestedStatus
+    : "ALL";
+  const requestedAttendance = searchParams.get("attendance") ?? "ALL";
+  const attendance = allowedAttendanceFilters.has(requestedAttendance)
+    ? requestedAttendance
+    : "ALL";
+
+  const submissionWhere: Prisma.ActivityFormSubmissionWhereInput = {
+    ...(status !== "ALL"
+      ? {
+          status: status as "SUBMITTED" | "APPROVED" | "REJECTED",
+        }
+      : {}),
+    ...(attendance === "PRESENT"
+      ? {
+          status: "APPROVED",
+          checkedInAt: { not: null },
+        }
+      : attendance === "ABSENT"
+        ? {
+            status: "APPROVED",
+            checkedInAt: null,
+          }
+        : {}),
+    ...(query
+      ? {
+          OR: [
+            {
+              studentName: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            {
+              studentEmail: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            {
+              studentDepartment: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+          ],
+        }
+      : {}),
+  };
 
   await requireActivityPermission(
     PERMISSIONS.REGISTRATION_EXPORT,
@@ -96,6 +163,8 @@ export async function GET(
             },
 
             submissions: {
+              where: submissionWhere,
+
               include: {
                 answers: true,
               },
@@ -288,6 +357,36 @@ export async function GET(
           }
         },
       );
+
+      const registrationStatusCell = row.getCell(5);
+      const registrationStatusColor =
+        submission.status === "APPROVED"
+          ? "FFDDF6E8"
+          : submission.status === "REJECTED"
+            ? "FFFFE2E2"
+            : "FFFFF2CC";
+
+      registrationStatusCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: registrationStatusColor },
+      };
+      registrationStatusCell.font = { bold: true };
+
+      const attendanceCell = row.getCell(6);
+      if (attendanceStatus === "حضر") {
+        attendanceCell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFDDF6E8" },
+        };
+      } else if (attendanceStatus === "لم يحضر") {
+        attendanceCell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFFFE2E2" },
+        };
+      }
     },
   );
 
@@ -337,13 +436,30 @@ export async function GET(
     },
   };
 
+  worksheet.pageSetup = {
+    orientation: "landscape",
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    paperSize: 9,
+  };
+
+  worksheet.headerFooter.oddHeader =
+    `&C&"Arial,Bold"${activity.title}`;
+  worksheet.headerFooter.oddFooter =
+    "&Rصفحة &P من &N";
+
   const buffer =
     await workbook.xlsx.writeBuffer();
 
   const filename =
     `${safeFileName(
       activity.title,
-    )}-registrations.xlsx`;
+    )}-${
+      query || status !== "ALL" || attendance !== "ALL"
+        ? "filtered-"
+        : ""
+    }registrations.xlsx`;
 
   return new Response(
     Buffer.from(buffer),

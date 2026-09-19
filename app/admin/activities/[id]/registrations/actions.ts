@@ -379,6 +379,8 @@ export async function updateRegistrationStatus(
                 ? {
                     checkedInAt: null,
                     checkedInById: null,
+                    attendanceSource: null,
+                    attendanceLinkId: null,
                   }
                 : {}),
             },
@@ -572,6 +574,8 @@ export async function updateRegistrationAttendance(
           checkedInAt,
           checkedInById:
             user.id,
+          attendanceSource: "STAFF_MANUAL",
+          attendanceLinkId: null,
         },
       });
 
@@ -617,6 +621,8 @@ export async function updateRegistrationAttendance(
     data: {
       checkedInAt: null,
       checkedInById: null,
+      attendanceSource: null,
+      attendanceLinkId: null,
     },
   });
 

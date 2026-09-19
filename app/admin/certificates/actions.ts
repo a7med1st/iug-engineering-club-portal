@@ -24,6 +24,19 @@ import {
 import {
   prisma,
 } from "@/lib/prisma";
+import { renderCertificate } from "@/lib/certificate-renderer";
+import { putPrivateBlob, tryDeletePrivateBlobs } from "@/lib/blob-storage";
+import { randomUUID } from "node:crypto";
+
+async function generateCertificateArtifact(submissionId: string, certificateId: string) {
+  const row = await prisma.activityFormSubmission.findUnique({ where: { id: submissionId }, select: { studentName: true, form: { select: { activity: { select: { title: true, startsAt: true, certificateTemplate: true } } } }, certificate: { select: { artifactPathname: true } } } });
+  const template = row?.form.activity.certificateTemplate;
+  if (!row || !template) certificateAdminError("يجب إعداد قالب للنشاط قبل إصدار الشهادة.");
+  const rendered = await renderCertificate({ sourcePathname: template.sourcePathname, width: template.sourceWidth, height: template.sourceHeight, settings: { nameX:Number(template.nameX),nameY:Number(template.nameY),nameFontSize:Number(template.nameFontSize),nameFontFamily:template.nameFontFamily as "Cairo",nameColor:template.nameColor,nameAlign:template.nameAlign as "left"|"center"|"right",titleVisible:template.titleVisible,titleX:Number(template.titleX),titleY:Number(template.titleY),titleFontSize:Number(template.titleFontSize),titleFontFamily:template.titleFontFamily as "Cairo",titleColor:template.titleColor,titleAlign:template.titleAlign as "left"|"center"|"right",dateVisible:template.dateVisible,dateX:Number(template.dateX),dateY:Number(template.dateY),dateFontSize:Number(template.dateFontSize),dateFontFamily:template.dateFontFamily as "Cairo",dateColor:template.dateColor,dateAlign:template.dateAlign as "left"|"center"|"right" }, studentName: row.studentName, activityTitle: row.form.activity.title, activityDate: row.form.activity.startsAt });
+  const pathname=`certificates/${certificateId}/${randomUUID()}.png`; await putPrivateBlob(pathname,rendered.buffer,rendered.mime);
+  try { await prisma.certificate.update({ where:{id:certificateId}, data:{artifactPathname:pathname,artifactMime:rendered.mime,artifactSize:rendered.size,artifactWidth:rendered.width,artifactHeight:rendered.height,generatedAt:new Date(),templateFingerprint:rendered.fingerprint} }); } catch(error) { await tryDeletePrivateBlobs([pathname], "certificate-generation-rollback"); throw error; }
+  if(row.certificate?.artifactPathname) await tryDeletePrivateBlobs([row.certificate.artifactPathname], "certificate-artifact-replacement");
+}
 
 function field(
   formData: FormData,
@@ -80,6 +93,7 @@ async function ensureEligibleSubmission(
               select: {
                 id: true,
                 title: true,
+                certificateTemplate: { select: { id: true } },
               },
             },
           },
@@ -110,6 +124,10 @@ async function ensureEligibleSubmission(
     certificateAdminError(
       "لا يمكن إصدار الشهادة قبل تسجيل حضور المشارك.",
     );
+  }
+
+  if (!submission.form.activity.certificateTemplate) {
+    certificateAdminError("يجب إعداد قالب للنشاط قبل إصدار الشهادة.");
   }
 
   return submission;
@@ -262,6 +280,7 @@ export async function issueCertificate(
     throw error;
   }
 
+  await generateCertificateArtifact(submission.id, certificate.id);
   await notifyCertificate(
     submission.userId,
     submission.form.activity.title,
@@ -300,6 +319,14 @@ export async function issueActivityCertificates(
     certificateAdminError(
       "اختر نشاطًا أولًا.",
     );
+  }
+
+  const activityTemplate = await prisma.certificateTemplate.findUnique({
+    where: { activityId },
+    select: { id: true },
+  });
+  if (!activityTemplate) {
+    certificateAdminError("يجب إعداد قالب للنشاط قبل إصدار الشهادات.");
   }
 
   const submissions =
@@ -396,6 +423,8 @@ export async function issueActivityCertificates(
                 code,
             },
           });
+
+    await generateCertificateArtifact(submission.id, certificate.id);
 
     await notifyCertificate(
       submission.userId,

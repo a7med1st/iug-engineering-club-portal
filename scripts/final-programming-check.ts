@@ -297,6 +297,15 @@ async function main() {
         checkedInAt: {
           not: null,
         },
+
+        form: {
+          activity: {
+            startsAt: {
+              lte:
+                new Date(),
+            },
+          },
+        },
       },
     });
 

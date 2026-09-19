@@ -208,7 +208,7 @@ async function main() {
   const layout = await readFile("app/layout.tsx", "utf8");
   assert.match(layout, /getCspNonce\(\)/);
   assert.match(layout, /<CspNonceProvider nonce=\{nonce\}>/);
-  assert.match(layout, /<script nonce=\{nonce\}/);
+  assert.match(layout, /<script\s+[\s\S]*?nonce=\{nonce\}/);
 
   const nonceHelper = await readFile("lib/csp-nonce.ts", "utf8");
   assert.match(nonceHelper, /headers\(\)/);
@@ -253,7 +253,7 @@ async function main() {
     "components/security/CspNonce.tsx",
     "utf8",
   );
-  assert.match(nonceComponent, /return <style nonce=\{nonce\}>/);
+  assert.match(nonceComponent, /return\s*\(\s*<style\s+nonce=\{nonce\}/);
 
   console.log("CSP preview enforcement security tests passed.");
 }

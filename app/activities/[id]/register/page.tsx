@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getSafeReturnTo, appendReturnTo } from "@/lib/safe-return-to";
 
 import ActivityRegistrationForm from "@/components/activities/ActivityRegistrationForm";
 import {
@@ -16,12 +17,15 @@ type Props = {
     params: Promise<{
         id: string;
     }>;
+    searchParams: Promise<{ returnTo?: string }>;
 };
 
 export default async function ActivityRegisterPage({
     params,
+    searchParams,
 }: Props) {
     const { id } = await params;
+    const returnTo = getSafeReturnTo((await searchParams).returnTo);
 
     const [activity, auth] = await Promise.all([
         prisma.activity.findUnique({
@@ -249,9 +253,7 @@ export default async function ActivityRegisterPage({
                                     </p>
 
                                     <Link
-                                        href={`/login?portal=student&returnTo=${encodeURIComponent(
-                                            `/activities/${activity.id}/register`,
-                                        )}`}
+                                        href={appendReturnTo("/login?portal=student", returnTo ?? `/activities/${activity.id}/register`)}
                                         className="primary-btn"
                                     >
                                         تسجيل دخول الطالب
@@ -273,6 +275,7 @@ export default async function ActivityRegisterPage({
                                     formId={form.id}
                                     requiresGuestIdentity={requiresGuestIdentity}
                                     departments={departments}
+                                    returnTo={returnTo}
                                     questions={form.questions.map(
                                         (question) => ({
                                             id: question.id,

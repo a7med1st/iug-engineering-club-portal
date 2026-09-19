@@ -8,6 +8,7 @@ import {
   useState,
   useTransition,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   submitActivityRegistration,
@@ -34,6 +35,7 @@ type Props = {
     id: string;
     nameAr: string;
   }>;
+  returnTo: string | null;
 };
 
 const initialState: RegistrationFormState = {
@@ -64,7 +66,9 @@ export default function ActivityRegistrationForm({
   questions,
   requiresGuestIdentity,
   departments,
+  returnTo,
 }: Props) {
+  const router = useRouter();
   const [state, formAction] = useActionState(
     submitActivityRegistration,
     initialState,
@@ -79,6 +83,7 @@ export default function ActivityRegistrationForm({
     if (state.success) {
       setValues(emptyValues(questions, requiresGuestIdentity));
       formRef.current?.reset();
+      if (returnTo) router.replace(returnTo);
       return;
     }
 
@@ -88,7 +93,7 @@ export default function ActivityRegistrationForm({
         ...state.values,
       }));
     }
-  }, [questions, requiresGuestIdentity, state.success, state.values]);
+  }, [questions, requiresGuestIdentity, returnTo, router, state.success, state.values]);
 
   function updateAnswer(questionId: string, value: string) {
     setValues((current) => ({

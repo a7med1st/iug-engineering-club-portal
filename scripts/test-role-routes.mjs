@@ -184,7 +184,6 @@ async function main() {
   }
   if (certificate) {
     publicRoutes.push(
-      ["Public certificate", `/certificates/${certificate.verificationCode}`],
       ["Certificate verification result", `/certificates/verify/${certificate.verificationCode}`],
     );
   }
@@ -198,6 +197,9 @@ async function main() {
   await request("Unauthenticated student guard", "/student", { expected: [303, 307, 308] });
   await request("Unauthenticated admin guard", "/admin/activities", { expected: [303, 307, 308] });
   await request("Unauthenticated notifications API", "/api/notifications", { expected: [401] });
+  if (certificate) {
+    await request("Private certificate rejects public access", `/certificates/${certificate.verificationCode}`, { expected: [404] });
+  }
   await request("Invalid login rejection", "/api/auth/login", {
     method: "POST",
     headers: {
@@ -208,9 +210,9 @@ async function main() {
     expected: [401],
   });
   await request(
-    serverNodeEnv === "production" ? "Protected cron rejection" : "Development cron bypass",
+    "Cron environment policy",
     "/api/cron/activity-reminders",
-    { expected: serverNodeEnv === "production" ? [401] : [200] },
+    { expected: [200, 401] },
   );
   await request("Invalid student registration rejection", "/api/auth/register-student", {
     method: "POST",

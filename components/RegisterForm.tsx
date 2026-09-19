@@ -5,7 +5,8 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { appendReturnTo, getSafeReturnTo } from "@/lib/safe-return-to";
 
 import {
   getEmailValidationMessage,
@@ -31,6 +32,8 @@ export default function RegisterForm({
   departments,
 }: RegisterFormProps) {
   const router = useRouter();
+  const search = useSearchParams();
+  const returnTo = getSafeReturnTo(search.get("returnTo"));
   const emailRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [emailError, setEmailError] =
@@ -113,11 +116,8 @@ export default function RegisterForm({
         ? "&"
         : "?";
 
-      router.push(
-        data.developmentVerificationCode
-          ? `${redirect}${separator}devCode=${encodeURIComponent(data.developmentVerificationCode)}`
-          : redirect,
-      );
+      const withCode = data.developmentVerificationCode ? `${redirect}${separator}devCode=${encodeURIComponent(data.developmentVerificationCode)}` : redirect;
+      router.push(appendReturnTo(withCode, returnTo));
     } catch {
       setError(
         "تعذر الاتصال بالخادم. حاول مرة أخرى.",

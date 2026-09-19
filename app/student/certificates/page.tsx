@@ -46,9 +46,13 @@ export default async function StudentCertificatesPage() {
         revokedAt:
           null,
 
+        artifactPathname: { not: null },
+
         submission: {
           userId:
             user.id,
+          status: "APPROVED",
+          checkedInAt: { not: null },
         },
       },
 
@@ -179,6 +183,7 @@ export default async function StudentCertificatesPage() {
                 >
                   عرض الشهادة
                 </Link>
+                <Link href={`/certificates/${certificate.verificationCode}/download`}>تنزيل الشهادة</Link>
               </article>
             ),
           )}

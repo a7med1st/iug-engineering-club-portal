@@ -1,5 +1,6 @@
 import type { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
+import { isClubLeadership } from "@/lib/club-leadership";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -390,20 +391,7 @@ export function managedDepartmentIdsForUser(
     : [];
 }
 
-export function isClubLeadership(
-  position: string | null | undefined,
-): boolean {
-  if (!position) return false;
-
-  const positionLower = position.toLowerCase();
-
-  return (
-    positionLower.includes("رئيس النادي") ||
-    positionLower.includes("نائب رئيس النادي") ||
-    positionLower.includes("club president") ||
-    positionLower.includes("vice president")
-  );
-}
+export { isClubLeadership } from "@/lib/club-leadership";
 
 export function hasGlobalContactAccess(
   user: Pick<

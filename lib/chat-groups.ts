@@ -1,4 +1,4 @@
-import { isClubLeadership } from "./permissions";
+import { isClubLeadership } from "./club-leadership.ts";
 import { prisma } from "./prisma.ts";
 
 const GENERAL_KEY = "group:general";
