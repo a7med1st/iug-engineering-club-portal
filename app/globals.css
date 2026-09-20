@@ -514,8 +514,14 @@ p {
 }
 
 .login-guide-help svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: block;
     width: 23px;
     height: 23px;
+    max-width: none;
+    transform: translate(-50%, -50%);
 }
 
 .login-guide-layer {
