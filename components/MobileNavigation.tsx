@@ -90,6 +90,7 @@ export default function MobileNavigation({
       <ThemeToggle className="mobile-theme-toggle" />
       <button
         ref={toggleRef}
+        data-login-guide="mobile-menu"
         className="mobile-menu-toggle"
         type="button"
         aria-label={open ? "إغلاق قائمة التنقل" : "فتح قائمة التنقل"}
@@ -154,7 +155,7 @@ export default function MobileNavigation({
                   <button className="primary-btn" type="submit">تسجيل الخروج</button>
                 </form>
               ) : (
-                <Link className="primary-btn" href="/login" onClick={() => closeMenu()}>
+                <Link className="primary-btn" href="/login" data-login-guide="mobile-login" onClick={() => closeMenu()}>
                   تسجيل الدخول
                 </Link>
               )}

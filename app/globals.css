@@ -495,6 +495,173 @@ p {
     flex-shrink: 0
 }
 
+.login-guide-help {
+    position: fixed;
+    inset-inline-end: 20px;
+    bottom: 20px;
+    z-index: 90;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(22, 136, 255, .35);
+    border-radius: 50%;
+    background: #fff;
+    color: #0875df;
+    box-shadow: 0 10px 28px rgba(7, 51, 91, .2);
+    cursor: pointer;
+}
+
+.login-guide-help svg {
+    width: 23px;
+    height: 23px;
+}
+
+.login-guide-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 100100;
+    direction: rtl;
+}
+
+.login-guide-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 13, 26, .68);
+}
+
+.login-guide-highlight {
+    position: fixed;
+    border: 3px solid #35d4ff;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .08);
+    box-shadow: 0 0 0 5px rgba(53, 212, 255, .2), 0 0 28px rgba(53, 212, 255, .55);
+    pointer-events: none;
+    animation: loginGuidePulse 1.45s ease-in-out infinite;
+}
+
+.login-guide-dialog {
+    position: fixed;
+    left: 50%;
+    width: min(380px, calc(100vw - 28px));
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    transform: translateX(-50%);
+    padding: 18px;
+    border: 1px solid rgba(53, 212, 255, .42);
+    border-radius: 8px;
+    background: #fff;
+    color: #102139;
+    box-shadow: 0 22px 60px rgba(0, 0, 0, .35);
+    outline: none;
+}
+
+.login-guide-dialog::before {
+    content: "";
+    position: absolute;
+    left: var(--login-guide-arrow-left, 50%);
+    width: 15px;
+    height: 15px;
+    background: #fff;
+    border-inline-start: 1px solid rgba(53, 212, 255, .42);
+    border-top: 1px solid rgba(53, 212, 255, .42);
+}
+
+.login-guide-dialog.is-below::before {
+    top: -8px;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.login-guide-dialog.is-above::before {
+    bottom: -8px;
+    transform: translateX(-50%) rotate(225deg);
+}
+
+.login-guide-dialog-head,
+.login-guide-actions {
+    display: flex;
+    align-items: center;
+}
+
+.login-guide-dialog-head {
+    justify-content: space-between;
+    color: #52708d;
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.login-guide-dialog-head button {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #eef5fb;
+    color: #173753;
+    cursor: pointer;
+}
+
+.login-guide-dialog-head svg {
+    width: 18px;
+    height: 18px;
+}
+
+.login-guide-dialog h2 {
+    margin: 8px 0 5px;
+    font-size: 1.16rem;
+}
+
+.login-guide-dialog p {
+    margin: 0;
+    color: #526a80;
+    font-size: .88rem;
+    line-height: 1.8;
+}
+
+.login-guide-actions {
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.login-guide-actions .primary-btn,
+.login-guide-actions .ghost-btn {
+    min-width: 92px;
+}
+
+.login-guide-skip {
+    margin-top: 10px;
+    padding: 3px 0;
+    border: 0;
+    background: transparent;
+    color: #60788e;
+    font-family: inherit;
+    font-size: .75rem;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+@keyframes loginGuidePulse {
+    50% { box-shadow: 0 0 0 9px rgba(53, 212, 255, .12), 0 0 34px rgba(53, 212, 255, .7); }
+}
+
+@media (max-width: 520px) {
+    .login-guide-help {
+        inset-inline-end: 14px;
+        bottom: 14px;
+    }
+
+    .login-guide-dialog {
+        padding: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-guide-highlight { animation: none; }
+}
+
 .mobile-menu-toggle,
 .mobile-menu-close {
     width: 44px;

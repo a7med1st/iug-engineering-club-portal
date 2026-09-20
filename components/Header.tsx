@@ -9,6 +9,7 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import LogoutButton from "@/components/auth/LogoutButton";
 import ChatMessagesHeaderLink from "@/components/member/ChatMessagesHeaderLink";
+import LoginGuide from "@/components/auth/LoginGuide";
 
 const navigationLinks = [
   { href: "/", label: "الرئيسية" },
@@ -103,6 +104,7 @@ export default async function Header() {
             <Link
               className="primary-btn fancy-primary-btn"
               href="/login"
+              data-login-guide="desktop-login"
             >
               تسجيل الدخول
             </Link>
@@ -114,6 +116,7 @@ export default async function Header() {
           portal={portal}
           authenticated={Boolean(session)}
         />
+        <LoginGuide authenticated={Boolean(session)} />
       </div>
     </header>
   );

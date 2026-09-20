@@ -50,13 +50,13 @@ export default function AuthForm() {
   }
   return (
     <div className="auth-card">
-      <div className="portal-switch">
+      <div className="portal-switch" data-login-guide="portal">
         <button className={portal === "student" ? "active" : ""} onClick={() => setPortal("student")} type="button">طالب</button>
         <button className={portal === "member" ? "active" : ""} onClick={() => setPortal("member")} type="button">عضو</button>
       </div>
       <h1>{title}</h1>
       <p>{portal === "student" ? "استخدم البريد الإلكتروني المرتبط بحساب الطالب الذي أنشأته." : "حسابات الأعضاء تُنشأ حصريًا بواسطة مدير النظام ولا يوجد تسجيل ذاتي للأعضاء."}</p>
-      <form onSubmit={submit} className="stack-form">
+      <form onSubmit={submit} className="stack-form" data-login-guide="credentials">
         <label>البريد الإلكتروني<input type="email" name="email" required autoComplete="email" placeholder="name@gmail.com" /></label>
         <label>
           كلمة المرور

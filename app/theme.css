@@ -590,6 +590,25 @@ html[data-theme="dark"] .auth-card .form-success {
   background: rgb(25 127 91 / 14%);
 }
 
+html[data-theme="dark"] .login-guide-help,
+html[data-theme="dark"] .login-guide-dialog,
+html[data-theme="dark"] .login-guide-dialog::before {
+  border-color: #35627f;
+  background: #0b263d;
+  color: #eef7ff;
+}
+
+html[data-theme="dark"] .login-guide-dialog p,
+html[data-theme="dark"] .login-guide-dialog-head,
+html[data-theme="dark"] .login-guide-skip {
+  color: #bfd3e3;
+}
+
+html[data-theme="dark"] .login-guide-dialog-head button {
+  background: #173d59;
+  color: #e8f5ff;
+}
+
 /* Dark-theme contrast audit
    Keep form controls readable even when a page has a more specific light rule. */
 html[data-theme="dark"] body :where(
