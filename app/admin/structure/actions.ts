@@ -126,6 +126,10 @@ function revalidateStructure(userId?: string) {
   }
 }
 
+function retiredMemberEmail(userId: string) {
+  return `removed-member+${userId}@iug-engineering-club.local`;
+}
+
 async function getDescendantIds(itemId: string) {
   const items = await prisma.clubStructureItem.findMany({
     select: {
@@ -403,6 +407,12 @@ export async function deleteStructureMember(
     select: {
       id: true,
       userId: true,
+      user: {
+        select: {
+          id: true,
+          role: true,
+        },
+      },
       departmentId: true,
       parentId: true,
       children: {
@@ -463,6 +473,20 @@ export async function deleteStructureMember(
     await tx.clubStructureItem.delete({
       where: { id: itemId },
     });
+
+    if (item.user?.role === "MEMBER") {
+      await tx.user.update({
+        where: { id: item.user.id },
+        data: {
+          email: retiredMemberEmail(item.user.id),
+          emailVerifiedAt: null,
+          memberPermissions: [],
+          managedDepartmentIds: [],
+          sessionVersion: { increment: 1 },
+          mustChangePassword: true,
+        },
+      });
+    }
   });
 
   revalidateStructure(item.userId ?? undefined);

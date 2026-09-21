@@ -290,21 +290,37 @@ async function main() {
         prisma.clubStructureItem.findUniqueOrThrow({ where: { id: grandchildItem.id } }),
         fetch(new URL("/delegates", baseUrl)),
       ]);
+    const releasedMemberAccount = await prisma.user.findUniqueOrThrow({
+      where: { id: converted.id },
+    });
 
     assert.equal(publicResponse.status, 200);
     const publicStructure = await publicResponse.text();
     assert.equal(deletedItem, null);
+    assert.notEqual(releasedMemberAccount.email, student.email);
     assert.equal(movedChild.parentId, parentItem.id);
     assert.equal(movedChild.level, 2);
     assert.equal(movedGrandchild.parentId, childItem.id);
     assert.equal(movedGrandchild.level, 3);
     assert.ok(!publicStructure.includes(renamedMember));
+    await prisma.user.create({
+      data: {
+        name: `Reused Student ${suffix}`,
+        email: student.email,
+        emailVerifiedAt: new Date(),
+        passwordHash,
+        role: "STUDENT",
+        departmentId,
+      },
+    });
     console.log("PASS  Permanent structure deletion hides the member and reparents descendants.");
   } finally {
     if (departmentId) {
       await prisma.clubStructureItem.deleteMany({ where: { departmentId } });
       await prisma.user.deleteMany({
-        where: { email: { startsWith: prefix } },
+        where: {
+          OR: [{ email: { startsWith: prefix } }, { departmentId }],
+        },
       });
       await prisma.department.deleteMany({ where: { id: departmentId } });
     }
