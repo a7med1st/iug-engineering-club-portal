@@ -13,7 +13,7 @@ import {
   consumeRateLimits,
   createRateLimitKey,
 } from "@/lib/rate-limit";
-import { registrationWindowStatus } from "@/lib/registration-window";
+import { registrationWindowStatusForActivity } from "@/lib/registration-window";
 import { clientIpFromHeaders } from "@/lib/upload-rate-limit";
 
 export type RegistrationFormValues = Record<string, string>;
@@ -263,6 +263,7 @@ export async function submitActivityRegistration(
               title: true,
               capacity: true,
               status: true,
+              endsAt: true,
             },
           },
 
@@ -297,7 +298,7 @@ export async function submitActivityRegistration(
       );
     }
 
-    const registrationStatus = registrationWindowStatus(form);
+    const registrationStatus = registrationWindowStatusForActivity(form, form.activity.endsAt);
 
     if (registrationStatus !== "OPEN") {
       const message = registrationStatus === "NOT_STARTED"
@@ -522,6 +523,7 @@ export async function submitActivityRegistration(
                         true,
                       status:
                         true,
+                      endsAt: true,
                     },
                   },
                 },
@@ -529,7 +531,7 @@ export async function submitActivityRegistration(
 
             if (
               !latestForm ||
-              registrationWindowStatus(latestForm) !== "OPEN"
+              registrationWindowStatusForActivity(latestForm, latestForm.activity.endsAt) !== "OPEN"
             ) {
               throw new Error(
                 "REGISTRATION_CLOSED",

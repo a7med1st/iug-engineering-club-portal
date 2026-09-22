@@ -9,7 +9,7 @@ import {
 } from "@/lib/activities";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { registrationWindowStatus } from "@/lib/registration-window";
+import { registrationWindowStatusForActivity } from "@/lib/registration-window";
 
 export const dynamic = "force-dynamic";
 
@@ -81,7 +81,7 @@ export default async function ActivityRegisterPage({
         })
         : [];
     const registrationStatus = form
-        ? registrationWindowStatus(form)
+        ? registrationWindowStatusForActivity(form, activity.endsAt)
         : null;
     const registrationDateFormatter = new Intl.DateTimeFormat("ar-PS", {
         dateStyle: "medium",

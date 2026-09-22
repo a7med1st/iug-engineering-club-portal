@@ -20,6 +20,23 @@ export function registrationWindowStatus(
   return "OPEN";
 }
 
+export function registrationWindowStatusForActivity(
+  form: RegistrationWindow,
+  activityEndsAt: Date | null,
+  referenceTime: Date = new Date(),
+): RegistrationWindowStatus {
+  if (
+    form.isOpen &&
+    activityEndsAt &&
+    form.closesAt.getTime() <= referenceTime.getTime() &&
+    activityEndsAt.getTime() > referenceTime.getTime()
+  ) {
+    return registrationWindowStatus({ ...form, closesAt: activityEndsAt }, referenceTime);
+  }
+
+  return registrationWindowStatus(form, referenceTime);
+}
+
 export function isRegistrationOpen(
   form: RegistrationWindow | null | undefined,
   referenceTime: Date = new Date(),
