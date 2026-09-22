@@ -1010,6 +1010,9 @@ model Certificate {
   artifactHeight   Int?
   generatedAt      DateTime?
   templateFingerprint String?
+  customName        String?
+  customNameX       Decimal? @db.Decimal(10, 2)
+  customNameY       Decimal? @db.Decimal(10, 2)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

@@ -5,6 +5,7 @@ import {
   BadgeCheck,
   Ban,
   ExternalLink,
+  Pencil,
   RotateCcw,
   ShieldCheck,
   UsersRound,
@@ -336,6 +337,15 @@ export default async function AdminCertificatesPage({
                                 className={styles.openButton}
                               >
                                 <ExternalLink size={16} />
+                              </Link>
+
+                              <Link
+                                href={`/admin/certificates/${row.certificate.id}/edit`}
+                                title="تعديل الاسم ومكانه في هذه الشهادة"
+                                aria-label={`تعديل شهادة ${row.studentName}`}
+                                className={styles.openButton}
+                              >
+                                <Pencil size={16} />
                               </Link>
 
                               <form action={regenerateCertificate}>

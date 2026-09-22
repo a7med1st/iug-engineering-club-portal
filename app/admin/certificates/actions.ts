@@ -29,10 +29,10 @@ import { putPrivateBlob, tryDeletePrivateBlobs } from "@/lib/blob-storage";
 import { randomUUID } from "node:crypto";
 
 async function generateCertificateArtifact(submissionId: string, certificateId: string) {
-  const row = await prisma.activityFormSubmission.findUnique({ where: { id: submissionId }, select: { studentName: true, form: { select: { activity: { select: { title: true, startsAt: true, certificateTemplate: true } } } }, certificate: { select: { artifactPathname: true } } } });
+  const row = await prisma.activityFormSubmission.findUnique({ where: { id: submissionId }, select: { studentName: true, form: { select: { activity: { select: { title: true, startsAt: true, certificateTemplate: true } } } }, certificate: { select: { artifactPathname: true, customName: true, customNameX: true, customNameY: true } } } });
   const template = row?.form.activity.certificateTemplate;
   if (!row || !template) certificateAdminError("يجب إعداد قالب للنشاط قبل إصدار الشهادة.");
-  const rendered = await renderCertificate({ sourcePathname: template.sourcePathname, width: template.sourceWidth, height: template.sourceHeight, settings: { nameX:Number(template.nameX),nameY:Number(template.nameY),nameFontSize:Number(template.nameFontSize),nameFontFamily:template.nameFontFamily as "Cairo",nameColor:template.nameColor,nameAlign:template.nameAlign as "left"|"center"|"right",titleVisible:template.titleVisible,titleX:Number(template.titleX),titleY:Number(template.titleY),titleFontSize:Number(template.titleFontSize),titleFontFamily:template.titleFontFamily as "Cairo",titleColor:template.titleColor,titleAlign:template.titleAlign as "left"|"center"|"right",dateVisible:template.dateVisible,dateX:Number(template.dateX),dateY:Number(template.dateY),dateFontSize:Number(template.dateFontSize),dateFontFamily:template.dateFontFamily as "Cairo",dateColor:template.dateColor,dateAlign:template.dateAlign as "left"|"center"|"right" }, studentName: row.studentName, activityTitle: row.form.activity.title, activityDate: row.form.activity.startsAt });
+  const rendered = await renderCertificate({ sourcePathname: template.sourcePathname, width: template.sourceWidth, height: template.sourceHeight, settings: { nameX:Number(row.certificate?.customNameX ?? template.nameX),nameY:Number(row.certificate?.customNameY ?? template.nameY),nameFontSize:Number(template.nameFontSize),nameFontFamily:template.nameFontFamily as "Cairo",nameColor:template.nameColor,nameAlign:template.nameAlign as "left"|"center"|"right",titleVisible:template.titleVisible,titleX:Number(template.titleX),titleY:Number(template.titleY),titleFontSize:Number(template.titleFontSize),titleFontFamily:template.titleFontFamily as "Cairo",titleColor:template.titleColor,titleAlign:template.titleAlign as "left"|"center"|"right",dateVisible:template.dateVisible,dateX:Number(template.dateX),dateY:Number(template.dateY),dateFontSize:Number(template.dateFontSize),dateFontFamily:template.dateFontFamily as "Cairo",dateColor:template.dateColor,dateAlign:template.dateAlign as "left"|"center"|"right" }, studentName: row.certificate?.customName?.trim() || row.studentName, activityTitle: row.form.activity.title, activityDate: row.form.activity.startsAt });
   const pathname=`certificates/${certificateId}/${randomUUID()}.png`; await putPrivateBlob(pathname,rendered.buffer,rendered.mime);
   try { await prisma.certificate.update({ where:{id:certificateId}, data:{artifactPathname:pathname,artifactMime:rendered.mime,artifactSize:rendered.size,artifactWidth:rendered.width,artifactHeight:rendered.height,generatedAt:new Date(),templateFingerprint:rendered.fingerprint} }); } catch(error) { await tryDeletePrivateBlobs([pathname], "certificate-generation-rollback"); throw error; }
   if(row.certificate?.artifactPathname) await tryDeletePrivateBlobs([row.certificate.artifactPathname], "certificate-artifact-replacement");
@@ -314,6 +314,39 @@ export async function regenerateCertificate(formData: FormData) {
   await generateCertificateArtifact(submission.id, submission.certificate.id);
   revalidatePath("/admin/certificates");
   redirect(`/admin/certificates?success=${encodeURIComponent("تم تحديث صورة الشهادة.")}`);
+}
+
+export async function updateIndividualCertificate(formData: FormData) {
+  await requirePermission(PERMISSIONS.ADMIN_DASHBOARD);
+
+  const certificateId = field(formData, "certificateId");
+  const customName = field(formData, "customName");
+  const customNameX = Number(formData.get("customNameX"));
+  const customNameY = Number(formData.get("customNameY"));
+
+  const certificate = await prisma.certificate.findUnique({
+    where: { id: certificateId },
+    select: {
+      id: true,
+      revokedAt: true,
+      submissionId: true,
+      submission: { select: { form: { select: { activityId: true } } } },
+    },
+  });
+
+  if (!certificate || certificate.revokedAt) certificateAdminError("الشهادة غير متاحة للتعديل.");
+  if (!customName || customName.length > 160 || !Number.isFinite(customNameX) || !Number.isFinite(customNameY)) {
+    certificateAdminError("تحقق من الاسم وموقعه داخل الشهادة.");
+  }
+
+  await prisma.certificate.update({
+    where: { id: certificate.id },
+    data: { customName, customNameX, customNameY },
+  });
+  await generateCertificateArtifact(certificate.submissionId, certificate.id);
+
+  revalidatePath("/admin/certificates");
+  redirect(`/admin/certificates?activity=${encodeURIComponent(certificate.submission.form.activityId)}&success=${encodeURIComponent("تم تعديل الشهادة وإعادة توليدها.")}`);
 }
 
 export async function regenerateActivityCertificates(formData: FormData) {
