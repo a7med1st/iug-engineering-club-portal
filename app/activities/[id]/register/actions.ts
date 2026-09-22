@@ -322,13 +322,13 @@ export async function submitActivityRegistration(
 
     const currentAuth = await getCurrentUser();
     let studentUser: RegistrationStudent | null =
-      currentAuth?.user.role === "STUDENT"
+      currentAuth?.user.role === "STUDENT" || currentAuth?.user.role === "MEMBER"
         ? currentAuth.user
         : null;
 
     if (form.requiresAccount && !studentUser) {
       return failure(
-        "يجب تسجيل الدخول بحساب طالب لتعبئة هذا النموذج.",
+        "يجب تسجيل الدخول بحساب طالب أو عضو لتعبئة هذا النموذج.",
         submittedValues,
       );
     }

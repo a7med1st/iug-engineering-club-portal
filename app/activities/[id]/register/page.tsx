@@ -65,9 +65,10 @@ export default async function ActivityRegisterPage({
     }
 
     const form = activity.registrationForm;
-    const isStudentSignedIn = auth?.user.role === "STUDENT";
+    const isEligibleAccountSignedIn =
+        auth?.user.role === "STUDENT" || auth?.user.role === "MEMBER";
     const requiresGuestIdentity = Boolean(
-        form && !form.requiresAccount && !isStudentSignedIn,
+        form && !form.requiresAccount && !isEligibleAccountSignedIn,
     );
     const departments = requiresGuestIdentity
         ? await prisma.department.findMany({
@@ -226,7 +227,7 @@ export default async function ActivityRegisterPage({
 
                                 <span>
                                     {form.requiresAccount
-                                        ? "يتطلب تسجيل الدخول بحساب طالب"
+                                        ? "يتطلب تسجيل الدخول بحساب طالب أو عضو"
                                         : "التسجيل متاح دون إنشاء حساب"}
                                 </span>
 
@@ -242,10 +243,10 @@ export default async function ActivityRegisterPage({
 
                             </div>
 
-                            {form.requiresAccount && !isStudentSignedIn ? (
+                            {form.requiresAccount && !isEligibleAccountSignedIn ? (
                                 <div className="activity-registration-state">
                                     <h3>
-                                        سجّل الدخول لإكمال التسجيل
+                                        سجّل الدخول بحساب طالب أو عضو لإكمال التسجيل
                                     </h3>
 
                                     <p>
