@@ -21,6 +21,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  serverExternalPackages: ["@resvg/resvg-js"],
+  outputFileTracingIncludes: {
+    "/admin/certificates": ["./public/fonts/certificates/*.ttf"],
+  },
 
   experimental: {
     serverActions: {

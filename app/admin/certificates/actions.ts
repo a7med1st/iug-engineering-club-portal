@@ -300,6 +300,22 @@ export async function issueCertificate(
   );
 }
 
+export async function regenerateCertificate(formData: FormData) {
+  await requirePermission(PERMISSIONS.ADMIN_DASHBOARD);
+
+  const submissionId = field(formData, "submissionId");
+  if (!submissionId) certificateAdminError("التسجيل غير صالح.");
+
+  const submission = await ensureEligibleSubmission(submissionId);
+  if (!submission.certificate || submission.certificate.revokedAt) {
+    certificateAdminError("الشهادة غير متاحة لإعادة التوليد.");
+  }
+
+  await generateCertificateArtifact(submission.id, submission.certificate.id);
+  revalidatePath("/admin/certificates");
+  redirect(`/admin/certificates?success=${encodeURIComponent("تم تحديث صورة الشهادة.")}`);
+}
+
 export async function issueActivityCertificates(
   formData: FormData,
 ) {

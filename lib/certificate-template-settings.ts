@@ -1,5 +1,5 @@
 export type TextAlign = "left" | "center" | "right";
-export const CERTIFICATE_FONTS = ["Cairo", "Tajawal", "Noto Kufi Arabic", "IBM Plex Sans Arabic", "Amiri", "Inter"] as const;
+export const CERTIFICATE_FONTS = ["Cairo", "Tajawal", "Noto Kufi Arabic", "IBM Plex Sans Arabic", "Amiri"] as const;
 export type CertificateFontFamily = (typeof CERTIFICATE_FONTS)[number];
 export type CertificateTemplateSettings = { nameX:number;nameY:number;nameFontSize:number;nameFontFamily:CertificateFontFamily;nameColor:string;nameAlign:TextAlign;titleVisible:boolean;titleX:number;titleY:number;titleFontSize:number;titleFontFamily:CertificateFontFamily;titleColor:string;titleAlign:TextAlign;dateVisible:boolean;dateX:number;dateY:number;dateFontSize:number;dateFontFamily:CertificateFontFamily;dateColor:string;dateAlign:TextAlign };
 const color=/^#[0-9a-fA-F]{6}$/;const aligns=new Set(["left","center","right"]);const fonts=new Set<string>(CERTIFICATE_FONTS);

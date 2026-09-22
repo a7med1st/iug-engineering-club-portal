@@ -5,6 +5,7 @@ import {
   BadgeCheck,
   Ban,
   ExternalLink,
+  RotateCcw,
   ShieldCheck,
   UsersRound,
 } from "lucide-react";
@@ -27,6 +28,7 @@ import {
 import {
   issueActivityCertificates,
   issueCertificate,
+  regenerateCertificate,
   revokeCertificate,
 } from "./actions";
 
@@ -327,6 +329,13 @@ export default async function AdminCertificatesPage({
                               >
                                 <ExternalLink size={16} />
                               </Link>
+
+                              <form action={regenerateCertificate}>
+                                <input type="hidden" name="submissionId" value={row.id} />
+                                <button type="submit" title="إعادة توليد الشهادة بالخط المحدد" aria-label="إعادة توليد الشهادة بالخط المحدد" className={styles.openButton}>
+                                  <RotateCcw size={16} />
+                                </button>
+                              </form>
 
                               <form
                                 action={revokeCertificate}

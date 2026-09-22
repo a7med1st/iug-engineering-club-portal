@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import sharp from "sharp";
 import { composeCertificate } from "../lib/certificate-renderer";
-import type { CertificateTemplateSettings } from "../lib/certificate-template-settings";
+import { CERTIFICATE_FONTS, type CertificateTemplateSettings } from "../lib/certificate-template-settings";
 
 async function main(){
   const width=1200,height=850;
@@ -12,6 +12,17 @@ async function main(){
   assert.equal(metadata.format,"png");
   assert.deepEqual([metadata.width,metadata.height],[width,height]);
   assert.equal(metadata.pages??1,1);
+  const fontImages = await Promise.all(CERTIFICATE_FONTS.map((fontFamily) =>
+    composeCertificate(source, {
+      width, height,
+      settings: { ...settings, nameFontFamily: fontFamily },
+      studentName: "طالب المعاينة",
+      activityTitle: "نشاط المعاينة",
+      activityDate: new Date("2026-09-19T00:00:00Z"),
+    }),
+  ));
+  assert.equal(new Set(fontImages.map((image) => image.toString("base64"))).size, CERTIFICATE_FONTS.length,
+    "Every Arabic font must produce a distinct certificate image");
   console.log(`certificate rendering test passed: one ${metadata.width}x${metadata.height} PNG`);
 }
 main().catch(error=>{console.error(error);process.exitCode=1});
