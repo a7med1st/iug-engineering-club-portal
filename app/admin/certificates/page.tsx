@@ -28,6 +28,7 @@ import {
 import {
   issueActivityCertificates,
   issueCertificate,
+  regenerateActivityCertificates,
   regenerateCertificate,
   revokeCertificate,
 } from "./actions";
@@ -203,10 +204,16 @@ export default async function AdminCertificatesPage({
         />
 
         {data.selectedActivity && (
-          <form
-            action={issueActivityCertificates}
-            className={styles.bulkForm}
-          >
+          <div className={styles.bulkForm}>
+            <form action={regenerateActivityCertificates}>
+              <input type="hidden" name="activityId" value={data.selectedActivity.id} />
+              <button type="submit" className={`${styles.bulkButton} ${styles.regenerateAllButton}`}>
+                <RotateCcw size={18} />
+                <span>تعديل جميع الشهادات بالخط المحدد</span>
+              </button>
+            </form>
+
+            <form action={issueActivityCertificates}>
             <input
               type="hidden"
               name="activityId"
@@ -223,7 +230,8 @@ export default async function AdminCertificatesPage({
                 إصدار شهادات جميع الحاضرين
               </span>
             </button>
-          </form>
+            </form>
+          </div>
         )}
       </div>
 

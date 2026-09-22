@@ -560,6 +560,12 @@
 .bulkForm {
   display: flex;
   justify-content: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bulkForm form {
+  display: flex;
 }
 
 .bulkButton {
@@ -574,6 +580,13 @@
   cursor: pointer;
   font-size: .75rem;
   font-weight: 850;
+}
+
+.regenerateAllButton {
+  border-color: #b9d4e8;
+  background: #fff;
+  color: #245b7f;
+  box-shadow: 0 10px 24px rgba(24, 74, 110, .08);
 }
 
 .panel {

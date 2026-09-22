@@ -316,6 +316,44 @@ export async function regenerateCertificate(formData: FormData) {
   redirect(`/admin/certificates?success=${encodeURIComponent("تم تحديث صورة الشهادة.")}`);
 }
 
+export async function regenerateActivityCertificates(formData: FormData) {
+  await requirePermission(PERMISSIONS.ADMIN_DASHBOARD);
+
+  const activityId = field(formData, "activityId");
+  if (!activityId) certificateAdminError("اختر نشاطًا أولًا.");
+
+  const template = await prisma.certificateTemplate.findUnique({
+    where: { activityId },
+    select: { id: true },
+  });
+  if (!template) certificateAdminError("يجب إعداد قالب للنشاط قبل تحديث الشهادات.");
+
+  const submissions = await prisma.activityFormSubmission.findMany({
+    where: {
+      form: { activityId },
+      certificate: { is: { revokedAt: null } },
+    },
+    select: { id: true, certificate: { select: { id: true } } },
+  });
+
+  if (!submissions.length) {
+    certificateAdminError("لا توجد شهادات صادرة لتحديثها في هذا النشاط.");
+  }
+
+  for (const submission of submissions) {
+    if (submission.certificate) {
+      await generateCertificateArtifact(submission.id, submission.certificate.id);
+    }
+  }
+
+  revalidatePath("/admin/certificates");
+  redirect(
+    `/admin/certificates?activity=${encodeURIComponent(activityId)}&success=${encodeURIComponent(
+      `تم تحديث ${submissions.length} شهادة بالخط المحدد.`,
+    )}`,
+  );
+}
+
 export async function issueActivityCertificates(
   formData: FormData,
 ) {
