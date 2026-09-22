@@ -5486,7 +5486,7 @@ p {
 ========================================================== */
 
 .activity-dynamic-form {
-    display: none;
+    display: flex;
     flex-direction: column;
 
     gap: 27px;
