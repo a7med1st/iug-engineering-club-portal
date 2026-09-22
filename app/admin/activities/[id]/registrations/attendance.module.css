@@ -1569,6 +1569,19 @@
   border-bottom: 1px solid rgba(183, 209, 231, 0.62);
 }
 
+.bulkActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bulkActions :global(.activity-registration-approve) {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
 .resultsCount {
   min-height: 0;
   display: inline-flex;

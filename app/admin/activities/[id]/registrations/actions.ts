@@ -21,6 +21,56 @@ const allowedStatuses = [
 type SubmissionStatus =
   (typeof allowedStatuses)[number];
 
+export async function approveAllPendingRegistrations(formData: FormData) {
+  const activityId = String(formData.get("activityId") ?? "").trim();
+  if (!activityId) return;
+
+  await requireActivityPermission(PERMISSIONS.REGISTRATION_REVIEW, activityId);
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        const form = await tx.activityRegistrationForm.findUnique({
+          where: { activityId },
+          select: { id: true, activity: { select: { title: true } } },
+        });
+        if (!form) return;
+
+        const pending = await tx.activityFormSubmission.findMany({
+          where: { formId: form.id, status: "SUBMITTED" },
+          select: { id: true, userId: true },
+        });
+        if (!pending.length) return;
+
+        await tx.activityFormSubmission.updateMany({
+          where: { id: { in: pending.map((item) => item.id) }, status: "SUBMITTED" },
+          data: { status: "APPROVED" },
+        });
+
+        const notifications = pending
+          .filter((item) => item.userId)
+          .map((item) => ({
+            userId: item.userId!,
+            type: "ACTIVITY_APPROVED" as const,
+            title: `تم قبول تسجيلك في ${form.activity.title}`,
+            body: "تمت مراجعة طلبك وقبوله. يمكنك مراجعة تفاصيل النشاط من لوحة الطالب.",
+            href: "/student?activityTab=all#my-activities",
+          }));
+        if (notifications.length) {
+          await tx.notification.createMany({ data: notifications });
+        }
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      break;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034" && attempt < 3) continue;
+      throw error;
+    }
+  }
+
+  revalidateRegistrationPages(activityId);
+  redirect(`/admin/activities/${activityId}/registrations?success=${encodeURIComponent("تم قبول جميع الطلبات قيد المراجعة.")}`);
+}
+
 const allowedAttendanceActions = [
   "CHECK_IN",
   "CHECK_OUT",
