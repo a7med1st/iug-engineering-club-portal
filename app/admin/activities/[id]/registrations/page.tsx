@@ -19,7 +19,7 @@ import { prisma } from "@/lib/prisma";
 import { registrationWindowStatus } from "@/lib/registration-window";
 
 import {
-    approveAllPendingRegistrations,
+    approveAllRegistrations,
     updateActivityArchiveState,
     updateRegistrationAttendance,
     updateRegistrationSettings,
@@ -1338,12 +1338,12 @@ export default async function ActivityRegistrationsPage({
                     </div>
 
                     <div className={attendanceStyles.bulkActions}>
-                        {submittedCount > 0 && (
-                            <form action={approveAllPendingRegistrations}>
+                        {submittedCount + rejectedCount > 0 && (
+                            <form action={approveAllRegistrations}>
                                 <input type="hidden" name="activityId" value={activity.id} />
                                 <button type="submit" className="activity-registration-approve">
                                     <CheckCircle2 size={17} aria-hidden="true" />
-                                    قبول الجميع ({submittedCount})
+                                    قبول الجميع ({submittedCount + rejectedCount})
                                 </button>
                             </form>
                         )}

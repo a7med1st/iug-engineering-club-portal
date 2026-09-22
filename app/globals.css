@@ -5486,10 +5486,14 @@ p {
 ========================================================== */
 
 .activity-dynamic-form {
-    display: flex;
+    display: none;
     flex-direction: column;
 
     gap: 27px;
+}
+
+html[data-reload-intro="true"] .intro-gate {
+    display: flex;
 }
 
 .activity-registration-identity {

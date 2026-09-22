@@ -7,8 +7,14 @@ export default function IntroGate() {
   const [show, setShow] = useState(true);
 
   useEffect(() => {
+    if (document.documentElement.dataset.reloadIntro !== "true") {
+      setShow(false);
+      return;
+    }
+
     const timer = setTimeout(() => {
       setShow(false);
+      delete document.documentElement.dataset.reloadIntro;
     }, 3800);
 
     return () => clearTimeout(timer);

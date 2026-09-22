@@ -14,6 +14,10 @@ export const metadata: Metadata = { title: "النادي الهندسي للطل
 
 const themeBootScript = `
   (() => {
+    const navigation = performance.getEntriesByType("navigation")[0];
+    if (navigation && navigation.type === "reload") {
+      document.documentElement.dataset.reloadIntro = "true";
+    }
     try {
       const stored = localStorage.getItem("engineering-club-theme");
       const theme = stored === "dark" || stored === "light"

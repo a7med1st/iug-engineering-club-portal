@@ -21,7 +21,7 @@ const allowedStatuses = [
 type SubmissionStatus =
   (typeof allowedStatuses)[number];
 
-export async function approveAllPendingRegistrations(formData: FormData) {
+export async function approveAllRegistrations(formData: FormData) {
   const activityId = String(formData.get("activityId") ?? "").trim();
   if (!activityId) return;
 
@@ -32,22 +32,31 @@ export async function approveAllPendingRegistrations(formData: FormData) {
       await prisma.$transaction(async (tx) => {
         const form = await tx.activityRegistrationForm.findUnique({
           where: { activityId },
-          select: { id: true, activity: { select: { title: true } } },
+          select: { id: true, activity: { select: { title: true, capacity: true } } },
         });
         if (!form) return;
 
-        const pending = await tx.activityFormSubmission.findMany({
-          where: { formId: form.id, status: "SUBMITTED" },
-          select: { id: true, userId: true },
+        const registrations = await tx.activityFormSubmission.findMany({
+          where: { formId: form.id },
+          select: { id: true, userId: true, status: true },
         });
-        if (!pending.length) return;
+        const toApprove = registrations.filter((item) => item.status !== "APPROVED");
+        if (!toApprove.length) return;
 
-        await tx.activityFormSubmission.updateMany({
-          where: { id: { in: pending.map((item) => item.id) }, status: "SUBMITTED" },
+        const capacity = form.activity.capacity;
+        const occupiedSeats = registrations.filter((item) => item.status !== "REJECTED").length;
+        const rejectedCount = toApprove.filter((item) => item.status === "REJECTED").length;
+        if (capacity > 0 && occupiedSeats + rejectedCount > capacity) {
+          throw new Error("CAPACITY_FULL");
+        }
+
+        const updated = await tx.activityFormSubmission.updateMany({
+          where: { id: { in: toApprove.map((item) => item.id) }, status: { not: "APPROVED" } },
           data: { status: "APPROVED" },
         });
+        if (updated.count !== toApprove.length) throw new Error("REGISTRATIONS_CHANGED");
 
-        const notifications = pending
+        const notifications = toApprove
           .filter((item) => item.userId)
           .map((item) => ({
             userId: item.userId!,
@@ -62,13 +71,16 @@ export async function approveAllPendingRegistrations(formData: FormData) {
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
       break;
     } catch (error) {
+      if (error instanceof Error && error.message === "CAPACITY_FULL") {
+        redirect(`/admin/activities/${activityId}/registrations?error=${encodeURIComponent("لا يمكن قبول الجميع لأن المقاعد المتاحة لا تكفي للتسجيلات المرفوضة.")}`);
+      }
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034" && attempt < 3) continue;
       throw error;
     }
   }
 
   revalidateRegistrationPages(activityId);
-  redirect(`/admin/activities/${activityId}/registrations?success=${encodeURIComponent("تم قبول جميع الطلبات قيد المراجعة.")}`);
+  redirect(`/admin/activities/${activityId}/registrations?success=${encodeURIComponent("تم قبول جميع المسجلين.")}`);
 }
 
 const allowedAttendanceActions = [
