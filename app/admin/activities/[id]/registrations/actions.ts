@@ -269,10 +269,21 @@ export async function updateActivityDate(
   );
 
   try {
-    const activity = await prisma.activity.update({
-      where: { id: activityId },
-      data: { startsAt, endsAt },
-      select: { startsAt: true, endsAt: true },
+    const activity = await prisma.$transaction(async (tx) => {
+      const updated = await tx.activity.update({
+        where: { id: activityId },
+        data: { startsAt, endsAt },
+        select: { startsAt: true, endsAt: true },
+      });
+
+      if (endsAt && endsAt.getTime() > Date.now()) {
+        await tx.activityRegistrationForm.updateMany({
+          where: { activityId, closesAt: { lte: new Date() } },
+          data: { closesAt: endsAt, isOpen: true },
+        });
+      }
+
+      return updated;
     });
 
     revalidateActivityDetailsPages(activityId);
