@@ -23,6 +23,14 @@ async function main(){
   ));
   assert.equal(new Set(fontImages.map((image) => image.toString("base64"))).size, CERTIFICATE_FONTS.length,
     "Every Arabic font must produce a distinct certificate image");
+  const englishSettings = { ...settings, nameFontFamily: "Amiri" as const, titleVisible: false, dateVisible: false };
+  const englishI = await composeCertificate(source, {
+    width, height, settings: englishSettings, studentName: "IIII IIII", activityTitle: "", activityDate: null,
+  });
+  const englishW = await composeCertificate(source, {
+    width, height, settings: englishSettings, studentName: "WWWW WWWW", activityTitle: "", activityDate: null,
+  });
+  assert.notDeepEqual(englishI, englishW, "English names must render as letters, not identical missing-glyph boxes");
   console.log(`certificate rendering test passed: one ${metadata.width}x${metadata.height} PNG`);
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

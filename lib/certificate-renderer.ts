@@ -10,6 +10,7 @@ const fontFiles:Record<CertificateFontFamily,string>={Cairo:"cairo.ttf",Tajawal:
 const certificateFontPaths = Object.values(fontFiles).map((file) =>
   path.join(process.cwd(), "public", "fonts", "certificates", file),
 );
+certificateFontPaths.push(path.join(process.cwd(), "public", "fonts", "certificates", "inter.ttf"));
 const anchor=(align:TextAlign)=>align==="left"?"start":align==="right"?"end":"middle";
 
 export function certificateTemplateFingerprint(value:unknown){return createHash("sha256").update(JSON.stringify(value)).digest("hex")}
@@ -24,7 +25,12 @@ export async function buildCertificateOverlay(input:RenderInput){
 export async function composeCertificate(source:Buffer,input:RenderInput){
   const overlay=await buildCertificateOverlay(input);
   const textLayer = new Resvg(overlay, {
-    font: { fontFiles: certificateFontPaths, loadSystemFonts: false },
+    font: {
+      fontFiles: certificateFontPaths,
+      loadSystemFonts: false,
+      defaultFontFamily: "Inter",
+      sansSerifFamily: "Inter",
+    },
   }).render().asPng();
   const buffer=await sharp(source).resize(input.width,input.height,{fit:"fill"}).composite([{input:Buffer.from(textLayer)}]).png().toBuffer();
   const metadata=await sharp(buffer).metadata();
