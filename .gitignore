@@ -17,6 +17,7 @@ Thumbs.db
 !.env.example
 *.tsbuildinfo
 storage/
+.worktrees/
 
 # Local feature installers and safety backups
 .phase*-backup-*/
