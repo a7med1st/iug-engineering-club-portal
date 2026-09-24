@@ -52,6 +52,17 @@ export default async function AdminLayout({
   if (
     hasPermission(
       user.role,
+      PERMISSIONS.LIBRARY_MANAGE,
+      user.memberPermissions,
+      user.position,
+    )
+  ) {
+    allowedHrefs.push("/admin/library");
+  }
+
+  if (
+    hasPermission(
+      user.role,
       PERMISSIONS.STRUCTURE_MANAGE,
       user.memberPermissions,
       user.position,

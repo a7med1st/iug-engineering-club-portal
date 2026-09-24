@@ -9,6 +9,7 @@ import {
   MessageSquareText,
   MessagesSquare,
   Network,
+  Library,
   QrCode,
   UserRound,
 } from "lucide-react";
@@ -64,6 +65,13 @@ export default async function Member() {
     user.memberPermissions,
   );
 
+  const canManageLibrary = hasPermission(
+    user.role,
+    PERMISSIONS.LIBRARY_MANAGE,
+    user.memberPermissions,
+    user.position,
+  );
+
   const tools = [
     {
       href: "/member/profile",
@@ -112,6 +120,14 @@ export default async function Member() {
       icon: Network,
       visible: canManageStructure,
       tone: "teal",
+    },
+    {
+      href: "/admin/library",
+      title: "إدارة مكتبة التخصص",
+      text: "نظّم مساقات قسمك ومجلداته وملفاته.",
+      icon: Library,
+      visible: canManageLibrary,
+      tone: "cyan",
     },
     {
       href: "/admin/contact",

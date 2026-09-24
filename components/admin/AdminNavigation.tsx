@@ -16,9 +16,15 @@ import {
   LayoutDashboard,
   FileSpreadsheet,
   Award,
+  Library,
 } from "lucide-react";
 
 const adminLinks = [
+  {
+    href: "/admin/library",
+    label: "إدارة مكتبة التخصص",
+    icon: Library,
+  },
   {
     href: "/admin/certificates",
     label: "الشهادات",

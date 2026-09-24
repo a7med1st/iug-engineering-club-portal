@@ -83,6 +83,9 @@ export const PERMISSIONS = {
   GUIDE_MANAGE:
     "GUIDE_MANAGE",
 
+  LIBRARY_MANAGE:
+    "LIBRARY_MANAGE",
+
   CONTACT_MANAGE:
     "CONTACT_MANAGE",
 } as const;
@@ -165,6 +168,13 @@ export const MEMBER_PERMISSION_OPTIONS = [
   },
   {
     permission:
+      PERMISSIONS.LIBRARY_MANAGE,
+    label:
+      "إدارة مكتبة التخصص",
+    scope: "DEPARTMENT",
+  },
+  {
+    permission:
       PERMISSIONS.CONTACT_MANAGE,
     label:
       "إدارة التواصل والشكاوى والاقتراحات",
@@ -201,6 +211,7 @@ const DEPARTMENT_SCOPED_SET =
     PERMISSIONS.ATTENDANCE_SCAN,
     PERMISSIONS.GUIDE_MANAGE,
     PERMISSIONS.STRUCTURE_MANAGE,
+    PERMISSIONS.LIBRARY_MANAGE,
   ]);
 
 const STUDENT_PERMISSIONS =
@@ -224,6 +235,7 @@ export const ADMIN_AREA_PERMISSIONS =
     PERMISSIONS.MEMBER_MANAGE,
     PERMISSIONS.STRUCTURE_MANAGE,
     PERMISSIONS.GUIDE_MANAGE,
+    PERMISSIONS.LIBRARY_MANAGE,
     PERMISSIONS.CONTACT_MANAGE,
   ] as const;
 
