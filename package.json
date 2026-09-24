@@ -33,7 +33,7 @@
     "test:library-selection": "node --import tsx scripts/test-library-selection.ts",
     "test:library-ui": "node scripts/test-library-ui.mjs",
     "test:library": "npm run test:library-permissions && npm run test:library-schema && npm run test:library-domain && npm run test:library-file-security && npm run test:library-actions && npm run test:library-routes && npm run test:library-selection && npm run test:library-ui",
-    "test:all": "tsc --noEmit --incremental false && prisma validate && npm run test:login-guide && npm run test:csp-security && npm run test:file-security && npm run test:email-verification && npm run test:contact-routing && npm run test:integrity && npm run test:member-management && npm run test:admin-dashboard-users && npm run test:registration-export && npm run test:routes && npm run test:attendance-certificate-schema && npm run test:attendance-links && npm run test:attendance-confirmation && npm run test:certificate-template && npm run test:certificate-rendering",
+    "test:all": "tsc --noEmit --incremental false && prisma validate && npm run test:library && npm run test:login-guide && npm run test:csp-security && npm run test:file-security && npm run test:email-verification && npm run test:contact-routing && npm run test:integrity && npm run test:member-management && npm run test:admin-dashboard-users && npm run test:registration-export && npm run test:routes && npm run test:attendance-certificate-schema && npm run test:attendance-links && npm run test:attendance-confirmation && npm run test:certificate-template && npm run test:certificate-rendering",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",

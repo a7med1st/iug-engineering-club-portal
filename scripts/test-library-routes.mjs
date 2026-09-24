@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 const upload = await readFile(new URL("../app/admin/library/upload/route.ts", import.meta.url), "utf8");
 const file = await readFile(new URL("../app/admin/library/files/[fileId]/route.ts", import.meta.url), "utf8");
 assert.match(upload, /LIBRARY_MAX_FILES/);
+assert.match(upload, /content-length/i);
 assert.match(upload, /canAccessDepartment/);
 assert.match(upload, /deleteLibraryFiles/);
 assert.match(file, /canAccessDepartment/);

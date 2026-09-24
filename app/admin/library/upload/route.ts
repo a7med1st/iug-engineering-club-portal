@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS, canAccessDepartment, hasPermission } from "@/lib/permissions";
-import { LIBRARY_MAX_FILES } from "@/lib/library/constants";
+import { LIBRARY_MAX_FILE_BYTES, LIBRARY_MAX_FILES } from "@/lib/library/constants";
 import { validateLibraryUpload } from "@/lib/library/file-validation";
 import { deleteLibraryFiles, storeLibraryFile } from "@/lib/library/storage";
 import { UploadValidationError, logUploadRejection } from "@/lib/upload-security";
@@ -10,6 +10,10 @@ import { UploadValidationError, logUploadRejection } from "@/lib/upload-security
 export async function POST(request: Request) {
   const auth = await getCurrentUser();
   if (!auth) return NextResponse.json({ error: "غير مصرح." }, { status: 401 });
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (contentLength > LIBRARY_MAX_FILES * LIBRARY_MAX_FILE_BYTES + 2 * 1024 * 1024) {
+    return NextResponse.json({ error: "حجم طلب الرفع أكبر من الحد المسموح." }, { status: 413 });
+  }
   const form = await request.formData();
   const folderId = String(form.get("folderId") ?? "");
   const folder = await prisma.libraryFolder.findUnique({ where: { id: folderId }, select: { id: true, course: { select: { departmentId: true } } } });
@@ -34,4 +38,3 @@ export async function POST(request: Request) {
   }
   return NextResponse.json({ results });
 }
-

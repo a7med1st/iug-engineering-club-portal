@@ -5,4 +5,6 @@ assert.match(confirm, /<dialog/);
 assert.match(confirm, /showModal/);
 assert.match(confirm, /إلغاء/);
 assert.match(confirm, /تأكيد الحذف/);
+assert.match(confirm, /event\.submitter/);
+assert.match(confirm, /styles\.danger/);
 console.log("Library UI contract tests passed.");

@@ -8,7 +8,8 @@ export default function ConfirmDeleteButton() {
   useEffect(() => {
     const onSubmit = (event: SubmitEvent) => {
       const form = event.target instanceof HTMLFormElement ? event.target : null;
-      if (!form || form.dataset.confirmed === "true") return;
+      const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
+      if (!form || form.dataset.confirmed === "true" || !submitter?.classList.contains(styles.danger)) return;
       const field = form.querySelector<HTMLInputElement>('input[name="fileId"],input[name="folderId"],input[name="courseId"]');
       if (!field) return;
       event.preventDefault(); pending.current = form;
