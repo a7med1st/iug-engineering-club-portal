@@ -18,7 +18,8 @@ export async function GET(request: Request, context: { params: Promise<{ fileId:
   if (!stored?.stream) return new Response(null, { status: 404 });
   const download = new URL(request.url).searchParams.get("download") === "1";
   const previewable = file.mimeType === "application/pdf" || file.mimeType.startsWith("image/");
-  const headers = new Headers(stored.headers);
+  const headers = new Headers();
+  stored.headers.forEach((value, key) => headers.set(key, value));
   headers.set("content-type", file.mimeType);
   headers.set("content-disposition", disposition(file.originalName || file.title, previewable && !download));
   headers.set("cache-control", "private, no-store");
