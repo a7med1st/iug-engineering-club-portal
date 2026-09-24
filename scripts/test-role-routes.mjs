@@ -279,6 +279,7 @@ async function main() {
     ["Admin members", "/admin/members", [200]],
     ["Admin structure", "/admin/structure", [200]],
     ["Admin guides", "/admin/guides", [200]],
+    ["Admin specialization library", "/admin/library", [200]],
     ["Admin contact", "/admin/contact", [200]],
     ["Admin certificates", "/admin/certificates", [200]],
     ["Admin dashboard", "/admin/dashboard", [200]],

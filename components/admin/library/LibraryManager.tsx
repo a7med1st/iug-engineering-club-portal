@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Download, Eye, FileText, Folder, Pencil, Plus, Trash2 } from "lucide-react";
 import { createCourseAction, createFolderAction, deleteCourseAction, deleteFileAction, deleteFolderAction, updateCourseAction, updateFileTitleAction, updateFolderAction } from "@/app/admin/library/actions";
 import LibraryUploader from "./LibraryUploader";
+import ConfirmDeleteButton from "./ConfirmDeleteButton";
 import styles from "./LibraryManager.module.css";
 
 type Data = Awaited<ReturnType<typeof import("@/lib/library/queries")["resolveLibrarySelection"]>>;
@@ -11,7 +12,7 @@ const href = (data: Data, course?: string, folder?: string) => `/admin/library?d
 
 export default function LibraryManager({ data }: { data: Data }) {
   if (!data.selectedDepartment) return <div className="admin-card"><p className="empty-state">لا يوجد قسم مرتبط بحسابك لإدارة مكتبته.</p></div>;
-  return <div className={styles.shell}>
+  return <div className={styles.shell}><ConfirmDeleteButton/>
     <div className={styles.departmentBar}><span>القسم المحدد</span>{data.departments.length > 1 ? <form><select name="department" defaultValue={data.selectedDepartment.id}>{data.departments.map((d) => <option key={d.id} value={d.id}>{d.nameAr}</option>)}</select><button className="btn secondary">عرض</button></form> : <strong>{data.selectedDepartment.nameAr}</strong>}</div>
     <aside className={styles.sidebar}>
       <div className={styles.panelTitle}><h2>المستويات والمساقات</h2><details><summary title="إضافة مساق"><Plus size={17}/> إضافة مساق</summary><form action={createCourseAction} className={styles.form}>{hidden(data)}<input type="hidden" name="departmentId" value={data.selectedDepartment.id}/><input name="name" required placeholder="اسم المساق"/><input name="code" placeholder="رمز المساق"/><select name="level">{levelNames.map((name, i) => <option value={i + 1} key={name}>المستوى {name}</option>)}</select><input name="sortOrder" type="number" min="0" defaultValue="0"/><textarea name="description" placeholder="وصف اختياري"/><button className="btn primary">حفظ</button></form></details></div>

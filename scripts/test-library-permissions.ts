@@ -1,23 +1,14 @@
 import assert from "node:assert/strict";
 
-import {
-  PERMISSIONS,
-  canAccessDepartment,
-  hasPermission,
-  normalizeMemberPermissions,
-} from "../lib/permissions";
-
-const libraryPermission = PERMISSIONS.LIBRARY_MANAGE;
-
-assert.equal(
-  normalizeMemberPermissions([libraryPermission]).includes(libraryPermission),
-  true,
-);
-assert.equal(hasPermission("ADMIN", libraryPermission), true);
-assert.equal(hasPermission("MEMBER", libraryPermission, []), false);
-assert.equal(hasPermission("MEMBER", libraryPermission, [libraryPermission]), true);
-assert.equal(
-  canAccessDepartment(
+async function main() {
+  process.env.SESSION_SECRET = "library-test-session-secret-32-characters";
+  const { PERMISSIONS, canAccessDepartment, hasPermission, normalizeMemberPermissions } = await import("../lib/permissions");
+  const libraryPermission = PERMISSIONS.LIBRARY_MANAGE;
+  assert.equal(normalizeMemberPermissions([libraryPermission]).includes(libraryPermission), true);
+  assert.equal(hasPermission("ADMIN", libraryPermission), true);
+  assert.equal(hasPermission("MEMBER", libraryPermission, []), false);
+  assert.equal(hasPermission("MEMBER", libraryPermission, [libraryPermission]), true);
+  assert.equal(canAccessDepartment(
     {
       role: "MEMBER",
       departmentId: "department-a",
@@ -26,7 +17,8 @@ assert.equal(
     },
     "department-b",
   ),
-  false,
-);
-
-console.log("Library permission tests passed.");
+    false,
+  );
+  console.log("Library permission tests passed.");
+}
+void main();
