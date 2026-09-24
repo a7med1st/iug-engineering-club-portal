@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+const upload = await readFile(new URL("../app/admin/library/upload/route.ts", import.meta.url), "utf8");
+const file = await readFile(new URL("../app/admin/library/files/[fileId]/route.ts", import.meta.url), "utf8");
+assert.match(upload, /LIBRARY_MAX_FILES/);
+assert.match(upload, /canAccessDepartment/);
+assert.match(upload, /deleteLibraryFiles/);
+assert.match(file, /canAccessDepartment/);
+assert.match(file, /private, no-store/);
+assert.match(file, /content-disposition/i);
+console.log("Library route contract tests passed.");
