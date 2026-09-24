@@ -215,6 +215,8 @@ model User {
   assignedComplaints     Complaint[]            @relation("ComplaintAssignee")
   assignedSuggestions    Suggestion[]           @relation("SuggestionAssignee")
   assignedCollaborations CollaborationRequest[] @relation("CollaborationAssignee")
+  createdLibraryFolders  LibraryFolder[]         @relation("LibraryFolderCreator")
+  uploadedLibraryFiles   LibraryFile[]           @relation("LibraryFileUploader")
 }
 
 // =========================================================
@@ -329,9 +331,68 @@ model Department {
 
   complaints  Complaint[]
   suggestions Suggestion[]
+  libraryCourses LibraryCourse[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// =========================================================
+// SPECIALIZATION LIBRARY
+// =========================================================
+
+model LibraryCourse {
+  id           String   @id @default(cuid())
+  departmentId String
+  level        Int
+  name         String
+  code         String?
+  description  String?
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  department Department      @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  folders    LibraryFolder[]
+
+  @@index([departmentId, level, sortOrder])
+}
+
+model LibraryFolder {
+  id          String   @id @default(cuid())
+  courseId    String
+  name        String
+  sortOrder   Int      @default(0)
+  isVisible   Boolean  @default(true)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course    LibraryCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdBy User?         @relation("LibraryFolderCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  files     LibraryFile[]
+
+  @@index([courseId, sortOrder])
+  @@index([createdById])
+}
+
+model LibraryFile {
+  id           String   @id @default(cuid())
+  folderId     String
+  title        String
+  originalName String
+  storageKey   String   @unique
+  mimeType     String
+  size         Int
+  uploadedById String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  folder     LibraryFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  uploadedBy User?         @relation("LibraryFileUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([folderId, createdAt])
+  @@index([uploadedById])
 }
 
 // =========================================================
