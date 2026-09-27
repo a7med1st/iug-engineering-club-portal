@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { Save } from "lucide-react";
+import { CERTIFICATE_FONTS } from "@/lib/certificate-template-settings";
 import styles from "./CertificateTemplateEditor.module.css";
 import layout from "./IndividualCertificateEditor.module.css";
 
@@ -10,7 +11,7 @@ export default function IndividualCertificateEditor({ certificateId, name, x, y,
   fontSize: number; bold: boolean; fontFamily: string; color: string; align: string; templateUrl: string;
   action: (data: FormData) => void;
 }) {
-  const [value, setValue] = useState({ name, x, y, fontSize, bold });
+  const [value, setValue] = useState({ name, x, y, fontSize, bold, fontFamily });
   const [scale, setScale] = useState(1);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +42,7 @@ export default function IndividualCertificateEditor({ certificateId, name, x, y,
       <div ref={previewRef} className={styles.preview} style={{ aspectRatio: `${width}/${height}` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={templateUrl} alt="معاينة الشهادة" />
-        <span className={styles.draggableText} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); move(event); }} onPointerMove={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) move(event); }} style={{ left: value.x * scale, top: value.y * scale, fontSize: value.fontSize * scale, fontFamily, fontWeight: value.bold ? 700 : 400, WebkitTextStroke: value.bold ? `${Math.max(.5, value.fontSize * .025) * scale}px ${color}` : undefined, color, "--anchor": anchor } as React.CSSProperties}>{value.name}</span>
+        <span className={styles.draggableText} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); move(event); }} onPointerMove={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) move(event); }} style={{ left: value.x * scale, top: value.y * scale, fontSize: value.fontSize * scale, fontFamily: value.fontFamily, fontWeight: value.bold ? 700 : 400, WebkitTextStroke: value.bold ? `${Math.max(.5, value.fontSize * .025) * scale}px ${color}` : undefined, color, "--anchor": anchor } as React.CSSProperties}>{value.name}</span>
       </div>
       <small>اسحب الاسم داخل الشهادة لتغيير مكانه.</small>
     </div>
@@ -53,6 +54,7 @@ export default function IndividualCertificateEditor({ certificateId, name, x, y,
           <label><span>الموضع الأفقي</span><div className={layout.numberField}><input type="number" min="0" max={width} value={value.x} onChange={(event) => setValue((current) => ({ ...current, x: Number(event.target.value) }))} /><small>px</small></div></label>
           <label><span>الموضع العمودي</span><div className={layout.numberField}><input type="number" min="0" max={height} value={value.y} onChange={(event) => setValue((current) => ({ ...current, y: Number(event.target.value) }))} /><small>px</small></div></label>
           <label><span>حجم الخط</span><div className={layout.numberField}><input name="customNameFontSize" type="number" min="1" max="512" step="0.01" value={value.fontSize} onChange={(event) => setValue((current) => ({ ...current, fontSize: Math.max(1, Math.min(512, Number(event.target.value) || 1)) }))} /><small>px</small></div></label>
+          <label><span>نوع الخط</span><select className={layout.fontSelect} name="customNameFontFamily" value={value.fontFamily} onChange={(event) => setValue((current) => ({ ...current, fontFamily: event.target.value }))}>{CERTIFICATE_FONTS.map((font) => <option key={font} value={font}>{font}</option>)}</select></label>
           <label className={layout.boldField}><input name="customNameBold" type="checkbox" checked={value.bold} onChange={(event) => setValue((current) => ({ ...current, bold: event.target.checked }))} /><span className={layout.boldIcon}>B</span><span>خط غامق</span></label>
         </div>
       </fieldset>

@@ -9,7 +9,8 @@
 .numberField { min-width: 0; height: 44px; display: flex; align-items: center; border: 1px solid var(--line); border-radius: 7px; background: var(--field-bg); }
 .numberField input { width: 100%; min-width: 0; height: 100%; padding: 0 12px; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; font-size: .84rem; }
 .numberField small { padding-inline-end: 12px; color: var(--muted); font-size: .68rem; }
-.nameField input:focus, .numberField:focus-within { outline: 2px solid #1688ff; outline-offset: 2px; }
+.fontSelect { width: 100%; min-width: 0; height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--field-bg); color: var(--ink); font: inherit; font-size: .84rem; }
+.nameField input:focus, .numberField:focus-within, .fontSelect:focus { outline: 2px solid #1688ff; outline-offset: 2px; }
 .section .boldField { min-height: 44px; align-self: end; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--field-bg); color: var(--ink); cursor: pointer; }
 .boldField input { width: 17px; height: 17px; margin: 0; accent-color: #0875d1; }
 .boldIcon { display: grid; place-items: center; width: 24px; height: 24px; font-family: Arial, sans-serif; font-size: .95rem; font-weight: 700; }
