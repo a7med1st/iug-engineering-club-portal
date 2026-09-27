@@ -3,23 +3,22 @@ import path from "node:path";
 import { Resvg } from "@resvg/resvg-js";
 import sharp from "sharp";
 import { getPrivateBlob } from "@/lib/blob-storage";
-import { escapeSvgText, type CertificateFontFamily, type CertificateTemplateSettings, type TextAlign } from "@/lib/certificate-template-settings";
+import { certificateTextRuns, escapeSvgText, type CertificateFontFamily, type CertificateTemplateSettings, type TextAlign } from "@/lib/certificate-template-settings";
 
 type RenderInput={width:number;height:number;settings:CertificateTemplateSettings;studentName:string;activityTitle:string;activityDate:Date|null};
-const fontFiles:Record<CertificateFontFamily,string>={Cairo:"cairo.ttf",Tajawal:"tajawal.ttf","Noto Kufi Arabic":"noto-kufi-arabic.ttf","IBM Plex Sans Arabic":"ibm-plex-sans-arabic.ttf",Amiri:"amiri.ttf",Alexandria:"alexandria.ttf","Thmanyah Sans":"thmanyah-sans.otf"};
+const fontFiles:Record<CertificateFontFamily,string>={Cairo:"cairo.ttf",Tajawal:"tajawal.ttf","Noto Kufi Arabic":"noto-kufi-arabic.ttf","IBM Plex Sans Arabic":"ibm-plex-sans-arabic.ttf",Amiri:"amiri.ttf",Alexandria:"alexandria.ttf","Thmanyah Sans":"thmanyah-sans.otf",Inter:"inter.ttf"};
 const certificateFontPaths = Object.values(fontFiles).map((file) =>
   path.join(process.cwd(), "public", "fonts", "certificates", file),
 );
-certificateFontPaths.push(path.join(process.cwd(), "public", "fonts", "certificates", "inter.ttf"));
 const anchor=(align:TextAlign)=>align==="left"?"start":align==="right"?"end":"middle";
 
 export function certificateTemplateFingerprint(value:unknown){return createHash("sha256").update(JSON.stringify(value)).digest("hex")}
 
 export async function buildCertificateOverlay(input:RenderInput){
   const{width,height,settings}=input;
-  const text=(value:string,x:number,y:number,size:number,color:string,align:TextAlign,font:CertificateFontFamily)=>`<text x="${x}" y="${y}" text-anchor="${anchor(align)}" font-family="${font}" font-size="${size}px" font-weight="400" fill="${color}" direction="rtl" unicode-bidi="plaintext">${escapeSvgText(value)}</text>`;
+  const text=(value:string,x:number,y:number,size:number,color:string,align:TextAlign,font:CertificateFontFamily,englishFont:CertificateFontFamily,bold:boolean)=>{const runs=certificateTextRuns(value,font,englishFont);return `<text x="${x}" y="${y}" text-anchor="${anchor(align)}" font-family="${runs[0]?.font??font}" font-size="${size}px" font-weight="${bold?700:400}" fill="${color}"${bold?` stroke="${color}" stroke-width="${Math.max(.5,size*.025)}" stroke-linejoin="round" paint-order="stroke fill"`:""} direction="rtl" unicode-bidi="plaintext">${runs.length===1?escapeSvgText(value):runs.map(run=>`<tspan font-family="${run.font}">${escapeSvgText(run.text)}</tspan>`).join("")}</text>`;}
   const date=input.activityDate?new Intl.DateTimeFormat("ar-PS",{dateStyle:"long"}).format(input.activityDate):"";
-  return`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${text(input.studentName,settings.nameX,settings.nameY,settings.nameFontSize,settings.nameColor,settings.nameAlign,settings.nameFontFamily)}${settings.titleVisible?text(input.activityTitle,settings.titleX,settings.titleY,settings.titleFontSize,settings.titleColor,settings.titleAlign,settings.titleFontFamily):""}${settings.dateVisible?text(date,settings.dateX,settings.dateY,settings.dateFontSize,settings.dateColor,settings.dateAlign,settings.dateFontFamily):""}</svg>`;
+  return`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${text(input.studentName,settings.nameX,settings.nameY,settings.nameFontSize,settings.nameColor,settings.nameAlign,settings.nameFontFamily,settings.nameEnglishFontFamily,settings.nameBold)}${settings.titleVisible?text(input.activityTitle,settings.titleX,settings.titleY,settings.titleFontSize,settings.titleColor,settings.titleAlign,settings.titleFontFamily,settings.titleEnglishFontFamily,settings.titleBold):""}${settings.dateVisible?text(date,settings.dateX,settings.dateY,settings.dateFontSize,settings.dateColor,settings.dateAlign,settings.dateFontFamily,settings.dateEnglishFontFamily,settings.dateBold):""}</svg>`;
 }
 
 export async function composeCertificate(source:Buffer,input:RenderInput){

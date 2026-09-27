@@ -24,8 +24,10 @@
 .required { padding: 4px 8px; border-radius: 999px; background: #eaf5ff; color: #1688ff; font-size: .58rem; font-weight: 850; }
 .fieldGrid { display: grid; grid-template-columns: repeat(3, minmax(72px, 1fr)) minmax(150px, 1.35fr); gap: 10px; align-items: end; }
 .fieldGrid > label, .alignmentField { min-width: 0; display: grid; gap: 6px; color: #627b91; font-size: .62rem; font-weight: 750; }
-.fieldGrid > label:nth-child(5) { grid-column: 1 / 2; grid-row: 2; }
-.alignmentField { grid-column: 2 / 5; grid-row: 2; }
+.fieldGrid > label:nth-child(5) { grid-column: 1 / 3; }
+.boldField { align-self: stretch; }
+.boldField input { width: 18px; height: 18px; accent-color: #1688ff; }
+.alignmentField { grid-column: 3 / 5; }
 .numberField { min-width: 0; height: 40px; display: flex; align-items: center; overflow: hidden; border: 1px solid #cfdeea; border-radius: 7px; background: #fff; }
 .numberField:focus-within { border-color: #1688ff; box-shadow: 0 0 0 3px rgba(22,136,255,.09); }
 .numberField input { width: 100%; min-width: 0; height: 100%; padding: 0 8px; border: 0; outline: 0; background: transparent; color: #173957; font: inherit; }
@@ -54,13 +56,14 @@
 @media (max-width: 760px) {
   .settingSection { padding: 13px; }
   .fieldGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .fieldGrid > label:nth-child(5) { grid-column: auto; grid-row: auto; }
+  .fieldGrid > label:nth-child(5) { grid-column: span 2; grid-row: auto; }
   .fontField, .alignmentField { grid-column: span 2; grid-row: auto; }
   .saveButton { width: 100%; }
   .dimensions { align-items: flex-start; flex-direction: column; }
 }
 @media (max-width: 390px) {
   .fieldGrid { grid-template-columns: 1fr; }
+  .fieldGrid > label:nth-child(5) { grid-column: auto; }
   .fontField, .alignmentField { grid-column: auto; }
 }
 
@@ -74,3 +77,4 @@
 :global(html[data-theme="dark"]) .numberField input,
 :global(html[data-theme="dark"]) .sectionHeading strong,
 :global(html[data-theme="dark"]) .uploadCopy strong { color: var(--ink); }
+@font-face { font-family: "Thmanyah Sans"; src: url("/fonts/certificates/thmanyah-sans.otf") format("opentype"); font-weight: 400 700; font-display: swap; }
