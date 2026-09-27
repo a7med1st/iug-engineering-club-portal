@@ -1,0 +1,18 @@
+.editor { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 28px; }
+.previewColumn { gap: 10px; }
+.settings { gap: 20px; }
+.section { min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: 20px; }
+.section legend { width: 100%; padding: 0 0 12px; margin-bottom: 18px; border-bottom: 1px solid var(--line); color: var(--ink); font-size: .9rem; font-weight: 700; }
+.section label { min-width: 0; display: grid; gap: 8px; color: var(--muted); font-size: .72rem; font-weight: 700; }
+.nameField input { width: 100%; height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--field-bg); color: var(--ink); font: inherit; font-size: .86rem; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.numberField { min-width: 0; height: 44px; display: flex; align-items: center; border: 1px solid var(--line); border-radius: 7px; background: var(--field-bg); }
+.numberField input { width: 100%; min-width: 0; height: 100%; padding: 0 12px; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; font-size: .84rem; }
+.numberField small { padding-inline-end: 12px; color: var(--muted); font-size: .68rem; }
+.nameField input:focus, .numberField:focus-within { outline: 2px solid #1688ff; outline-offset: 2px; }
+.section .boldField { min-height: 44px; align-self: end; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--field-bg); color: var(--ink); cursor: pointer; }
+.boldField input { width: 17px; height: 17px; margin: 0; accent-color: #0875d1; }
+.boldIcon { display: grid; place-items: center; width: 24px; height: 24px; font-family: Arial, sans-serif; font-size: .95rem; font-weight: 700; }
+.saveButton { justify-self: stretch; min-height: 46px; }
+@media (max-width: 1180px) { .editor { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .fields { grid-template-columns: 1fr; gap: 12px; } }

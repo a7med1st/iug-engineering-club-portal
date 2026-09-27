@@ -1094,6 +1094,8 @@ model Certificate {
   customName        String?
   customNameX       Decimal? @db.Decimal(10, 2)
   customNameY       Decimal? @db.Decimal(10, 2)
+  customNameFontSize Decimal? @db.Decimal(10, 2)
+  customNameBold     Boolean?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

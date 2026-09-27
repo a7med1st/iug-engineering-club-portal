@@ -14,6 +14,7 @@ import {
 
 import {
   createVerificationCode,
+  isIssuedCertificate,
 } from "@/lib/certificates";
 
 import {
@@ -28,20 +29,22 @@ import { renderCertificate } from "@/lib/certificate-renderer";
 import { putPrivateBlob, tryDeletePrivateBlobs } from "@/lib/blob-storage";
 import { randomUUID } from "node:crypto";
 
-async function generateCertificateArtifact(submissionId: string, certificateId: string) {
-  const row = await prisma.activityFormSubmission.findUnique({ where: { id: submissionId }, select: { studentName: true, form: { select: { activity: { select: { title: true, startsAt: true, certificateTemplate: true } } } }, certificate: { select: { artifactPathname: true, customName: true, customNameX: true, customNameY: true } } } });
+type IndividualOverrides = { customName: string; customNameX: number; customNameY: number; customNameFontSize: number; customNameBold: boolean };
+
+async function generateCertificateArtifact(submissionId: string, certificateId: string, overrides?: IndividualOverrides) {
+  const row = await prisma.activityFormSubmission.findUnique({ where: { id: submissionId }, select: { studentName: true, form: { select: { activity: { select: { title: true, startsAt: true, certificateTemplate: true } } } }, certificate: { select: { artifactPathname: true, customName: true, customNameX: true, customNameY: true, customNameFontSize: true, customNameBold: true } } } });
   const template = row?.form.activity.certificateTemplate;
   if (!row || !template) certificateAdminError("يجب إعداد قالب للنشاط قبل إصدار الشهادة.");
-const rendered = await renderCertificate({ sourcePathname: template.sourcePathname, width: template.sourceWidth, height: template.sourceHeight, settings: { nameX:Number(row.certificate?.customNameX ?? template.nameX),nameY:Number(row.certificate?.customNameY ?? template.nameY),nameFontSize:Number(template.nameFontSize),nameFontFamily:template.nameFontFamily as "Cairo",nameEnglishFontFamily:template.nameEnglishFontFamily as "Cairo",nameBold:template.nameBold,nameColor:template.nameColor,nameAlign:template.nameAlign as "left"|"center"|"right",titleVisible:template.titleVisible,titleX:Number(template.titleX),titleY:Number(template.titleY),titleFontSize:Number(template.titleFontSize),titleFontFamily:template.titleFontFamily as "Cairo",titleEnglishFontFamily:template.titleEnglishFontFamily as "Cairo",titleBold:template.titleBold,titleColor:template.titleColor,titleAlign:template.titleAlign as "left"|"center"|"right",dateVisible:template.dateVisible,dateX:Number(template.dateX),dateY:Number(template.dateY),dateFontSize:Number(template.dateFontSize),dateFontFamily:template.dateFontFamily as "Cairo",dateEnglishFontFamily:template.dateEnglishFontFamily as "Cairo",dateBold:template.dateBold,dateColor:template.dateColor,dateAlign:template.dateAlign as "left"|"center"|"right" }, studentName: row.certificate?.customName?.trim() || row.studentName, activityTitle: row.form.activity.title, activityDate: row.form.activity.startsAt });
+const rendered = await renderCertificate({ sourcePathname: template.sourcePathname, width: template.sourceWidth, height: template.sourceHeight, settings: { nameX:Number(overrides?.customNameX ?? row.certificate?.customNameX ?? template.nameX),nameY:Number(overrides?.customNameY ?? row.certificate?.customNameY ?? template.nameY),nameFontSize:Number(overrides?.customNameFontSize ?? row.certificate?.customNameFontSize ?? template.nameFontSize),nameFontFamily:template.nameFontFamily as "Cairo",nameEnglishFontFamily:template.nameEnglishFontFamily as "Cairo",nameBold:overrides?.customNameBold ?? row.certificate?.customNameBold ?? template.nameBold,nameColor:template.nameColor,nameAlign:template.nameAlign as "left"|"center"|"right",titleVisible:template.titleVisible,titleX:Number(template.titleX),titleY:Number(template.titleY),titleFontSize:Number(template.titleFontSize),titleFontFamily:template.titleFontFamily as "Cairo",titleEnglishFontFamily:template.titleEnglishFontFamily as "Cairo",titleBold:template.titleBold,titleColor:template.titleColor,titleAlign:template.titleAlign as "left"|"center"|"right",dateVisible:template.dateVisible,dateX:Number(template.dateX),dateY:Number(template.dateY),dateFontSize:Number(template.dateFontSize),dateFontFamily:template.dateFontFamily as "Cairo",dateEnglishFontFamily:template.dateEnglishFontFamily as "Cairo",dateBold:template.dateBold,dateColor:template.dateColor,dateAlign:template.dateAlign as "left"|"center"|"right" }, studentName: overrides?.customName.trim() || row.certificate?.customName?.trim() || row.studentName, activityTitle: row.form.activity.title, activityDate: row.form.activity.startsAt });
   const pathname=`certificates/${certificateId}/${randomUUID()}.png`; await putPrivateBlob(pathname,rendered.buffer,rendered.mime);
-  try { await prisma.certificate.update({ where:{id:certificateId}, data:{artifactPathname:pathname,artifactMime:rendered.mime,artifactSize:rendered.size,artifactWidth:rendered.width,artifactHeight:rendered.height,generatedAt:new Date(),templateFingerprint:rendered.fingerprint} }); } catch(error) { await tryDeletePrivateBlobs([pathname], "certificate-generation-rollback"); throw error; }
+  try { await prisma.certificate.update({ where:{id:certificateId}, data:{artifactPathname:pathname,artifactMime:rendered.mime,artifactSize:rendered.size,artifactWidth:rendered.width,artifactHeight:rendered.height,generatedAt:new Date(),templateFingerprint:rendered.fingerprint,...overrides} }); } catch(error) { await tryDeletePrivateBlobs([pathname], "certificate-generation-rollback"); throw error; }
   if(row.certificate?.artifactPathname) await tryDeletePrivateBlobs([row.certificate.artifactPathname], "certificate-artifact-replacement");
 }
 
 function regenerationFailureMessage(error: unknown) {
   return error instanceof Error && error.message.startsWith("CERTIFICATE_NAME_NOT_VISIBLE")
     ? "تعذر إظهار الاسم داخل القالب. تحقق من موضع الاسم وحجم الخط في إعدادات الشهادة."
-    : "تعذر إعادة توليد الشهادة. حاول مجددًا، وإن استمرت المشكلة راجع سجل الخادم.";
+    : "تعذر توليد صورة الشهادة. حاول مجددًا، وإن استمرت المشكلة راجع سجل الخادم.";
 }
 
 function field(
@@ -90,6 +93,7 @@ async function ensureEligibleSubmission(
               true,
             revokedAt:
               true,
+            artifactPathname: true,
           },
         },
 
@@ -181,7 +185,7 @@ async function notifyCertificate(
     return;
   }
 
-  await prisma.notification.create({
+  try { await prisma.notification.create({
     data: {
       userId,
 
@@ -197,7 +201,9 @@ async function notifyCertificate(
       href:
         `/certificates/${verificationCode}`,
     },
-  });
+  }); } catch (error) {
+    console.error("Certificate notification failed", { userId, verificationCode, error });
+  }
 }
 
 export async function issueCertificate(
@@ -226,11 +232,7 @@ export async function issueCertificate(
       submissionId,
     );
 
-  if (
-    submission.certificate &&
-    !submission.certificate
-      .revokedAt
-  ) {
+  if (submission.certificate && isIssuedCertificate(submission.certificate)) {
     redirect(
       `/certificates/${submission.certificate.verificationCode}`,
     );
@@ -246,20 +248,7 @@ export async function issueCertificate(
   try {
     certificate =
       submission.certificate
-        ? await prisma.certificate.update({
-            where: {
-              id:
-                submission.certificate.id,
-            },
-
-            data: {
-              revokedAt:
-                null,
-
-              issuedAt:
-                new Date(),
-            },
-          })
+        ? submission.certificate
         : await prisma.certificate.create({
             data: {
               submissionId:
@@ -267,6 +256,7 @@ export async function issueCertificate(
 
               verificationCode:
                 code,
+              revokedAt: new Date(),
             },
           });
   } catch (
@@ -286,7 +276,13 @@ export async function issueCertificate(
     throw error;
   }
 
-  await generateCertificateArtifact(submission.id, certificate.id);
+  try {
+    await generateCertificateArtifact(submission.id, certificate.id);
+    await prisma.certificate.update({ where: { id: certificate.id }, data: { revokedAt: null, issuedAt: new Date() } });
+  } catch (error) {
+    console.error("Certificate issuance failed", { submissionId: submission.id, error });
+    redirect(`/admin/certificates?activity=${encodeURIComponent(submission.form.activity.id)}&error=${encodeURIComponent(regenerationFailureMessage(error))}`);
+  }
   await notifyCertificate(
     submission.userId,
     submission.form.activity.title,
@@ -334,6 +330,8 @@ export async function updateIndividualCertificate(formData: FormData) {
   const customName = field(formData, "customName");
   const customNameX = Number(formData.get("customNameX"));
   const customNameY = Number(formData.get("customNameY"));
+  const customNameFontSize = Number(formData.get("customNameFontSize"));
+  const customNameBold = formData.get("customNameBold") === "on";
 
   const certificate = await prisma.certificate.findUnique({
     where: { id: certificateId },
@@ -346,15 +344,16 @@ export async function updateIndividualCertificate(formData: FormData) {
   });
 
   if (!certificate || certificate.revokedAt) certificateAdminError("الشهادة غير متاحة للتعديل.");
-  if (!customName || customName.length > 160 || !Number.isFinite(customNameX) || !Number.isFinite(customNameY)) {
+  if (!customName || customName.length > 160 || !Number.isFinite(customNameX) || !Number.isFinite(customNameY) || customNameX < 0 || customNameY < 0 || !Number.isFinite(customNameFontSize) || customNameFontSize < 1 || customNameFontSize > 512) {
     certificateAdminError("تحقق من الاسم وموقعه داخل الشهادة.");
   }
 
-  await prisma.certificate.update({
-    where: { id: certificate.id },
-    data: { customName, customNameX, customNameY },
-  });
-  await generateCertificateArtifact(certificate.submissionId, certificate.id);
+  try {
+    await generateCertificateArtifact(certificate.submissionId, certificate.id, { customName, customNameX, customNameY, customNameFontSize, customNameBold });
+  } catch (error) {
+    console.error("Individual certificate update failed", { certificateId: certificate.id, error });
+    redirect(`/admin/certificates?activity=${encodeURIComponent(certificate.submission.form.activityId)}&error=${encodeURIComponent(regenerationFailureMessage(error))}`);
+  }
 
   revalidatePath("/admin/certificates");
   redirect(`/admin/certificates?activity=${encodeURIComponent(certificate.submission.form.activityId)}&success=${encodeURIComponent("تم تعديل الشهادة وإعادة توليدها.")}`);
@@ -462,6 +461,7 @@ export async function issueActivityCertificates(
               true,
             revokedAt:
               true,
+            artifactPathname: true,
           },
         },
 
@@ -485,18 +485,14 @@ export async function issueActivityCertificates(
     );
   }
 
-  let created =
-    0;
+  let created = 0;
+  let failed = 0;
 
   for (
     const submission
     of submissions
   ) {
-    if (
-      submission.certificate &&
-      !submission.certificate
-        .revokedAt
-    ) {
+    if (isIssuedCertificate(submission.certificate)) {
       continue;
     }
 
@@ -507,20 +503,7 @@ export async function issueActivityCertificates(
 
     const certificate =
       submission.certificate
-        ? await prisma.certificate.update({
-            where: {
-              id:
-                submission.certificate.id,
-            },
-
-            data: {
-              revokedAt:
-                null,
-
-              issuedAt:
-                new Date(),
-            },
-          })
+        ? submission.certificate
         : await prisma.certificate.create({
             data: {
               submissionId:
@@ -528,10 +511,18 @@ export async function issueActivityCertificates(
 
               verificationCode:
                 code,
+              revokedAt: new Date(),
             },
           });
 
-    await generateCertificateArtifact(submission.id, certificate.id);
+    try {
+      await generateCertificateArtifact(submission.id, certificate.id);
+      await prisma.certificate.update({ where: { id: certificate.id }, data: { revokedAt: null, issuedAt: new Date() } });
+    } catch (error) {
+      failed += 1;
+      console.error("Certificate bulk issuance failed", { submissionId: submission.id, error });
+      continue;
+    }
 
     await notifyCertificate(
       submission.userId,
@@ -550,6 +541,10 @@ export async function issueActivityCertificates(
   revalidatePath(
     "/notifications",
   );
+
+  if (failed) {
+    redirect(`/admin/certificates?activity=${encodeURIComponent(activityId)}&error=${encodeURIComponent(`تم إصدار ${created} شهادة، وتعذر إصدار ${failed}. حاول إصدار الشهادات المتبقية مجددًا.`)}`);
+  }
 
   redirect(
     `/admin/certificates?activity=${encodeURIComponent(

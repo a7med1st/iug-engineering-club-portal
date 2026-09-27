@@ -6,14 +6,13 @@ import {
   UserRound,
 } from "lucide-react";
 
-import Link from "next/link";
-
 import {
   notFound,
 } from "next/navigation";
 
 import {
   getCertificateByCode,
+  isCertificateValid,
 } from "@/lib/certificates";
 
 import styles from "./verify.module.css";
@@ -65,8 +64,7 @@ export default async function VerifyCertificatePage({
       .form
       .activity;
 
-  const valid =
-    !certificate.revokedAt;
+  const valid = isCertificateValid(certificate);
 
   return (
     <main
@@ -138,9 +136,7 @@ export default async function VerifyCertificatePage({
 
             <strong>
               {
-                certificate
-                  .submission
-                  .studentName
+                certificate.customName?.trim() || certificate.submission.studentName
               }
             </strong>
           </div>
@@ -194,11 +190,6 @@ export default async function VerifyCertificatePage({
           </div>
         </div>
 
-        <Link
-          href={`/certificates/${certificate.verificationCode}`}
-        >
-          عرض الشهادة
-        </Link>
       </section>
     </main>
   );

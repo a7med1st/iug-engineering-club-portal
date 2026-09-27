@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import sharp from "sharp";
 import { composeCertificate, fitCertificateName } from "../lib/certificate-renderer";
-import { CERTIFICATE_FONTS, type CertificateTemplateSettings } from "../lib/certificate-template-settings";
+import { CERTIFICATE_FONTS, type CertificateFontFamily, type CertificateTemplateSettings } from "../lib/certificate-template-settings";
 
 async function main(){
   const width=1200,height=850;
@@ -18,7 +18,7 @@ async function main(){
   assert.ok(fitted.nameFontSize<compactSettings.nameFontSize,"Long names must fit inside a compact certificate");
   const edgeName=await fitCertificateName({...compactInput,studentName:"آية محمد",settings:{...compactSettings,nameX:2,nameY:5}});
   assert.ok(edgeName.nameX>2 && edgeName.nameY>5,"Names near the template edge must be moved into view");
-  const missingFont=await fitCertificateName({...compactInput,studentName:"آية محمد",settings:{...compactSettings,nameFontFamily:"Noto Kufi Arabic"}});
+  const missingFont=await fitCertificateName({...compactInput,studentName:"آية محمد",settings:{...compactSettings,nameFontFamily:"Noto Kufi Arabic" as CertificateFontFamily}});
   assert.equal(missingFont.nameFontFamily,"Cairo","A blank font must fall back to a visible Arabic font");
   const compactSource=await sharp({create:{width:531,height:376,channels:4,background:"white"}}).png().toBuffer();
   const compactRendered=await composeCertificate(compactSource,compactInput);
@@ -36,10 +36,10 @@ async function main(){
   const fontImages = await Promise.all(CERTIFICATE_FONTS.map((fontFamily) =>
     composeCertificate(source, {
       width, height,
-      settings: { ...settings, nameFontFamily: fontFamily },
+      settings: { ...settings, nameFontFamily: fontFamily, titleVisible: false, dateVisible: false },
       studentName: "طالب المعاينة",
-      activityTitle: "نشاط المعاينة",
-      activityDate: new Date("2026-09-19T00:00:00Z"),
+      activityTitle: "",
+      activityDate: null,
     }),
   ));
   assert.equal(fontImages.length, CERTIFICATE_FONTS.length);

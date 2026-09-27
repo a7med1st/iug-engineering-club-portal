@@ -23,7 +23,7 @@ export default async function EditCertificatePage({ params }: { params: Promise<
         name={certificate.customName ?? certificate.submission.studentName}
         x={Number(certificate.customNameX ?? template.nameX)} y={Number(certificate.customNameY ?? template.nameY)}
         width={template.sourceWidth} height={template.sourceHeight}
-        fontSize={Number(template.nameFontSize)} fontFamily={template.nameFontFamily}
+        fontSize={Number(certificate.customNameFontSize ?? template.nameFontSize)} bold={certificate.customNameBold ?? template.nameBold} fontFamily={template.nameFontFamily}
         color={template.nameColor} align={template.nameAlign}
         templateUrl={`/admin/certificates/templates/${certificate.submission.form.activityId}`}
         action={updateIndividualCertificate}

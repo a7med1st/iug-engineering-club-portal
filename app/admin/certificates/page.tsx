@@ -19,6 +19,7 @@ import { saveCertificateTemplate } from "./template-actions";
 
 import {
   getCertificateAdminRows,
+  isIssuedCertificate,
 } from "@/lib/certificates";
 
 import {
@@ -270,10 +271,7 @@ values={{nameX:Number(template?.nameX??600),nameY:Number(template?.nameY??425),n
             <tbody>
               {data.rows.length ? (
                 data.rows.map((row) => {
-                  const active = Boolean(
-                    row.certificate &&
-                      !row.certificate.revokedAt,
-                  );
+                  const active = isIssuedCertificate(row.certificate);
 
                   return (
                     <tr key={row.id}>
@@ -315,7 +313,7 @@ values={{nameX:Number(template?.nameX??600),nameY:Number(template?.nameY??425),n
                               }
                             </span>
                           </div>
-                        ) : row.certificate?.revokedAt ? (
+                        ) : row.certificate?.revokedAt && row.certificate.artifactPathname ? (
                           <span className={styles.revoked}>
                             ملغاة
                           </span>

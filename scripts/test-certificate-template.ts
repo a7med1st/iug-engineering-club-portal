@@ -9,6 +9,7 @@ assert.equal(parseTemplateSettings(valid).ok, true);
 valid.set("nameX","1201"); assert.equal(parseTemplateSettings(valid).ok, false);
 valid.set("nameX","320"); valid.set("nameColor","red"); assert.equal(parseTemplateSettings(valid).ok, false);
 valid.set("nameColor","#112233"); valid.set("nameFontFamily","Comic Sans MS"); assert.equal(parseTemplateSettings(valid).ok, false);
+valid.set("nameFontFamily","Noto Kufi Arabic"); assert.equal(parseTemplateSettings(valid).ok, false);
 valid.set("nameFontFamily","Cairo");
 valid.set("nameEnglishFontFamily","Alexandria");
 valid.set("nameBold","on");

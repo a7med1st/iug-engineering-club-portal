@@ -4,6 +4,19 @@ import {
   prisma,
 } from "@/lib/prisma";
 
+export function isCertificateValid(certificate: {
+  revokedAt: Date | null;
+  artifactPathname: string | null;
+  submission: { status: string; checkedInAt: Date | null };
+}) {
+  return !certificate.revokedAt && Boolean(certificate.artifactPathname) &&
+    certificate.submission.status === "APPROVED" && Boolean(certificate.submission.checkedInAt);
+}
+
+export function isIssuedCertificate(certificate: { revokedAt: Date | null; artifactPathname: string | null } | null) {
+  return Boolean(certificate && !certificate.revokedAt && certificate.artifactPathname);
+}
+
 export function normalizeCertificateCode(
   value: string,
 ) {
@@ -171,6 +184,7 @@ export async function getCertificateAdminRows({
               true,
             issuedAt: true,
             revokedAt: true,
+            artifactPathname: true,
           },
         },
 
@@ -200,24 +214,14 @@ export async function getCertificateAdminRows({
           issued ===
             "ISSUED"
         ) {
-          return Boolean(
-            submission.certificate &&
-              !submission.certificate
-                .revokedAt,
-          );
+          return isIssuedCertificate(submission.certificate);
         }
 
         if (
           issued ===
             "NOT_ISSUED"
         ) {
-          return (
-            !submission.certificate ||
-            Boolean(
-              submission.certificate
-                .revokedAt,
-            )
-          );
+          return !isIssuedCertificate(submission.certificate);
         }
 
         return true;
@@ -235,22 +239,12 @@ export async function getCertificateAdminRows({
 
       issuedCount:
         submissions.filter(
-          (submission) =>
-            Boolean(
-              submission.certificate &&
-                !submission.certificate
-                  .revokedAt,
-            ),
+          (submission) => isIssuedCertificate(submission.certificate),
         ).length,
 
       notIssuedCount:
         submissions.filter(
-          (submission) =>
-            !submission.certificate ||
-            Boolean(
-              submission.certificate
-                .revokedAt,
-            ),
+          (submission) => !isIssuedCertificate(submission.certificate),
         ).length,
     },
   };
