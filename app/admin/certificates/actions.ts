@@ -38,6 +38,12 @@ const rendered = await renderCertificate({ sourcePathname: template.sourcePathna
   if(row.certificate?.artifactPathname) await tryDeletePrivateBlobs([row.certificate.artifactPathname], "certificate-artifact-replacement");
 }
 
+function regenerationFailureMessage(error: unknown) {
+  return error instanceof Error && error.message.startsWith("CERTIFICATE_NAME_NOT_VISIBLE")
+    ? "تعذر إظهار الاسم داخل القالب. تحقق من موضع الاسم وحجم الخط في إعدادات الشهادة."
+    : "تعذر إعادة توليد الشهادة. حاول مجددًا، وإن استمرت المشكلة راجع سجل الخادم.";
+}
+
 function field(
   formData: FormData,
   name: string,
@@ -311,7 +317,12 @@ export async function regenerateCertificate(formData: FormData) {
     certificateAdminError("الشهادة غير متاحة لإعادة التوليد.");
   }
 
-  await generateCertificateArtifact(submission.id, submission.certificate.id);
+  try {
+    await generateCertificateArtifact(submission.id, submission.certificate.id);
+  } catch (error) {
+    console.error("Certificate regeneration failed", { submissionId: submission.id, error });
+    redirect(`/admin/certificates?activity=${encodeURIComponent(submission.form.activity.id)}&error=${encodeURIComponent(regenerationFailureMessage(error))}`);
+  }
   revalidatePath("/admin/certificates");
   redirect(`/admin/certificates?success=${encodeURIComponent("تم تحديث صورة الشهادة.")}`);
 }
@@ -373,13 +384,22 @@ export async function regenerateActivityCertificates(formData: FormData) {
     certificateAdminError("لا توجد شهادات صادرة لتحديثها في هذا النشاط.");
   }
 
+  let failed = 0;
   for (const submission of submissions) {
     if (submission.certificate) {
-      await generateCertificateArtifact(submission.id, submission.certificate.id);
+      try {
+        await generateCertificateArtifact(submission.id, submission.certificate.id);
+      } catch (error) {
+        failed += 1;
+        console.error("Certificate bulk regeneration failed", { submissionId: submission.id, error });
+      }
     }
   }
 
   revalidatePath("/admin/certificates");
+  if (failed) {
+    redirect(`/admin/certificates?activity=${encodeURIComponent(activityId)}&error=${encodeURIComponent(`تم تحديث ${submissions.length - failed} شهادة، وتعذر تحديث ${failed}. جرّب إعادة توليد الشهادات المتبقية فرديًا.`)}`);
+  }
   redirect(
     `/admin/certificates?activity=${encodeURIComponent(activityId)}&success=${encodeURIComponent(
       `تم تحديث ${submissions.length} شهادة بالخط المحدد.`,

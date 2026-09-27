@@ -16,6 +16,8 @@ async function main(){
   const compactInput={width:531,height:376,settings:compactSettings,studentName:"آية عبد الرحمن محمد عبد الكريم أحمد فاطمة بنت عبد العزيز",activityTitle:"",activityDate:null};
   const fitted=await fitCertificateName(compactInput);
   assert.ok(fitted.nameFontSize<compactSettings.nameFontSize,"Long names must fit inside a compact certificate");
+  const edgeName=await fitCertificateName({...compactInput,studentName:"آية محمد",settings:{...compactSettings,nameX:2,nameY:5}});
+  assert.ok(edgeName.nameX>2 && edgeName.nameY>5,"Names near the template edge must be moved into view");
   const missingFont=await fitCertificateName({...compactInput,studentName:"آية محمد",settings:{...compactSettings,nameFontFamily:"Noto Kufi Arabic"}});
   assert.equal(missingFont.nameFontFamily,"Cairo","A blank font must fall back to a visible Arabic font");
   const compactSource=await sharp({create:{width:531,height:376,channels:4,background:"white"}}).png().toBuffer();

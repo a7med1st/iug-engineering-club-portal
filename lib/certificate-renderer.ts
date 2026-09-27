@@ -43,6 +43,12 @@ export async function fitCertificateName(input:RenderInput){
       settings={...settings,nameFontFamily:"Cairo"};
       continue;
     }
+    if(bounds && bounds.right-bounds.left<input.width-2*margin && bounds.bottom-bounds.top<input.height-2*margin){
+      const dx=bounds.left<=margin?margin+1-bounds.left:bounds.right>=input.width-1-margin?input.width-2-margin-bounds.right:0;
+      const dy=bounds.top<=margin?margin+1-bounds.top:bounds.bottom>=input.height-1-margin?input.height-2-margin-bounds.bottom:0;
+      settings={...settings,nameX:settings.nameX+dx,nameY:settings.nameY+dy};
+      continue;
+    }
     settings={...settings,nameFontSize:settings.nameFontSize*.85};
   }
   throw new Error(`CERTIFICATE_NAME_NOT_VISIBLE:${settings.nameFontFamily}`);
