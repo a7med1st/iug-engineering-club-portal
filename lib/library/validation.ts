@@ -43,3 +43,18 @@ export function validateLibraryFileTitle(value: unknown) {
   return requiredText(value, "اسم الملف", 180);
 }
 
+export function validateLibraryLinkInput(input: Record<string, unknown>) {
+  const title = requiredText(input.title, "عنوان الرابط", 180);
+  const rawUrl = requiredText(input.url, "الرابط", 2048);
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    throw new LibraryValidationError("الرابط غير صالح.");
+  }
+  if (!["http:", "https:"].includes(url.protocol) || !url.hostname || url.username || url.password) {
+    throw new LibraryValidationError("استخدم رابط http أو https صالحاً.");
+  }
+  return { title, url: url.toString() };
+}
+

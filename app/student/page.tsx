@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import {
   Award,
+  BookOpen,
   CalendarClock,
   CircleCheckBig,
   ClipboardList,
@@ -309,6 +310,10 @@ export default async function StudentDashboardPage({
               <span>
                 شهاداتي
               </span>
+            </Link>
+            <Link href="/library" className={`${styles.certificatesLink} ${styles.dashboardActionButton}`}>
+              <BookOpen size={19} strokeWidth={2} />
+              <span>مكتبة التخصص</span>
             </Link>
           </div>
         </div>

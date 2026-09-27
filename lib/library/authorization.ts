@@ -33,3 +33,10 @@ export async function requireLibraryFile(id: string) {
   await requireDepartmentPermission(PERMISSIONS.LIBRARY_MANAGE, departmentId);
   return { ...resource, departmentId };
 }
+
+export async function requireLibraryLink(id: string) {
+  const resource = await prisma.libraryLink.findUnique({ where: { id }, select: { id: true, folder: { select: { course: { select: { departmentId: true } } } } } });
+  if (!resource) return null;
+  await requireDepartmentPermission(PERMISSIONS.LIBRARY_MANAGE, resource.folder.course.departmentId);
+  return resource;
+}

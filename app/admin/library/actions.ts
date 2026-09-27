@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS, requireDepartmentPermission } from "@/lib/permissions";
-import { requireLibraryCourse, requireLibraryFile, requireLibraryFolder } from "@/lib/library/authorization";
+import { requireLibraryCourse, requireLibraryFile, requireLibraryFolder, requireLibraryLink } from "@/lib/library/authorization";
 import { deleteLibraryFiles } from "@/lib/library/storage";
-import { LibraryValidationError, validateLibraryCourseInput, validateLibraryFileTitle, validateLibraryFolderInput } from "@/lib/library/validation";
+import { LibraryValidationError, validateLibraryCourseInput, validateLibraryFileTitle, validateLibraryFolderInput, validateLibraryLinkInput } from "@/lib/library/validation";
 
 const text = (data: FormData, key: string) => String(data.get(key) ?? "").trim();
 const back = (data: FormData, kind: "success" | "error", message: string): never => {
@@ -88,4 +88,36 @@ export async function deleteFileAction(data: FormData) {
     await prisma.libraryFile.delete({ where: { id: file.id } }); refresh();
   } catch { back(data, "error", "تعذر حذف الملف."); }
   back(data, "success", "تم حذف الملف.");
+}
+
+export async function createLinkAction(data: FormData) {
+  try {
+    const folder = await requireLibraryFolder(text(data, "folderId"));
+    if (!folder) throw new LibraryValidationError("المجلد غير موجود.");
+    const input = validateLibraryLinkInput(Object.fromEntries(data));
+    await prisma.libraryLink.create({ data: { folderId: folder.id, ...input } });
+    refresh();
+  } catch (error) { back(data, "error", message(error)); }
+  back(data, "success", "تمت إضافة الرابط.");
+}
+
+export async function updateLinkAction(data: FormData) {
+  try {
+    const link = await requireLibraryLink(text(data, "linkId"));
+    if (!link) throw new LibraryValidationError("الرابط غير موجود.");
+    const input = validateLibraryLinkInput(Object.fromEntries(data));
+    await prisma.libraryLink.update({ where: { id: link.id }, data: input });
+    refresh();
+  } catch (error) { back(data, "error", message(error)); }
+  back(data, "success", "تم تحديث الرابط.");
+}
+
+export async function deleteLinkAction(data: FormData) {
+  try {
+    const link = await requireLibraryLink(text(data, "linkId"));
+    if (!link) throw new LibraryValidationError("الرابط غير موجود.");
+    await prisma.libraryLink.delete({ where: { id: link.id } });
+    refresh();
+  } catch (error) { back(data, "error", message(error)); }
+  back(data, "success", "تم حذف الرابط.");
 }

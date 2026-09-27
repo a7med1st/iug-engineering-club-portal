@@ -5361,6 +5361,9 @@
 }
 
 /* Match the three student actions with the header "لوحتي" typography/motion. */
+@media (min-width: 561px) and (max-width: 1100px) {
+  .heroActions { flex-wrap: wrap; }
+}
 .dashboardActionButton {
   position: relative;
   isolation: isolate;

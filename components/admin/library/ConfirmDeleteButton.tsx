@@ -10,10 +10,10 @@ export default function ConfirmDeleteButton() {
       const form = event.target instanceof HTMLFormElement ? event.target : null;
       const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
       if (!form || form.dataset.confirmed === "true" || !submitter?.classList.contains(styles.danger)) return;
-      const field = form.querySelector<HTMLInputElement>('input[name="fileId"],input[name="folderId"],input[name="courseId"]');
+      const field = form.querySelector<HTMLInputElement>('input[name="fileId"],input[name="folderId"],input[name="courseId"],input[name="linkId"]');
       if (!field) return;
       event.preventDefault(); pending.current = form;
-      setLabel(field.name === "fileId" ? "الملف" : field.name === "folderId" ? "المجلد" : "المساق");
+      setLabel(field.name === "fileId" ? "الملف" : field.name === "folderId" ? "المجلد" : field.name === "linkId" ? "الرابط" : "المساق");
       dialog.current?.showModal();
     };
     document.addEventListener("submit", onSubmit, true);

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { validateLibraryCourseInput, validateLibraryFolderInput, validateLibraryFileTitle } from "../lib/library/validation";
+import { validateLibraryCourseInput, validateLibraryFolderInput, validateLibraryFileTitle, validateLibraryLinkInput } from "../lib/library/validation";
 
 assert.deepEqual(validateLibraryCourseInput({ level: "1", name: "  قواعد البيانات ", code: " CPE331 ", description: "  وصف ", sortOrder: "2" }), {
   level: 1, name: "قواعد البيانات", code: "CPE331", description: "وصف", sortOrder: 2,
@@ -9,4 +9,8 @@ assert.throws(() => validateLibraryCourseInput({ level: "1", name: " ", sortOrde
 assert.deepEqual(validateLibraryFolderInput({ name: " ملخصات ", sortOrder: "3", isVisible: "on" }), { name: "ملخصات", sortOrder: 3, isVisible: true });
 assert.equal(validateLibraryFileTitle("  Final 2025  "), "Final 2025");
 assert.throws(() => validateLibraryFileTitle(""));
+assert.deepEqual(validateLibraryLinkInput({ title: " محاضرة 1 ", url: "https://example.com/lecture" }), { title: "محاضرة 1", url: "https://example.com/lecture" });
+for (const url of ["javascript:alert(1)", "ftp://example.com/file", "https://user:pass@example.com", "not-a-url"]) {
+  assert.throws(() => validateLibraryLinkInput({ title: "محاضرة", url }));
+}
 console.log("Library domain tests passed.");

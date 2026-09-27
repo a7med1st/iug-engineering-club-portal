@@ -11,7 +11,7 @@ export default async function LibraryAdminPage({ searchParams }: { searchParams:
   const data = await resolveLibrarySelection(user, params);
   return (
     <section className="admin-page">
-      <div className="admin-page-head"><div><h1>إدارة مكتبة التخصص</h1><p className="muted">قم بإدارة مساقات القسم، المجلدات والملفات التي ستظهر للطلاب في مكتبة تخصصهم.</p></div></div>
+      <div className="admin-page-head"><div><h1>إدارة مكتبة التخصص</h1><p className="muted">قم بإدارة مساقات القسم والمجلدات والملفات والروابط التي ستظهر للطلاب في مكتبة تخصصهم.</p></div></div>
       <AdminFeedback error={params.error} success={params.success} />
       <LibraryManager data={data} />
     </section>

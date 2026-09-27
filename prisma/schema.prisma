@@ -371,6 +371,7 @@ model LibraryFolder {
   course    LibraryCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
   createdBy User?         @relation("LibraryFolderCreator", fields: [createdById], references: [id], onDelete: SetNull)
   files     LibraryFile[]
+  links     LibraryLink[]
 
   @@index([courseId, sortOrder])
   @@index([createdById])
@@ -393,6 +394,19 @@ model LibraryFile {
 
   @@index([folderId, createdAt])
   @@index([uploadedById])
+}
+
+model LibraryLink {
+  id        String   @id @default(cuid())
+  folderId  String
+  title     String
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  folder LibraryFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@index([folderId, createdAt])
 }
 
 // =========================================================
