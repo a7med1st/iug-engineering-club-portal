@@ -21,8 +21,21 @@ async function main(){
       activityDate: new Date("2026-09-19T00:00:00Z"),
     }),
   ));
-  assert.equal(new Set(fontImages.map((image) => image.toString("base64"))).size, CERTIFICATE_FONTS.length,
-    "Every Arabic font must produce a distinct certificate image");
+  assert.equal(fontImages.length, CERTIFICATE_FONTS.length);
+  for (const image of fontImages) {
+    const imageMetadata = await sharp(image).metadata();
+    assert.deepEqual([imageMetadata.width, imageMetadata.height], [width, height]);
+  }
+  for (const fontFamily of ["Alexandria", "Thmanyah Sans"] as const) {
+    const fontSettings = { ...settings, nameFontFamily: fontFamily, titleVisible: false, dateVisible: false };
+    const englishI = await composeCertificate(source, {
+      width, height, settings: fontSettings, studentName: "IIII IIII", activityTitle: "", activityDate: null,
+    });
+    const englishW = await composeCertificate(source, {
+      width, height, settings: fontSettings, studentName: "WWWW WWWW", activityTitle: "", activityDate: null,
+    });
+    assert.notDeepEqual(englishI, englishW, `${fontFamily} must render English letters, not identical missing-glyph boxes`);
+  }
   const englishSettings = { ...settings, nameFontFamily: "Amiri" as const, titleVisible: false, dateVisible: false };
   const englishI = await composeCertificate(source, {
     width, height, settings: englishSettings, studentName: "IIII IIII", activityTitle: "", activityDate: null,

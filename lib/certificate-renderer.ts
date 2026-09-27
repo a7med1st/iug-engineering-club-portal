@@ -6,7 +6,7 @@ import { getPrivateBlob } from "@/lib/blob-storage";
 import { escapeSvgText, type CertificateFontFamily, type CertificateTemplateSettings, type TextAlign } from "@/lib/certificate-template-settings";
 
 type RenderInput={width:number;height:number;settings:CertificateTemplateSettings;studentName:string;activityTitle:string;activityDate:Date|null};
-const fontFiles:Record<CertificateFontFamily,string>={Cairo:"cairo.ttf",Tajawal:"tajawal.ttf","Noto Kufi Arabic":"noto-kufi-arabic.ttf","IBM Plex Sans Arabic":"ibm-plex-sans-arabic.ttf",Amiri:"amiri.ttf"};
+const fontFiles:Record<CertificateFontFamily,string>={Cairo:"cairo.ttf",Tajawal:"tajawal.ttf","Noto Kufi Arabic":"noto-kufi-arabic.ttf","IBM Plex Sans Arabic":"ibm-plex-sans-arabic.ttf",Amiri:"amiri.ttf",Alexandria:"alexandria.ttf","Thmanyah Sans":"thmanyah-sans.otf"};
 const certificateFontPaths = Object.values(fontFiles).map((file) =>
   path.join(process.cwd(), "public", "fonts", "certificates", file),
 );

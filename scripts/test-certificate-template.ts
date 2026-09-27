@@ -23,6 +23,15 @@ if (parsed.ok) {
   const metadata = await sharp(png).metadata();
   assert.deepEqual([metadata.width, metadata.height], [1200, 850]);
 }
+for (const fontFamily of ["Alexandria", "Thmanyah Sans"] as const) {
+  valid.set("nameFontFamily", fontFamily);
+  const fontParsed = parseTemplateSettings(valid);
+  assert.equal(fontParsed.ok, true, `${fontFamily} must be accepted for certificate text`);
+  if (fontParsed.ok) {
+    const svg = await buildCertificateOverlay({ width: 1200, height: 850, settings: fontParsed.value, studentName: "أحمد Engineering", activityTitle: "ورشة", activityDate: new Date("2026-09-19T00:00:00Z") });
+    assert.match(svg, new RegExp(`font-family="${fontFamily}"`));
+  }
+}
 console.log("certificate template settings tests passed");
 }
 main().catch((error) => { console.error(error); process.exitCode = 1; });
