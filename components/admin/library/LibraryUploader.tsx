@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { UploadCloud } from "lucide-react";
 import styles from "./LibraryManager.module.css";
 
-export default function LibraryUploader({ folderId }: { folderId: string }) {
+export default function LibraryUploader({ folderId, uploadUrl = "/admin/library/upload" }: { folderId: string; uploadUrl?: string }) {
   const input = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
@@ -15,7 +15,7 @@ export default function LibraryUploader({ folderId }: { folderId: string }) {
   const upload = () => {
     if (!files.length) return;
     const body = new FormData(); body.set("folderId", folderId); files.forEach((file) => body.append("files", file));
-    const xhr = new XMLHttpRequest(); xhr.open("POST", "/admin/library/upload");
+    const xhr = new XMLHttpRequest(); xhr.open("POST", uploadUrl);
     xhr.upload.onprogress = (event) => event.lengthComputable && setProgress(Math.round((event.loaded / event.total) * 100));
     xhr.onload = () => {
       const payload = JSON.parse(xhr.responseText || "{}");

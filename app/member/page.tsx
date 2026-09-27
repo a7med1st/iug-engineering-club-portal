@@ -122,9 +122,17 @@ export default async function Member() {
       tone: "teal",
     },
     {
+      href: "/member/library",
+      title: "مكتبة القسم",
+      text: "أضف مجلدات وروابط وملفات لمساقات قسمك.",
+      icon: Library,
+      visible: true,
+      tone: "cyan",
+    },
+    {
       href: "/admin/library",
       title: "إدارة مكتبة التخصص",
-      text: "نظّم مساقات قسمك ومجلداته وملفاته.",
+      text: "إدارة المساقات والمجلدات ومحتواها.",
       icon: Library,
       visible: canManageLibrary,
       tone: "cyan",

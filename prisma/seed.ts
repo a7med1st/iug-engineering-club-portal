@@ -18,7 +18,7 @@ import { prisma } from "../lib/prisma";
 
 const departments = [
   { slug: "computer-engineering", nameAr: "هندسة الحاسوب", nameEn: "Computer Engineering", coverImage: "/images/departments/computer.png", sortOrder: 1 },
-  { slug: "ai-engineering", nameAr: "هندسة الذكاء الصناعي", nameEn: "Artificial Intelligence Engineering", coverImage: "/images/departments/ai.png", sortOrder: 2 },
+  { slug: "ai-engineering", nameAr: "هندسة الذكاء الاصطناعي", nameEn: "Artificial Intelligence Engineering", coverImage: "/images/departments/ai.png", sortOrder: 2 },
   { slug: "architecture", nameAr: "الهندسة المعمارية", nameEn: "Architecture", coverImage: "/images/departments/architecture.png", sortOrder: 3 },
   { slug: "civil-engineering", nameAr: "الهندسة المدنية", nameEn: "Civil Engineering", coverImage: "/images/departments/civil.png", sortOrder: 4 },
   { slug: "industrial-engineering", nameAr: "الهندسة الصناعية", nameEn: "Industrial Engineering", coverImage: "/images/departments/industrial.png", sortOrder: 5 },
