@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import sharp from "sharp";
-import { composeCertificate } from "../lib/certificate-renderer";
+import { composeCertificate, fitCertificateName } from "../lib/certificate-renderer";
 import { CERTIFICATE_FONTS, type CertificateTemplateSettings } from "../lib/certificate-template-settings";
 
 async function main(){
@@ -12,6 +12,16 @@ async function main(){
   assert.equal(metadata.format,"png");
   assert.deepEqual([metadata.width,metadata.height],[width,height]);
   assert.equal(metadata.pages??1,1);
+  const compactSettings={...settings,nameX:265.5,nameY:188,nameFontSize:32,titleVisible:false,dateVisible:false};
+  const compactInput={width:531,height:376,settings:compactSettings,studentName:"آية عبد الرحمن محمد عبد الكريم أحمد فاطمة بنت عبد العزيز",activityTitle:"",activityDate:null};
+  const fitted=await fitCertificateName(compactInput);
+  assert.ok(fitted.nameFontSize<compactSettings.nameFontSize,"Long names must fit inside a compact certificate");
+  const missingFont=await fitCertificateName({...compactInput,studentName:"آية محمد",settings:{...compactSettings,nameFontFamily:"Noto Kufi Arabic"}});
+  assert.equal(missingFont.nameFontFamily,"Cairo","A blank font must fall back to a visible Arabic font");
+  const compactSource=await sharp({create:{width:531,height:376,channels:4,background:"white"}}).png().toBuffer();
+  const compactRendered=await composeCertificate(compactSource,compactInput);
+  assert.ok((await sharp(compactRendered).stats()).channels[0].min<255,"The fitted name must appear on the certificate");
+  await assert.rejects(fitCertificateName({...compactInput,studentName:""}),/CERTIFICATE_NAME_NOT_VISIBLE/);
   const mixedInput={width,height,studentName:"أحمد Ali",activityTitle:"",activityDate:null};
   const regular=await composeCertificate(source,{...mixedInput,settings:{...settings,titleVisible:false,dateVisible:false}});
   const bold=await composeCertificate(source,{...mixedInput,settings:{...settings,nameBold:true,titleVisible:false,dateVisible:false}});
@@ -34,6 +44,8 @@ async function main(){
   for (const image of fontImages) {
     const imageMetadata = await sharp(image).metadata();
     assert.deepEqual([imageMetadata.width, imageMetadata.height], [width, height]);
+    const stats=await sharp(image).stats();
+    assert.ok(stats.channels[0].min<255,"Every font choice must produce visible text");
   }
   for (const fontFamily of ["Alexandria", "Thmanyah Sans"] as const) {
     const fontSettings = { ...settings, nameFontFamily: fontFamily, titleVisible: false, dateVisible: false };

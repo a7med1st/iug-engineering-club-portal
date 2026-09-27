@@ -11,6 +11,7 @@ const certificateFontPaths = Object.values(fontFiles).map((file) =>
   path.join(process.cwd(), "public", "fonts", "certificates", file),
 );
 const anchor=(align:TextAlign)=>align==="left"?"start":align==="right"?"end":"middle";
+const resvgOptions={font:{fontFiles:certificateFontPaths,loadSystemFonts:false,defaultFontFamily:"Inter",sansSerifFamily:"Inter"}};
 
 export function certificateTemplateFingerprint(value:unknown){return createHash("sha256").update(JSON.stringify(value)).digest("hex")}
 
@@ -21,16 +22,36 @@ export async function buildCertificateOverlay(input:RenderInput){
   return`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${text(input.studentName,settings.nameX,settings.nameY,settings.nameFontSize,settings.nameColor,settings.nameAlign,settings.nameFontFamily,settings.nameEnglishFontFamily,settings.nameBold)}${settings.titleVisible?text(input.activityTitle,settings.titleX,settings.titleY,settings.titleFontSize,settings.titleColor,settings.titleAlign,settings.titleFontFamily,settings.titleEnglishFontFamily,settings.titleBold):""}${settings.dateVisible?text(date,settings.dateX,settings.dateY,settings.dateFontSize,settings.dateColor,settings.dateAlign,settings.dateFontFamily,settings.dateEnglishFontFamily,settings.dateBold):""}</svg>`;
 }
 
+async function nameBounds(input:RenderInput){
+  const overlay=await buildCertificateOverlay({...input,settings:{...input.settings,titleVisible:false,dateVisible:false}});
+  const png=new Resvg(overlay,resvgOptions).render().asPng();
+  const {data,info}=await sharp(png).extractChannel(3).raw().toBuffer({resolveWithObject:true});
+  let left=info.width,right=-1,top=info.height,bottom=-1;
+  for(let y=0;y<info.height;y++)for(let x=0;x<info.width;x++)if(data[y*info.width+x]){
+    left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);
+  }
+  return right<0?null:{left,right,top,bottom};
+}
+
+export async function fitCertificateName(input:RenderInput){
+  const margin=Math.min(8,Math.floor(Math.min(input.width,input.height)*.015));
+  let settings=input.settings;
+  for(let attempt=0;attempt<16;attempt++){
+    const bounds=await nameBounds({...input,settings});
+    if(bounds && bounds.left>margin && bounds.right<input.width-1-margin && bounds.top>margin && bounds.bottom<input.height-1-margin)return settings;
+    if(!bounds && attempt===0 && settings.nameFontFamily!=="Cairo"){
+      settings={...settings,nameFontFamily:"Cairo"};
+      continue;
+    }
+    settings={...settings,nameFontSize:settings.nameFontSize*.85};
+  }
+  throw new Error(`CERTIFICATE_NAME_NOT_VISIBLE:${settings.nameFontFamily}`);
+}
+
 export async function composeCertificate(source:Buffer,input:RenderInput){
-  const overlay=await buildCertificateOverlay(input);
-  const textLayer = new Resvg(overlay, {
-    font: {
-      fontFiles: certificateFontPaths,
-      loadSystemFonts: false,
-      defaultFontFamily: "Inter",
-      sansSerifFamily: "Inter",
-    },
-  }).render().asPng();
+  const settings=await fitCertificateName(input);
+  const overlay=await buildCertificateOverlay({...input,settings});
+  const textLayer = new Resvg(overlay,resvgOptions).render().asPng();
   const buffer=await sharp(source).resize(input.width,input.height,{fit:"fill"}).composite([{input:Buffer.from(textLayer)}]).png().toBuffer();
   const metadata=await sharp(buffer).metadata();
   if(metadata.width!==input.width||metadata.height!==input.height||(metadata.pages??1)!==1)throw new Error("CERTIFICATE_DIMENSION_MISMATCH");
