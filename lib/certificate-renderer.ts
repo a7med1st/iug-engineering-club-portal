@@ -36,8 +36,17 @@ async function nameBounds(input:RenderInput){
 export async function fitCertificateName(input:RenderInput){
   const margin=Math.min(8,Math.floor(Math.min(input.width,input.height)*.015));
   let settings={...input.settings,nameFontFamily:fontFiles[input.settings.nameFontFamily]?input.settings.nameFontFamily:"Cairo"};
+  const visibleName=input.studentName.replace(/\p{Default_Ignorable_Code_Point}/gu, "").trim();
+  if (!/[\p{L}\p{N}]/u.test(visibleName)) {
+    console.error("Certificate name visibility check failed", {reason:"no_visible_characters",width:input.width,height:input.height,nameLength:input.studentName.length});
+    throw new Error("CERTIFICATE_NAME_NOT_VISIBLE:no_visible_characters");
+  }
+  let firstBounds:Awaited<ReturnType<typeof nameBounds>>=null;
+  let lastBounds:Awaited<ReturnType<typeof nameBounds>>=null;
   for(let attempt=0;attempt<16;attempt++){
-    const bounds=await nameBounds({...input,settings});
+    const bounds=await nameBounds({...input,studentName:visibleName,settings});
+    if(attempt===0)firstBounds=bounds;
+    lastBounds=bounds;
     if(bounds && bounds.left>margin && bounds.right<input.width-1-margin && bounds.top>margin && bounds.bottom<input.height-1-margin)return settings;
     if(!bounds && attempt===0 && settings.nameFontFamily!=="Cairo"){
       settings={...settings,nameFontFamily:"Cairo"};
@@ -51,12 +60,13 @@ export async function fitCertificateName(input:RenderInput){
     }
     settings={...settings,nameFontSize:settings.nameFontSize*.85};
   }
-  throw new Error(`CERTIFICATE_NAME_NOT_VISIBLE:${settings.nameFontFamily}`);
+  console.error("Certificate name visibility check failed", {reason:lastBounds?"out_of_bounds":"no_pixels",width:input.width,height:input.height,firstBounds,lastBounds,nameX:settings.nameX,nameY:settings.nameY,fontSize:settings.nameFontSize,fontFamily:settings.nameFontFamily,nameLength:input.studentName.length});
+  throw new Error(`CERTIFICATE_NAME_NOT_VISIBLE:${lastBounds?"out_of_bounds":"no_pixels"}`);
 }
 
 export async function composeCertificate(source:Buffer,input:RenderInput){
   const settings=await fitCertificateName(input);
-  const overlay=await buildCertificateOverlay({...input,settings});
+  const overlay=await buildCertificateOverlay({...input,studentName:input.studentName.replace(/\p{Default_Ignorable_Code_Point}/gu, "").trim(),settings});
   const textLayer = new Resvg(overlay,resvgOptions).render().asPng();
   const buffer=await sharp(source).resize(input.width,input.height,{fit:"fill"}).composite([{input:Buffer.from(textLayer)}]).png().toBuffer();
   const metadata=await sharp(buffer).metadata();

@@ -42,6 +42,9 @@ const rendered = await renderCertificate({ sourcePathname: template.sourcePathna
 }
 
 function regenerationFailureMessage(error: unknown) {
+  if (error instanceof Error && error.message === "CERTIFICATE_NAME_NOT_VISIBLE:no_visible_characters") {
+    return "اسم المشارك لا يحتوي أحرفًا ظاهرة. تحقق من الاسم المسجل أو عدّله في إعدادات الشهادة.";
+  }
   return error instanceof Error && error.message.startsWith("CERTIFICATE_NAME_NOT_VISIBLE")
     ? "تعذر إظهار الاسم داخل القالب. تحقق من موضع الاسم وحجم الخط في إعدادات الشهادة."
     : "تعذر توليد صورة الشهادة. حاول مجددًا، وإن استمرت المشكلة راجع سجل الخادم.";

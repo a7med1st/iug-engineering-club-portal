@@ -24,6 +24,10 @@ async function main(){
   const compactRendered=await composeCertificate(compactSource,compactInput);
   assert.ok((await sharp(compactRendered).stats()).channels[0].min<255,"The fitted name must appear on the certificate");
   await assert.rejects(fitCertificateName({...compactInput,studentName:""}),/CERTIFICATE_NAME_NOT_VISIBLE/);
+  await assert.rejects(fitCertificateName({...compactInput,studentName:"\u200f\u200d\ufeff"}),/CERTIFICATE_NAME_NOT_VISIBLE:no_visible_characters/);
+  const invisibleControls=await composeCertificate(compactSource,{...compactInput,studentName:"\u200fAli\u200d"});
+  const plainName=await composeCertificate(compactSource,{...compactInput,studentName:"Ali"});
+  assert.deepEqual(invisibleControls,plainName,"Invisible controls must not alter certificate names");
   const mixedInput={width,height,studentName:"أحمد Ali",activityTitle:"",activityDate:null};
   const regular=await composeCertificate(source,{...mixedInput,settings:{...settings,titleVisible:false,dateVisible:false}});
   const bold=await composeCertificate(source,{...mixedInput,settings:{...settings,nameBold:true,titleVisible:false,dateVisible:false}});
