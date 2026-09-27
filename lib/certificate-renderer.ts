@@ -60,7 +60,16 @@ export async function fitCertificateName(input:RenderInput){
     }
     settings={...settings,nameFontSize:settings.nameFontSize*.85};
   }
-  console.error("Certificate name visibility check failed", {reason:lastBounds?"out_of_bounds":"no_pixels",width:input.width,height:input.height,firstBounds,lastBounds,nameX:settings.nameX,nameY:settings.nameY,fontSize:settings.nameFontSize,fontFamily:settings.nameFontFamily,nameLength:input.studentName.length});
+  const referenceBounds=lastBounds?null:await nameBounds({...input,studentName:"اختبار",settings:input.settings});
+  const characterProfile=Array.from(visibleName).reduce((counts,char)=>{
+    if(/\p{Script=Arabic}/u.test(char))counts.arabic++;
+    else if(/\p{Script=Latin}/u.test(char))counts.latin++;
+    else if(/\p{L}|\p{N}/u.test(char))counts.otherLetters++;
+    else if(/\p{M}/u.test(char))counts.marks++;
+    else counts.other++;
+    return counts;
+  },{arabic:0,latin:0,otherLetters:0,marks:0,other:0});
+  console.error("Certificate name visibility check failed", {reason:lastBounds?"out_of_bounds":"no_pixels",width:input.width,height:input.height,firstBounds,lastBounds,referenceBounds,nameX:settings.nameX,nameY:settings.nameY,initialFontSize:input.settings.nameFontSize,fontSize:settings.nameFontSize,fontFamily:settings.nameFontFamily,englishFontFamily:settings.nameEnglishFontFamily,bold:settings.nameBold,align:settings.nameAlign,nameLength:input.studentName.length,characterProfile});
   throw new Error(`CERTIFICATE_NAME_NOT_VISIBLE:${lastBounds?"out_of_bounds":"no_pixels"}`);
 }
 
