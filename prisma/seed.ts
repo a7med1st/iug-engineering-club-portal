@@ -84,7 +84,7 @@ async function main() {
         where: { id: existingAdmin.id },
         data: {
           role: Role.ADMIN,
-          name: "مدير النادي الهندسي",
+          name: "مدير موقع النادي الهندسي",
           passwordHash,
           sessionVersion: { increment: 1 },
         },
@@ -98,7 +98,7 @@ async function main() {
             const user =
               await transaction.user.create({
                 data: {
-                  name: "مدير النادي الهندسي",
+                  name: "مدير موقع النادي الهندسي",
                   email: adminEmail,
                   emailVerifiedAt: null,
                   passwordHash,
