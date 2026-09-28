@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { isCertificateValid, isIssuedCertificate } from "../lib/certificates";
+import { canViewCertificate, isCertificateValid, isIssuedCertificate } from "../lib/certificates";
 
 const valid = {
   revokedAt: null,
@@ -16,5 +16,13 @@ assert.equal(isIssuedCertificate(valid), true);
 assert.equal(isIssuedCertificate(null), false);
 assert.equal(isIssuedCertificate({ revokedAt: null, artifactPathname: null }), false);
 assert.equal(isIssuedCertificate({ revokedAt: new Date(), artifactPathname: "certificates/test.png" }), false);
+
+const viewer = { id: "viewer", role: "MEMBER" as const, memberPermissions: [] as string[], position: null as string | null };
+assert.equal(canViewCertificate(viewer, "viewer"), true);
+assert.equal(canViewCertificate(viewer, "other"), false);
+assert.equal(canViewCertificate({ ...viewer, position: "نائب رئيس النادي" }, "other"), true);
+assert.equal(canViewCertificate({ ...viewer, position: "رئيس النادي" }, "other"), true);
+assert.equal(canViewCertificate({ ...viewer, role: "ADMIN" }, "other"), true);
+assert.equal(canViewCertificate({ ...viewer, role: "STUDENT" }, "other"), false);
 
 console.log("certificate validity tests passed");

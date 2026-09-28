@@ -3,14 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PrintButton from "@/components/admin/PrintButton";
 import { getCurrentUser } from "@/lib/auth";
-import { getCertificateByCode, isCertificateValid } from "@/lib/certificates";
+import { canViewCertificate, getCertificateByCode, isCertificateValid } from "@/lib/certificates";
 import styles from "./certificate.module.css";
 
 export const dynamic="force-dynamic";
 
 export default async function CertificatePage({params}:{params:Promise<{code:string}>}){
   const{code}=await params;const certificate=await getCertificateByCode(code);const auth=await getCurrentUser();
-  if(!certificate||!auth||(auth.user.role!=="ADMIN"&&certificate.submission.userId!==auth.user.id)||!isCertificateValid(certificate))notFound();
+  if(!certificate||!auth||!canViewCertificate(auth.user,certificate.submission.userId)||!isCertificateValid(certificate))notFound();
   const imageUrl=`/certificates/${certificate.verificationCode}/download?inline=1`;
   return <main className={styles.shell} dir="rtl">
     <div className={styles.toolbar}>

@@ -3,6 +3,11 @@ import crypto from "node:crypto";
 import {
   prisma,
 } from "@/lib/prisma";
+import { hasPermission, PERMISSIONS, type PermissionUser } from "@/lib/permissions";
+
+export function canViewCertificate(viewer: Pick<PermissionUser, "id" | "role" | "memberPermissions" | "position">, ownerId: string | null) {
+  return ownerId === viewer.id || hasPermission(viewer.role, PERMISSIONS.ADMIN_DASHBOARD, viewer.memberPermissions, viewer.position);
+}
 
 export function isCertificateValid(certificate: {
   revokedAt: Date | null;
