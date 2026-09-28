@@ -5,4 +5,5 @@
 :global(html[data-theme="dark"]) .page{--bg:#0a1722;--surface:#122434;--text:#e7f0f7;--muted:#a8bdcc;--line:#2d4658;--accent:#74c8ff}:global(html[data-theme="dark"]) .level a:hover,:global(html[data-theme="dark"]) .level a.selected{background:#17364d;color:#9ed8ff}:global(html[data-theme="dark"]) .addControl summary:hover{background:#17364d}
 :global(html[data-theme="light"]) .page{--bg:#f6f8fb;--surface:#fff;--text:#102139;--muted:#607387;--line:#dbe3ed;--accent:#116cb4}
 @media(prefers-reduced-motion:reduce){.page *{scroll-behavior:auto;transition:none!important}}
+.semesterHeading{margin:8px 0 4px;padding-inline-start:8px;color:var(--muted);font-size:.72rem;font-weight:700}
 .page :global(.btn){display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 12px;border-radius:5px;font:inherit;font-size:.85rem;font-weight:700;cursor:pointer}.page :global(.btn.primary){border:1px solid #116cb4;background:#116cb4;color:#fff}.page :global(.btn.secondary){border:1px solid var(--line);background:var(--surface);color:var(--text)}.page :global(.btn:disabled){opacity:.55;cursor:not-allowed}

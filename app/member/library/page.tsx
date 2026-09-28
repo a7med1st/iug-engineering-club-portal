@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Download, ExternalLink, FileText, Folder, Link2, Plus } from "lucide-react";
 import LibraryUploader from "@/components/admin/library/LibraryUploader";
-import { levelNames } from "@/lib/library/levels";
+import { levelNames, semesterNames } from "@/lib/library/levels";
 import { requireMemberLibraryAccess } from "@/lib/library/member";
 import { prisma } from "@/lib/prisma";
 import { addMemberLibraryFolder, addMemberLibraryLink } from "./actions";
@@ -22,8 +22,8 @@ export default async function MemberLibraryPage({ searchParams }: { searchParams
   const department = departments.find((item) => item.id === params.department) ?? departments[0] ?? null;
   const courses = department ? await prisma.libraryCourse.findMany({
     where: { departmentId: department.id },
-    select: { id: true, name: true, code: true, level: true },
-    orderBy: [{ level: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+    select: { id: true, name: true, code: true, level: true, semester: true },
+    orderBy: [{ level: "asc" }, { semester: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
   }) : [];
   const course = courses.find((item) => item.id === params.course) ?? courses[0] ?? null;
   const folders = course ? await prisma.libraryFolder.findMany({
@@ -64,9 +64,9 @@ export default async function MemberLibraryPage({ searchParams }: { searchParams
           {levelNames.map((name, index) => {
             const levelCourses = courses.filter((item) => item.level === index + 1);
             if (!levelCourses.length) return null;
-            return <div className={styles.level} key={name}><h3>المستوى {name}</h3>{levelCourses.map((item) => <Link href={href(item.id)} className={item.id === course?.id ? styles.selected : ""} key={item.id} aria-current={item.id === course?.id ? "page" : undefined}>
+            return <div className={styles.level} key={name}><h3>المستوى {name}</h3>{semesterNames.map((semesterName, semesterIndex) => <div key={semesterName}><h4 className={styles.semesterHeading}>{semesterName}</h4>{levelCourses.filter((item) => item.semester === semesterIndex + 1).map((item) => <Link href={href(item.id)} className={item.id === course?.id ? styles.selected : ""} key={item.id} aria-current={item.id === course?.id ? "page" : undefined}>
               <span>{item.name}</span>{item.code && <small>{item.code}</small>}
-            </Link>)}</div>;
+            </Link>)}</div>)}</div>;
           })}
           {!courses.length && <p className={styles.empty}>لا توجد مساقات في هذا القسم بعد.</p>}
         </nav>

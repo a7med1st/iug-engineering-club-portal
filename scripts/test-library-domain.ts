@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { validateLibraryCourseInput, validateLibraryFolderInput, validateLibraryFileTitle, validateLibraryLinkInput } from "../lib/library/validation";
 
 assert.deepEqual(validateLibraryCourseInput({ level: "1", name: "  قواعد البيانات ", code: " CPE331 ", description: "  وصف ", sortOrder: "2" }), {
-  level: 1, name: "قواعد البيانات", code: "CPE331", description: "وصف", sortOrder: 2,
+  level: 1, semester: 1, name: "قواعد البيانات", code: "CPE331", description: "وصف", sortOrder: 2,
 });
+assert.equal(validateLibraryCourseInput({ level: "2", semester: "2", name: "مساق" }).semester, 2);
+for (const semester of ["0", "3", "x"]) assert.throws(() => validateLibraryCourseInput({ level: "1", semester, name: "مساق" }));
 for (const level of ["0", "6", "x"]) assert.throws(() => validateLibraryCourseInput({ level, name: "مساق", sortOrder: "0" }));
 assert.throws(() => validateLibraryCourseInput({ level: "1", name: " ", sortOrder: "0" }));
 assert.deepEqual(validateLibraryFolderInput({ name: " ملخصات ", sortOrder: "3", isVisible: "on" }), { name: "ملخصات", sortOrder: 3, isVisible: true });

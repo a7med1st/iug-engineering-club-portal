@@ -8,6 +8,7 @@ for (const model of ["LibraryCourse", "LibraryFolder", "LibraryFile"]) {
 }
 assert.match(schema, /storageKey\s+String\s+@unique/);
 assert.match(schema, /libraryCourses\s+LibraryCourse\[\]/);
+assert.match(schema, /semester\s+Int\s+@default\(1\)/);
 assert.match(schema, /createdLibraryFolders\s+LibraryFolder\[\]\s+@relation\("LibraryFolderCreator"\)/);
 assert.match(schema, /uploadedLibraryFiles\s+LibraryFile\[\]\s+@relation\("LibraryFileUploader"\)/);
 

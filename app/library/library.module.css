@@ -14,6 +14,7 @@
 :global(html[data-theme="dark"]) .page{--library-bg:#0a1722;--library-card:#122434;--library-text:#e7f0f7;--library-muted:#a8bdcc;--library-line:#2d4658;--library-accent:#74c8ff}
 :global(html[data-theme="light"]) .page{--library-bg:#f6f8fb;--library-card:#fff;--library-text:#102139;--library-muted:#586b80;--library-line:#dbe3ed;--library-accent:#116cb4}
 @media(prefers-reduced-motion:reduce){.page *{scroll-behavior:auto;transition:none!important}}
+.sectionHeading h3{font-size:1.05rem;margin:0}
 @media(prefers-color-scheme:dark){.searchForm button,.primaryLink{background:#0966b2;color:#fff}}
 :global(html[data-theme="dark"]) .searchForm button,:global(html[data-theme="dark"]) .primaryLink{background:#0966b2;color:#fff}
 :global(html[data-theme="light"]) .searchForm button,:global(html[data-theme="light"]) .primaryLink{background:#116cb4;color:#fff}

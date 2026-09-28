@@ -3,7 +3,7 @@ import { BookOpen, Folder, Search } from "lucide-react";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getStudentLibraryDepartment } from "@/lib/library/student";
-import { levelNames } from "@/lib/library/levels";
+import { levelNames, semesterNames } from "@/lib/library/levels";
 import styles from "./library.module.css";
 
 export const dynamic = "force-dynamic";
@@ -37,8 +37,8 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
     prisma.libraryCourse.groupBy({ by: ["level"], where: { departmentId: department.id }, _count: { _all: true } }),
     prisma.libraryCourse.findMany({
       where,
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, code: true, description: true, _count: { select: { folders: { where: { isVisible: true } } } } },
+      orderBy: [{ semester: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+      select: { id: true, name: true, code: true, description: true, semester: true, _count: { select: { folders: { where: { isVisible: true } } } } },
     }),
   ]);
 
@@ -66,14 +66,15 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
       })}
     </nav>
 
-    <section className={styles.section}>
-      <div className={styles.sectionHeading}><h2>مساقات المستوى {levelNames[level - 1]}</h2><p>المساقات المتاحة حاليًا في مكتبة {department.nameAr}.</p></div>
-      {courses.length ? <div className={styles.courseGrid}>{courses.map((course) => <Link href={`/library/courses/${course.id}`} className={styles.courseCard} key={course.id}>
+    <div className={styles.sectionHeading}><h2>مساقات المستوى {levelNames[level - 1]}</h2><p>المساقات المتاحة حاليًا في مكتبة {department.nameAr}.</p></div>
+    {semesterNames.map((semesterName, semesterIndex) => <section className={styles.section} key={semesterName}>
+      <div className={styles.sectionHeading}><h3>{semesterName}</h3></div>
+      {courses.some((course) => course.semester === semesterIndex + 1) ? <div className={styles.courseGrid}>{courses.filter((course) => course.semester === semesterIndex + 1).map((course) => <Link href={`/library/courses/${course.id}`} className={styles.courseCard} key={course.id}>
         <h3>{course.name}</h3>
         {course.code && <span className={styles.code}>{course.code}</span>}
         {course.description && <p>{course.description}</p>}
         <span className={styles.cardFoot}><span><Folder size={16} aria-hidden="true" /> {course._count.folders} مجلد</span><span>استكشاف المساق</span></span>
-      </Link>)}</div> : <div className={styles.empty}><p>{query ? "لا توجد نتائج مطابقة للبحث في هذا المستوى." : "لا توجد مساقات في هذا المستوى بعد."}</p></div>}
-    </section>
+      </Link>)}</div> : <div className={styles.empty}><p>{query ? "لا توجد نتائج مطابقة للبحث في هذا الفصل." : "لا توجد مساقات في هذا الفصل بعد."}</p></div>}
+    </section>)}
   </main>;
 }

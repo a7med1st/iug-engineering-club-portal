@@ -24,6 +24,7 @@ function integer(value: unknown, label: string, min = 0, max = 100000) {
 export function validateLibraryCourseInput(input: Record<string, unknown>) {
   return {
     level: integer(input.level, "المستوى", 1, 5),
+    semester: integer(input.semester ?? 1, "الفصل", 1, 2),
     name: requiredText(input.name, "اسم المساق", 120),
     code: optionalText(input.code, 40),
     description: optionalText(input.description, 500),

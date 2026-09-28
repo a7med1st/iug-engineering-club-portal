@@ -345,6 +345,7 @@ model LibraryCourse {
   id           String   @id @default(cuid())
   departmentId String
   level        Int
+  semester     Int      @default(1)
   name         String
   code         String?
   description  String?
@@ -355,7 +356,7 @@ model LibraryCourse {
   department Department      @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   folders    LibraryFolder[]
 
-  @@index([departmentId, level, sortOrder])
+  @@index([departmentId, level, semester, sortOrder])
 }
 
 model LibraryFolder {
