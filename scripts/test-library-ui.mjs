@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 const confirm = await readFile(new URL("../components/admin/library/ConfirmDeleteButton.tsx", import.meta.url), "utf8");
+const manager = await readFile(new URL("../components/admin/library/LibraryManager.tsx", import.meta.url), "utf8");
 assert.match(confirm, /<dialog/);
 assert.match(confirm, /showModal/);
 assert.match(confirm, /إلغاء/);
 assert.match(confirm, /تأكيد الحذف/);
 assert.match(confirm, /event\.submitter/);
 assert.match(confirm, /styles\.danger/);
+assert.match(manager, /folderBreadcrumb/);
+assert.match(manager, /name="parentId"/);
+assert.match(manager, /selectedFolder\.parentId/);
 console.log("Library UI contract tests passed.");
