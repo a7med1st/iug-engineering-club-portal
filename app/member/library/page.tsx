@@ -3,6 +3,7 @@ import { ArrowRight, Download, ExternalLink, FileText, Folder, Link2, Plus } fro
 import LibraryUploader from "@/components/admin/library/LibraryUploader";
 import { levelNames, semesterNames } from "@/lib/library/levels";
 import { requireMemberLibraryAccess } from "@/lib/library/member";
+import { directLibraryChildren, isVisibleLibraryFolderPath, libraryFolderBreadcrumb } from "@/lib/library/tree";
 import { prisma } from "@/lib/prisma";
 import { addMemberLibraryFolder, addMemberLibraryLink } from "./actions";
 import styles from "./library.module.css";
@@ -26,12 +27,15 @@ export default async function MemberLibraryPage({ searchParams }: { searchParams
     orderBy: [{ level: "asc" }, { semester: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
   }) : [];
   const course = courses.find((item) => item.id === params.course) ?? courses[0] ?? null;
-  const folders = course ? await prisma.libraryFolder.findMany({
-    where: { courseId: course.id, isVisible: true },
-    select: { id: true, name: true, _count: { select: { files: true, links: true } } },
+  const allFolders = course ? await prisma.libraryFolder.findMany({
+    where: { courseId: course.id },
+    select: { id: true, courseId: true, parentId: true, name: true, sortOrder: true, isVisible: true, _count: { select: { files: true, links: true } } },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   }) : [];
-  const folder = folders.find((item) => item.id === params.folder) ?? folders[0] ?? null;
+  const requestedFolder = params.folder ? allFolders.find((item) => item.id === params.folder) ?? null : null;
+  const folder = requestedFolder && isVisibleLibraryFolderPath(allFolders, requestedFolder.id) ? requestedFolder : null;
+  const folderBreadcrumb = folder ? libraryFolderBreadcrumb(allFolders, folder.id) ?? [] : [];
+  const folders = directLibraryChildren(allFolders, folder?.id ?? null).filter((item) => item.isVisible);
   const [links, files] = folder ? await Promise.all([
     prisma.libraryLink.findMany({ where: { folderId: folder.id }, select: { id: true, title: true, url: true }, orderBy: [{ createdAt: "desc" }, { title: "asc" }] }),
     prisma.libraryFile.findMany({ where: { folderId: folder.id }, select: { id: true, title: true, mimeType: true }, orderBy: [{ createdAt: "desc" }, { title: "asc" }], take: 30 }),
@@ -73,15 +77,17 @@ export default async function MemberLibraryPage({ searchParams }: { searchParams
         <div className={styles.content}>
           {course && <>
             <div className={styles.courseHead}><div><h2>{course.name}</h2>{course.code && <p>{course.code}</p>}</div>
-              <details className={styles.addControl}><summary><Plus size={17} /> مجلد</summary><form action={addMemberLibraryFolder} className={styles.form}>
+              <details className={styles.addControl}><summary><Plus size={17} /> {folder ? "مجلد فرعي" : "مجلد"}</summary><form action={addMemberLibraryFolder} className={styles.form}>
                 <input type="hidden" name="courseId" value={course.id} />
+                <input type="hidden" name="parentId" value={folder?.id ?? ""} />
                 <input name="name" required maxLength={120} placeholder="اسم المجلد" aria-label="اسم المجلد" />
                 <button type="submit">إضافة المجلد</button>
               </form></details>
             </div>
-            <nav className={styles.folders} aria-label="مجلدات المساق">{folders.map((item) => <Link href={href(course.id, item.id)} className={item.id === folder?.id ? styles.selected : ""} key={item.id} aria-current={item.id === folder?.id ? "page" : undefined}>
+            <nav className={styles.breadcrumb} aria-label="مسار المجلد"><Link href={href(course.id)}>جذر المساق</Link>{folderBreadcrumb.map((item) => <span key={item.id}>/<Link href={href(course.id, item.id)}>{item.name}</Link></span>)}</nav>
+            <nav className={styles.folders} aria-label="مجلدات المساق">{folders.map((item) => <Link href={href(course.id, item.id)} key={item.id}>
               <Folder size={18} /><span>{item.name}<small>{item._count.links} رابط · {item._count.files} ملف</small></span>
-            </Link>)}{!folders.length && <p className={styles.empty}>لا توجد مجلدات بعد.</p>}</nav>
+            </Link>)}{!folders.length && <p className={styles.empty}>{folder ? "لا توجد مجلدات فرعية هنا." : "لا توجد مجلدات بعد."}</p>}</nav>
             {folder && <section className={styles.folderContent}>
               <div className={styles.folderHead}><h3>{folder.name}</h3>
                 <details className={styles.addControl}><summary><Plus size={17} /> رابط</summary><form action={addMemberLibraryLink} className={styles.form}>

@@ -5,6 +5,7 @@ import { memberLibraryDepartmentIds } from "@/lib/permissions";
 import { LIBRARY_MAX_FILE_BYTES, LIBRARY_MAX_FILES } from "@/lib/library/constants";
 import { validateLibraryUpload } from "@/lib/library/file-validation";
 import { deleteLibraryFiles, storeLibraryFile } from "@/lib/library/storage";
+import { isVisibleLibraryFolderPath } from "@/lib/library/tree";
 import { UploadValidationError, logUploadRejection } from "@/lib/upload-security";
 
 export async function POST(request: Request) {
@@ -18,10 +19,15 @@ export async function POST(request: Request) {
   const folderId = String(form.get("folderId") ?? "");
   const departmentIds = memberLibraryDepartmentIds(auth.user);
   const folder = departmentIds.length ? await prisma.libraryFolder.findFirst({
-    where: { id: folderId, isVisible: true, course: { departmentId: { in: departmentIds } } },
-    select: { id: true },
+    where: { id: folderId, course: { departmentId: { in: departmentIds } } },
+    select: { id: true, courseId: true },
   }) : null;
   if (!folder) return NextResponse.json({ error: "المجلد غير موجود." }, { status: 404 });
+  const courseFolders = await prisma.libraryFolder.findMany({
+    where: { courseId: folder.courseId },
+    select: { id: true, courseId: true, parentId: true, name: true, sortOrder: true, isVisible: true },
+  });
+  if (!isVisibleLibraryFolderPath(courseFolders, folder.id)) return NextResponse.json({ error: "المجلد غير موجود." }, { status: 404 });
 
   const files = form.getAll("files").filter((item): item is File => item instanceof File);
   if (!files.length || files.length > LIBRARY_MAX_FILES) return NextResponse.json({ error: "اختر من ملف واحد إلى 10 ملفات." }, { status: 400 });

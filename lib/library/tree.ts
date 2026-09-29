@@ -13,10 +13,10 @@ function compareFolders(left: LibraryFolderNode, right: LibraryFolderNode) {
     || left.id.localeCompare(right.id);
 }
 
-export function directLibraryChildren(
-  folders: readonly LibraryFolderNode[],
+export function directLibraryChildren<T extends LibraryFolderNode>(
+  folders: readonly T[],
   parentId: string | null,
-) {
+): T[] {
   return folders.filter((folder) => folder.parentId === parentId).sort(compareFolders);
 }
 

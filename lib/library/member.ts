@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { memberLibraryDepartmentIds, PERMISSIONS, requirePermission } from "@/lib/permissions";
+import { isVisibleLibraryFolderPath } from "@/lib/library/tree";
 
 export async function requireMemberLibraryAccess() {
   const { user } = await requirePermission(PERMISSIONS.MEMBER_DASHBOARD);
@@ -21,9 +22,14 @@ export async function requireMemberLibraryCourse(courseId: string) {
 export async function requireMemberLibraryFolder(folderId: string) {
   const { user, departmentIds } = await requireMemberLibraryAccess();
   const folder = departmentIds.length ? await prisma.libraryFolder.findFirst({
-    where: { id: folderId, isVisible: true, course: { departmentId: { in: departmentIds } } },
+    where: { id: folderId, course: { departmentId: { in: departmentIds } } },
     select: { id: true, courseId: true, parentId: true, course: { select: { departmentId: true } } },
   }) : null;
   if (!folder) notFound();
+  const courseFolders = await prisma.libraryFolder.findMany({
+    where: { courseId: folder.courseId },
+    select: { id: true, courseId: true, parentId: true, name: true, sortOrder: true, isVisible: true },
+  });
+  if (!isVisibleLibraryFolderPath(courseFolders, folder.id)) notFound();
   return { user, folder };
 }
