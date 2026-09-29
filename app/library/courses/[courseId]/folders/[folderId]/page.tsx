@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, Download, ExternalLink, Eye, FileText, Link2, Search } from "lucide-react";
+import { ArrowRight, Download, ExternalLink, Eye, FileText, Folder, Link2, Search } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { levelNames } from "@/lib/library/levels";
 import { getStudentLibraryFolder } from "@/lib/library/student";
+import { directLibraryChildren } from "@/lib/library/tree";
 import styles from "../../../../library.module.css";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,8 @@ export default async function LibraryFolderPage({ params, searchParams }: {
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const { courseId, folderId } = await params;
-  const { course, folder } = await getStudentLibraryFolder(courseId, folderId);
+  const { course, folder, allFolders, folderBreadcrumb } = await getStudentLibraryFolder(courseId, folderId);
+  const childFolders = directLibraryChildren(allFolders, folder.id).filter((item) => item.isVisible);
   const paramsQuery = await searchParams;
   const query = (paramsQuery.q ?? "").trim().slice(0, 100);
   const requestedPage = Number(paramsQuery.page);
@@ -41,14 +43,22 @@ export default async function LibraryFolderPage({ params, searchParams }: {
       <Link href="/library">مكتبتي</Link><span>›</span>
       <Link href={`/library?level=${course.level}`}>المستوى {levelNames[course.level - 1]}</Link><span>›</span>
       <Link href={`/library/courses/${course.id}`}>{course.name}</Link><span>›</span>
-      <span aria-current="page">{folder.name}</span>
+      {folderBreadcrumb.map((item, index) => index === folderBreadcrumb.length - 1
+        ? <span aria-current="page" key={item.id}>{item.name}</span>
+        : <span className={styles.breadcrumbPart} key={item.id}><Link href={`/library/courses/${course.id}/folders/${item.id}`}>{item.name}</Link><span>›</span></span>)}
     </nav>
-    <Link href={`/library/courses/${course.id}`} className={styles.back}><ArrowRight size={17} /> رجوع للمساق</Link>
+    <Link href={folder.parentId ? `/library/courses/${course.id}/folders/${folder.parentId}` : `/library/courses/${course.id}`} className={styles.back}><ArrowRight size={17} /> رجوع</Link>
     <header className={styles.detailHead}><h1>{folder.name}</h1><p>{totalFiles} ملف · {links.length} رابط</p></header>
 
     <form action={base} className={styles.searchForm} role="search">
       <Search size={19} aria-hidden="true" /><input type="search" name="q" defaultValue={query} placeholder="ابحث داخل المجلد..." aria-label="ابحث داخل المجلد" maxLength={100} /><button type="submit">بحث</button>
     </form>
+
+    {childFolders.length > 0 && <section className={styles.section}><div className={styles.sectionHeading}><h2>المجلدات الفرعية</h2></div>
+      <div className={styles.folderGrid}>{childFolders.map((child) => <Link className={styles.folderCard} href={`/library/courses/${course.id}/folders/${child.id}`} key={child.id}>
+        <Folder size={22} aria-hidden="true" /><span><strong>{child.name}</strong></span><span className={styles.explore}>فتح المجلد</span>
+      </Link>)}</div>
+    </section>}
 
     {links.length > 0 && <section className={styles.section}><div className={styles.sectionHeading}><h2>روابط المحاضرات</h2></div>
       <div className={styles.resourceList}>{links.map((link) => <a className={styles.resourceRow} href={link.url} target="_blank" rel="noopener noreferrer" key={link.id}>

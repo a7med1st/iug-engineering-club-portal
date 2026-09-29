@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS, hasPermission } from "@/lib/permissions";
 import { readLibraryFile } from "@/lib/library/storage";
+import { isVisibleLibraryFolderPath } from "@/lib/library/tree";
 
 function disposition(name: string, inline: boolean) {
   const safe = name.replace(/["\\\r\n]/g, "_");
@@ -16,10 +17,15 @@ export async function GET(request: Request, context: { params: Promise<{ fileId:
   }
   const { fileId } = await context.params;
   const file = await prisma.libraryFile.findFirst({
-    where: { id: fileId, folder: { isVisible: true, course: { departmentId: auth.user.departmentId } } },
-    select: { title: true, originalName: true, storageKey: true, mimeType: true },
+    where: { id: fileId, folder: { course: { departmentId: auth.user.departmentId } } },
+    select: { title: true, originalName: true, storageKey: true, mimeType: true, folderId: true, folder: { select: { courseId: true } } },
   });
   if (!file) return new Response(null, { status: 404 });
+  const courseFolders = await prisma.libraryFolder.findMany({
+    where: { courseId: file.folder.courseId },
+    select: { id: true, courseId: true, parentId: true, name: true, sortOrder: true, isVisible: true },
+  });
+  if (!isVisibleLibraryFolderPath(courseFolders, file.folderId)) return new Response(null, { status: 404 });
   const stored = await readLibraryFile(file.storageKey);
   if (!stored?.stream) return new Response(null, { status: 404 });
 

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { isVisibleLibraryFolderPath, libraryFolderBreadcrumb } from "@/lib/library/tree";
 
 export async function getStudentLibraryDepartment() {
   const { user } = await requirePermission(PERMISSIONS.STUDENT_DASHBOARD);
@@ -25,9 +26,17 @@ export async function getStudentLibraryCourse(courseId: string) {
 export async function getStudentLibraryFolder(courseId: string, folderId: string) {
   const { department, course } = await getStudentLibraryCourse(courseId);
   const folder = await prisma.libraryFolder.findFirst({
-    where: { id: folderId, courseId: course.id, isVisible: true },
-    select: { id: true, name: true },
+    where: { id: folderId, courseId: course.id },
+    select: { id: true, courseId: true, parentId: true, name: true, sortOrder: true, isVisible: true },
   });
   if (!folder) notFound();
-  return { department, course, folder };
+  const allFolders = await prisma.libraryFolder.findMany({
+    where: { courseId: course.id },
+    select: { id: true, courseId: true, parentId: true, name: true, sortOrder: true, isVisible: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  });
+  if (!isVisibleLibraryFolderPath(allFolders, folder.id)) notFound();
+  const folderBreadcrumb = libraryFolderBreadcrumb(allFolders, folder.id);
+  if (!folderBreadcrumb) notFound();
+  return { department, course, folder, allFolders, folderBreadcrumb };
 }
