@@ -16,8 +16,8 @@ export async function POST(request: Request) {
   }
   const form = await request.formData();
   const folderId = String(form.get("folderId") ?? "");
-  const folder = await prisma.libraryFolder.findUnique({ where: { id: folderId }, select: { id: true, course: { select: { departmentId: true } } } });
-  if (!folder || !hasPermission(auth.user.role, PERMISSIONS.LIBRARY_MANAGE, auth.user.memberPermissions, auth.user.position) || !canAccessDepartment(auth.user, folder.course.departmentId)) {
+  const folder = await prisma.libraryFolder.findUnique({ where: { id: folderId }, select: { id: true, course: { select: { departments: { select: { departmentId: true } } } } } });
+  if (!folder || !hasPermission(auth.user.role, PERMISSIONS.LIBRARY_MANAGE, auth.user.memberPermissions, auth.user.position) || !folder.course.departments.some((item) => canAccessDepartment(auth.user, item.departmentId))) {
     return NextResponse.json({ error: "المجلد غير موجود." }, { status: 404 });
   }
   const files = form.getAll("files").filter((item): item is File => item instanceof File);
@@ -28,7 +28,8 @@ export async function POST(request: Request) {
     try {
       const validated = await validateLibraryUpload(file);
       storedKey = await storeLibraryFile(validated);
-      await prisma.libraryFile.create({ data: { folderId: folder.id, title: validated.title, originalName: validated.originalName, storageKey: validated.storageKey, mimeType: validated.mime, size: validated.size, uploadedById: auth.user.id } });
+      const last = await prisma.libraryFile.aggregate({ where: { folderId: folder.id }, _max: { sortOrder: true } });
+      await prisma.libraryFile.create({ data: { folderId: folder.id, title: validated.title, originalName: validated.originalName, storageKey: validated.storageKey, mimeType: validated.mime, size: validated.size, uploadedById: auth.user.id, sortOrder: (last._max.sortOrder ?? -1) + 1 } });
       results.push({ name: file.name, ok: true });
     } catch (error) {
       if (storedKey) await deleteLibraryFiles([storedKey]).catch(() => undefined);

@@ -16,11 +16,13 @@ export async function getStudentLibraryCourse(courseId: string) {
   const department = await getStudentLibraryDepartment();
   if (!department) notFound();
   const course = await prisma.libraryCourse.findFirst({
-    where: { id: courseId, departmentId: department.id },
-    select: { id: true, name: true, code: true, description: true, level: true },
+    where: { id: courseId, departments: { some: { departmentId: department.id } } },
+    select: { id: true, name: true, code: true, description: true, departments: { where: { departmentId: department.id }, select: { level: true, semester: true, sortOrder: true }, take: 1 } },
   });
   if (!course) notFound();
-  return { department, course };
+  const placement = course.departments[0];
+  if (!placement) notFound();
+  return { department, course: { id: course.id, name: course.name, code: course.code, description: course.description, ...placement } };
 }
 
 export async function getStudentLibraryFolder(courseId: string, folderId: string) {

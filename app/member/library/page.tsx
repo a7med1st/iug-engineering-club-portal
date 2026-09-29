@@ -21,11 +21,12 @@ export default async function MemberLibraryPage({ searchParams }: { searchParams
     orderBy: [{ sortOrder: "asc" }, { nameAr: "asc" }],
   }) : [];
   const department = departments.find((item) => item.id === params.department) ?? departments[0] ?? null;
-  const courses = department ? await prisma.libraryCourse.findMany({
+  const placements = department ? await prisma.libraryCourseDepartment.findMany({
     where: { departmentId: department.id },
-    select: { id: true, name: true, code: true, level: true, semester: true },
-    orderBy: [{ level: "asc" }, { semester: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+    select: { level: true, semester: true, sortOrder: true, course: { select: { id: true, name: true, code: true, departments: { select: { department: { select: { nameAr: true } } } } } } },
+    orderBy: [{ level: "asc" }, { semester: "asc" }, { sortOrder: "asc" }, { course: { name: "asc" } }],
   }) : [];
+  const courses = placements.map(({ course, level, semester, sortOrder }) => ({ ...course, level, semester, sortOrder }));
   const course = courses.find((item) => item.id === params.course) ?? courses[0] ?? null;
   const allFolders = course ? await prisma.libraryFolder.findMany({
     where: { courseId: course.id },
@@ -38,7 +39,7 @@ export default async function MemberLibraryPage({ searchParams }: { searchParams
   const folders = directLibraryChildren(allFolders, folder?.id ?? null).filter((item) => item.isVisible);
   const [links, files] = folder ? await Promise.all([
     prisma.libraryLink.findMany({ where: { folderId: folder.id }, select: { id: true, title: true, url: true }, orderBy: [{ createdAt: "desc" }, { title: "asc" }] }),
-    prisma.libraryFile.findMany({ where: { folderId: folder.id }, select: { id: true, title: true, mimeType: true }, orderBy: [{ createdAt: "desc" }, { title: "asc" }], take: 30 }),
+    prisma.libraryFile.findMany({ where: { folderId: folder.id }, select: { id: true, title: true, mimeType: true, sortOrder: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { title: "asc" }], take: 30 }),
   ]) : [[], []];
   const href = (courseId?: string, folderId?: string) => {
     const values = new URLSearchParams();

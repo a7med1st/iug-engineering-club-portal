@@ -1,5 +1,5 @@
 import type { PermissionUser } from "@/lib/permissions";
-import { PERMISSIONS, isClubLeadership, managedDepartmentIdsForUser, requireDepartmentPermission } from "@/lib/permissions";
+import { PERMISSIONS, canAccessDepartment, isClubLeadership, managedDepartmentIdsForUser, requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function getManageableLibraryDepartments(user: PermissionUser) {
@@ -12,31 +12,37 @@ export async function getManageableLibraryDepartments(user: PermissionUser) {
   });
 }
 
-export async function requireLibraryCourse(id: string) {
-  const resource = await prisma.libraryCourse.findUnique({ where: { id }, select: { id: true, departmentId: true } });
+async function authorizedPlacement(departmentIds: string[], preferredDepartmentId?: string) {
+  const { user } = await requirePermission(PERMISSIONS.LIBRARY_MANAGE);
+  const candidates = preferredDepartmentId ? departmentIds.filter((id) => id === preferredDepartmentId) : departmentIds;
+  const departmentId = candidates.find((id) => canAccessDepartment(user, id));
+  return departmentId ? { user, departmentId } : null;
+}
+
+export async function requireLibraryCourse(id: string, preferredDepartmentId?: string) {
+  const resource = await prisma.libraryCourse.findUnique({ where: { id }, select: { id: true, departments: { select: { departmentId: true } } } });
   if (!resource) return null;
-  await requireDepartmentPermission(PERMISSIONS.LIBRARY_MANAGE, resource.departmentId);
-  return resource;
+  const access = await authorizedPlacement(resource.departments.map((item) => item.departmentId), preferredDepartmentId);
+  return access ? { id: resource.id, departmentId: access.departmentId } : null;
 }
 
 export async function requireLibraryFolder(id: string) {
-  const resource = await prisma.libraryFolder.findUnique({ where: { id }, select: { id: true, courseId: true, parentId: true, course: { select: { departmentId: true } } } });
+  const resource = await prisma.libraryFolder.findUnique({ where: { id }, select: { id: true, courseId: true, parentId: true, course: { select: { departments: { select: { departmentId: true } } } } } });
   if (!resource) return null;
-  await requireDepartmentPermission(PERMISSIONS.LIBRARY_MANAGE, resource.course.departmentId);
-  return { ...resource, departmentId: resource.course.departmentId };
+  const access = await authorizedPlacement(resource.course.departments.map((item) => item.departmentId));
+  return access ? { id: resource.id, courseId: resource.courseId, parentId: resource.parentId, departmentId: access.departmentId } : null;
 }
 
 export async function requireLibraryFile(id: string) {
-  const resource = await prisma.libraryFile.findUnique({ where: { id }, select: { id: true, title: true, originalName: true, storageKey: true, mimeType: true, size: true, folder: { select: { course: { select: { departmentId: true } } } } } });
+  const resource = await prisma.libraryFile.findUnique({ where: { id }, select: { id: true, title: true, originalName: true, storageKey: true, mimeType: true, size: true, folder: { select: { course: { select: { departments: { select: { departmentId: true } } } } } } } });
   if (!resource) return null;
-  const departmentId = resource.folder.course.departmentId;
-  await requireDepartmentPermission(PERMISSIONS.LIBRARY_MANAGE, departmentId);
-  return { ...resource, departmentId };
+  const access = await authorizedPlacement(resource.folder.course.departments.map((item) => item.departmentId));
+  return access ? { ...resource, departmentId: access.departmentId } : null;
 }
 
 export async function requireLibraryLink(id: string) {
-  const resource = await prisma.libraryLink.findUnique({ where: { id }, select: { id: true, folder: { select: { course: { select: { departmentId: true } } } } } });
+  const resource = await prisma.libraryLink.findUnique({ where: { id }, select: { id: true, folder: { select: { course: { select: { departments: { select: { departmentId: true } } } } } } } });
   if (!resource) return null;
-  await requireDepartmentPermission(PERMISSIONS.LIBRARY_MANAGE, resource.folder.course.departmentId);
-  return resource;
+  const access = await authorizedPlacement(resource.folder.course.departments.map((item) => item.departmentId));
+  return access ? resource : null;
 }

@@ -20,9 +20,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
     <div className={styles.empty}><h2>المكتبة غير متاحة بعد</h2><p>لا يوجد تخصص مرتبط بحسابك. أضف تخصصك من بيانات الحساب ثم عُد إلى المكتبة.</p><Link href="/student" className={styles.primaryLink}>العودة إلى حسابي</Link></div>
   </main>;
 
-  const where: Prisma.LibraryCourseWhereInput = {
-    departmentId: department.id,
-    level,
+  const courseWhere: Prisma.LibraryCourseWhereInput = {
     ...(query ? { OR: [
       { name: { contains: query, mode: "insensitive" } },
       { code: { contains: query, mode: "insensitive" } },
@@ -33,14 +31,15 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
       ] } } },
     ] } : {}),
   };
-  const [counts, courses] = await Promise.all([
-    prisma.libraryCourse.groupBy({ by: ["level"], where: { departmentId: department.id }, _count: { _all: true } }),
-    prisma.libraryCourse.findMany({
-      where,
-      orderBy: [{ semester: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, code: true, description: true, semester: true, _count: { select: { folders: { where: { isVisible: true } } } } },
+  const [counts, placements] = await Promise.all([
+    prisma.libraryCourseDepartment.groupBy({ by: ["level"], where: { departmentId: department.id }, _count: { _all: true } }),
+    prisma.libraryCourseDepartment.findMany({
+      where: { departmentId: department.id, level, course: courseWhere },
+      orderBy: [{ semester: "asc" }, { sortOrder: "asc" }, { course: { name: "asc" } }],
+      select: { semester: true, course: { select: { id: true, name: true, code: true, description: true, _count: { select: { folders: { where: { isVisible: true } } } } } } },
     }),
   ]);
+  const courses = placements.map(({ course, semester }) => ({ ...course, semester }));
 
   return <main className={styles.page}>
     <header className={styles.intro}>

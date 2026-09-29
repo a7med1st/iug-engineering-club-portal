@@ -12,8 +12,8 @@ export async function GET(request: Request, context: { params: Promise<{ fileId:
   const auth = await getCurrentUser();
   if (!auth) return new Response(null, { status: 401 });
   const { fileId } = await context.params;
-  const file = await prisma.libraryFile.findUnique({ where: { id: fileId }, select: { title: true, originalName: true, storageKey: true, mimeType: true, folder: { select: { course: { select: { departmentId: true } } } } } });
-  if (!file || !hasPermission(auth.user.role, PERMISSIONS.LIBRARY_MANAGE, auth.user.memberPermissions, auth.user.position) || !canAccessDepartment(auth.user, file.folder.course.departmentId)) return new Response(null, { status: 404 });
+  const file = await prisma.libraryFile.findUnique({ where: { id: fileId }, select: { title: true, originalName: true, storageKey: true, mimeType: true, folder: { select: { course: { select: { departments: { select: { departmentId: true } } } } } } } });
+  if (!file || !hasPermission(auth.user.role, PERMISSIONS.LIBRARY_MANAGE, auth.user.memberPermissions, auth.user.position) || !file.folder.course.departments.some((item) => canAccessDepartment(auth.user, item.departmentId))) return new Response(null, { status: 404 });
   const stored = await readLibraryFile(file.storageKey);
   if (!stored?.stream) return new Response(null, { status: 404 });
   const download = new URL(request.url).searchParams.get("download") === "1";

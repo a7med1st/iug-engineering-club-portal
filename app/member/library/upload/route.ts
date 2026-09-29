@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   const folderId = String(form.get("folderId") ?? "");
   const departmentIds = memberLibraryDepartmentIds(auth.user);
   const folder = departmentIds.length ? await prisma.libraryFolder.findFirst({
-    where: { id: folderId, course: { departmentId: { in: departmentIds } } },
+    where: { id: folderId, course: { departments: { some: { departmentId: { in: departmentIds } } } } },
     select: { id: true, courseId: true },
   }) : null;
   if (!folder) return NextResponse.json({ error: "المجلد غير موجود." }, { status: 404 });
@@ -37,7 +37,8 @@ export async function POST(request: Request) {
     try {
       const validated = await validateLibraryUpload(file);
       storedKey = await storeLibraryFile(validated);
-      await prisma.libraryFile.create({ data: { folderId: folder.id, title: validated.title, originalName: validated.originalName, storageKey: validated.storageKey, mimeType: validated.mime, size: validated.size, uploadedById: auth.user.id } });
+      const last = await prisma.libraryFile.aggregate({ where: { folderId: folder.id }, _max: { sortOrder: true } });
+      await prisma.libraryFile.create({ data: { folderId: folder.id, title: validated.title, originalName: validated.originalName, storageKey: validated.storageKey, mimeType: validated.mime, size: validated.size, uploadedById: auth.user.id, sortOrder: (last._max.sortOrder ?? -1) + 1 } });
       results.push({ name: file.name, ok: true });
     } catch (error) {
       if (storedKey) await deleteLibraryFiles([storedKey]).catch(() => undefined);

@@ -16,7 +16,7 @@ export async function GET(request: Request, context: { params: Promise<{ fileId:
   if (!departmentIds.length) return new Response(null, { status: 404 });
   const { fileId } = await context.params;
   const file = await prisma.libraryFile.findFirst({
-    where: { id: fileId, folder: { course: { departmentId: { in: departmentIds } } } },
+    where: { id: fileId, folder: { course: { departments: { some: { departmentId: { in: departmentIds } } } } } },
     select: { title: true, originalName: true, storageKey: true, mimeType: true, folderId: true, folder: { select: { courseId: true } } },
   });
   if (!file) return new Response(null, { status: 404 });

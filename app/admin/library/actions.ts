@@ -7,6 +7,9 @@ import { PERMISSIONS, requireDepartmentPermission } from "@/lib/permissions";
 import { requireLibraryCourse, requireLibraryFile, requireLibraryFolder, requireLibraryLink } from "@/lib/library/authorization";
 import { deleteLibraryFiles } from "@/lib/library/storage";
 import { libraryFolderDescendantIds } from "@/lib/library/tree";
+import { createOrAttachLibraryCourse } from "@/lib/library/courses";
+import { normalizeLibraryCourseCode } from "@/lib/library/course-code";
+import { libraryAdjacentSwap } from "@/lib/library/ordering";
 import { LibraryValidationError, validateLibraryCourseInput, validateLibraryFileTitle, validateLibraryFolderInput, validateLibraryLinkInput } from "@/lib/library/validation";
 
 const text = (data: FormData, key: string) => String(data.get(key) ?? "").trim();
@@ -24,37 +27,49 @@ export async function createCourseAction(data: FormData) {
     const departmentId = text(data, "departmentId");
     await requireDepartmentPermission(PERMISSIONS.LIBRARY_MANAGE, departmentId);
     const input = validateLibraryCourseInput(Object.fromEntries(data));
-    await prisma.libraryCourse.create({ data: { departmentId, ...input } }); refresh();
+    await createOrAttachLibraryCourse(input, departmentId, text(data, "confirmExisting") === "true"); refresh();
   } catch (error) { back(data, "error", message(error)); }
   back(data, "success", "تمت إضافة المساق.");
 }
 
 export async function updateCourseAction(data: FormData) {
   try {
-    const course = await requireLibraryCourse(text(data, "courseId")); if (!course) throw new LibraryValidationError("المساق غير موجود.");
-    await prisma.libraryCourse.update({ where: { id: course.id }, data: validateLibraryCourseInput(Object.fromEntries(data)) }); refresh();
+    const course = await requireLibraryCourse(text(data, "courseId"), text(data, "department")); if (!course) throw new LibraryValidationError("المساق غير موجود.");
+    const input = validateLibraryCourseInput(Object.fromEntries(data));
+    await prisma.$transaction([
+      prisma.libraryCourse.update({ where: { id: course.id }, data: { name: input.name, code: input.code, normalizedCode: normalizeLibraryCourseCode(input.code), description: input.description } }),
+      prisma.libraryCourseDepartment.update({ where: { courseId_departmentId: { courseId: course.id, departmentId: course.departmentId } }, data: { level: input.level, semester: input.semester, sortOrder: input.sortOrder } }),
+    ]); refresh();
   } catch (error) { back(data, "error", message(error)); }
   back(data, "success", "تم تحديث المساق.");
 }
 
 export async function deleteCourseAction(data: FormData) {
   try {
-    const course = await requireLibraryCourse(text(data, "courseId")); if (!course) throw new LibraryValidationError("المساق غير موجود.");
-    const files = await prisma.libraryFile.findMany({ where: { folder: { courseId: course.id } }, select: { storageKey: true } });
-    await deleteLibraryFiles(files.map((file) => file.storageKey));
-    await prisma.libraryCourse.delete({ where: { id: course.id } }); refresh();
+    const course = await requireLibraryCourse(text(data, "courseId"), text(data, "department")); if (!course) throw new LibraryValidationError("المساق غير موجود.");
+    const placementCount = await prisma.libraryCourseDepartment.count({ where: { courseId: course.id } });
+    if (placementCount > 1) {
+      await prisma.libraryCourseDepartment.delete({ where: { courseId_departmentId: { courseId: course.id, departmentId: course.departmentId } } });
+    } else {
+      const files = await prisma.libraryFile.findMany({ where: { folder: { courseId: course.id } }, select: { storageKey: true } });
+      await deleteLibraryFiles(files.map((file) => file.storageKey));
+      await prisma.libraryCourse.delete({ where: { id: course.id } });
+    }
+    refresh();
   } catch { back(data, "error", "تعذر حذف المساق وملفاته."); }
   data.delete("course"); data.delete("folder"); back(data, "success", "تم حذف المساق.");
 }
 
 export async function createFolderAction(data: FormData) {
   try {
-    const course = await requireLibraryCourse(text(data, "courseId")); if (!course) throw new LibraryValidationError("المساق غير موجود.");
+    const course = await requireLibraryCourse(text(data, "courseId"), text(data, "department")); if (!course) throw new LibraryValidationError("المساق غير موجود.");
     const auth = await requireDepartmentPermission(PERMISSIONS.LIBRARY_MANAGE, course.departmentId);
     const parentId = text(data, "parentId") || null;
     const parent = parentId ? await requireLibraryFolder(parentId) : null;
     if (parentId && (!parent || parent.courseId !== course.id)) throw new LibraryValidationError("المجلد الأب غير صالح.");
-    const folder = await prisma.libraryFolder.create({ data: { courseId: course.id, parentId, createdById: auth.user.id, ...validateLibraryFolderInput(Object.fromEntries(data)) } });
+    const input = validateLibraryFolderInput(Object.fromEntries(data));
+    const last = await prisma.libraryFolder.aggregate({ where: { courseId: course.id, parentId }, _max: { sortOrder: true } });
+    const folder = await prisma.libraryFolder.create({ data: { courseId: course.id, parentId, createdById: auth.user.id, ...input, sortOrder: (last._max.sortOrder ?? -1) + 1 } });
     data.set("folder", folder.id); refresh();
   } catch (error) { back(data, "error", message(error)); }
   back(data, "success", "تم إنشاء المجلد.");
@@ -130,4 +145,38 @@ export async function deleteLinkAction(data: FormData) {
     refresh();
   } catch (error) { back(data, "error", message(error)); }
   back(data, "success", "تم حذف الرابط.");
+}
+
+async function move(data: FormData, kind: "folder" | "file") {
+  const direction = text(data, "direction");
+  if (direction !== "up" && direction !== "down") throw new LibraryValidationError("اتجاه الترتيب غير صالح.");
+  if (kind === "folder") {
+    const folder = await requireLibraryFolder(text(data, "folderId")); if (!folder) throw new LibraryValidationError("المجلد غير موجود.");
+    await prisma.$transaction(async (tx) => {
+      const siblings = await tx.libraryFolder.findMany({ where: { courseId: folder.courseId, parentId: folder.parentId }, select: { id: true, sortOrder: true, createdAt: true } });
+      const change = libraryAdjacentSwap(siblings, folder.id, direction);
+      for (const item of change.normalized) await tx.libraryFolder.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } });
+      for (const item of change.swap) await tx.libraryFolder.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } });
+    });
+  } else {
+    const file = await requireLibraryFile(text(data, "fileId")); if (!file) throw new LibraryValidationError("الملف غير موجود.");
+    const record = await prisma.libraryFile.findUnique({ where: { id: file.id }, select: { folderId: true } }); if (!record) throw new LibraryValidationError("الملف غير موجود.");
+    await prisma.$transaction(async (tx) => {
+      const siblings = await tx.libraryFile.findMany({ where: { folderId: record.folderId }, select: { id: true, sortOrder: true, createdAt: true } });
+      const change = libraryAdjacentSwap(siblings, file.id, direction);
+      for (const item of change.normalized) await tx.libraryFile.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } });
+      for (const item of change.swap) await tx.libraryFile.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } });
+    });
+  }
+  refresh();
+}
+
+export async function moveFolderAction(data: FormData) {
+  try { await move(data, "folder"); } catch (error) { back(data, "error", message(error)); }
+  back(data, "success", "تم تحديث ترتيب المجلد.");
+}
+
+export async function moveFileAction(data: FormData) {
+  try { await move(data, "file"); } catch (error) { back(data, "error", message(error)); }
+  back(data, "success", "تم تحديث ترتيب الملف.");
 }

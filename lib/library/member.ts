@@ -12,18 +12,20 @@ export async function requireMemberLibraryAccess() {
 export async function requireMemberLibraryCourse(courseId: string) {
   const { user, departmentIds } = await requireMemberLibraryAccess();
   const course = departmentIds.length ? await prisma.libraryCourse.findFirst({
-    where: { id: courseId, departmentId: { in: departmentIds } },
-    select: { id: true, name: true, code: true, level: true, departmentId: true },
+    where: { id: courseId, departments: { some: { departmentId: { in: departmentIds } } } },
+    select: { id: true, name: true, code: true, departments: { where: { departmentId: { in: departmentIds } }, select: { departmentId: true, level: true, semester: true, sortOrder: true }, take: 1 } },
   }) : null;
   if (!course) notFound();
-  return { user, course };
+  const placement = course.departments[0];
+  if (!placement) notFound();
+  return { user, course: { id: course.id, name: course.name, code: course.code, ...placement } };
 }
 
 export async function requireMemberLibraryFolder(folderId: string) {
   const { user, departmentIds } = await requireMemberLibraryAccess();
   const folder = departmentIds.length ? await prisma.libraryFolder.findFirst({
-    where: { id: folderId, course: { departmentId: { in: departmentIds } } },
-    select: { id: true, courseId: true, parentId: true, course: { select: { departmentId: true } } },
+    where: { id: folderId, course: { departments: { some: { departmentId: { in: departmentIds } } } } },
+    select: { id: true, courseId: true, parentId: true, course: { select: { departments: { where: { departmentId: { in: departmentIds } }, select: { departmentId: true }, take: 1 } } } },
   }) : null;
   if (!folder) notFound();
   const courseFolders = await prisma.libraryFolder.findMany({

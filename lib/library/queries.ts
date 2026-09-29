@@ -28,11 +28,12 @@ export function resolveLibraryFolderNavigation<T extends LibraryFolderNode>(
 export async function resolveLibrarySelection(user: PermissionUser, params: { department?: string; course?: string; folder?: string }) {
   const departments = await getManageableLibraryDepartments(user);
   const selectedDepartment = pickLibrarySelection(params.department, departments);
-  const courses = selectedDepartment ? await prisma.libraryCourse.findMany({ where: { departmentId: selectedDepartment.id }, include: { _count: { select: { folders: true } } }, orderBy: [{ level: "asc" }, { semester: "asc" }, { sortOrder: "asc" }, { name: "asc" }] }) : [];
+  const placements = selectedDepartment ? await prisma.libraryCourseDepartment.findMany({ where: { departmentId: selectedDepartment.id }, include: { course: { include: { _count: { select: { folders: true } }, departments: { select: { department: { select: { id: true, nameAr: true } } } } } } }, orderBy: [{ level: "asc" }, { semester: "asc" }, { sortOrder: "asc" }, { course: { name: "asc" } }] }) : [];
+  const courses = placements.map(({ course, level, semester, sortOrder }) => ({ ...course, level, semester, sortOrder }));
   const selectedCourse = pickLibrarySelection(params.course, courses);
   const allFolders = selectedCourse ? await prisma.libraryFolder.findMany({ where: { courseId: selectedCourse.id }, include: { _count: { select: { files: true, links: true } } }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }) : [];
   const { folders, selectedFolder, folderBreadcrumb } = resolveLibraryFolderNavigation(allFolders, params.folder);
-  const files = selectedFolder ? await prisma.libraryFile.findMany({ where: { folderId: selectedFolder.id }, orderBy: [{ createdAt: "desc" }, { title: "asc" }] }) : [];
+  const files = selectedFolder ? await prisma.libraryFile.findMany({ where: { folderId: selectedFolder.id }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { title: "asc" }] }) : [];
   const links = selectedFolder ? await prisma.libraryLink.findMany({ where: { folderId: selectedFolder.id }, orderBy: [{ createdAt: "desc" }, { title: "asc" }] }) : [];
   return { departments, selectedDepartment, courses, selectedCourse, folders, selectedFolder, folderBreadcrumb, files, links };
 }
