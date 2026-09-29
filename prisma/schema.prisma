@@ -331,7 +331,7 @@ model Department {
 
   complaints  Complaint[]
   suggestions Suggestion[]
-  libraryCourses LibraryCourse[]
+  libraryCourseDepartments LibraryCourseDepartment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -342,20 +342,31 @@ model Department {
 // =========================================================
 
 model LibraryCourse {
-  id           String   @id @default(cuid())
+  id             String   @id @default(cuid())
+  name           String
+  code           String?
+  normalizedCode String?  @unique
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  departments LibraryCourseDepartment[]
+  folders     LibraryFolder[]
+}
+
+model LibraryCourseDepartment {
+  courseId    String
   departmentId String
-  level        Int
-  semester     Int      @default(1)
-  name         String
-  code         String?
-  description  String?
-  sortOrder    Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  level       Int
+  semester    Int @default(1)
+  sortOrder   Int @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  department Department      @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  folders    LibraryFolder[]
+  course     LibraryCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  department Department    @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 
+  @@id([courseId, departmentId])
   @@index([departmentId, level, semester, sortOrder])
 }
 
@@ -389,6 +400,7 @@ model LibraryFile {
   storageKey   String   @unique
   mimeType     String
   size         Int
+  sortOrder    Int      @default(0)
   uploadedById String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -396,7 +408,7 @@ model LibraryFile {
   folder     LibraryFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
   uploadedBy User?         @relation("LibraryFileUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
 
-  @@index([folderId, createdAt])
+  @@index([folderId, sortOrder, createdAt])
   @@index([uploadedById])
 }
 
