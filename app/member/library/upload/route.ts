@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { managedDepartmentIdsForUser } from "@/lib/permissions";
+import { memberLibraryDepartmentIds } from "@/lib/permissions";
 import { LIBRARY_MAX_FILE_BYTES, LIBRARY_MAX_FILES } from "@/lib/library/constants";
 import { validateLibraryUpload } from "@/lib/library/file-validation";
 import { deleteLibraryFiles, storeLibraryFile } from "@/lib/library/storage";
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   }
   const form = await request.formData();
   const folderId = String(form.get("folderId") ?? "");
-  const departmentIds = managedDepartmentIdsForUser(auth.user);
+  const departmentIds = memberLibraryDepartmentIds(auth.user);
   const folder = departmentIds.length ? await prisma.libraryFolder.findFirst({
     where: { id: folderId, isVisible: true, course: { departmentId: { in: departmentIds } } },
     select: { id: true },

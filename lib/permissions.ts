@@ -403,6 +403,17 @@ export function managedDepartmentIdsForUser(
     : [];
 }
 
+export function memberLibraryDepartmentIds(
+  user: Pick<
+    PermissionUser,
+    "role" | "departmentId" | "managedDepartmentIds"
+  >,
+): string[] {
+  return user.role === "MEMBER" && user.departmentId
+    ? [user.departmentId]
+    : [];
+}
+
 export { isClubLeadership } from "@/lib/club-leadership";
 
 export function hasGlobalContactAccess(

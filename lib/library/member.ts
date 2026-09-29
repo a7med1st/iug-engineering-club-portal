@@ -1,11 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { managedDepartmentIdsForUser, PERMISSIONS, requirePermission } from "@/lib/permissions";
+import { memberLibraryDepartmentIds, PERMISSIONS, requirePermission } from "@/lib/permissions";
 
 export async function requireMemberLibraryAccess() {
   const { user } = await requirePermission(PERMISSIONS.MEMBER_DASHBOARD);
   if (user.role !== "MEMBER") redirect("/admin/library");
-  return { user, departmentIds: managedDepartmentIdsForUser(user) };
+  return { user, departmentIds: memberLibraryDepartmentIds(user) };
 }
 
 export async function requireMemberLibraryCourse(courseId: string) {

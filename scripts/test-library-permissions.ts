@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 
 async function main() {
   process.env.SESSION_SECRET = "library-test-session-secret-32-characters";
-  const { PERMISSIONS, canAccessDepartment, hasPermission, normalizeMemberPermissions } = await import("../lib/permissions");
+  const { PERMISSIONS, canAccessDepartment, hasPermission, memberLibraryDepartmentIds, normalizeMemberPermissions } = await import("../lib/permissions");
   const libraryPermission = PERMISSIONS.LIBRARY_MANAGE;
   assert.equal(normalizeMemberPermissions([libraryPermission]).includes(libraryPermission), true);
   assert.equal(hasPermission("ADMIN", libraryPermission), true);
@@ -18,6 +18,22 @@ async function main() {
     "department-b",
   ),
     false,
+  );
+  assert.deepEqual(
+    memberLibraryDepartmentIds({
+      role: "MEMBER",
+      departmentId: "department-a",
+      managedDepartmentIds: ["department-a", "department-b"],
+    }),
+    ["department-a"],
+  );
+  assert.deepEqual(
+    memberLibraryDepartmentIds({
+      role: "MEMBER",
+      departmentId: null,
+      managedDepartmentIds: ["department-a"],
+    }),
+    [],
   );
   console.log("Library permission tests passed.");
 }

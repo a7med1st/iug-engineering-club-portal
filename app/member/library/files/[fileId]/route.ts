@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { managedDepartmentIdsForUser } from "@/lib/permissions";
+import { memberLibraryDepartmentIds } from "@/lib/permissions";
 import { readLibraryFile } from "@/lib/library/storage";
 
 function disposition(name: string, inline: boolean) {
@@ -11,7 +11,7 @@ function disposition(name: string, inline: boolean) {
 export async function GET(request: Request, context: { params: Promise<{ fileId: string }> }) {
   const auth = await getCurrentUser();
   if (!auth || auth.user.role !== "MEMBER") return new Response(null, { status: 401 });
-  const departmentIds = managedDepartmentIdsForUser(auth.user);
+  const departmentIds = memberLibraryDepartmentIds(auth.user);
   if (!departmentIds.length) return new Response(null, { status: 404 });
   const { fileId } = await context.params;
   const file = await prisma.libraryFile.findFirst({
