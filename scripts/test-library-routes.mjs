@@ -10,6 +10,8 @@ const studentGuard = await readFile(new URL("../lib/library/student.ts", import.
 const studentCourse = await readFile(new URL("../app/library/courses/[courseId]/page.tsx", import.meta.url), "utf8");
 const studentFolder = await readFile(new URL("../app/library/courses/[courseId]/folders/[folderId]/page.tsx", import.meta.url), "utf8");
 const studentFile = await readFile(new URL("../app/library/files/[fileId]/route.ts", import.meta.url), "utf8");
+const nextConfig = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
+const nginx = await readFile(new URL("../ops/nginx-iug-main.conf", import.meta.url), "utf8");
 assert.match(upload, /LIBRARY_MAX_FILES/);
 assert.match(upload, /content-length/i);
 assert.match(upload, /canAccessDepartment/);
@@ -28,4 +30,6 @@ assert.match(studentCourse, /parentId:\s*null/);
 assert.match(studentFolder, /directLibraryChildren/);
 assert.match(studentFolder, /folderBreadcrumb/);
 assert.match(studentFile, /isVisibleLibraryFolderPath/);
+assert.match(nextConfig, /middlewareClientMaxBodySize:\s*"32mb"/);
+assert.match(nginx, /client_max_body_size\s+32m;/);
 console.log("Library route contract tests passed.");
