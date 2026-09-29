@@ -362,6 +362,7 @@ model LibraryCourse {
 model LibraryFolder {
   id          String   @id @default(cuid())
   courseId    String
+  parentId    String?
   name        String
   sortOrder   Int      @default(0)
   isVisible   Boolean  @default(true)
@@ -370,11 +371,13 @@ model LibraryFolder {
   updatedAt   DateTime @updatedAt
 
   course    LibraryCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  parent    LibraryFolder? @relation("LibraryFolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  LibraryFolder[] @relation("LibraryFolderTree")
   createdBy User?         @relation("LibraryFolderCreator", fields: [createdById], references: [id], onDelete: SetNull)
   files     LibraryFile[]
   links     LibraryLink[]
 
-  @@index([courseId, sortOrder])
+  @@index([courseId, parentId, sortOrder])
   @@index([createdById])
 }
 
