@@ -17,8 +17,11 @@ const member = await readFile(new URL("../app/member/library/page.tsx", import.m
 assert.match(member, /CourseCreateForm/);
 assert.match(member, /OrderButtons/);
 const orderButtons = await readFile(new URL("../components/library/OrderButtons.tsx", import.meta.url), "utf8").catch(() => "");
+const courseForm = await readFile(new URL("../components/library/CourseCreateForm.tsx", import.meta.url), "utf8").catch(() => "");
 assert.match(orderButtons, /ArrowUp/);
 assert.match(orderButtons, /ArrowDown/);
 assert.match(orderButtons, /للأعلى/);
 assert.match(orderButtons, /disabled/);
+assert.match(courseForm, /onChange/);
+assert.match(courseForm, /confirmRef\.current\.value = "false"/);
 console.log("Library UI contract tests passed.");

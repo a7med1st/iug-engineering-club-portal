@@ -39,7 +39,10 @@ export default function CourseCreateForm({ action, departmentId }: { action: (da
     {departmentId && <input type="hidden" name="departmentId" value={departmentId} />}
     <input ref={confirmRef} type="hidden" name="confirmExisting" defaultValue="false" />
     <input name="name" required maxLength={120} placeholder="اسم المساق" />
-    <input name="code" maxLength={40} placeholder="رمز المساق" onBlur={(event) => void check(event.currentTarget.value)} />
+    <input name="code" maxLength={40} placeholder="رمز المساق" onChange={() => {
+      setMatch(null);
+      if (confirmRef.current) confirmRef.current.value = "false";
+    }} onBlur={(event) => void check(event.currentTarget.value)} />
     <select name="level" aria-label="المستوى">{levelNames.map((name, i) => <option value={i + 1} key={name}>المستوى {name}</option>)}</select>
     <select name="semester" aria-label="الفصل">{semesterNames.map((name, i) => <option value={i + 1} key={name}>{name}</option>)}</select>
     <input name="sortOrder" type="number" min="0" defaultValue="0" aria-label="ترتيب المساق" />
