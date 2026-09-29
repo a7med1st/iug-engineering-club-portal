@@ -28,6 +28,7 @@
     "test:library-permissions": "node --import tsx scripts/test-library-permissions.ts",
     "test:library-schema": "node scripts/test-library-schema.mjs",
     "test:library-domain": "node --import tsx scripts/test-library-domain.ts",
+    "test:library-tree": "node --import tsx scripts/test-library-tree.ts",
     "test:library-file-security": "node --import tsx scripts/test-library-file-security.ts",
     "test:library-actions": "node scripts/test-library-actions.mjs",
     "test:library-routes": "node scripts/test-library-routes.mjs",
