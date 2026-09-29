@@ -59,20 +59,23 @@ export function libraryFolderDescendantIds(
     siblings.push(folder);
     children.set(folder.parentId, siblings);
   }
+  for (const siblings of children.values()) siblings.sort(compareFolders);
 
   const result: string[] = [];
   const visited = new Set<string>();
-  const visit = (folder: LibraryFolderNode): boolean => {
-    if (visited.has(folder.id) || folder.courseId !== selected.courseId) return false;
+  const pending = [selected];
+  while (pending.length) {
+    const folder = pending.pop()!;
+    if (visited.has(folder.id) || folder.courseId !== selected.courseId) return null;
     visited.add(folder.id);
     result.push(folder.id);
-    for (const child of (children.get(folder.id) ?? []).sort(compareFolders)) {
-      if (!visit(child)) return false;
+    const directChildren = children.get(folder.id) ?? [];
+    for (let index = directChildren.length - 1; index >= 0; index -= 1) {
+      pending.push(directChildren[index]);
     }
-    return true;
-  };
+  }
 
-  return visit(selected) ? result : null;
+  return result;
 }
 
 export function isVisibleLibraryFolderPath(

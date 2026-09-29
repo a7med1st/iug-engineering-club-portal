@@ -33,4 +33,16 @@ assert.equal(libraryFolderBreadcrumb(cyclic, "one"), null);
 assert.equal(libraryFolderDescendantIds(cyclic, "one"), null);
 assert.equal(isVisibleLibraryFolderPath(cyclic, "one"), false);
 
+const deepFolders: LibraryFolderNode[] = Array.from({ length: 12_000 }, (_, index) => ({
+  id: `deep-${index}`,
+  courseId: "course-deep",
+  parentId: index === 0 ? null : `deep-${index - 1}`,
+  name: `Deep ${index}`,
+  sortOrder: index,
+  isVisible: true,
+}));
+const deepIds = libraryFolderDescendantIds(deepFolders, "deep-0");
+assert.equal(deepIds?.length, 12_000);
+assert.equal(deepIds?.at(-1), "deep-11999");
+
 console.log("Library tree tests passed.");
