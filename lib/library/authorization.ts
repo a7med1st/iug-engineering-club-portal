@@ -20,7 +20,7 @@ export async function requireLibraryCourse(id: string) {
 }
 
 export async function requireLibraryFolder(id: string) {
-  const resource = await prisma.libraryFolder.findUnique({ where: { id }, select: { id: true, courseId: true, course: { select: { departmentId: true } } } });
+  const resource = await prisma.libraryFolder.findUnique({ where: { id }, select: { id: true, courseId: true, parentId: true, course: { select: { departmentId: true } } } });
   if (!resource) return null;
   await requireDepartmentPermission(PERMISSIONS.LIBRARY_MANAGE, resource.course.departmentId);
   return { ...resource, departmentId: resource.course.departmentId };

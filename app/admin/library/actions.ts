@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { PERMISSIONS, requireDepartmentPermission } from "@/lib/permissions";
 import { requireLibraryCourse, requireLibraryFile, requireLibraryFolder, requireLibraryLink } from "@/lib/library/authorization";
 import { deleteLibraryFiles } from "@/lib/library/storage";
+import { libraryFolderDescendantIds } from "@/lib/library/tree";
 import { LibraryValidationError, validateLibraryCourseInput, validateLibraryFileTitle, validateLibraryFolderInput, validateLibraryLinkInput } from "@/lib/library/validation";
 
 const text = (data: FormData, key: string) => String(data.get(key) ?? "").trim();
@@ -50,7 +51,11 @@ export async function createFolderAction(data: FormData) {
   try {
     const course = await requireLibraryCourse(text(data, "courseId")); if (!course) throw new LibraryValidationError("المساق غير موجود.");
     const auth = await requireDepartmentPermission(PERMISSIONS.LIBRARY_MANAGE, course.departmentId);
-    await prisma.libraryFolder.create({ data: { courseId: course.id, createdById: auth.user.id, ...validateLibraryFolderInput(Object.fromEntries(data)) } }); refresh();
+    const parentId = text(data, "parentId") || null;
+    const parent = parentId ? await requireLibraryFolder(parentId) : null;
+    if (parentId && (!parent || parent.courseId !== course.id)) throw new LibraryValidationError("المجلد الأب غير صالح.");
+    const folder = await prisma.libraryFolder.create({ data: { courseId: course.id, parentId, createdById: auth.user.id, ...validateLibraryFolderInput(Object.fromEntries(data)) } });
+    data.set("folder", folder.id); refresh();
   } catch (error) { back(data, "error", message(error)); }
   back(data, "success", "تم إنشاء المجلد.");
 }
@@ -66,11 +71,16 @@ export async function updateFolderAction(data: FormData) {
 export async function deleteFolderAction(data: FormData) {
   try {
     const folder = await requireLibraryFolder(text(data, "folderId")); if (!folder) throw new LibraryValidationError("المجلد غير موجود.");
-    const files = await prisma.libraryFile.findMany({ where: { folderId: folder.id }, select: { storageKey: true } });
+    const folders = await prisma.libraryFolder.findMany({ where: { courseId: folder.courseId }, select: { id: true, courseId: true, parentId: true, name: true, sortOrder: true, isVisible: true } });
+    const subtreeIds = libraryFolderDescendantIds(folders, folder.id);
+    if (!subtreeIds) throw new LibraryValidationError("تعذر قراءة بنية المجلد.");
+    const files = await prisma.libraryFile.findMany({ where: { folderId: { in: subtreeIds } }, select: { storageKey: true } });
     await deleteLibraryFiles(files.map((file) => file.storageKey));
     await prisma.libraryFolder.delete({ where: { id: folder.id } }); refresh();
   } catch { back(data, "error", "تعذر حذف المجلد وملفاته."); }
-  data.delete("folder"); back(data, "success", "تم حذف المجلد.");
+  const parentId = text(data, "parentId");
+  if (parentId) data.set("folder", parentId); else data.delete("folder");
+  back(data, "success", "تم حذف المجلد.");
 }
 
 export async function updateFileTitleAction(data: FormData) {

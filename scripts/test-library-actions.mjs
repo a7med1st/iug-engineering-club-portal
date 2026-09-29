@@ -1,9 +1,16 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 const source = await readFile(new URL("../app/admin/library/actions.ts", import.meta.url), "utf8");
+const memberSource = await readFile(new URL("../app/member/library/actions.ts", import.meta.url), "utf8");
 for (const name of ["createCourseAction", "updateCourseAction", "deleteCourseAction", "createFolderAction", "updateFolderAction", "deleteFolderAction", "updateFileTitleAction", "deleteFileAction"]) assert.match(source, new RegExp(`export async function ${name}`));
 assert.match(source, /requireLibraryCourse/);
 assert.match(source, /requireLibraryFolder/);
 assert.match(source, /requireLibraryFile/);
 assert.match(source, /deleteLibraryFiles/);
+assert.match(source, /parentId/);
+assert.match(source, /parent\.courseId\s*!==\s*course\.id/);
+assert.match(source, /libraryFolderDescendantIds/);
+assert.match(source, /folderId:\s*\{\s*in:\s*subtreeIds\s*\}/);
+assert.match(memberSource, /parentId/);
+assert.match(memberSource, /parent\.courseId\s*!==\s*course\.id/);
 console.log("Library action contract tests passed.");

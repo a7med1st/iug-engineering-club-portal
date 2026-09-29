@@ -22,8 +22,11 @@ function refresh(courseId: string, folderId?: string) {
 export async function addMemberLibraryFolder(data: FormData) {
   const { user, course } = await requireMemberLibraryCourse(String(data.get("courseId") ?? ""));
   try {
+    const parentId = String(data.get("parentId") ?? "").trim() || null;
+    const parent = parentId ? (await requireMemberLibraryFolder(parentId)).folder : null;
+    if (parentId && (!parent || parent.courseId !== course.id)) throw new LibraryValidationError("المجلد الأب غير صالح.");
     const input = validateLibraryFolderInput({ name: data.get("name"), sortOrder: 0, isVisible: true });
-    const folder = await prisma.libraryFolder.create({ data: { courseId: course.id, createdById: user.id, ...input } });
+    const folder = await prisma.libraryFolder.create({ data: { courseId: course.id, parentId, createdById: user.id, ...input } });
     refresh(course.id, folder.id);
     back(course.id, folder.id, "success", "تمت إضافة المجلد.");
   } catch (error) {

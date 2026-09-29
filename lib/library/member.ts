@@ -22,7 +22,7 @@ export async function requireMemberLibraryFolder(folderId: string) {
   const { user, departmentIds } = await requireMemberLibraryAccess();
   const folder = departmentIds.length ? await prisma.libraryFolder.findFirst({
     where: { id: folderId, isVisible: true, course: { departmentId: { in: departmentIds } } },
-    select: { id: true, courseId: true, course: { select: { departmentId: true } } },
+    select: { id: true, courseId: true, parentId: true, course: { select: { departmentId: true } } },
   }) : null;
   if (!folder) notFound();
   return { user, folder };
