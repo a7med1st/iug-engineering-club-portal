@@ -12,7 +12,7 @@ export default async function LibraryCoursePage({ params }: { params: Promise<{ 
   const { course } = await getStudentLibraryCourse(courseId);
   const folders = await prisma.libraryFolder.findMany({
     where: { courseId: course.id, parentId: null, isVisible: true },
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { id: "asc" }],
     select: { id: true, name: true, _count: { select: { files: true, links: true } } },
   });
 

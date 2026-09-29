@@ -30,7 +30,7 @@ export default async function LibraryFolderPage({ params, searchParams }: {
   const currentPage = Math.min(page, pageCount);
   const files = await prisma.libraryFile.findMany({
     where: fileWhere,
-    orderBy: [{ createdAt: "desc" }, { title: "asc" }],
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { title: "asc" }],
     skip: (currentPage - 1) * pageSize,
     take: pageSize,
     select: { id: true, title: true, mimeType: true, size: true, createdAt: true },

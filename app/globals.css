@@ -8486,3 +8486,5 @@ html[data-reload-intro="true"] .intro-gate {
         grid-column: auto;
     }
 }
+/* Compact ordering controls shared by both library management surfaces. */
+.library-order-buttons{display:inline-flex;align-items:center;gap:4px;flex:none}.library-order-buttons form{margin:0}.library-order-buttons button{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid #dbe3ed;border-radius:6px;background:transparent;color:inherit;cursor:pointer}.library-order-buttons button:disabled{opacity:.35;cursor:not-allowed}

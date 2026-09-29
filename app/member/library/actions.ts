@@ -43,15 +43,16 @@ export async function addMemberLibraryFolder(data: FormData) {
 export async function createMemberCourseAction(data: FormData) {
   const { user } = await requireMemberLibraryAccess();
   if (!user.departmentId) redirect("/member/library?error=" + encodeURIComponent("لا يوجد قسم مرتبط بحسابك."));
+  let result: Awaited<ReturnType<typeof createOrAttachLibraryCourse>>;
   try {
     const input = validateLibraryCourseInput(Object.fromEntries(data));
-    const result = await createOrAttachLibraryCourse(input, user.departmentId, String(data.get("confirmExisting")) === "true");
-    refresh(result.courseId);
-    redirect(`/member/library?course=${result.courseId}&success=${encodeURIComponent(result.attached ? "تم ربط المساق ومحتواه بقسمك." : "تمت إضافة المساق.")}`);
+    result = await createOrAttachLibraryCourse(input, user.departmentId, String(data.get("confirmExisting")) === "true");
   } catch (error) {
     const value = error instanceof LibraryValidationError ? error.message : "تعذر إضافة المساق.";
     redirect(`/member/library?error=${encodeURIComponent(value)}`);
   }
+  refresh(result.courseId);
+  redirect(`/member/library?course=${result.courseId}&success=${encodeURIComponent(result.attached ? "تم ربط المساق ومحتواه بقسمك." : "تمت إضافة المساق.")}`);
 }
 
 async function moveMemberItem(data: FormData, kind: "folder" | "file") {

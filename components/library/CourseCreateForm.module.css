@@ -1,0 +1,5 @@
+.form { display: grid; gap: .65rem; min-width: min(20rem, 80vw); }
+.form input, .form select, .form textarea { width: 100%; }
+.note { margin: 0; color: #52606d; font-size: .82rem; }
+.match { display: grid; gap: .3rem; padding: .7rem; border: 1px solid #0f8a6a; border-radius: 6px; background: #effbf7; color: #123b31; }
+.match span, .match small { overflow-wrap: anywhere; }

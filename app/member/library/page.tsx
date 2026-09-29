@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { ArrowRight, Download, ExternalLink, FileText, Folder, Link2, Plus } from "lucide-react";
 import LibraryUploader from "@/components/admin/library/LibraryUploader";
+import CourseCreateForm from "@/components/library/CourseCreateForm";
+import OrderButtons from "@/components/library/OrderButtons";
 import { levelNames, semesterNames } from "@/lib/library/levels";
 import { requireMemberLibraryAccess } from "@/lib/library/member";
 import { directLibraryChildren, isVisibleLibraryFolderPath, libraryFolderBreadcrumb } from "@/lib/library/tree";
 import { prisma } from "@/lib/prisma";
-import { addMemberLibraryFolder, addMemberLibraryLink } from "./actions";
+import { addMemberLibraryFolder, addMemberLibraryLink, createMemberCourseAction, moveMemberFileAction, moveMemberFolderAction } from "./actions";
 import styles from "./library.module.css";
 
 export const dynamic = "force-dynamic";
@@ -66,6 +68,7 @@ export default async function MemberLibraryPage({ searchParams }: { searchParams
       <div className={styles.layout}>
         <nav className={styles.courseNav} aria-label="مساقات القسم">
           <h2>المساقات</h2>
+          <details className={styles.addControl}><summary><Plus size={17}/> إضافة مساق</summary><CourseCreateForm action={createMemberCourseAction}/></details>
           {levelNames.map((name, index) => {
             const levelCourses = courses.filter((item) => item.level === index + 1);
             if (!levelCourses.length) return null;
@@ -86,9 +89,8 @@ export default async function MemberLibraryPage({ searchParams }: { searchParams
               </form></details>
             </div>
             <nav className={styles.breadcrumb} aria-label="مسار المجلد"><Link href={href(course.id)}>جذر المساق</Link>{folderBreadcrumb.map((item) => <span key={item.id}>/<Link href={href(course.id, item.id)}>{item.name}</Link></span>)}</nav>
-            <nav className={styles.folders} aria-label="مجلدات المساق">{folders.map((item) => <Link href={href(course.id, item.id)} key={item.id}>
-              <Folder size={18} /><span>{item.name}<small>{item._count.links} رابط · {item._count.files} ملف</small></span>
-            </Link>)}{!folders.length && <p className={styles.empty}>{folder ? "لا توجد مجلدات فرعية هنا." : "لا توجد مجلدات بعد."}</p>}</nav>
+            {course.departments.length > 1 && <p className={styles.success}>مساق مشترك مع {course.departments.map((item) => item.department.nameAr).join("، ")}. المحتوى متزامن بين الأقسام.</p>}
+            <nav className={styles.folders} aria-label="مجلدات المساق">{folders.map((item, index) => <div key={item.id}><Link href={href(course.id, item.id)}><Folder size={18}/><span>{item.name}<small>{item._count.links} رابط · {item._count.files} ملف</small></span></Link><OrderButtons action={moveMemberFolderAction} itemId={item.id} itemName={item.name} itemField="folderId" first={index === 0} last={index === folders.length - 1} fields={{ course: course.id, folder: folder?.id ?? "" }}/></div>)}{!folders.length && <p className={styles.empty}>{folder ? "لا توجد مجلدات فرعية هنا." : "لا توجد مجلدات بعد."}</p>}</nav>
             {folder && <section className={styles.folderContent}>
               <div className={styles.folderHead}><h3>{folder.name}</h3>
                 <details className={styles.addControl}><summary><Plus size={17} /> رابط</summary><form action={addMemberLibraryLink} className={styles.form}>
@@ -99,7 +101,7 @@ export default async function MemberLibraryPage({ searchParams }: { searchParams
                 </form></details>
               </div>
               {links.length > 0 && <div className={styles.items}>{links.map((item) => <a href={item.url} target="_blank" rel="noopener noreferrer" key={item.id}><Link2 size={17} /><span>{item.title}</span><ExternalLink size={16} /></a>)}</div>}
-              {files.length > 0 && <div className={styles.items}>{files.map((item) => <a href={`/member/library/files/${item.id}?download=1`} key={item.id}><FileText size={17} /><span>{item.title}</span><Download size={16} /></a>)}</div>}
+              {files.length > 0 && <div className={styles.items}>{files.map((item, index) => <div key={item.id}><a href={`/member/library/files/${item.id}?download=1`}><FileText size={17}/><span>{item.title}</span><Download size={16}/></a><OrderButtons action={moveMemberFileAction} itemId={item.id} itemName={item.title} itemField="fileId" first={index === 0} last={index === files.length - 1} fields={{ course: course.id, folder: folder.id }}/></div>)}</div>}
               <LibraryUploader folderId={folder.id} uploadUrl="/member/library/upload" />
             </section>}
           </>}
