@@ -34,7 +34,7 @@ export async function resolveLibrarySelection(user: PermissionUser, params: { de
   const allFolders = selectedCourse ? await prisma.libraryFolder.findMany({ where: { courseId: selectedCourse.id }, include: { _count: { select: { files: true, links: true } } }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { id: "asc" }] }) : [];
   const { folders, selectedFolder, folderBreadcrumb } = resolveLibraryFolderNavigation(allFolders, params.folder);
   const files = selectedFolder ? await prisma.libraryFile.findMany({ where: { folderId: selectedFolder.id }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { title: "asc" }] }) : [];
-  const links = selectedFolder ? await prisma.libraryLink.findMany({ where: { folderId: selectedFolder.id }, orderBy: [{ createdAt: "desc" }, { title: "asc" }] }) : [];
+  const links = selectedFolder ? await prisma.libraryLink.findMany({ where: { folderId: selectedFolder.id }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { title: "asc" }] }) : [];
   return { departments, selectedDepartment, courses, selectedCourse, folders, selectedFolder, folderBreadcrumb, files, links };
 }
 

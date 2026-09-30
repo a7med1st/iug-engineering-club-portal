@@ -417,12 +417,13 @@ model LibraryLink {
   folderId  String
   title     String
   url       String
+  sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   folder LibraryFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
 
-  @@index([folderId, createdAt])
+  @@index([folderId, sortOrder, createdAt])
 }
 
 // =========================================================

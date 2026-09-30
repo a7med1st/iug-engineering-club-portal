@@ -86,11 +86,25 @@ export async function moveMemberFileAction(data: FormData) {
   back(String(data.get("course") ?? ""), String(data.get("folder") ?? "") || null, "success", "تم تحديث ترتيب الملف.");
 }
 
+export async function moveMemberLinkAction(data: FormData) {
+  const direction = String(data.get("direction"));
+  if (direction !== "up" && direction !== "down") throw new LibraryValidationError("اتجاه الترتيب غير صالح.");
+  const link = await prisma.libraryLink.findUnique({ where: { id: String(data.get("linkId") ?? "") }, select: { id: true, folderId: true } });
+  if (!link) throw new LibraryValidationError("الرابط غير موجود.");
+  const { folder } = await requireMemberLibraryFolder(link.folderId);
+  const siblings = await prisma.libraryLink.findMany({ where: { folderId: folder.id }, select: { id: true, sortOrder: true, createdAt: true } });
+  const change = libraryAdjacentSwap(siblings, link.id, direction);
+  await prisma.$transaction([...change.normalized, ...change.swap].map((item) => prisma.libraryLink.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } })));
+  refresh(folder.courseId, folder.id);
+  back(folder.courseId, folder.id, "success", "تم تحديث ترتيب الرابط.");
+}
+
 export async function addMemberLibraryLink(data: FormData) {
   const { folder } = await requireMemberLibraryFolder(String(data.get("folderId") ?? ""));
   try {
     const input = validateLibraryLinkInput(Object.fromEntries(data));
-    await prisma.libraryLink.create({ data: { folderId: folder.id, ...input } });
+    const last = await prisma.libraryLink.aggregate({ where: { folderId: folder.id }, _max: { sortOrder: true } });
+    await prisma.libraryLink.create({ data: { folderId: folder.id, ...input, sortOrder: (last._max.sortOrder ?? -1) + 1 } });
     refresh(folder.courseId, folder.id);
     back(folder.courseId, folder.id, "success", "تمت إضافة الرابط.");
   } catch (error) {

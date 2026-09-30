@@ -1,8 +1,9 @@
 import { ExternalLink, Link2, Pencil, Plus, Trash2 } from "lucide-react";
-import { createLinkAction, deleteLinkAction, updateLinkAction } from "@/app/admin/library/actions";
+import { createLinkAction, deleteLinkAction, moveLinkAction, updateLinkAction } from "@/app/admin/library/actions";
+import OrderButtons from "@/components/library/OrderButtons";
 import styles from "./LibraryManager.module.css";
 
-type LinkItem = { id: string; title: string; url: string; createdAt: Date };
+type LinkItem = { id: string; title: string; url: string; sortOrder: number; createdAt: Date };
 
 export default function LibraryLinks({ folderId, links, department, course }: {
   folderId: string;
@@ -29,10 +30,11 @@ export default function LibraryLinks({ folderId, links, department, course }: {
         </form>
       </details>
     </div>
-    {links.length ? <div className={styles.fileList}>{links.map((link) => <article key={link.id}>
+    {links.length ? <div className={styles.fileList}>{links.map((link, index) => <article key={link.id}>
       <Link2 size={20} aria-hidden="true" />
       <div><strong>{link.title}</strong><small dir="ltr">{link.url}</small></div>
       <div className={styles.actions}>
+        <OrderButtons action={moveLinkAction} itemId={link.id} itemName={link.title} itemField="linkId" first={index === 0} last={index === links.length - 1} fields={{ department, course, folder: folderId }} />
         <a href={link.url} target="_blank" rel="noopener noreferrer" title="فتح الرابط" aria-label={`فتح ${link.title}`}><ExternalLink size={17} /></a>
         <details><summary title="تعديل الرابط" aria-label={`تعديل ${link.title}`}><Pencil size={16} /></summary>
           <form action={updateLinkAction} className={styles.form}>

@@ -10,6 +10,10 @@ const sharedCoursesMigration = await readFile(
   new URL("../prisma/migrations/20260929120000_share_library_courses_and_order_files/migration.sql", import.meta.url),
   "utf8",
 ).catch(() => "");
+const linkOrderingMigration = await readFile(
+  new URL("../prisma/migrations/20260930120000_order_library_links/migration.sql", import.meta.url),
+  "utf8",
+).catch(() => "");
 
 for (const model of ["LibraryCourse", "LibraryCourseDepartment", "LibraryFolder", "LibraryFile"]) {
   assert.match(schema, new RegExp(`model ${model} \\{`));
@@ -29,6 +33,9 @@ assert.match(nestedFoldersMigration, /FOREIGN KEY \("parentId"\)[\s\S]*REFERENCE
 assert.match(schema, /normalizedCode\s+String\?\s+@unique/);
 assert.match(schema, /model LibraryCourseDepartment \{[\s\S]*courseId\s+String[\s\S]*departmentId\s+String[\s\S]*level\s+Int[\s\S]*semester\s+Int\s+@default\(1\)[\s\S]*sortOrder\s+Int\s+@default\(0\)[\s\S]*@@id\(\[courseId, departmentId\]\)[\s\S]*@@index\(\[departmentId, level, semester, sortOrder\]\)/);
 assert.match(schema, /model LibraryFile \{[\s\S]*sortOrder\s+Int\s+@default\(0\)[\s\S]*@@index\(\[folderId, sortOrder, createdAt\]\)/);
+assert.match(schema, /model LibraryLink \{[\s\S]*sortOrder\s+Int\s+@default\(0\)[\s\S]*@@index\(\[folderId, sortOrder, createdAt\]\)/);
+assert.match(linkOrderingMigration, /ADD COLUMN\s+"sortOrder" INTEGER NOT NULL DEFAULT 0/i);
+assert.match(linkOrderingMigration, /ROW_NUMBER\(\) OVER \(PARTITION BY "folderId" ORDER BY "createdAt" DESC, "title", "id"\)/i);
 assert.match(sharedCoursesMigration, /CREATE TABLE "LibraryCourseDepartment"/);
 assert.match(sharedCoursesMigration, /INSERT INTO "LibraryCourseDepartment"[\s\S]*SELECT[\s\S]*"departmentId"[\s\S]*"level"[\s\S]*"semester"[\s\S]*"sortOrder"/i);
 assert.match(sharedCoursesMigration, /ROW_NUMBER\(\) OVER \(PARTITION BY "folderId" ORDER BY "createdAt", "id"\)/i);

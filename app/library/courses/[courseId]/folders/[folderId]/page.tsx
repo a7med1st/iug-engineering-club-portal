@@ -25,7 +25,7 @@ export default async function LibraryFolderPage({ params, searchParams }: {
   const linkWhere = { folderId: folder.id, ...(query ? { title: { contains: query, mode: "insensitive" as const } } : {}) };
   const [totalFiles, links] = await Promise.all([
     prisma.libraryFile.count({ where: fileWhere }),
-    prisma.libraryLink.findMany({ where: linkWhere, orderBy: [{ createdAt: "desc" }, { title: "asc" }], select: { id: true, title: true, url: true } }),
+    prisma.libraryLink.findMany({ where: linkWhere, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { title: "asc" }], select: { id: true, title: true, url: true } }),
   ]);
   const pageCount = Math.max(1, Math.ceil(totalFiles / pageSize));
   const currentPage = Math.min(page, pageCount);

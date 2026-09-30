@@ -6,7 +6,7 @@ export default function OrderButtons({ action, itemId, itemName, itemField, firs
   action: Action;
   itemId: string;
   itemName: string;
-  itemField: "folderId" | "fileId";
+  itemField: "folderId" | "fileId" | "linkId";
   first: boolean;
   last: boolean;
   fields?: Record<string, string>;

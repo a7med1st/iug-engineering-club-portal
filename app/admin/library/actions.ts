@@ -120,7 +120,8 @@ export async function createLinkAction(data: FormData) {
     const folder = await requireLibraryFolder(text(data, "folderId"));
     if (!folder) throw new LibraryValidationError("المجلد غير موجود.");
     const input = validateLibraryLinkInput(Object.fromEntries(data));
-    await prisma.libraryLink.create({ data: { folderId: folder.id, ...input } });
+    const last = await prisma.libraryLink.aggregate({ where: { folderId: folder.id }, _max: { sortOrder: true } });
+    await prisma.libraryLink.create({ data: { folderId: folder.id, ...input, sortOrder: (last._max.sortOrder ?? -1) + 1 } });
     refresh();
   } catch (error) { back(data, "error", message(error)); }
   back(data, "success", "تمت إضافة الرابط.");
@@ -147,7 +148,7 @@ export async function deleteLinkAction(data: FormData) {
   back(data, "success", "تم حذف الرابط.");
 }
 
-async function move(data: FormData, kind: "folder" | "file") {
+async function move(data: FormData, kind: "folder" | "file" | "link") {
   const direction = text(data, "direction");
   if (direction !== "up" && direction !== "down") throw new LibraryValidationError("اتجاه الترتيب غير صالح.");
   if (kind === "folder") {
@@ -158,7 +159,7 @@ async function move(data: FormData, kind: "folder" | "file") {
       for (const item of change.normalized) await tx.libraryFolder.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } });
       for (const item of change.swap) await tx.libraryFolder.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } });
     });
-  } else {
+  } else if (kind === "file") {
     const file = await requireLibraryFile(text(data, "fileId")); if (!file) throw new LibraryValidationError("الملف غير موجود.");
     const record = await prisma.libraryFile.findUnique({ where: { id: file.id }, select: { folderId: true } }); if (!record) throw new LibraryValidationError("الملف غير موجود.");
     await prisma.$transaction(async (tx) => {
@@ -166,6 +167,15 @@ async function move(data: FormData, kind: "folder" | "file") {
       const change = libraryAdjacentSwap(siblings, file.id, direction);
       for (const item of change.normalized) await tx.libraryFile.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } });
       for (const item of change.swap) await tx.libraryFile.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } });
+    });
+  } else {
+    const link = await requireLibraryLink(text(data, "linkId")); if (!link) throw new LibraryValidationError("الرابط غير موجود.");
+    const record = await prisma.libraryLink.findUnique({ where: { id: link.id }, select: { folderId: true } }); if (!record) throw new LibraryValidationError("الرابط غير موجود.");
+    await prisma.$transaction(async (tx) => {
+      const siblings = await tx.libraryLink.findMany({ where: { folderId: record.folderId }, select: { id: true, sortOrder: true, createdAt: true } });
+      const change = libraryAdjacentSwap(siblings, link.id, direction);
+      for (const item of change.normalized) await tx.libraryLink.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } });
+      for (const item of change.swap) await tx.libraryLink.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } });
     });
   }
   refresh();
@@ -179,4 +189,9 @@ export async function moveFolderAction(data: FormData) {
 export async function moveFileAction(data: FormData) {
   try { await move(data, "file"); } catch (error) { back(data, "error", message(error)); }
   back(data, "success", "تم تحديث ترتيب الملف.");
+}
+
+export async function moveLinkAction(data: FormData) {
+  try { await move(data, "link"); } catch (error) { back(data, "error", message(error)); }
+  back(data, "success", "تم تحديث ترتيب الرابط.");
 }

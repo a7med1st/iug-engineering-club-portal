@@ -7,7 +7,7 @@ import { levelNames, semesterNames } from "@/lib/library/levels";
 import { requireMemberLibraryAccess } from "@/lib/library/member";
 import { directLibraryChildren, isVisibleLibraryFolderPath, libraryFolderBreadcrumb } from "@/lib/library/tree";
 import { prisma } from "@/lib/prisma";
-import { addMemberLibraryFolder, addMemberLibraryLink, createMemberCourseAction, moveMemberFileAction, moveMemberFolderAction } from "./actions";
+import { addMemberLibraryFolder, addMemberLibraryLink, createMemberCourseAction, moveMemberFileAction, moveMemberFolderAction, moveMemberLinkAction } from "./actions";
 import styles from "./library.module.css";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +40,7 @@ export default async function MemberLibraryPage({ searchParams }: { searchParams
   const folderBreadcrumb = folder ? libraryFolderBreadcrumb(allFolders, folder.id) ?? [] : [];
   const folders = directLibraryChildren(allFolders, folder?.id ?? null).filter((item) => item.isVisible);
   const [links, files] = folder ? await Promise.all([
-    prisma.libraryLink.findMany({ where: { folderId: folder.id }, select: { id: true, title: true, url: true }, orderBy: [{ createdAt: "desc" }, { title: "asc" }] }),
+    prisma.libraryLink.findMany({ where: { folderId: folder.id }, select: { id: true, title: true, url: true, sortOrder: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { title: "asc" }] }),
     prisma.libraryFile.findMany({ where: { folderId: folder.id }, select: { id: true, title: true, mimeType: true, sortOrder: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { title: "asc" }], take: 30 }),
   ]) : [[], []];
   const href = (courseId?: string, folderId?: string) => {
@@ -100,7 +100,7 @@ export default async function MemberLibraryPage({ searchParams }: { searchParams
                   <button type="submit">إضافة الرابط</button>
                 </form></details>
               </div>
-              {links.length > 0 && <div className={styles.items}>{links.map((item) => <a href={item.url} target="_blank" rel="noopener noreferrer" key={item.id}><Link2 size={17} /><span>{item.title}</span><ExternalLink size={16} /></a>)}</div>}
+              {links.length > 0 && <div className={styles.items}>{links.map((item, index) => <div key={item.id}><a href={item.url} target="_blank" rel="noopener noreferrer"><Link2 size={17} /><span>{item.title}</span><ExternalLink size={16} /></a><OrderButtons action={moveMemberLinkAction} itemId={item.id} itemName={item.title} itemField="linkId" first={index === 0} last={index === links.length - 1} fields={{ course: course.id, folder: folder.id }}/></div>)}</div>}
               {files.length > 0 && <div className={styles.items}>{files.map((item, index) => <div key={item.id}><a href={`/member/library/files/${item.id}?download=1`}><FileText size={17}/><span>{item.title}</span><Download size={16}/></a><OrderButtons action={moveMemberFileAction} itemId={item.id} itemName={item.title} itemField="fileId" first={index === 0} last={index === files.length - 1} fields={{ course: course.id, folder: folder.id }}/></div>)}</div>}
               <LibraryUploader folderId={folder.id} uploadUrl="/member/library/upload" />
             </section>}
