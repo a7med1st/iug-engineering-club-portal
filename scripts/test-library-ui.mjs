@@ -28,4 +28,5 @@ assert.match(courseForm, /confirmRef\.current\.value = "false"/);
 assert.match(uploader, /for \(const file of files\)/);
 assert.match(uploader, /body\.append\("files", file\)/);
 assert.match(uploader, /xhr\.status === 413/);
+assert.doesNotMatch(uploader, /accept=/);
 console.log("Library UI contract tests passed.");

@@ -29,14 +29,31 @@ function validZip(buffer: Buffer) {
 export async function validateLibraryUpload(file: File): Promise<ValidatedLibraryFile> {
   if (!(file instanceof File) || file.size === 0) throw new UploadValidationError("اختر ملفًا صالحًا.", "EMPTY");
   if (file.size > LIBRARY_MAX_FILE_BYTES) throw new UploadValidationError("حجم الملف أكبر من 25MB.", "SIZE");
-  const mime = normalizeMime(file.type);
+  const normalizedMime = normalizeMime(file.type);
+  const mime = /^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/.test(normalizedMime)
+    ? normalizedMime
+    : "application/octet-stream";
   const extension = path.extname(file.name).toLowerCase();
   if (["image/jpeg", "image/png", "image/webp"].includes(mime)) {
     const image = await validateAndProcessImage(file, { maxBytes: LIBRARY_MAX_FILE_BYTES, maxWidth: 8000, maxHeight: 8000, maxPixels: 32_000_000 });
     return { ...image, title: path.basename(image.originalName, path.extname(image.originalName)), storageKey: `library/${randomUUID()}${image.extension}` };
   }
   const rule = RULES.get(mime);
-  if (!rule) throw new UploadValidationError("نوع الملف غير مسموح.", "TYPE");
+  if (!rule) {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const originalName = sanitizeOriginalFilename(file.name);
+    const originalExtension = path.extname(originalName).toLowerCase();
+    const safeExtension = /^\.[a-z0-9][a-z0-9._+-]{0,19}$/i.test(originalExtension) ? originalExtension : "";
+    return {
+      buffer,
+      mime,
+      extension: safeExtension,
+      originalName,
+      title: path.basename(originalName, originalExtension),
+      size: buffer.length,
+      storageKey: `library/${randomUUID()}${safeExtension}`,
+    };
+  }
   if (!rule.extensions.includes(extension)) throw new UploadValidationError("امتداد الملف لا يطابق نوعه.", "EXTENSION");
   const buffer = Buffer.from(await file.arrayBuffer());
   if (mime === "application/pdf") {

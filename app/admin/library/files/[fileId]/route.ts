@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS, canAccessDepartment, hasPermission } from "@/lib/permissions";
 import { readLibraryFile } from "@/lib/library/storage";
+import { isPreviewableLibraryMime } from "@/lib/library/file-response";
 
 function disposition(name: string, inline: boolean) {
   const safe = name.replace(/["\\\r\n]/g, "_");
@@ -17,7 +18,7 @@ export async function GET(request: Request, context: { params: Promise<{ fileId:
   const stored = await readLibraryFile(file.storageKey);
   if (!stored?.stream) return new Response(null, { status: 404 });
   const download = new URL(request.url).searchParams.get("download") === "1";
-  const previewable = file.mimeType === "application/pdf" || file.mimeType.startsWith("image/");
+  const previewable = isPreviewableLibraryMime(file.mimeType);
   const headers = new Headers();
   stored.headers.forEach((value, key) => headers.set(key, value));
   headers.set("content-type", file.mimeType);

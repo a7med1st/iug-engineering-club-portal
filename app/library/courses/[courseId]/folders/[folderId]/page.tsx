@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { levelNames } from "@/lib/library/levels";
 import { getStudentLibraryFolder } from "@/lib/library/student";
 import { directLibraryChildren } from "@/lib/library/tree";
+import { isPreviewableLibraryMime } from "@/lib/library/file-response";
 import styles from "../../../../library.module.css";
 
 export const dynamic = "force-dynamic";
@@ -68,7 +69,7 @@ export default async function LibraryFolderPage({ params, searchParams }: {
 
     <section className={styles.section}><div className={styles.sectionHeading}><h2>الملفات</h2><p>{totalFiles} ملف</p></div>
       {files.length ? <div className={styles.resourceList}>{files.map((file) => {
-        const previewable = file.mimeType === "application/pdf" || file.mimeType.startsWith("image/");
+        const previewable = isPreviewableLibraryMime(file.mimeType);
         const type = file.mimeType === "application/pdf" ? "PDF" : file.mimeType.split("/").pop()?.toUpperCase() ?? "ملف";
         return <div className={styles.resourceRow} key={file.id}>
           <FileText size={20} aria-hidden="true" />

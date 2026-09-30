@@ -64,7 +64,7 @@ export default function LibraryUploader({ folderId, uploadUrl = "/admin/library/
   return <div className={styles.uploader} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); choose(e.dataTransfer.files); }}>
     <UploadCloud size={30} aria-hidden="true" />
     <strong>اسحب الملفات هنا أو اخترها</strong><span>حتى 10 ملفات، 25MB لكل ملف</span>
-    <input ref={input} hidden type="file" multiple accept=".pdf,.docx,.pptx,.xlsx,.zip,.jpg,.jpeg,.png,.webp" onChange={(e) => choose(e.target.files)} />
+    <input ref={input} hidden type="file" multiple onChange={(e) => choose(e.target.files)} />
     <div className={styles.actions}><button type="button" className="btn secondary" onClick={() => input.current?.click()}>اختيار الملفات</button><button type="button" className="btn primary" disabled={!files.length || progress !== null} onClick={upload}>رفع الملفات</button></div>
     {!!files.length && <ul>{files.map((file) => <li key={`${file.name}-${file.size}`}>{file.name}</li>)}</ul>}
     {progress !== null && <progress max="100" value={progress}>{progress}%</progress>}
