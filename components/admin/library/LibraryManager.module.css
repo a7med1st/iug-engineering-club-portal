@@ -11,3 +11,5 @@
 .semesterGroup{margin:10px 0 4px;padding-inline-start:10px;border-inline-start:2px solid var(--border,#dbe6ef)}.semesterGroup h3{margin:0;color:var(--muted,#64748b);font-size:.78rem}
 .breadcrumb{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:14px 0;color:var(--muted,#64748b);font-size:.84rem}.breadcrumb span{display:flex;align-items:center;gap:7px;min-width:0}.breadcrumb a{color:#0875d1;text-decoration:none;overflow-wrap:anywhere}.currentFolder{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding-bottom:12px;border-bottom:1px solid var(--border,#e4ebf1)}.currentFolder h3{margin:0;font-size:1rem;overflow-wrap:anywhere}
 .shared{max-width:58ch;color:#176b55!important;overflow-wrap:anywhere}
+.actions>details[open]>.form,.linkSection .actions>details[open]>.form{position:fixed;top:50%;inset-inline-start:auto;inset-inline-end:auto;left:50%;right:auto;transform:translate(-50%,-50%);width:min(380px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow-y:auto;box-sizing:border-box;z-index:100}
+.form input,.form select,.form textarea{min-width:0;width:100%;box-sizing:border-box}

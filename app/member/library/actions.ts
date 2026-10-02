@@ -6,8 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { requireMemberLibraryCourse, requireMemberLibraryFolder } from "@/lib/library/member";
 import { requireMemberLibraryAccess } from "@/lib/library/member";
 import { createOrAttachLibraryCourse } from "@/lib/library/courses";
+import { deleteLibraryFiles } from "@/lib/library/storage";
+import { libraryFolderDescendantIds } from "@/lib/library/tree";
+import { normalizeLibraryCourseCode } from "@/lib/library/course-code";
 import { libraryAdjacentSwap } from "@/lib/library/ordering";
-import { LibraryValidationError, validateLibraryCourseInput, validateLibraryFolderInput, validateLibraryLinkInput } from "@/lib/library/validation";
+import { LibraryValidationError, validateLibraryCourseInput, validateLibraryFileTitle, validateLibraryFolderInput, validateLibraryLinkInput } from "@/lib/library/validation";
 
 function back(courseId: string, folderId: string | null, kind: "success" | "error", message: string): never {
   const params = new URLSearchParams({ course: courseId, [kind]: message });
@@ -111,4 +114,92 @@ export async function addMemberLibraryLink(data: FormData) {
     if (error instanceof LibraryValidationError) back(folder.courseId, folder.id, "error", error.message);
     throw error;
   }
+}
+
+export async function updateMemberCourseAction(data: FormData) {
+  const { course } = await requireMemberLibraryCourse(String(data.get("courseId") ?? ""));
+  try {
+    const input = validateLibraryCourseInput(Object.fromEntries(data));
+    await prisma.$transaction([
+      prisma.libraryCourse.update({ where: { id: course.id }, data: { name: input.name, code: input.code, normalizedCode: normalizeLibraryCourseCode(input.code), description: input.description } }),
+      prisma.libraryCourseDepartment.update({ where: { courseId_departmentId: { courseId: course.id, departmentId: course.departmentId } }, data: { level: input.level, semester: input.semester, sortOrder: input.sortOrder } }),
+    ]);
+    refresh(course.id);
+  } catch (error) {
+    if (error instanceof LibraryValidationError) back(course.id, null, "error", error.message);
+    throw error;
+  }
+  back(course.id, null, "success", "تم تعديل المساق.");
+}
+
+export async function deleteMemberCourseAction(data: FormData) {
+  const { course } = await requireMemberLibraryCourse(String(data.get("courseId") ?? ""));
+  const placements = await prisma.libraryCourseDepartment.count({ where: { courseId: course.id } });
+  if (placements > 1) {
+    await prisma.libraryCourseDepartment.delete({ where: { courseId_departmentId: { courseId: course.id, departmentId: course.departmentId } } });
+  } else {
+    const files = await prisma.libraryFile.findMany({ where: { folder: { courseId: course.id } }, select: { storageKey: true } });
+    await deleteLibraryFiles(files.map((file) => file.storageKey));
+    await prisma.libraryCourse.delete({ where: { id: course.id } });
+  }
+  refresh(course.id);
+  redirect("/member/library?success=" + encodeURIComponent("تم حذف المساق."));
+}
+
+export async function updateMemberFolderAction(data: FormData) {
+  const { folder } = await requireMemberLibraryFolder(String(data.get("folderId") ?? ""));
+  const input = validateLibraryFolderInput({ name: data.get("name"), sortOrder: data.get("sortOrder"), isVisible: true });
+  await prisma.libraryFolder.update({ where: { id: folder.id }, data: input });
+  refresh(folder.courseId, folder.id);
+  back(folder.courseId, folder.id, "success", "تم تعديل المجلد.");
+}
+
+export async function deleteMemberFolderAction(data: FormData) {
+  const { folder } = await requireMemberLibraryFolder(String(data.get("folderId") ?? ""));
+  const folders = await prisma.libraryFolder.findMany({ where: { courseId: folder.courseId }, select: { id: true, courseId: true, parentId: true, name: true, sortOrder: true, isVisible: true } });
+  const subtreeIds = libraryFolderDescendantIds(folders, folder.id);
+  if (!subtreeIds) throw new LibraryValidationError("تعذر قراءة بنية المجلد.");
+  const files = await prisma.libraryFile.findMany({ where: { folderId: { in: subtreeIds } }, select: { storageKey: true } });
+  await deleteLibraryFiles(files.map((file) => file.storageKey));
+  await prisma.libraryFolder.delete({ where: { id: folder.id } });
+  refresh(folder.courseId, folder.parentId ?? undefined);
+  back(folder.courseId, folder.parentId, "success", "تم حذف المجلد.");
+}
+
+export async function updateMemberLinkAction(data: FormData) {
+  const link = await prisma.libraryLink.findUnique({ where: { id: String(data.get("linkId") ?? "") }, select: { id: true, folderId: true } });
+  if (!link) throw new LibraryValidationError("الرابط غير موجود.");
+  const { folder } = await requireMemberLibraryFolder(link.folderId);
+  const input = validateLibraryLinkInput(Object.fromEntries(data));
+  await prisma.libraryLink.update({ where: { id: link.id }, data: input });
+  refresh(folder.courseId, folder.id);
+  back(folder.courseId, folder.id, "success", "تم تعديل الرابط.");
+}
+
+export async function deleteMemberLinkAction(data: FormData) {
+  const link = await prisma.libraryLink.findUnique({ where: { id: String(data.get("linkId") ?? "") }, select: { id: true, folderId: true } });
+  if (!link) throw new LibraryValidationError("الرابط غير موجود.");
+  const { folder } = await requireMemberLibraryFolder(link.folderId);
+  await prisma.libraryLink.delete({ where: { id: link.id } });
+  refresh(folder.courseId, folder.id);
+  back(folder.courseId, folder.id, "success", "تم حذف الرابط.");
+}
+
+export async function updateMemberFileAction(data: FormData) {
+  const file = await prisma.libraryFile.findUnique({ where: { id: String(data.get("fileId") ?? "") }, select: { id: true, folderId: true } });
+  if (!file) throw new LibraryValidationError("الملف غير موجود.");
+  const { folder } = await requireMemberLibraryFolder(file.folderId);
+  await prisma.libraryFile.update({ where: { id: file.id }, data: { title: validateLibraryFileTitle(data.get("title")) } });
+  refresh(folder.courseId, folder.id);
+  back(folder.courseId, folder.id, "success", "تم تعديل اسم الملف.");
+}
+
+export async function deleteMemberFileAction(data: FormData) {
+  const file = await prisma.libraryFile.findUnique({ where: { id: String(data.get("fileId") ?? "") }, select: { id: true, folderId: true, storageKey: true } });
+  if (!file) throw new LibraryValidationError("الملف غير موجود.");
+  const { folder } = await requireMemberLibraryFolder(file.folderId);
+  await deleteLibraryFiles([file.storageKey]);
+  await prisma.libraryFile.delete({ where: { id: file.id } });
+  refresh(folder.courseId, folder.id);
+  back(folder.courseId, folder.id, "success", "تم حذف الملف.");
 }
