@@ -191,14 +191,25 @@ export default function RegisterForm({
       </label>
 
       <label>
-        القسم
+        الرقم الجامعي <span className="muted">(اختياري)</span>
+        <input
+          name="studentNumber"
+          inputMode="numeric"
+          pattern="[0-9]{5,20}"
+          minLength={5}
+          maxLength={20}
+          autoComplete="off"
+        />
+      </label>
+
+      <label>
+        التخصص <span className="muted">(اختياري)</span>
         <select
           name="departmentId"
           defaultValue=""
-          required
         >
-          <option value="" disabled>
-            اختر تخصصك
+          <option value="">
+            بدون تحديد
           </option>
           {departments.map((department) => (
             <option

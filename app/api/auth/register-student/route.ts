@@ -22,6 +22,10 @@ import {
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimits } from "@/lib/rate-limit";
 import { rejectCrossOriginRequest } from "@/lib/request-security";
+import {
+  optionalStudentRegistrationFields,
+  StudentRegistrationFieldError,
+} from "@/lib/student-registration";
 
 export async function POST(req: Request) {
   const crossOriginResponse = rejectCrossOriginRequest(req);
@@ -45,8 +49,16 @@ export async function POST(req: Request) {
       String(body.email || ""),
     );
     const password = String(body.password || "");
-    const departmentId =
-      String(body.departmentId || "").trim();
+    let optionalFields;
+    try {
+      optionalFields = optionalStudentRegistrationFields(body);
+    } catch (error) {
+      if (error instanceof StudentRegistrationFieldError) {
+        return NextResponse.json({ error: error.message, field: error.field }, { status: 400 });
+      }
+      throw error;
+    }
+    const { departmentId, studentNumber } = optionalFields;
 
     if (name.length < 2) {
       return NextResponse.json(
@@ -80,23 +92,14 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!departmentId) {
-      return NextResponse.json(
-        {
-          error: "يرجى اختيار تخصصك.",
-          field: "departmentId",
-        },
-        { status: 400 },
-      );
-    }
-
-    const departmentExists =
-      await prisma.department.findUnique({
+    const departmentExists = departmentId
+      ? await prisma.department.findUnique({
         where: { id: departmentId },
         select: { id: true },
-      });
+      })
+      : null;
 
-    if (!departmentExists) {
+    if (departmentId && !departmentExists) {
       return NextResponse.json(
         {
           error: "التخصص المختار غير موجود.",
@@ -143,6 +146,19 @@ export async function POST(req: Request) {
       );
     }
 
+    if (studentNumber) {
+      const numberExists = await prisma.user.findUnique({
+        where: { studentNumber },
+        select: { id: true },
+      });
+      if (numberExists) {
+        return NextResponse.json(
+          { error: "هذا الرقم الجامعي مسجل مسبقًا.", field: "studentNumber" },
+          { status: 409 },
+        );
+      }
+    }
+
     const passwordHash = await bcrypt.hash(
       password,
       12,
@@ -160,6 +176,7 @@ export async function POST(req: Request) {
                 passwordHash,
                 role: "STUDENT",
                 departmentId,
+                studentNumber,
               },
               select: {
                 id: true,
@@ -240,6 +257,13 @@ export async function POST(req: Request) {
         Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
+      const target = Array.isArray(error.meta?.target) ? error.meta.target.map(String) : [];
+      if (target.includes("studentNumber")) {
+        return NextResponse.json(
+          { error: "هذا الرقم الجامعي مسجل مسبقًا.", field: "studentNumber" },
+          { status: 409 },
+        );
+      }
       return NextResponse.json(
         {
           error:
