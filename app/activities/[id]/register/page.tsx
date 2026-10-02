@@ -102,15 +102,6 @@ export default async function ActivityRegisterPage({
         })
         : 0;
 
-    const remainingSeats =
-        activity.capacity > 0
-            ? Math.max(
-                activity.capacity -
-                occupiedSeats,
-                0,
-            )
-            : null;
-
     const isCapacityFull =
         activity.capacity > 0 &&
         occupiedSeats >= activity.capacity;
@@ -152,18 +143,6 @@ export default async function ActivityRegisterPage({
                                     activity.startsAt,
                                     activity.endsAt,
                                 )}
-                            </strong>
-                        </div>
-
-                        <div>
-                            <span>
-                                المقاعد المتبقية
-                            </span>
-
-                            <strong>
-                                {remainingSeats !== null
-                                    ? `${remainingSeats} مقعد`
-                                    : "غير محددة"}
                             </strong>
                         </div>
 
