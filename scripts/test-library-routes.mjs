@@ -30,6 +30,6 @@ assert.match(studentCourse, /parentId:\s*null/);
 assert.match(studentFolder, /directLibraryChildren/);
 assert.match(studentFolder, /folderBreadcrumb/);
 assert.match(studentFile, /isVisibleLibraryFolderPath/);
-assert.match(nextConfig, /middlewareClientMaxBodySize:\s*"32mb"/);
-assert.match(nginx, /client_max_body_size\s+32m;/);
+assert.match(nextConfig, /middlewareClientMaxBodySize:\s*"128mb"/);
+assert.match(nginx, /client_max_body_size\s+128m;/);
 console.log("Library route contract tests passed.");

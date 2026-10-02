@@ -2,7 +2,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 
 import { normalizeMime, sanitizeOriginalFilename, UploadValidationError, validateAndProcessImage } from "@/lib/upload-security";
-import { LIBRARY_MAX_FILE_BYTES } from "./constants";
+import { LIBRARY_MAX_FILE_BYTES, LIBRARY_MAX_FILE_MB } from "./constants";
 
 const RULES = new Map([
   ["application/pdf", { extensions: [".pdf"], canonical: ".pdf", marker: "%PDF-" }],
@@ -28,7 +28,7 @@ function validZip(buffer: Buffer) {
 
 export async function validateLibraryUpload(file: File): Promise<ValidatedLibraryFile> {
   if (!(file instanceof File) || file.size === 0) throw new UploadValidationError("اختر ملفًا صالحًا.", "EMPTY");
-  if (file.size > LIBRARY_MAX_FILE_BYTES) throw new UploadValidationError("حجم الملف أكبر من 25MB.", "SIZE");
+  if (file.size > LIBRARY_MAX_FILE_BYTES) throw new UploadValidationError(`حجم الملف أكبر من ${LIBRARY_MAX_FILE_MB}MB.`, "SIZE");
   const normalizedMime = normalizeMime(file.type);
   const mime = /^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/.test(normalizedMime)
     ? normalizedMime

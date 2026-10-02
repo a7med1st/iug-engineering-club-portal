@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadCloud } from "lucide-react";
+import { LIBRARY_MAX_FILE_MB, LIBRARY_MAX_FILES } from "@/lib/library/constants";
 import styles from "./LibraryManager.module.css";
 
 export default function LibraryUploader({ folderId, uploadUrl = "/admin/library/upload" }: { folderId: string; uploadUrl?: string }) {
@@ -11,7 +12,7 @@ export default function LibraryUploader({ folderId, uploadUrl = "/admin/library/
   const [files, setFiles] = useState<File[]>([]);
   const [progress, setProgress] = useState<number | null>(null);
   const [results, setResults] = useState<Array<{ name: string; ok: boolean; message?: string }>>([]);
-  const choose = (list: FileList | null) => setFiles(Array.from(list ?? []).slice(0, 10));
+  const choose = (list: FileList | null) => setFiles(Array.from(list ?? []).slice(0, LIBRARY_MAX_FILES));
   const uploadOne = (file: File, index: number, total: number) => new Promise<{ name: string; ok: boolean; message?: string }>((resolve) => {
     const body = new FormData();
     body.set("folderId", folderId);
@@ -63,7 +64,7 @@ export default function LibraryUploader({ folderId, uploadUrl = "/admin/library/
   };
   return <div className={styles.uploader} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); choose(e.dataTransfer.files); }}>
     <UploadCloud size={30} aria-hidden="true" />
-    <strong>اسحب الملفات هنا أو اخترها</strong><span>حتى 10 ملفات، 25MB لكل ملف</span>
+    <strong>اسحب الملفات هنا أو اخترها</strong><span>حتى {LIBRARY_MAX_FILES} ملفات، {LIBRARY_MAX_FILE_MB}MB لكل ملف</span>
     <input ref={input} hidden type="file" multiple onChange={(e) => choose(e.target.files)} />
     <div className={styles.actions}><button type="button" className="btn secondary" onClick={() => input.current?.click()}>اختيار الملفات</button><button type="button" className="btn primary" disabled={!files.length || progress !== null} onClick={upload}>رفع الملفات</button></div>
     {!!files.length && <ul>{files.map((file) => <li key={`${file.name}-${file.size}`}>{file.name}</li>)}</ul>}

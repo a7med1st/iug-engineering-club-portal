@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
+import { LIBRARY_MAX_FILE_BYTES } from "../lib/library/constants";
 import { validateLibraryUpload } from "../lib/library/file-validation";
 import { isPreviewableLibraryMime } from "../lib/library/file-response";
 
 async function main() {
+  assert.ok(LIBRARY_MAX_FILE_BYTES > 50 * 1024 * 1024, "Library uploads must allow files larger than 50MB.");
   const pdfBytes = new TextEncoder().encode("%PDF-1.4\nbody\n%%EOF");
   const valid = await validateLibraryUpload(new File([pdfBytes], "final.pdf", { type: "application/pdf" }));
   assert.equal(valid.mime, "application/pdf");

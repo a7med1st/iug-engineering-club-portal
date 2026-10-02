@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
   },
 
   experimental: {
-    middlewareClientMaxBodySize: "32mb",
+    middlewareClientMaxBodySize: "128mb",
     serverActions: {
       // الصورة الشخصية حتى 5MB + الغلاف حتى 8MB في نفس الفورم،
       // مع هامش بسيط لبيانات multipart وبقية الحقول.
