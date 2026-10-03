@@ -22,6 +22,7 @@
     "test:attendance-confirmation": "node --require ./scripts/node-platform-fallback.cjs --import tsx scripts/test-attendance-confirmation.ts",
     "test:activity-registration-ui": "node scripts/test-activity-registration-ui.mjs",
     "test:student-registration-options": "node --import tsx scripts/test-student-registration-options.ts",
+    "test:registration-account-links": "node --require ./scripts/node-platform-fallback.cjs --import tsx scripts/test-registration-account-links.ts",
     "test:certificate-template": "node --require ./scripts/node-platform-fallback.cjs --import tsx scripts/test-certificate-template.ts",
     "test:certificate-rendering": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --import tsx scripts/test-certificate-rendering.ts",
     "test:certificate-validity": "node --import tsx scripts/test-certificate-validity.ts",
@@ -70,6 +71,7 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/node": "^22.10.0",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.2.18",

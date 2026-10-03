@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
+import { registrationAccountLinkQuery } from "@/lib/registration-account-links";
 
 const COOKIE = "ec_session";
 const SESSION_ISSUER = "iug-engineering-club-portal";
@@ -147,6 +148,7 @@ export async function getCurrentUser(): Promise<{
       managedDepartmentIds: true,
       memberPermissions: true,
       sessionVersion: true,
+      emailVerifiedAt: true,
       mustChangePassword: true,
       department: {
         select: {
@@ -160,6 +162,10 @@ export async function getCurrentUser(): Promise<{
 
   if (!user || user.sessionVersion !== session.sessionVersion) {
     return null;
+  }
+
+  if (user.emailVerifiedAt && (user.role === "STUDENT" || user.role === "MEMBER")) {
+    await prisma.$executeRaw(registrationAccountLinkQuery(user.id));
   }
 
   return { session, user };
