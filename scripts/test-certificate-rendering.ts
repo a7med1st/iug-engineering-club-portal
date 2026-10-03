@@ -20,6 +20,8 @@ async function main(){
   assert.ok(edgeName.nameX>2 && edgeName.nameY>5,"Names near the template edge must be moved into view");
   const missingFont=await fitCertificateName({...compactInput,studentName:"آية محمد",settings:{...compactSettings,nameFontFamily:"Noto Kufi Arabic" as CertificateFontFamily}});
   assert.equal(missingFont.nameFontFamily,"Cairo","A blank font must fall back to a visible Arabic font");
+  const legacyThmanyah = await fitCertificateName({...compactInput,settings:{...compactSettings,nameFontFamily:"Thmanyah Sans"}});
+  assert.equal(legacyThmanyah.nameFontFamily,"Cairo","Legacy Thmanyah Arabic selections must use Cairo");
   const compactSource=await sharp({create:{width:531,height:376,channels:4,background:"white"}}).png().toBuffer();
   const compactRendered=await composeCertificate(compactSource,compactInput);
   assert.ok((await sharp(compactRendered).stats()).channels[0].min<255,"The fitted name must appear on the certificate");

@@ -1,5 +1,5 @@
 export type TextAlign = "left" | "center" | "right";
-export const CERTIFICATE_FONTS = ["Cairo", "Tajawal", "IBM Plex Sans Arabic", "Amiri", "Alexandria", "Thmanyah Sans"] as const;
+export const CERTIFICATE_FONTS = ["Cairo", "Tajawal", "IBM Plex Sans Arabic", "Amiri", "Alexandria"] as const;
 export const CERTIFICATE_ENGLISH_FONTS = ["Alexandria", "Thmanyah Sans", "Inter"] as const;
 export type CertificateFontFamily = (typeof CERTIFICATE_FONTS)[number] | (typeof CERTIFICATE_ENGLISH_FONTS)[number];
 export type CertificateTemplateSettings = { nameX:number;nameY:number;nameFontSize:number;nameFontFamily:CertificateFontFamily;nameEnglishFontFamily:CertificateFontFamily;nameBold:boolean;nameColor:string;nameAlign:TextAlign;titleVisible:boolean;titleX:number;titleY:number;titleFontSize:number;titleFontFamily:CertificateFontFamily;titleEnglishFontFamily:CertificateFontFamily;titleBold:boolean;titleColor:string;titleAlign:TextAlign;dateVisible:boolean;dateX:number;dateY:number;dateFontSize:number;dateFontFamily:CertificateFontFamily;dateEnglishFontFamily:CertificateFontFamily;dateBold:boolean;dateColor:string;dateAlign:TextAlign };
@@ -8,7 +8,7 @@ export function escapeSvgText(value:string){return value.replace(/&/g,"&amp;").r
 const arabicCharacter=/[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/u;
 export function certificateTextRuns(value:string,arabicFont:CertificateFontFamily,englishFont:CertificateFontFamily){
   return Array.from(value).reduce<{font:CertificateFontFamily;text:string}[]>((runs,char)=>{
-    const font=arabicCharacter.test(char)?arabicFont:englishFont;
+    const font=arabicCharacter.test(char)?(CERTIFICATE_FONTS.includes(arabicFont as (typeof CERTIFICATE_FONTS)[number])?arabicFont:"Cairo"):englishFont;
     const last=runs.at(-1);
     if(last?.font===font)last.text+=char;
     else runs.push({font,text:char});

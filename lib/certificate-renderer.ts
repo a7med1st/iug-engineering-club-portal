@@ -3,7 +3,7 @@ import path from "node:path";
 import { Resvg } from "@resvg/resvg-js";
 import sharp from "sharp";
 import { getPrivateBlob } from "@/lib/blob-storage";
-import { certificateTextRuns, escapeSvgText, type CertificateFontFamily, type CertificateTemplateSettings, type TextAlign } from "@/lib/certificate-template-settings";
+import { CERTIFICATE_FONTS, certificateTextRuns, escapeSvgText, type CertificateFontFamily, type CertificateTemplateSettings, type TextAlign } from "@/lib/certificate-template-settings";
 
 type RenderInput={width:number;height:number;settings:CertificateTemplateSettings;studentName:string;activityTitle:string;activityDate:Date|null};
 const fontFiles:Record<CertificateFontFamily,string>={Cairo:"cairo.ttf",Tajawal:"tajawal.ttf","IBM Plex Sans Arabic":"ibm-plex-sans-arabic.ttf",Amiri:"amiri.ttf",Alexandria:"alexandria.ttf","Thmanyah Sans":"thmanyah-sans.otf",Inter:"inter.ttf"};
@@ -35,7 +35,7 @@ async function nameBounds(input:RenderInput){
 
 export async function fitCertificateName(input:RenderInput){
   const margin=Math.min(8,Math.floor(Math.min(input.width,input.height)*.015));
-  let settings={...input.settings,nameFontFamily:fontFiles[input.settings.nameFontFamily]?input.settings.nameFontFamily:"Cairo"};
+  let settings={...input.settings,nameFontFamily:CERTIFICATE_FONTS.includes(input.settings.nameFontFamily as (typeof CERTIFICATE_FONTS)[number])?input.settings.nameFontFamily:"Cairo"};
   const visibleName=input.studentName.replace(/\p{Default_Ignorable_Code_Point}/gu, "").trim();
   if (!/[\p{L}\p{N}]/u.test(visibleName)) {
     console.error("Certificate name visibility check failed", {reason:"no_visible_characters",width:input.width,height:input.height,nameLength:input.studentName.length});
