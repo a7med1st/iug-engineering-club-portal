@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import sharp from "sharp";
-import { composeCertificate, fitCertificateName } from "../lib/certificate-renderer";
+import { buildCertificateOverlay, composeCertificate, fitCertificateName } from "../lib/certificate-renderer";
+import { Resvg } from "@resvg/resvg-js";
+import path from "node:path";
 import { CERTIFICATE_FONTS, type CertificateFontFamily, type CertificateTemplateSettings } from "../lib/certificate-template-settings";
 
 async function main(){
@@ -21,7 +23,14 @@ async function main(){
   const missingFont=await fitCertificateName({...compactInput,studentName:"آية محمد",settings:{...compactSettings,nameFontFamily:"Noto Kufi Arabic" as CertificateFontFamily}});
   assert.equal(missingFont.nameFontFamily,"Cairo","A blank font must fall back to a visible Arabic font");
   const legacyThmanyah = await fitCertificateName({...compactInput,settings:{...compactSettings,nameFontFamily:"Thmanyah Sans"}});
-  assert.equal(legacyThmanyah.nameFontFamily,"Cairo","Legacy Thmanyah Arabic selections must use Cairo");
+  assert.equal(legacyThmanyah.nameFontFamily,"Thmanyah Sans","Thmanyah Arabic selections must retain the requested font");
+  const thmanyahInput={width,height,settings:{...settings,nameFontFamily:"Thmanyah Sans" as const,titleVisible:false,dateVisible:false},studentName:"\u062b\u0645\u0627\u0646\u064a\u0629",activityTitle:"",activityDate:null};
+  const thmanyahOverlay=await buildCertificateOverlay(thmanyahInput);
+  const referenceOverlay=thmanyahOverlay.replaceAll('font-family="Thmanyah Sans"','font-family="thmanyah sans"');
+  const referenceLayer=new Resvg(referenceOverlay,{font:{fontFiles:[path.join(process.cwd(),"public/fonts/certificates/thmanyah-sans.otf")],loadSystemFonts:false}}).render().asPng();
+  const referenceImage=await sharp(source).composite([{input:Buffer.from(referenceLayer)}]).png().toBuffer();
+  const thmanyahImage=await composeCertificate(source,thmanyahInput);
+  assert.deepEqual(thmanyahImage,referenceImage,"Arabic Thmanyah must match the actual font rendered in isolation, not a fallback");
   const compactSource=await sharp({create:{width:531,height:376,channels:4,background:"white"}}).png().toBuffer();
   const compactRendered=await composeCertificate(compactSource,compactInput);
   assert.ok((await sharp(compactRendered).stats()).channels[0].min<255,"The fitted name must appear on the certificate");

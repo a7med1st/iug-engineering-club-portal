@@ -32,7 +32,7 @@ if (parsed.ok) {
   assert.deepEqual([metadata.width, metadata.height], [1200, 850]);
 }
 valid.set("nameFontFamily", "Thmanyah Sans");
-assert.equal(parseTemplateSettings(valid).ok, false, "Thmanyah must not be accepted for Arabic text");
+assert.equal(parseTemplateSettings(valid).ok, true, "Thmanyah must be accepted for Arabic text");
 valid.set("nameFontFamily", "Cairo");
 valid.set("nameEnglishFontFamily", "Thmanyah Sans");
 assert.equal(parseTemplateSettings(valid).ok, true, "Thmanyah must remain available for English text");

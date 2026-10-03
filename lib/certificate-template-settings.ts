@@ -1,5 +1,5 @@
 export type TextAlign = "left" | "center" | "right";
-export const CERTIFICATE_FONTS = ["Cairo", "Tajawal", "IBM Plex Sans Arabic", "Amiri", "Alexandria"] as const;
+export const CERTIFICATE_FONTS = ["Cairo", "Tajawal", "IBM Plex Sans Arabic", "Amiri", "Alexandria", "Thmanyah Sans"] as const;
 export const CERTIFICATE_ENGLISH_FONTS = ["Alexandria", "Thmanyah Sans", "Inter"] as const;
 export type CertificateFontFamily = (typeof CERTIFICATE_FONTS)[number] | (typeof CERTIFICATE_ENGLISH_FONTS)[number];
 export type CertificateTemplateSettings = { nameX:number;nameY:number;nameFontSize:number;nameFontFamily:CertificateFontFamily;nameEnglishFontFamily:CertificateFontFamily;nameBold:boolean;nameColor:string;nameAlign:TextAlign;titleVisible:boolean;titleX:number;titleY:number;titleFontSize:number;titleFontFamily:CertificateFontFamily;titleEnglishFontFamily:CertificateFontFamily;titleBold:boolean;titleColor:string;titleAlign:TextAlign;dateVisible:boolean;dateX:number;dateY:number;dateFontSize:number;dateFontFamily:CertificateFontFamily;dateEnglishFontFamily:CertificateFontFamily;dateBold:boolean;dateColor:string;dateAlign:TextAlign };
