@@ -31,7 +31,7 @@
 
 .grid article {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
   gap: 14px;
   padding: 17px;
@@ -77,17 +77,45 @@
   font-size: .72rem;
 }
 
-.grid article > a {
+.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions a {
   display: inline-flex;
-  min-height: 38px;
   align-items: center;
-  padding: 0 12px;
-  border-radius: 9px;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  box-sizing: border-box;
   background: var(--blue);
   color: #fff;
   text-decoration: none;
-  font-size: .72rem;
-  font-weight: 850;
+  font-size: .78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.actions .downloadLink {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--ink);
+}
+
+.actions a:hover,
+.actions a:focus-visible {
+  filter: brightness(.92);
+}
+
+.actions a:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 .empty {
@@ -110,9 +138,17 @@
   .grid article {
     grid-template-columns: 44px minmax(0, 1fr);
   }
+}
 
-  .grid article > a {
-    grid-column: 1 / -1;
-    justify-content: center;
+@media (max-width: 420px) {
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .actions a {
+    padding: 0 8px;
+    white-space: normal;
+    text-align: center;
   }
 }

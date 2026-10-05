@@ -3,6 +3,8 @@ import Link from "next/link";
 import {
   Award,
   BadgeCheck,
+  Download,
+  Eye,
 } from "lucide-react";
 
 import {
@@ -177,13 +179,22 @@ export default async function StudentCertificatesPage() {
                   </p>
                 </div>
 
-                <Link
-                  href={`/certificates/${certificate.verificationCode}`}
-                  target="_blank"
-                >
-                  عرض الشهادة
-                </Link>
-                <Link href={`/certificates/${certificate.verificationCode}/download`}>تنزيل الشهادة</Link>
+                <div className={styles.actions}>
+                  <Link
+                    href={`/certificates/${certificate.verificationCode}`}
+                    target="_blank"
+                  >
+                    <Eye size={16} aria-hidden="true" />
+                    عرض الشهادة
+                  </Link>
+                  <Link
+                    href={`/certificates/${certificate.verificationCode}/download`}
+                    className={styles.downloadLink}
+                  >
+                    <Download size={16} aria-hidden="true" />
+                    تنزيل الشهادة
+                  </Link>
+                </div>
               </article>
             ),
           )}
