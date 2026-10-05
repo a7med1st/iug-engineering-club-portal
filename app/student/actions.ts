@@ -9,6 +9,7 @@ import {
   requirePermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { canWithdrawActivityRegistration } from "@/lib/activity-registration-withdrawal";
 import {
   UploadRateLimitError,
   enforceProfileUploadLimit,
@@ -464,6 +465,7 @@ export async function cancelActivityRegistration(
       select: {
         id: true,
         status: true,
+        checkedInAt: true,
 
         form: {
           select: {
@@ -471,7 +473,6 @@ export async function cancelActivityRegistration(
               select: {
                 id: true,
                 title: true,
-                startsAt: true,
               },
             },
           },
@@ -490,24 +491,11 @@ export async function cancelActivityRegistration(
   const activity =
     submission.form.activity;
 
-  if (
-    submission.status === "REJECTED"
-  ) {
+  if (!canWithdrawActivityRegistration(submission.status, submission.checkedInAt)) {
     return {
       success: false,
       message:
-        "لا يمكن إلغاء تسجيل مرفوض.",
-    };
-  }
-
-  if (
-    activity.startsAt &&
-    activity.startsAt <= new Date()
-  ) {
-    return {
-      success: false,
-      message:
-        "لا يمكن إلغاء التسجيل بعد بدء النشاط.",
+        "لا يمكن سحب تسجيل مرفوض أو تسجيل تم إثبات حضوره.",
     };
   }
 
@@ -517,6 +505,8 @@ export async function cancelActivityRegistration(
         where: {
           id: submission.id,
           userId: user.id,
+          status: { not: "REJECTED" },
+          checkedInAt: null,
         },
       });
 
@@ -524,7 +514,7 @@ export async function cancelActivityRegistration(
       return {
         success: false,
         message:
-          "تعذر إلغاء التسجيل. حاول مرة أخرى.",
+          "تعذر سحب التسجيل. حاول مرة أخرى.",
       };
     }
 
@@ -552,7 +542,7 @@ export async function cancelActivityRegistration(
     return {
       success: true,
       message:
-        "تم إلغاء تسجيلك في النشاط بنجاح.",
+        "تم سحب تسجيلك من النشاط بنجاح.",
     };
   } catch (error) {
     console.error(
@@ -563,7 +553,7 @@ export async function cancelActivityRegistration(
     return {
       success: false,
       message:
-        "تعذر إلغاء التسجيل حاليًا. حاول مرة أخرى.",
+        "تعذر سحب التسجيل حاليًا. حاول مرة أخرى.",
     };
   }
 }

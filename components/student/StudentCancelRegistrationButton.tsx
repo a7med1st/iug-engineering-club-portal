@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   X,
+  XCircle,
 } from "lucide-react";
 
 import {
@@ -68,7 +69,8 @@ export default function StudentCancelRegistrationButton({
           setConfirming(true)
         }
       >
-        إلغاء التسجيل
+        <XCircle size={17} aria-hidden="true" />
+        سحب التسجيل
       </button>
 
       {confirming && (
@@ -123,11 +125,11 @@ export default function StudentCancelRegistrationButton({
               <h3
                 id="cancel-registration-title"
               >
-                إلغاء التسجيل؟
+                سحب التسجيل؟
               </h3>
 
               <p>
-                أنت على وشك إلغاء تسجيلك
+                أنت على وشك سحب تسجيلك
                 في:
               </p>
 
@@ -136,7 +138,7 @@ export default function StudentCancelRegistrationButton({
               </strong>
 
               <small>
-                بعد الإلغاء سيتم حذف
+                بعد السحب سيتم حذف
                 تسجيلك وإجابات نموذج
                 التسجيل، وسيصبح المقعد
                 متاحًا لطالب آخر.
@@ -188,7 +190,7 @@ export default function StudentCancelRegistrationButton({
               >
                 {pending
                   ? "جارٍ الإلغاء..."
-                  : "نعم، إلغاء التسجيل"}
+                  : "نعم، سحب التسجيل"}
               </button>
             </form>
           </section>

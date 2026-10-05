@@ -17,6 +17,7 @@ import {
   requirePermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { canWithdrawActivityRegistration } from "@/lib/activity-registration-withdrawal";
 import StudentAcceptanceCard from "@/components/student/StudentAcceptanceCard";
 import styles from "./student.module.css";
 export const dynamic = "force-dynamic";
@@ -943,9 +944,10 @@ export default async function StudentDashboardPage({
                               />
                             )}
 
-                          {isUpcoming &&
-                            submission.status !==
-                            "REJECTED" && (
+                          {canWithdrawActivityRegistration(
+                            submission.status,
+                            submission.checkedInAt,
+                          ) && (
                               <StudentCancelRegistrationButton
                                 submissionId={
                                   submission.id
