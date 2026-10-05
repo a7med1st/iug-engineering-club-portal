@@ -4,6 +4,7 @@ import {
   Award,
   BookOpen,
   CalendarClock,
+  ChevronDown,
   CircleCheckBig,
   ClipboardList,
   Compass,
@@ -157,8 +158,6 @@ export default async function StudentDashboardPage({
 
             form: {
               select: {
-                title: true,
-
                 activity: {
                   select: {
                     id: true,
@@ -786,6 +785,11 @@ export default async function StudentDashboardPage({
                               عرض الإجابات
                               التي قدمتها
                             </small>
+                            <ChevronDown
+                              className={styles.registrationDetailsChevron}
+                              size={18}
+                              aria-hidden="true"
+                            />
                           </summary>
 
                           <div
@@ -799,16 +803,8 @@ export default async function StudentDashboardPage({
                               }
                             >
                               <div>
-                                <span>
-                                  نموذج التسجيل
-                                </span>
-
                                 <h4>
-                                  {
-                                    submission
-                                      .form
-                                      .title
-                                  }
+                                  {activity.title}
                                 </h4>
                               </div>
 
