@@ -163,7 +163,6 @@ export default async function StudentDashboardPage({
                   select: {
                     id: true,
                     title: true,
-                    description: true,
                     location: true,
                     startsAt: true,
                     capacity: true,
@@ -698,11 +697,6 @@ export default async function StudentDashboardPage({
                               }
                             </h3>
 
-                            <p>
-                              {
-                                activity.description
-                              }
-                            </p>
                           </div>
 
                           <div
