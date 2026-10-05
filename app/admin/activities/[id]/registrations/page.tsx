@@ -1599,8 +1599,8 @@ export default async function ActivityRegistrationsPage({
                                         )}
 
 
-                                        {submission.status !==
-                                            "APPROVED" && (
+                                        {submission.status ===
+                                            "SUBMITTED" && (
                                                 <form
                                                     action={
                                                         updateRegistrationStatus
@@ -1638,8 +1638,8 @@ export default async function ActivityRegistrationsPage({
                                             )}
 
 
-                                        {submission.status !==
-                                            "REJECTED" && (
+                                        {submission.status ===
+                                            "SUBMITTED" && (
                                                 <form
                                                     className="activity-registration-reject-form"
                                                     action={
