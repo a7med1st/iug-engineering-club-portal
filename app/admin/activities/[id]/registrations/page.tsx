@@ -1668,23 +1668,23 @@ export default async function ActivityRegistrationsPage({
                                                         value="REJECTED"
                                                     />
 
-                                                    <label className="activity-registration-reason-field">
-                                                        <span>سبب الرفض الذي سيظهر للطالب</span>
-                                                        <textarea
-                                                            name="rejectionReason"
-                                                            required
-                                                            maxLength={500}
-                                                            rows={2}
-                                                            placeholder="اكتب سبب الرفض"
-                                                        />
-                                                    </label>
-
                                                     <button
                                                         type="submit"
                                                         className="activity-registration-reject"
                                                     >
                                                         رفض
                                                     </button>
+
+                                                    <label className="activity-registration-reason-field">
+                                                        <span>سبب الرفض</span>
+                                                        <input
+                                                            type="text"
+                                                            name="rejectionReason"
+                                                            required
+                                                            maxLength={500}
+                                                            placeholder="اكتب السبب الذي سيظهر للطالب"
+                                                        />
+                                                    </label>
                                                 </form>
                                             )}
 

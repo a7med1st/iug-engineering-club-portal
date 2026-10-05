@@ -6662,36 +6662,36 @@ html[data-reload-intro="true"] .intro-gate {
 
 .activity-registration-review-actions {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
+    flex-wrap: nowrap;
+    align-items: center;
 
     gap: 8px;
 
     padding: 14px 20px;
+    overflow-x: auto;
+    scrollbar-width: thin;
 }
 
 .activity-registration-review-actions .activity-registration-reject-form {
     display: flex;
-    flex: 1 1 320px;
-    align-items: flex-end;
+    flex: 0 0 auto;
+    align-items: center;
     gap: 8px;
-    min-width: 0;
 }
 
 .activity-registration-reason-field {
-    display: grid;
-    flex: 1 1 auto;
-    gap: 6px;
-    min-width: 0;
-    max-width: 320px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     color: var(--ink);
     font-size: 12px;
     font-weight: 700;
+    white-space: nowrap;
 }
 
-.activity-registration-reason-field textarea {
-    width: 100%;
-    min-height: 72px;
+.activity-registration-reason-field input {
+    width: 230px;
+    min-height: 38px;
     box-sizing: border-box;
     padding: 9px 11px;
     border: 1px solid var(--line);
@@ -6699,7 +6699,6 @@ html[data-reload-intro="true"] .intro-gate {
     background: var(--surface, #fff);
     color: var(--ink);
     font: inherit;
-    resize: vertical;
 }
 
 .activity-registration-saved-reason {
@@ -6813,16 +6812,11 @@ html[data-reload-intro="true"] .intro-gate {
     }
 
     .activity-registration-review-actions .activity-registration-reject-form {
-        flex: 1 1 0;
         gap: 6px;
     }
 
-    .activity-registration-reason-field {
-        max-width: none;
-    }
-
-    .activity-registration-review-actions .activity-registration-reject-form textarea {
-        min-height: 56px;
+    .activity-registration-reason-field input {
+        width: 160px;
     }
 }
 
