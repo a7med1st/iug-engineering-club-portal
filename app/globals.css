@@ -6669,6 +6669,41 @@ html[data-reload-intro="true"] .intro-gate {
     padding: 14px 20px;
 }
 
+.activity-registration-reason-field {
+    display: grid;
+    gap: 6px;
+    width: min(100%, 320px);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.activity-registration-reason-field textarea {
+    width: 100%;
+    min-height: 72px;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface, #fff);
+    color: var(--ink);
+    font: inherit;
+    resize: vertical;
+}
+
+.activity-registration-saved-reason {
+    padding: 12px 20px;
+    border-top: 1px solid var(--line);
+    color: var(--ink);
+    font-size: 13px;
+}
+
+.activity-registration-saved-reason p {
+    margin: 5px 0 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 .activity-registration-review-actions button {
     min-height: 38px;
 

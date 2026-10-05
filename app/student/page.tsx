@@ -134,6 +134,7 @@ export default async function StudentDashboardPage({
           select: {
             id: true,
             status: true,
+            rejectionReason: true,
             submittedAt: true,
             checkInToken: true,
             checkedInAt: true,
@@ -766,6 +767,13 @@ export default async function StudentDashboardPage({
                             </strong>
                           </div>
                         </div>
+
+                        {submission.status === "REJECTED" && submission.rejectionReason && (
+                          <div className={styles.rejectionReason}>
+                            <strong>سبب الرفض</strong>
+                            <p>{submission.rejectionReason}</p>
+                          </div>
+                        )}
 
                         {/* REGISTRATION DETAILS */}
 

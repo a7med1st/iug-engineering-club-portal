@@ -1541,6 +1541,12 @@ export default async function ActivityRegistrationsPage({
                       ACTIONS
                   ======================================= */}
 
+                                    {submission.status === "REJECTED" && submission.rejectionReason && (
+                                        <div className="activity-registration-saved-reason">
+                                            <strong>سبب الرفض الظاهر للطالب</strong>
+                                            <p>{submission.rejectionReason}</p>
+                                        </div>
+                                    )}
                                     <div className="activity-registration-review-actions">
 
                                         {canManualAttendance &&
@@ -1660,6 +1666,17 @@ export default async function ActivityRegistrationsPage({
                                                         name="status"
                                                         value="REJECTED"
                                                     />
+
+                                                    <label className="activity-registration-reason-field">
+                                                        <span>سبب الرفض الذي سيظهر للطالب</span>
+                                                        <textarea
+                                                            name="rejectionReason"
+                                                            required
+                                                            maxLength={500}
+                                                            rows={2}
+                                                            placeholder="اكتب سبب الرفض"
+                                                        />
+                                                    </label>
 
                                                     <button
                                                         type="submit"

@@ -11,6 +11,7 @@ import {
 
 import { activityDateTimeFromInput } from "@/lib/activities";
 import { prisma } from "@/lib/prisma";
+import { registrationRejectionReason } from "@/lib/registration-rejection-reason";
 
 const allowedStatuses = [
   "SUBMITTED",
@@ -52,7 +53,7 @@ export async function approveAllRegistrations(formData: FormData) {
 
         const updated = await tx.activityFormSubmission.updateMany({
           where: { id: { in: toApprove.map((item) => item.id) }, status: { not: "APPROVED" } },
-          data: { status: "APPROVED" },
+          data: { status: "APPROVED", rejectionReason: null },
         });
         if (updated.count !== toApprove.length) throw new Error("REGISTRATIONS_CHANGED");
 
@@ -344,6 +345,14 @@ export async function updateRegistrationStatus(
     activityId,
   );
 
+  let rejectionReason: string | null;
+  try {
+    rejectionReason = registrationRejectionReason(status, formData.get("rejectionReason"));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "سبب الرفض غير صالح.";
+    redirect(`/admin/activities/${activityId}/registrations?error=${encodeURIComponent(message)}`);
+  }
+
   const maxAttempts = 3;
 
   for (
@@ -443,6 +452,7 @@ export async function updateRegistrationStatus(
 
             data: {
               status,
+              rejectionReason,
 
               /*
                * إذا لم يعد الطالب "مقبولًا"
@@ -484,7 +494,7 @@ export async function updateRegistrationStatus(
                 body:
                   status === "APPROVED"
                     ? "تمت مراجعة طلبك وقبوله. يمكنك مراجعة تفاصيل النشاط من لوحة الطالب."
-                    : "تمت مراجعة طلبك وتحديث حالته إلى مرفوض. يمكنك مراجعة تفاصيل التسجيل من لوحة الطالب.",
+                    : `تم رفض طلبك. السبب: ${rejectionReason}`,
 
                 href:
                   status === "APPROVED"

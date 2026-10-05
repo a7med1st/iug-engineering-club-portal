@@ -584,6 +584,7 @@ model ActivityFormSubmission {
   studentDepartment String?
 
   status ActivitySubmissionStatus @default(SUBMITTED)
+  rejectionReason String?
 
   answers ActivityFormAnswer[]
 
