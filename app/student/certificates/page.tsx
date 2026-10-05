@@ -95,10 +95,6 @@ export default async function StudentCertificatesPage() {
       }
     >
       <header data-reveal="up">
-        <span>
-          My Certificates
-        </span>
-
         <h1>
           شهاداتي
         </h1>
@@ -134,10 +130,6 @@ export default async function StudentCertificatesPage() {
                 </div>
 
                 <div>
-                  <span>
-                    شهادة مشاركة
-                  </span>
-
                   <h2>
                     {
                       certificate
