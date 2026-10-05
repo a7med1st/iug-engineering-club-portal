@@ -1576,10 +1576,32 @@
   flex-wrap: wrap;
 }
 
-.bulkActions :global(.activity-registration-approve) {
+.bulkApproveButton {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(21, 128, 61, 0.3);
+  border-radius: 6px;
+  background: #eaf7ee;
+  color: #166534;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.bulkApproveButton:hover {
+  background: #d9f0e1;
+  border-color: rgba(21, 128, 61, 0.5);
+}
+
+.bulkApproveButton:focus-visible {
+  outline: 2px solid #15803d;
+  outline-offset: 2px;
 }
 
 .resultsCount {

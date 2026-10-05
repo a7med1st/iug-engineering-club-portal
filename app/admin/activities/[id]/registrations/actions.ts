@@ -33,7 +33,7 @@ export async function approveAllRegistrations(formData: FormData) {
       await prisma.$transaction(async (tx) => {
         const form = await tx.activityRegistrationForm.findUnique({
           where: { activityId },
-          select: { id: true, activity: { select: { title: true, capacity: true } } },
+          select: { id: true, activity: { select: { title: true } } },
         });
         if (!form) return;
 
@@ -41,18 +41,11 @@ export async function approveAllRegistrations(formData: FormData) {
           where: { formId: form.id },
           select: { id: true, userId: true, status: true },
         });
-        const toApprove = registrations.filter((item) => item.status !== "APPROVED");
+        const toApprove = registrations.filter((item) => item.status === "SUBMITTED");
         if (!toApprove.length) return;
 
-        const capacity = form.activity.capacity;
-        const occupiedSeats = registrations.filter((item) => item.status !== "REJECTED").length;
-        const rejectedCount = toApprove.filter((item) => item.status === "REJECTED").length;
-        if (capacity > 0 && occupiedSeats + rejectedCount > capacity) {
-          throw new Error("CAPACITY_FULL");
-        }
-
         const updated = await tx.activityFormSubmission.updateMany({
-          where: { id: { in: toApprove.map((item) => item.id) }, status: { not: "APPROVED" } },
+          where: { id: { in: toApprove.map((item) => item.id) }, status: "SUBMITTED" },
           data: { status: "APPROVED", rejectionReason: null },
         });
         if (updated.count !== toApprove.length) throw new Error("REGISTRATIONS_CHANGED");
@@ -72,16 +65,13 @@ export async function approveAllRegistrations(formData: FormData) {
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
       break;
     } catch (error) {
-      if (error instanceof Error && error.message === "CAPACITY_FULL") {
-        redirect(`/admin/activities/${activityId}/registrations?error=${encodeURIComponent("لا يمكن قبول الجميع لأن المقاعد المتاحة لا تكفي للتسجيلات المرفوضة.")}`);
-      }
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034" && attempt < 3) continue;
       throw error;
     }
   }
 
   revalidateRegistrationPages(activityId);
-  redirect(`/admin/activities/${activityId}/registrations?success=${encodeURIComponent("تم قبول جميع المسجلين.")}`);
+  redirect(`/admin/activities/${activityId}/registrations?success=${encodeURIComponent("تم قبول جميع الطلبات قيد المراجعة.")}`);
 }
 
 const allowedAttendanceActions = [

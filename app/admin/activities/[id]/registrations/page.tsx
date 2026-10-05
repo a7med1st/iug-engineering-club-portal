@@ -1338,12 +1338,12 @@ export default async function ActivityRegistrationsPage({
                     </div>
 
                     <div className={attendanceStyles.bulkActions}>
-                        {submittedCount + rejectedCount > 0 && (
+                        {submittedCount > 0 && (
                             <form action={approveAllRegistrations}>
                                 <input type="hidden" name="activityId" value={activity.id} />
-                                <button type="submit" className="activity-registration-approve">
-                                    <CheckCircle2 size={17} aria-hidden="true" />
-                                    قبول الجميع ({submittedCount + rejectedCount})
+                                <button type="submit" className={attendanceStyles.bulkApproveButton}>
+                                    <CheckCircle2 size={16} aria-hidden="true" />
+                                    قبول قيد المراجعة ({submittedCount})
                                 </button>
                             </form>
                         )}
