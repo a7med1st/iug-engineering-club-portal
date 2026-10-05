@@ -9,6 +9,8 @@ import {
   useTransition,
 } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { MessageCircle } from "lucide-react";
 
 import {
   submitActivityRegistration,
@@ -83,7 +85,7 @@ export default function ActivityRegistrationForm({
     if (state.success) {
       setValues(emptyValues(questions, requiresGuestIdentity));
       formRef.current?.reset();
-      if (returnTo) router.replace(returnTo);
+      if (returnTo && !state.whatsappUrl) router.replace(returnTo);
       return;
     }
 
@@ -93,7 +95,7 @@ export default function ActivityRegistrationForm({
         ...state.values,
       }));
     }
-  }, [questions, requiresGuestIdentity, returnTo, router, state.success, state.values]);
+  }, [questions, requiresGuestIdentity, returnTo, router, state.success, state.values, state.whatsappUrl]);
 
   function updateAnswer(questionId: string, value: string) {
     setValues((current) => ({
@@ -275,7 +277,21 @@ export default function ActivityRegistrationForm({
           role={state.success ? "status" : "alert"}
           aria-live="polite"
         >
-          {state.message}
+          <span>{state.message}</span>
+          {state.success && state.whatsappUrl && (
+            <div className="activity-registration-success-links">
+              <a
+                className="activity-registration-whatsapp-link"
+                href={state.whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle size={18} aria-hidden="true" />
+                فتح رابط واتساب
+              </a>
+              {returnTo && <Link href={returnTo}>العودة</Link>}
+            </div>
+          )}
         </div>
       )}
 

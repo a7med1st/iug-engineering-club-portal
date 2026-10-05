@@ -12,6 +12,7 @@ import {
 import { activityDateTimeFromInput } from "@/lib/activities";
 import { prisma } from "@/lib/prisma";
 import { registrationRejectionReason } from "@/lib/registration-rejection-reason";
+import { normalizeWhatsAppRegistrationLink } from "@/lib/whatsapp-registration-link";
 
 const allowedStatuses = [
   "SUBMITTED",
@@ -855,6 +856,14 @@ export async function updateRegistrationSettings(
     activityId,
   );
 
+  let whatsappUrl: string | null;
+  try {
+    whatsappUrl = normalizeWhatsAppRegistrationLink(formData.get("whatsappUrl"));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "رابط واتساب غير صالح.";
+    redirect(`${basePath}?error=${encodeURIComponent(message)}`);
+  }
+
   if (
     !Number.isInteger(capacity) ||
     capacity < 1 ||
@@ -955,6 +964,7 @@ export async function updateRegistrationSettings(
 
             data: {
               isOpen,
+              whatsappUrl,
             },
           });
         },

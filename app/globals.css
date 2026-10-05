@@ -6332,6 +6332,33 @@ html[data-reload-intro="true"] .intro-gate {
     color: #b91c1c;
 }
 
+.activity-registration-success-links {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.activity-registration-whatsapp-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    background: #16803d;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.activity-registration-whatsapp-link:hover,
+.activity-registration-whatsapp-link:focus-visible {
+    background: #116530;
+    color: #fff;
+}
+
 .activity-form-submit:disabled {
     opacity: 0.65;
     cursor: not-allowed;
@@ -7011,6 +7038,24 @@ html[data-reload-intro="true"] .intro-gate {
     color: var(--muted);
 
     font-size: 11px;
+}
+
+.registration-whatsapp-input {
+    width: 100%;
+    min-height: 40px;
+    box-sizing: border-box;
+    padding: 8px 11px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface, #fff);
+    color: var(--ink);
+    font: inherit;
+    font-size: 13px;
+}
+
+.registration-whatsapp-setting {
+    grid-column: 1 / -1;
+    min-height: 0;
 }
 
 

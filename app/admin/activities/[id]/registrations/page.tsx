@@ -1056,6 +1056,26 @@ export default async function ActivityRegistrationsPage({
 
         </div>
 
+        <div className="registration-setting-box registration-whatsapp-setting">
+            <div className="registration-setting-box-head">
+                <div>
+                    <strong>رابط واتساب للمسجلين</strong>
+                    <span>يظهر للطالب بعد إرسال نموذج التسجيل بنجاح</span>
+                </div>
+            </div>
+
+            <input
+                className="registration-whatsapp-input"
+                type="url"
+                name="whatsappUrl"
+                placeholder="https://chat.whatsapp.com/..."
+                defaultValue={form.whatsappUrl ?? ""}
+                maxLength={2048}
+                dir="ltr"
+                disabled={isArchived}
+            />
+        </div>
+
 
         {/* زر الحفظ */}
 

@@ -23,6 +23,7 @@ export type RegistrationFormState = {
   message: string;
   values: RegistrationFormValues;
   fieldErrors?: Record<string, string>;
+  whatsappUrl?: string | null;
 };
 
 const initialFailure: RegistrationFormState = {
@@ -726,6 +727,7 @@ const currentCount =
       message:
         "تم تسجيلك في النشاط بنجاح ✅",
       values: {},
+      whatsappUrl: form.whatsappUrl,
     };
   } catch (error) {
     if (error instanceof RegistrationValidationError) {
