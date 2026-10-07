@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import {
   ArrowLeft,
+  Award,
   BookOpenText,
   CalendarDays,
   ExternalLink,
@@ -178,6 +179,10 @@ export default async function Member() {
           </div>
 
           <div className={styles.heroActions}>
+            <Link href="/member/certificates" className={styles.heroGhostButton}>
+              <Award size={17} aria-hidden="true" />
+              <span>شهاداتي</span>
+            </Link>
             {structureItem && (
               <Link
                 href={`/members/${user.id}`}
