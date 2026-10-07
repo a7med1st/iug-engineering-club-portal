@@ -10,6 +10,10 @@ const studentGuard = await readFile(new URL("../lib/library/student.ts", import.
 const studentCourse = await readFile(new URL("../app/library/courses/[courseId]/page.tsx", import.meta.url), "utf8");
 const studentFolder = await readFile(new URL("../app/library/courses/[courseId]/folders/[folderId]/page.tsx", import.meta.url), "utf8");
 const studentFile = await readFile(new URL("../app/library/files/[fileId]/route.ts", import.meta.url), "utf8");
+const submissionFile = await readFile(new URL("../app/admin/library/submissions/[submissionId]/route.ts", import.meta.url), "utf8");
+for (const route of [file, memberFile, studentFile, submissionFile]) {
+  assert.match(route, /safeContentDisposition/, "Library file routes must encode Unicode filenames safely.");
+}
 const nextConfig = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
 const nginx = await readFile(new URL("../ops/nginx-iug-main.conf", import.meta.url), "utf8");
 assert.match(upload, /LIBRARY_MAX_FILES/);

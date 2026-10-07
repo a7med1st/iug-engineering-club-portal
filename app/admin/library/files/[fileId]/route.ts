@@ -3,10 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { PERMISSIONS, canAccessDepartment, hasPermission } from "@/lib/permissions";
 import { readLibraryFile } from "@/lib/library/storage";
 import { isPreviewableLibraryMime } from "@/lib/library/file-response";
+import { safeContentDisposition } from "@/lib/private-file-response";
 
 function disposition(name: string, inline: boolean) {
-  const safe = name.replace(/["\\\r\n]/g, "_");
-  return `${inline ? "inline" : "attachment"}; filename="${safe}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+  return safeContentDisposition(name, inline ? "inline" : "attachment");
 }
 
 export async function GET(request: Request, context: { params: Promise<{ fileId: string }> }) {
