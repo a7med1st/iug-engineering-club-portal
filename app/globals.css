@@ -3019,6 +3019,7 @@ p {
     }
 
     .header-inner:has(.header-notification-slot) :where(.header-messages-link,
+        .header-library-link,
         .theme-toggle,
         .mobile-menu-toggle) {
         width: 38px;

@@ -39,6 +39,8 @@ type Props = {
   phone: string | null;
   studyLevel: StudyLevel | null;
   departmentName: string;
+  departmentId: string | null;
+  departments: { id: string; nameAr: string }[];
   createdAtLabel: string;
 
   initials: string;
@@ -70,6 +72,8 @@ export default function StudentProfileEditor({
   phone,
   studyLevel,
   departmentName,
+  departmentId,
+  departments,
   createdAtLabel,
 
   initials,
@@ -488,6 +492,28 @@ export default function StudentProfileEditor({
 
                 {/* LEVEL */}
 
+                <div className={styles.profileField}>
+                  <label htmlFor="student-department">التخصص</label>
+                  <select
+                    id="student-department"
+                    name="departmentId"
+                    defaultValue={departmentId ?? ""}
+                    disabled={pending}
+                  >
+                    <option value="">غير محدد</option>
+                    {departments.map((department) => (
+                      <option key={department.id} value={department.id}>
+                        {department.nameAr}
+                      </option>
+                    ))}
+                  </select>
+                  {state.fieldErrors?.departmentId && (
+                    <small className={styles.fieldError}>
+                      {state.fieldErrors.departmentId}
+                    </small>
+                  )}
+                </div>
+
                 <div
                   className={
                     styles.profileField
@@ -583,30 +609,6 @@ export default function StudentProfileEditor({
                   </div>
                 </div>
 
-                <div
-                  className={
-                    styles.readonlyProfileField
-                  }
-                >
-                  <GraduationCap
-                    size={18}
-                  />
-
-                  <div>
-                    <span>
-                      التخصص
-                    </span>
-
-                    <strong>
-                      {departmentName}
-                    </strong>
-
-                    <small>
-                      مرتبط ببيانات
-                      الحساب الأكاديمية
-                    </small>
-                  </div>
-                </div>
               </div>
 
               {/* ERROR */}

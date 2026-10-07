@@ -31,6 +31,7 @@ export type StudentProfileState = {
     studentNumber?: string;
     phone?: string;
     studyLevel?: string;
+    departmentId?: string;
   };
 };
 
@@ -97,6 +98,8 @@ export async function updateStudentProfile(
     formData.get("studyLevel") ?? "",
   ).trim();
 
+  const departmentId = String(formData.get("departmentId") ?? "").trim();
+
   const fieldErrors: NonNullable<
     StudentProfileState["fieldErrors"]
   > = {};
@@ -156,6 +159,16 @@ export async function updateStudentProfile(
       "المستوى الدراسي غير صالح.";
   }
 
+  if (departmentId) {
+    const department = await prisma.department.findUnique({
+      where: { id: departmentId },
+      select: { id: true },
+    });
+    if (!department) {
+      fieldErrors.departmentId = "التخصص المختار غير موجود.";
+    }
+  }
+
   if (
     Object.keys(fieldErrors).length >
     0
@@ -208,6 +221,7 @@ export async function updateStudentProfile(
 
       data: {
         name,
+        departmentId: departmentId || null,
 
         studentNumber:
           studentNumber || null,

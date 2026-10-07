@@ -86,6 +86,17 @@ export default async function Header() {
           <div className="header-notification-slot">
             <NotificationBell />
 
+            {studentLibraryLink && (
+              <Link
+                className="header-library-link"
+                href={studentLibraryLink.href}
+                aria-label={studentLibraryLink.label}
+                title={studentLibraryLink.label}
+              >
+                <BookOpen aria-hidden="true" />
+              </Link>
+            )}
+
             {(session.role === "MEMBER" ||
               session.role === "ADMIN") && (
                 <ChatMessagesHeaderLink />
@@ -95,16 +106,6 @@ export default async function Header() {
 
         <div className="header-actions desktop-header-actions">
           <ThemeToggle />
-          {studentLibraryLink && (
-            <Link
-              className="header-library-link"
-              href={studentLibraryLink.href}
-              aria-label={studentLibraryLink.label}
-              title={studentLibraryLink.label}
-            >
-              <BookOpen aria-hidden="true" />
-            </Link>
-          )}
           {portal && (
             <Link
               className="ghost-btn fancy-outline-btn"

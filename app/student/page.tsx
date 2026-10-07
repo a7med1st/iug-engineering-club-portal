@@ -384,6 +384,11 @@ export default async function StudentDashboardPage({
           />
 
           <StudentProfileEditor
+            departmentId={user.department?.id ?? null}
+            departments={await prisma.department.findMany({
+              select: { id: true, nameAr: true },
+              orderBy: { nameAr: "asc" },
+            })}
             name={user.name}
             email={user.email}
             studentNumber={
