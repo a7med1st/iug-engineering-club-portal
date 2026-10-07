@@ -105,6 +105,11 @@ async function main() {
     assert.deepEqual(requirePrivateBlobAuth(), {
       token: "vercel_blob_rw_private-test",
     });
+
+    process.env.VERCEL = "1";
+    assert.deepEqual(requirePrivateBlobReadAuth(), {
+      token: "vercel_blob_rw_private-test",
+    });
   } finally {
     for (const name of blobEnvironmentNames) {
       const value = originalBlobEnvironment[name];

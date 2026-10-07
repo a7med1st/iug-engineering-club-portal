@@ -208,11 +208,15 @@ export function requirePrivateBlobReadAuth(): BlobAuthOptions {
 
   const auth = requirePrivateBlobAuth();
   const oidcToken = configuredValue("VERCEL_OIDC_TOKEN");
+  const fallbackToken = configuredValue("BLOB_PRIVATE_READ_WRITE_TOKEN");
 
   // get() accepts storeId + oidcToken explicitly in @vercel/blob@2.8.0.
   // Read the rotating environment value on every call rather than caching it.
   if ("storeId" in auth && auth.storeId && oidcToken) {
     return { storeId: auth.storeId, oidcToken };
+  }
+  if ("storeId" in auth && auth.storeId && fallbackToken) {
+    return { token: fallbackToken };
   }
 
   return auth;
