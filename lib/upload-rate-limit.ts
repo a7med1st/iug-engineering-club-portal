@@ -66,6 +66,13 @@ export async function enforceProfileUploadLimit(userId: string, bytes: number) {
   ], "profile", { userId });
 }
 
+export async function enforceLibrarySubmissionUploadLimit(userId: string, bytes: number) {
+  return enforce([
+    requestRule("upload:library-submission", userId, 5, 24 * 60 * 60),
+    byteRule("upload:library-submission", userId, 200 * MB, 24 * 60 * 60, bytes),
+  ], "library-submission", { userId });
+}
+
 async function enforce(
   rules: RateLimitRule[],
   context: string,

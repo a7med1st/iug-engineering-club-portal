@@ -217,6 +217,8 @@ model User {
   assignedCollaborations CollaborationRequest[] @relation("CollaborationAssignee")
   createdLibraryFolders  LibraryFolder[]         @relation("LibraryFolderCreator")
   uploadedLibraryFiles   LibraryFile[]           @relation("LibraryFileUploader")
+  librarySubmissions     LibrarySubmission[]     @relation("LibrarySubmissionStudent")
+  reviewedLibrarySubmissions LibrarySubmission[] @relation("LibrarySubmissionReviewer")
 }
 
 // =========================================================
@@ -332,6 +334,7 @@ model Department {
   complaints  Complaint[]
   suggestions Suggestion[]
   libraryCourseDepartments LibraryCourseDepartment[]
+  librarySubmissions LibrarySubmission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -410,6 +413,37 @@ model LibraryFile {
 
   @@index([folderId, sortOrder, createdAt])
   @@index([uploadedById])
+}
+
+enum LibrarySubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model LibrarySubmission {
+  id           String                  @id @default(cuid())
+  departmentId String
+  studentId    String
+  title        String
+  note         String?
+  originalName String
+  storageKey   String                  @unique
+  mimeType     String
+  size         Int
+  status       LibrarySubmissionStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+  publishedFileId String?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  student    User       @relation("LibrarySubmissionStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  reviewedBy User?      @relation("LibrarySubmissionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([departmentId, status, createdAt])
+  @@index([studentId, createdAt])
 }
 
 model LibraryLink {

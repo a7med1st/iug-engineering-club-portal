@@ -5,11 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { getStudentLibraryDepartment } from "@/lib/library/student";
 import { levelNames, semesterNames } from "@/lib/library/levels";
 import styles from "./library.module.css";
+import LibrarySubmissionForm from "@/components/library/LibrarySubmissionForm";
+import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function LibraryPage({ searchParams }: { searchParams: Promise<{ level?: string; q?: string }> }) {
   const department = await getStudentLibraryDepartment();
+  const auth = await getCurrentUser();
   const params = await searchParams;
   const requestedLevel = Number(params.level);
   const level = Number.isInteger(requestedLevel) && requestedLevel >= 1 && requestedLevel <= 5 ? requestedLevel : 1;
@@ -40,6 +43,12 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
     }),
   ]);
   const courses = placements.map(({ course, semester }) => ({ ...course, semester }));
+  const mySubmissions = auth?.user.role === "STUDENT" ? await prisma.librarySubmission.findMany({
+    where: { studentId: auth.user.id, departmentId: department.id },
+    select: { id: true, title: true, status: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  }) : [];
 
   return <main className={styles.page}>
     <header className={styles.intro}>
@@ -47,6 +56,9 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
       <h1>مكتبة {department.nameAr}</h1>
       <p>مساقات ومواد تخصصك مرتبة حسب المستوى الدراسي.</p>
     </header>
+
+    {auth?.user.role === "STUDENT" && <LibrarySubmissionForm />}
+    {mySubmissions.length > 0 && <section className={styles.mySubmissions}><h2>آخر ملفاتي المرسلة</h2><ul>{mySubmissions.map((item) => <li key={item.id}><span>{item.title}</span><strong>{item.status === "PENDING" ? "قيد المراجعة" : item.status === "APPROVED" ? "منشور" : "مرفوض"}</strong></li>)}</ul></section>}
 
     <form action="/library" className={styles.searchForm} role="search">
       <input type="hidden" name="level" value={level} />
