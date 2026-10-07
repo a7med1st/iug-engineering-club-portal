@@ -486,6 +486,58 @@ p {
     transform: scale(1.06);
 }
 
+.header-library-link {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    padding: 0;
+    border: 1px solid rgba(22, 136, 255, 0.22);
+    border-radius: 15px;
+    background:
+        radial-gradient(circle at 28% 18%, rgba(53, 212, 255, 0.16), transparent 42%),
+        rgba(255, 255, 255, 0.9);
+    color: #0f3158;
+    box-shadow:
+        0 8px 20px rgba(8, 42, 74, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition:
+        transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+        border-color 200ms ease,
+        background 200ms ease,
+        color 200ms ease,
+        box-shadow 200ms ease;
+}
+
+.header-library-link:hover {
+    transform: translateY(-2px);
+    border-color: rgba(22, 136, 255, 0.46);
+    background:
+        radial-gradient(circle at 28% 18%, rgba(53, 212, 255, 0.24), transparent 45%),
+        #eef7ff;
+    color: #0f72dc;
+    box-shadow:
+        0 13px 28px rgba(15, 114, 220, 0.14),
+        0 0 0 4px rgba(22, 136, 255, 0.06);
+}
+
+.header-library-link:focus-visible {
+    outline: 3px solid rgba(22, 136, 255, 0.25);
+    outline-offset: 3px;
+}
+
+.header-library-link svg {
+    width: 21px;
+    height: 21px;
+    stroke-width: 2.15;
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.header-library-link:hover svg {
+    transform: scale(1.06);
+}
+
 .header-actions form {
     margin: 0
 }

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import MainNav from "@/components/MainNav";
 import MobileNavigation from "@/components/MobileNavigation";
@@ -40,6 +40,13 @@ export default async function Header() {
             label: "لوحتي",
           }
           : null;
+  const studentLibraryLink =
+    session?.role === "STUDENT"
+      ? {
+        href: "/library",
+        label: "مكتبة التخصص",
+      }
+      : null;
 
   return (
     <header className="site-header">
@@ -88,6 +95,16 @@ export default async function Header() {
 
         <div className="header-actions desktop-header-actions">
           <ThemeToggle />
+          {studentLibraryLink && (
+            <Link
+              className="header-library-link"
+              href={studentLibraryLink.href}
+              aria-label={studentLibraryLink.label}
+              title={studentLibraryLink.label}
+            >
+              <BookOpen aria-hidden="true" />
+            </Link>
+          )}
           {portal && (
             <Link
               className="ghost-btn fancy-outline-btn"
@@ -112,7 +129,11 @@ export default async function Header() {
         </div>
 
         <MobileNavigation
-          links={navigationLinks}
+          links={
+            studentLibraryLink
+              ? [...navigationLinks, studentLibraryLink]
+              : navigationLinks
+          }
           portal={portal}
           authenticated={Boolean(session)}
         />
