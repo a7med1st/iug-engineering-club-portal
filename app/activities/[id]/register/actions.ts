@@ -15,8 +15,9 @@ import {
 } from "@/lib/rate-limit";
 import { registrationWindowStatusForActivity } from "@/lib/registration-window";
 import { clientIpFromHeaders } from "@/lib/upload-rate-limit";
+import { checkboxAnswer } from "@/lib/registration-checkbox";
 
-export type RegistrationFormValues = Record<string, string>;
+export type RegistrationFormValues = Record<string, string | string[]>;
 
 export type RegistrationFormState = {
   success: boolean;
@@ -67,6 +68,11 @@ function getSubmittedValues(formData: FormData): RegistrationFormValues {
 
     if (questionId && values[questionId] === undefined) {
       values[questionId] = rawValue;
+    } else if (questionId && fieldName.startsWith(QUESTION_FIELD_PREFIX)) {
+      const previous = values[questionId];
+      values[questionId] = Array.isArray(previous)
+        ? [...previous, rawValue]
+        : [previous, rawValue];
     }
   }
 
@@ -122,11 +128,22 @@ function validateAndGetAnswer(
   const fieldName =
     `question_${question.id}`;
 
-  /*
-   * Every option-based question accepts exactly one value. Checking getAll()
-   * also protects the invariant when a request is crafted outside the UI.
-   */
   const submittedEntries = formData.getAll(fieldName);
+
+  if (question.type === "CHECKBOX") {
+    try {
+      return checkboxAnswer(
+        submittedEntries,
+        getQuestionOptions(question.options),
+        question.required,
+      );
+    } catch (error) {
+      throw new RegistrationValidationError(
+        `${question.label}: ${error instanceof Error ? error.message : "إجابة غير صالحة."}`,
+        question.id,
+      );
+    }
+  }
 
   if (isOptionQuestion(question.type) && submittedEntries.length > 1) {
     throw new RegistrationValidationError(
@@ -153,7 +170,7 @@ function validateAndGetAnswer(
   }
 
   /*
-   * SELECT / RADIO / legacy CHECKBOX
+   * SELECT / RADIO
    */
   if (isOptionQuestion(question.type)) {
     const allowedOptions =

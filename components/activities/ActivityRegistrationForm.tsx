@@ -51,7 +51,10 @@ function emptyValues(
   requiresGuestIdentity: boolean,
 ): RegistrationFormValues {
   return {
-    ...Object.fromEntries(questions.map((question) => [question.id, ""])),
+    ...Object.fromEntries(questions.map((question) => [
+      question.id,
+      question.type === "CHECKBOX" ? [] : "",
+    ])),
     ...(requiresGuestIdentity
       ? {
         studentName: "",
@@ -97,7 +100,7 @@ export default function ActivityRegistrationForm({
     }
   }, [questions, requiresGuestIdentity, returnTo, router, state.success, state.values, state.whatsappUrl]);
 
-  function updateAnswer(questionId: string, value: string) {
+  function updateAnswer(questionId: string, value: string | string[]) {
     setValues((current) => ({
       ...current,
       [questionId]: value,
@@ -160,7 +163,7 @@ export default function ActivityRegistrationForm({
               id="studentName"
               type="text"
               name="studentName"
-              value={values.studentName ?? ""}
+              value={typeof values.studentName === "string" ? values.studentName : ""}
               required
               minLength={2}
               maxLength={160}
@@ -192,7 +195,7 @@ export default function ActivityRegistrationForm({
               id="studentEmail"
               type="email"
               name="studentEmail"
-              value={values.studentEmail ?? ""}
+              value={typeof values.studentEmail === "string" ? values.studentEmail : ""}
               required
               maxLength={254}
               autoComplete="email"
@@ -222,7 +225,7 @@ export default function ActivityRegistrationForm({
             <select
               id="studentDepartmentId"
               name="studentDepartmentId"
-              value={values.studentDepartmentId ?? ""}
+              value={typeof values.studentDepartmentId === "string" ? values.studentDepartmentId : ""}
               disabled={pending || state.success}
               aria-invalid={
                 Boolean(state.fieldErrors?.studentDepartmentId) || undefined
@@ -312,17 +315,20 @@ export default function ActivityRegistrationForm({
 
 function QuestionField({
   question,
-  value,
+  value: answer,
   error,
   disabled,
   onChange,
 }: {
   question: Question;
-  value: string;
+  value: string | string[];
   error?: string;
   disabled: boolean;
-  onChange: (value: string) => void;
+  onChange: (value: string | string[]) => void;
 }) {
+  const value = typeof answer === "string" ? answer : "";
+  const selected = Array.isArray(answer) ? answer : answer ? [answer] : [];
+  const isCheckbox = question.type === "CHECKBOX";
   const fieldName = `question_${question.id}`;
   const labelId = `${fieldName}_label`;
   const helpId = question.helpText ? `${fieldName}_help` : undefined;
@@ -458,7 +464,8 @@ function QuestionField({
       {isOptionGroup && (
         <div
           className="activity-options-list"
-          role="radiogroup"
+          role={isCheckbox ? "group" : "radiogroup"}
+          aria-required={question.required || undefined}
           aria-labelledby={labelId}
           aria-describedby={describedBy}
           aria-invalid={Boolean(error) || undefined}
@@ -469,13 +476,19 @@ function QuestionField({
               className="activity-option"
             >
               <input
-                type="radio"
+                type={isCheckbox ? "checkbox" : "radio"}
                 name={fieldName}
                 value={option}
-                checked={value === option}
-                required={question.required}
+                checked={isCheckbox ? selected.includes(option) : value === option}
+                required={!isCheckbox && question.required}
                 disabled={disabled}
-                onChange={() => onChange(option)}
+                onChange={(event) => onChange(
+                  isCheckbox
+                    ? event.target.checked
+                      ? [...selected, option]
+                      : selected.filter((item) => item !== option)
+                    : option,
+                )}
               />
               <span>{option}</span>
             </label>
