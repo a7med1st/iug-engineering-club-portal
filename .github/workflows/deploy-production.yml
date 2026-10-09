@@ -44,3 +44,12 @@ jobs:
             "bash -s -- '$GITHUB_SHA'" \
             < scripts/deploy-production.sh
 
+      - name: Verify library downloads
+        shell: bash
+        run: |
+          ssh \
+            -i ~/.ssh/iug_deploy \
+            -o IdentitiesOnly=yes \
+            iugdeploy@130.110.247.136 \
+            "cd /var/www/main/current && node --env-file=.env --import tsx scripts/diagnose-library-download.ts --http --all"
+

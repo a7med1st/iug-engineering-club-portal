@@ -1,5 +1,6 @@
 import {
   del,
+  BlobAccessError,
   get,
   head,
   put,
@@ -272,12 +273,21 @@ export async function getPrivateBlob(
   },
 ): Promise<GetBlobResult | StoredFileResult | null> {
   if (usesLocalStorage()) return getLocalFile("private", pathname);
-  return get(pathname, {
+  const auth = requirePrivateBlobReadAuth();
+  const readOptions = {
     access: "private",
     abortSignal: options?.abortSignal,
     useCache: options?.useCache,
-    ...requirePrivateBlobReadAuth(),
-  });
+  } as const;
+  try {
+    return await get(pathname, { ...readOptions, ...auth });
+  } catch (error) {
+    const fallbackToken = configuredValue("BLOB_PRIVATE_READ_WRITE_TOKEN");
+    const authorizationFailed = error instanceof BlobAccessError ||
+      error instanceof Error && /Failed to fetch blob: (401|403)\b/.test(error.message);
+    if (!auth.storeId || !fallbackToken || !authorizationFailed) throw error;
+    return get(pathname, { ...readOptions, token: fallbackToken });
+  }
 }
 
 export async function headPrivateBlob(pathname: string): Promise<HeadBlobResult> {

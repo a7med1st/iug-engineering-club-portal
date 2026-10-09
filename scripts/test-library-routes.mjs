@@ -12,8 +12,13 @@ const studentFolder = await readFile(new URL("../app/library/courses/[courseId]/
 const studentFile = await readFile(new URL("../app/library/files/[fileId]/route.ts", import.meta.url), "utf8");
 const submissionFile = await readFile(new URL("../app/admin/library/submissions/[submissionId]/route.ts", import.meta.url), "utf8");
 for (const route of [file, memberFile, studentFile, submissionFile]) {
-  assert.match(route, /safeContentDisposition/, "Library file routes must encode Unicode filenames safely.");
+  assert.match(route, /libraryDownloadResponse/, "Library file routes must share the tested download response.");
+  assert.doesNotMatch(route, /stored\.headers\.forEach/, "Do not forward upstream encoding and connection headers.");
 }
+const downloadResponse = await readFile(new URL("../lib/library/file-response.ts", import.meta.url), "utf8");
+const privateResponse = await readFile(new URL("../lib/private-file-response.ts", import.meta.url), "utf8");
+assert.match(privateResponse, /safeContentDisposition/);
+assert.match(downloadResponse, /privateFileResponse/);
 const nextConfig = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
 const nginx = await readFile(new URL("../ops/nginx-iug-main.conf", import.meta.url), "utf8");
 assert.match(upload, /LIBRARY_MAX_FILES/);
@@ -21,8 +26,7 @@ assert.match(upload, /content-length/i);
 assert.match(upload, /canAccessDepartment/);
 assert.match(upload, /deleteLibraryFiles/);
 assert.match(file, /canAccessDepartment/);
-assert.match(file, /private, no-store/);
-assert.match(file, /content-disposition/i);
+assert.match(downloadResponse, /private, no-store/);
 assert.match(memberPage, /folderBreadcrumb/);
 assert.match(memberPage, /name="parentId"/);
 assert.match(memberPage, /directLibraryChildren/);
