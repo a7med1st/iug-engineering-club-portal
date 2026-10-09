@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { createHash } from "node:crypto";
 import { SignJWT } from "jose";
 import { getPrivateBlob } from "../lib/blob-storage";
+import { isVisibleLibraryFolderPath } from "../lib/library/tree";
 
 const prisma = new PrismaClient();
 const allFiles = process.argv.includes("--all");
@@ -9,6 +10,65 @@ const http = process.argv.includes("--http");
 let failures = 0;
 
 class DownloadCheckError extends Error {}
+
+async function sessionCookie(user: { id: string; email: string; name: string; role: string; sessionVersion: number }) {
+  if (!process.env.SESSION_SECRET) throw new Error("SESSION_SECRET is required for HTTP verification.");
+  const token = await new SignJWT({
+    email: user.email, name: user.name, role: user.role, sessionVersion: user.sessionVersion,
+  }).setProtectedHeader({ alg: "HS256" }).setSubject(user.id)
+    .setIssuer("iug-engineering-club-portal").setAudience("iug-engineering-club-web")
+    .setIssuedAt().setExpirationTime("1h").sign(new TextEncoder().encode(process.env.SESSION_SECRET));
+  return `ec_session=${token}`;
+}
+
+async function verifyPublicRoleDownloads() {
+  const users = await prisma.user.findMany({
+    where: { role: { in: ["STUDENT", "MEMBER"] }, departmentId: { not: null }, mustChangePassword: false },
+    select: { id: true, email: true, name: true, role: true, sessionVersion: true, departmentId: true },
+    orderBy: { id: "asc" },
+  });
+  const checked = new Set<string>();
+  for (const user of users) {
+    const scope = `${user.role}:${user.departmentId}`;
+    if (checked.has(scope)) continue;
+    checked.add(scope);
+    const files = await prisma.libraryFile.findMany({
+      where: { folder: { course: { departments: { some: { departmentId: user.departmentId! } } } } },
+      select: { id: true, storageKey: true, folderId: true, folder: { select: { courseId: true } } },
+      orderBy: { id: "asc" },
+    });
+    let selected = null;
+    for (const file of files) {
+      const folders = await prisma.libraryFolder.findMany({
+        where: { courseId: file.folder.courseId },
+        select: { id: true, courseId: true, parentId: true, name: true, sortOrder: true, isVisible: true },
+      });
+      if (isVisibleLibraryFolderPath(folders, file.folderId)) { selected = file; break; }
+    }
+    if (!selected) continue;
+    const prefix = user.role === "MEMBER" ? "/member/library/files" : "/library/files";
+    try {
+      const stored = await getPrivateBlob(selected.storageKey, { useCache: false });
+      if (!stored?.stream) throw new DownloadCheckError("Stored file not found");
+      const expected = await digest(stored.stream);
+      const response = await fetch(`https://iugengineeringclub.com${prefix}/${encodeURIComponent(selected.id)}?download=1`, {
+        headers: { cookie: await sessionCookie(user) }, redirect: "manual", signal: AbortSignal.timeout(120000),
+      });
+      if (response.status !== 200 || !response.body) {
+        await response.body?.cancel();
+        throw new DownloadCheckError(`Download HTTP ${response.status}`);
+      }
+      if (!response.headers.get("content-disposition")?.startsWith("attachment;")) throw new DownloadCheckError("Missing attachment header");
+      const actual = await digest(response.body);
+      if (actual.size !== expected.size || actual.hash !== expected.hash) throw new DownloadCheckError("Downloaded bytes do not match storage");
+      console.log(`PASS public library ${scope}: HTTPS ${user.role} download matches storage`);
+    } catch (error) {
+      failures++;
+      console.log(`FAIL public library ${scope}: ${error instanceof DownloadCheckError ? error.message : error instanceof Error ? error.name : "UnknownError"}`);
+    }
+  }
+  console.log(`Public library verification: ${checked.size} account scopes examined.`);
+}
 
 async function digest(stream: ReadableStream<Uint8Array>) {
   const reader = stream.getReader();
@@ -35,12 +95,7 @@ async function main() {
   let cookie = "";
   if (http) {
     if (!admin || !process.env.SESSION_SECRET) throw new Error("Authenticated HTTP verification requires an administrator and SESSION_SECRET.");
-    const token = await new SignJWT({
-      email: admin.email, name: admin.name, role: admin.role, sessionVersion: admin.sessionVersion,
-    }).setProtectedHeader({ alg: "HS256" }).setSubject(admin.id)
-      .setIssuer("iug-engineering-club-portal").setAudience("iug-engineering-club-web")
-      .setIssuedAt().setExpirationTime("1h").sign(new TextEncoder().encode(process.env.SESSION_SECRET));
-    cookie = `ec_session=${token}`;
+    cookie = await sessionCookie(admin);
   }
 
   let cursor: string | undefined;
@@ -80,6 +135,7 @@ async function main() {
     }
     cursor = files[files.length - 1].id;
   } while (allFiles);
+  if (http) await verifyPublicRoleDownloads();
   console.log(`Library verification: ${checked} checked, ${failures} failed.`);
   if (failures) process.exitCode = 1;
 }
