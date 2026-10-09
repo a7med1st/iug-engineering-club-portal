@@ -53,3 +53,12 @@ jobs:
             iugdeploy@130.110.247.136 \
             "cd /var/www/main/current && node --env-file=.env --import tsx scripts/diagnose-library-download.ts --http --all"
 
+      - name: Verify registration timestamps
+        shell: bash
+        run: |
+          ssh \
+            -i ~/.ssh/iug_deploy \
+            -o IdentitiesOnly=yes \
+            iugdeploy@130.110.247.136 \
+            "cd /var/www/main/current && node --env-file=.env --import tsx scripts/test-registration-time.ts && node --env-file=.env --import tsx scripts/verify-registration-time.ts"
+

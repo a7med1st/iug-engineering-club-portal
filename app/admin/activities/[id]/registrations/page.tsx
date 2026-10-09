@@ -9,6 +9,7 @@ import RegistrationFilterSelect from "@/components/admin/RegistrationFilterSelec
 import {
     ACTIVITY_TIME_ZONE,
     activityDateTimeInputValues,
+    formatActivityTimestamp,
 } from "@/lib/activities";
 import {
     PERMISSIONS,
@@ -1434,18 +1435,7 @@ export default async function ActivityRegistrationsPage({
                                                     )}
 
                                                     <span>
-                                                        {new Intl.DateTimeFormat(
-                                                            "ar-PS",
-                                                            {
-                                                                dateStyle:
-                                                                    "medium",
-
-                                                                timeStyle:
-                                                                    "short",
-                                                            },
-                                                        ).format(
-                                                            submission.submittedAt,
-                                                        )}
+                                                        {formatActivityTimestamp(submission.submittedAt)}
                                                     </span>
 
                                                 </div>
@@ -1485,15 +1475,7 @@ export default async function ActivityRegistrationsPage({
                                                     {submission.checkedInAt && (
                                                         <small className={attendanceStyles.attendanceTime}>
                                                             وقت الحضور:{" "}
-                                                            {new Intl.DateTimeFormat(
-                                                                "ar-PS",
-                                                                {
-                                                                    dateStyle: "medium",
-                                                                    timeStyle: "short",
-                                                                },
-                                                            ).format(
-                                                                submission.checkedInAt,
-                                                            )}
+                                                            {formatActivityTimestamp(submission.checkedInAt)}
                                                         </small>
                                                     )}
                                                 </div>

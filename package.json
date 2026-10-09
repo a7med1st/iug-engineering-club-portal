@@ -22,6 +22,7 @@
     "test:attendance-confirmation": "node --require ./scripts/node-platform-fallback.cjs --import tsx scripts/test-attendance-confirmation.ts",
     "test:activity-registration-ui": "node scripts/test-activity-registration-ui.mjs",
     "test:registration-checkbox": "node --import tsx scripts/test-registration-checkbox.ts",
+    "test:registration-time": "node --import tsx scripts/test-registration-time.ts",
     "test:student-registration-options": "node --import tsx scripts/test-student-registration-options.ts",
     "test:registration-account-links": "node --require ./scripts/node-platform-fallback.cjs --import tsx scripts/test-registration-account-links.ts",
     "test:certificate-template": "node --require ./scripts/node-platform-fallback.cjs --import tsx scripts/test-certificate-template.ts",

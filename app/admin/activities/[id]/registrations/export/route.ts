@@ -6,6 +6,7 @@ import {
   requireActivityPermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { formatActivityTimestamp } from "@/lib/activities";
 
 export const dynamic = "force-dynamic";
 
@@ -62,13 +63,7 @@ function formatDate(
     return "";
   }
 
-  return new Intl.DateTimeFormat(
-    "ar-PS",
-    {
-      dateStyle: "medium",
-      timeStyle: "short",
-    },
-  ).format(date);
+  return formatActivityTimestamp(date);
 }
 
 function safeFileName(

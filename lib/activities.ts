@@ -7,6 +7,15 @@ import type {
 
 export const ACTIVITY_TIME_ZONE = "Asia/Gaza";
 
+export function formatActivityTimestamp(date: Date | null, locale = "ar-PS") {
+  if (!date) return "";
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: ACTIVITY_TIME_ZONE,
+  }).format(date);
+}
+
 export type PublicActivity = Activity & {
   departments: Array<ActivityDepartment & { department: Department }>;
 };
