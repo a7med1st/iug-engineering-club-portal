@@ -24,7 +24,8 @@ const departments = [
   { slug: "industrial-engineering", nameAr: "الهندسة الصناعية", nameEn: "Industrial Engineering", coverImage: "/images/departments/industrial.png", sortOrder: 5 },
   { slug: "mechanical-engineering", nameAr: "الهندسة الميكانيكية", nameEn: "Mechanical Engineering", coverImage: "/images/departments/mechanical.png", sortOrder: 6 },
   { slug: "electrical-engineering", nameAr: "الهندسة الكهربائية", nameEn: "Electrical Engineering", coverImage: "/images/departments/electrical.png", sortOrder: 7 },
-  { slug: "intelligent-systems", nameAr: "هندسة النظم الذكية", nameEn: "Intelligent Systems Engineering", coverImage: "/images/departments/intelligent-systems.png", sortOrder: 8 }
+  { slug: "intelligent-systems", nameAr: "هندسة النظم الذكية", nameEn: "Intelligent Systems Engineering", coverImage: "/images/departments/intelligent-systems.png", sortOrder: 8 },
+  { slug: "information-technology", nameAr: "كلية تكنولوجيا المعلومات", nameEn: "Faculty of Information Technology", coverImage: "/images/departments/computer.png", sortOrder: 9 }
 ];
 
 async function main() {
