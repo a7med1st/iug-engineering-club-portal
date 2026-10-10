@@ -81,6 +81,21 @@ assert.equal((await loadAttendanceConfirmation({ activityId: "activity-1", token
 assert.equal((await loadAttendanceConfirmation({ activityId: "activity-1", token: "valid-token", user: { id: "student", role: "STUDENT", name: "Student" } }, deps())).status, "READY");
 
 const writes: Array<Record<string, unknown>> = [];
+const sessionWrites: Array<Record<string, unknown>> = [];
+const sessionDeps = deps({
+  link: { sessionId: "session-2", session: { id: "session-2", title: "Second session" } },
+  submission: { checkedInAt: now, sessionAttendances: [{ sessionId: "session-1", checkedInAt: now }] },
+  recordAttendance: async input => { sessionWrites.push(input); return 1; },
+});
+assert.equal((await loadAttendanceConfirmation({ activityId: "activity-1", token: "valid-token", user: { id: "student", role: "STUDENT", name: "Student" } }, sessionDeps)).status, "READY");
+assert.equal((await confirmAttendance({ activityId: "activity-1", token: "valid-token", userId: "student", role: "STUDENT" }, sessionDeps)).ok, true);
+assert.equal(sessionWrites[0]?.sessionId, "session-2");
+const duplicateSession = await confirmAttendance({ activityId: "activity-1", token: "valid-token", userId: "student", role: "STUDENT" }, deps({
+  link: { sessionId: "session-1" },
+  submission: { checkedInAt: null, sessionAttendances: [{ sessionId: "session-1", checkedInAt: now }] },
+  recordAttendance: async () => { throw new Error("Duplicate must not write"); },
+}));
+assert.equal(duplicateSession.ok && duplicateSession.alreadyRecorded, true);
 const success = await confirmAttendance(
   { activityId: "activity-1", token: "valid-token", userId: "student", role: "STUDENT" },
   deps({ recordAttendance: async (input) => { writes.push(input); return 1; } }),

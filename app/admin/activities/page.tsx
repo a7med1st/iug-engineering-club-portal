@@ -21,7 +21,7 @@ import { prisma } from "@/lib/prisma";
 import { formatActivitySchedule } from "@/lib/activities";
 import { registrationWindowStatus } from "@/lib/registration-window";
 
-import { createActivity } from "../actions";
+import CreateActivityForm from "@/components/admin/CreateActivityForm";
 
 export const dynamic = "force-dynamic";
 
@@ -153,7 +153,7 @@ export default async function ActivitiesAdminPage({
           <div className="admin-card activity-form-panel">
             <h2>بيانات النشاط</h2>
 
-            <form action={createActivity} className="stack-form">
+            <CreateActivityForm>
               <label>
                 اسم النشاط
 
@@ -267,7 +267,7 @@ export default async function ActivitiesAdminPage({
               >
                 حفظ النشاط ونموذج التسجيل
               </button>
-            </form>
+            </CreateActivityForm>
           </div>
         )}
 

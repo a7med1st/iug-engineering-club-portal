@@ -22,6 +22,8 @@ type AttendanceUser = {
 };
 
 type LinkRecord = {
+  sessionId?: string;
+  session?: { id: string; title: string };
   id: string;
   activityId: string;
   isActive: boolean;
@@ -35,6 +37,7 @@ type LinkRecord = {
 };
 
 type SubmissionRecord = {
+  sessionAttendances?: { sessionId: string; checkedInAt: Date }[];
   id: string;
   status: "SUBMITTED" | "APPROVED" | "REJECTED";
   checkedInAt: Date | null;
@@ -46,13 +49,16 @@ export type AttendanceConfirmationDeps = {
   findLink(input: { activityId: string; tokenHash: string }): Promise<LinkRecord | null>;
   findSubmission(input: { activityId: string; userId: string }): Promise<SubmissionRecord | null>;
   recordAttendance(input: {
+    sessionId?: string;
+    activityId?: string;
+    tokenHash?: string;
     submissionId: string;
     userId: string;
     checkedInAt: Date;
     checkedInById: null;
     attendanceSource: "SELF_LINK";
     attendanceLinkId: string;
-  }): Promise<number>;
+  }): Promise<number | { code: AttendanceErrorCode }>;
   consumeRateLimit(input: { userId: string; linkId: string }): Promise<boolean>;
 };
 
@@ -70,11 +76,15 @@ function linkError(link: LinkRecord, now: Date): AttendanceErrorCode | null {
   return null;
 }
 
-function registrationError(submission: SubmissionRecord | null): AttendanceErrorCode | null {
+function recordedAt(submission: SubmissionRecord | null, sessionId?: string) {
+  return sessionId ? submission?.sessionAttendances?.find(record => record.sessionId === sessionId)?.checkedInAt : submission?.checkedInAt;
+}
+
+function registrationError(submission: SubmissionRecord | null, sessionId?: string): AttendanceErrorCode | null {
   if (!submission) return "NOT_REGISTERED";
   if (submission.status === "SUBMITTED") return "PENDING_REGISTRATION";
   if (submission.status === "REJECTED") return "REJECTED_REGISTRATION";
-  if (submission.checkedInAt) return "ALREADY_RECORDED";
+  if (recordedAt(submission, sessionId)) return "ALREADY_RECORDED";
   return null;
 }
 
@@ -97,12 +107,13 @@ export async function loadAttendanceConfirmation(
     activityId: input.activityId,
     userId: input.user.id,
   });
-  const submissionError = registrationError(submission);
-  if (submissionError) return { status: submissionError, activity: link.activity };
+  const submissionError = registrationError(submission, link.sessionId);
+  if (submissionError) return { status: submissionError, activity: link.activity, session: link.session, submission };
 
   return {
     status: "READY" as const,
     activity: link.activity,
+    session: link.session,
     submission: submission!,
     user: input.user,
   };
@@ -139,15 +150,17 @@ export async function confirmAttendance(
     activityId: input.activityId,
     userId: input.userId,
   });
-  const submissionError = registrationError(submission);
+  const submissionError = registrationError(submission, link.sessionId);
   if (submissionError && submissionError !== "ALREADY_RECORDED") {
     return { ok: false, code: submissionError };
   }
-  if (submission?.checkedInAt) {
-    return { ok: true, alreadyRecorded: true, checkedInAt: submission.checkedInAt };
+  const existingTime = recordedAt(submission, link.sessionId);
+  if (existingTime) {
+    return { ok: true, alreadyRecorded: true, checkedInAt: existingTime };
   }
 
   const count = await deps.recordAttendance({
+    ...(link.sessionId ? { sessionId: link.sessionId, activityId: input.activityId, tokenHash: hashAttendanceToken(input.token) } : {}),
     submissionId: submission!.id,
     userId: input.userId,
     checkedInAt: now,
@@ -155,11 +168,13 @@ export async function confirmAttendance(
     attendanceSource: "SELF_LINK",
     attendanceLinkId: link.id,
   });
+  if (typeof count !== "number") return { ok: false, code: count.code };
   if (count === 1) return { ok: true, alreadyRecorded: false, checkedInAt: now };
 
   const latest = await deps.findSubmission({ activityId: input.activityId, userId: input.userId });
-  if (latest?.checkedInAt) {
-    return { ok: true, alreadyRecorded: true, checkedInAt: latest.checkedInAt };
+  const latestTime = recordedAt(latest, link.sessionId);
+  if (latestTime) {
+    return { ok: true, alreadyRecorded: true, checkedInAt: latestTime };
   }
-  return { ok: false, code: registrationError(latest) ?? "ALREADY_RECORDED" };
+  return { ok: false, code: registrationError(latest, link.sessionId) ?? "ALREADY_RECORDED" };
 }

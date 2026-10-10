@@ -54,6 +54,7 @@ type ScannerInstance = {
 
 type Props = {
   activityId: string;
+  sessions: { id: string; title: string }[];
 };
 
 const initialResult: MemberCheckInResult = {
@@ -77,7 +78,9 @@ function formatCheckInDate(
 
 export default function MemberCheckInScanner({
   activityId,
+  sessions,
 }: Props) {
+  const [sessionId, setSessionId] = useState(sessions[0]?.id ?? "");
   const scannerRef =
     useRef<ScannerInstance | null>(
       null,
@@ -146,6 +149,7 @@ export default function MemberCheckInScanner({
         await checkInMemberQr(
           activityId,
           decodedText,
+          sessionId,
         );
 
       if (mountedRef.current) {
@@ -295,6 +299,12 @@ export default function MemberCheckInScanner({
     "ALREADY_CHECKED_IN";
 
   return (
+    <>
+    <label>الجلسة
+      <select value={sessionId} disabled={cameraRunning || starting || processing} onChange={event => setSessionId(event.target.value)}>
+        {sessions.map(session => <option key={session.id} value={session.id}>{session.title}</option>)}
+      </select>
+    </label>
     <div
       className={
         styles.scannerLayout
@@ -555,5 +565,6 @@ export default function MemberCheckInScanner({
         </section>
       )}
     </div>
+    </>
   );
 }

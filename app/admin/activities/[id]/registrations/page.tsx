@@ -49,6 +49,8 @@ import {
 } from "lucide-react";
 import attendanceStyles from "./attendance.module.css";
 import AttendanceLinkPanel from "./AttendanceLinkPanel";
+import ActivityAttendanceMatrix from "@/components/admin/ActivityAttendanceMatrix";
+import { getAttendanceProgress } from "@/lib/activity-attendance";
 export const dynamic = "force-dynamic";
 
 type Props = {
@@ -203,7 +205,7 @@ export default async function ActivityRegistrationsPage({
             },
 
             include: {
-                attendanceLink: true,
+                sessions: { orderBy: { sortOrder: "asc" }, include: { attendanceLink: true } },
                 registrationForm: {
                     include: {
                         questions: {
@@ -226,20 +228,22 @@ export default async function ActivityRegistrationsPage({
                                 ...(attendance === "PRESENT"
                                     ? {
                                         status: "APPROVED",
-                                        checkedInAt: {
-                                            not: null,
-                                        },
+                                        OR: [
+                                            { sessionAttendances: { some: { session: { activityId: id } } } },
+                                            { form: { activity: { sessions: { none: {} } } }, checkedInAt: { not: null } },
+                                        ],
                                     }
                                     : attendance === "ABSENT"
                                         ? {
                                             status: "APPROVED",
-                                            checkedInAt: null,
+                                            sessionAttendances: { none: { session: { activityId: id } } },
+                                            OR: [{ form: { activity: { sessions: { some: {} } } } }, { checkedInAt: null }],
                                         }
                                         : {}),
 
                                 ...(query
                                     ? {
-                                        OR: [
+                                        AND: [{ OR: [
                                             {
                                                 studentName: {
                                                     contains:
@@ -264,12 +268,13 @@ export default async function ActivityRegistrationsPage({
                                                     mode: "insensitive",
                                                 },
                                             },
-                                        ],
+                                        ] }],
                                     }
                                     : {}),
                             },
 
                             include: {
+                                sessionAttendances: { select: { sessionId: true } },
                                 answers: {
                                     include: {
                                         question: true,
@@ -404,9 +409,7 @@ export default async function ActivityRegistrationsPage({
             where: {
                 formId: form.id,
                 status: "APPROVED",
-                checkedInAt: {
-                    not: null,
-                },
+                ...(activity.sessions.length ? { sessionAttendances: { some: { session: { activityId: id } } } } : { checkedInAt: { not: null } }),
             },
         });
 
@@ -538,17 +541,21 @@ export default async function ActivityRegistrationsPage({
                 </div>
             </header>
 
-            {canManualAttendance && (
+            {canManualAttendance && activity.sessions.map(session => (
                 <AttendanceLinkPanel
+                    key={session.id}
                     activityId={activity.id}
-                    link={activity.attendanceLink ? {
-                        isActive: activity.attendanceLink.isActive,
-                        opensAt: activity.attendanceLink.opensAt?.toISOString().slice(0, 16) ?? "",
-                        closesAt: activity.attendanceLink.closesAt?.toISOString().slice(0, 16) ?? "",
-                        tokenPrefix: activity.attendanceLink.tokenPrefix,
+                    sessionId={session.id}
+                    title={session.title}
+                    link={session.attendanceLink ? {
+                        isActive: session.attendanceLink.isActive,
+                        opensAt: session.attendanceLink.opensAt?.toISOString().slice(0, 16) ?? "",
+                        closesAt: session.attendanceLink.closesAt?.toISOString().slice(0, 16) ?? "",
+                        tokenPrefix: session.attendanceLink.tokenPrefix,
                     } : null}
                 />
-            )}
+            ))}
+            <ActivityAttendanceMatrix activityId={activity.id} sessions={activity.sessions} requiredAttendanceCount={activity.requiredAttendanceCount} submissions={form.submissions} canManage={canManualAttendance && activity.status !== "ARCHIVED"} action={updateRegistrationAttendance} />
 
             <section className={attendanceStyles.actionToolbar}>
                 <div className={attendanceStyles.toolbarHeading}>
@@ -1456,7 +1463,15 @@ export default async function ActivityRegistrationsPage({
                                                 }
                                             </span>
 
-                                            {submission.status === "APPROVED" && (
+                                            {submission.status === "APPROVED" && activity.sessions.length > 0 && (
+                                                <span className={attendanceStyles.attendanceBadge}>
+                                                    {(() => {
+                                                        const progress = getAttendanceProgress({ ...submission, form: { activity } });
+                                                        return `${progress.attendanceCount} / ${progress.requiredAttendanceCount} · ${progress.eligible ? "مستحق" : "غير مستحق"}`;
+                                                    })()}
+                                                </span>
+                                            )}
+                                            {submission.status === "APPROVED" && activity.sessions.length === 0 && (
                                                 <div className={attendanceStyles.attendanceStateWrap}>
                                                     <span
                                                         className={`${attendanceStyles.attendanceBadge} ${
@@ -1551,7 +1566,7 @@ export default async function ActivityRegistrationsPage({
                                     )}
                                     <div className="activity-registration-review-actions">
 
-                                        {canManualAttendance &&
+                                        {canManualAttendance && activity.sessions.length === 0 &&
                                             !isArchived &&
                                             submission.status === "APPROVED" && (
                                             <form

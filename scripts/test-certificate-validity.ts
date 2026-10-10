@@ -8,6 +8,17 @@ const valid = {
 };
 
 assert.equal(isCertificateValid(valid), true);
+const workshop = {
+  ...valid,
+  submission: {
+    ...valid.submission,
+    form: { activity: { sessions: [{ id: "a" }, { id: "b" }], requiredAttendanceCount: 2 } },
+    sessionAttendances: [{ sessionId: "a" }, { sessionId: "foreign" }],
+  },
+};
+assert.equal(isCertificateValid(workshop), false, "legacy check-in cannot bypass the session threshold");
+assert.equal(isCertificateValid({ ...workshop, submission: { ...workshop.submission, checkedInAt: null, sessionAttendances: [{ sessionId: "a" }, { sessionId: "b" }] } }), true);
+assert.equal(isCertificateValid({ ...workshop, submission: { ...workshop.submission, sessionAttendances: [{ sessionId: "a" }, { sessionId: "a" }] } }), false);
 assert.equal(isCertificateValid({ ...valid, revokedAt: new Date() }), false);
 assert.equal(isCertificateValid({ ...valid, artifactPathname: null }), false);
 assert.equal(isCertificateValid({ ...valid, submission: { ...valid.submission, status: "REJECTED" } }), false);

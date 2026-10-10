@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
+import { ActivitySessionsError, parseActivitySessions, updateActivitySessions, validateSessionChanges } from "@/lib/activity-sessions";
 import {
   ACTIVITY_TIME_ZONE,
   activityDateTimeFromInput,
@@ -422,7 +423,7 @@ async function runAdminAction(
   } catch (error) {
     const message =
       error instanceof
-        AdminActionError
+        AdminActionError || error instanceof ActivitySessionsError
         ? error.message
         : fallbackError;
 
@@ -941,14 +942,7 @@ export async function createActivity(
       PERMISSIONS.ACTIVITY_MANAGE,
     );
 
-  return runAdminAction(
-    "/admin/activities",
-
-    "تم حفظ النشاط ونموذج التسجيل بنجاح.",
-
-    "تعذر حفظ النشاط. تحقق من البيانات وحاول مجددًا.",
-
-    async () => {
+  try {
       /* =============================================
          ACTIVITY DATA
       ============================================= */
@@ -1355,8 +1349,12 @@ export async function createActivity(
          CREATE EVERYTHING
       ============================================= */
 
+      const sessionsConfiguration = parseActivitySessions(formData);
+      validateSessionChanges(sessionsConfiguration, []);
       const activity = await prisma.activity.create({
         data: {
+          requiredAttendanceCount: sessionsConfiguration.requiredAttendanceCount,
+          sessions: { create: sessionsConfiguration.sessions.map(({ id, ...session }) => session) },
           title,
           cardDescription,
           tickerDescription,
@@ -1547,8 +1545,15 @@ export async function createActivity(
       revalidatePath(
         "/notifications",
       );
-    },
-  );
+    return { success: true, message: "تم حفظ النشاط ونموذج التسجيل بنجاح." };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof AdminActionError || error instanceof ActivitySessionsError
+        ? error.message
+        : "تعذر حفظ النشاط. تحقق من البيانات وحاول مجددًا.",
+    };
+  }
 }
 
 /* =========================================================
@@ -2467,6 +2472,9 @@ export async function updateActivityText(
 
       await prisma.$transaction(
         async (transaction) => {
+          if (formData.has("activitySessions")) {
+            await updateActivitySessions(transaction, activityId, parseActivitySessions(formData));
+          }
           await transaction.activity.update({
             where: {
               id: activityId,

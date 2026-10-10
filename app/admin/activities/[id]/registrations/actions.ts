@@ -451,6 +451,7 @@ export async function updateRegistrationStatus(
                */
               ...(status !== "APPROVED"
                 ? {
+                    sessionAttendances: { deleteMany: {} },
                     checkedInAt: null,
                     checkedInById: null,
                     attendanceSource: null,
@@ -546,169 +547,19 @@ export async function updateRegistrationStatus(
    MANUAL CHECK-IN / CHECK-OUT
 ========================================================= */
 
-export async function updateRegistrationAttendance(
-  formData: FormData,
-) {
-  const activityId = String(
-    formData.get("activityId") ?? "",
-  ).trim();
-
-  const submissionId = String(
-    formData.get("submissionId") ?? "",
-  ).trim();
-
-  const requestedAction = String(
-    formData.get("attendanceAction") ?? "",
-  ).trim();
-
-  if (
-    !activityId ||
-    !submissionId ||
-    !allowedAttendanceActions.includes(
-      requestedAction as AttendanceAction,
-    )
-  ) {
-    return;
-  }
-
-  const attendanceAction =
-    requestedAction as AttendanceAction;
-
-  const { user } =
-    await requireActivityPermission(
-      PERMISSIONS.ATTENDANCE_MANUAL,
-      activityId,
-    );
-
-  const basePath =
-    `/admin/activities/${activityId}/registrations`;
-
-  const submission =
-    await prisma.activityFormSubmission.findFirst({
-      where: {
-        id: submissionId,
-
-        form: {
-          activityId,
-        },
-      },
-
-      select: {
-        id: true,
-        status: true,
-        checkedInAt: true,
-      },
-    });
-
-  if (!submission) {
-    redirect(
-      `${basePath}?error=${encodeURIComponent(
-        "التسجيل غير موجود لهذا النشاط.",
-      )}`,
-    );
-  }
-
-  if (
-    submission.status !== "APPROVED"
-  ) {
-    redirect(
-      `${basePath}?error=${encodeURIComponent(
-        "يمكن تسجيل الحضور للطلاب المقبولين فقط.",
-      )}`,
-    );
-  }
-
-  if (
-    attendanceAction === "CHECK_IN"
-  ) {
-    if (submission.checkedInAt) {
-      redirect(
-        `${basePath}?error=${encodeURIComponent(
-          "تم تسجيل حضور هذا الطالب مسبقًا.",
-        )}`,
-      );
-    }
-
-    const checkedInAt =
-      new Date();
-
-    /*
-     * updateMany يمنع الضغط المزدوج أو تسجيل
-     * الحضور مرتين في نفس اللحظة.
-     */
-    const result =
-      await prisma.activityFormSubmission.updateMany({
-        where: {
-          id: submission.id,
-          status: "APPROVED",
-          checkedInAt: null,
-        },
-
-        data: {
-          checkedInAt,
-          checkedInById:
-            user.id,
-          attendanceSource: "STAFF_MANUAL",
-          attendanceLinkId: null,
-        },
-      });
-
-    if (result.count !== 1) {
-      redirect(
-        `${basePath}?error=${encodeURIComponent(
-          "تعذر تسجيل الحضور. حدّث الصفحة وحاول مرة أخرى.",
-        )}`,
-      );
-    }
-
-    revalidateRegistrationPages(
-      activityId,
-    );
-
-    redirect(
-      `${basePath}?success=${encodeURIComponent(
-        "تم تسجيل حضور الطالب يدويًا بنجاح.",
-      )}`,
-    );
-  }
-
-  /*
-   * CHECK_OUT
-   */
-  if (!submission.checkedInAt) {
-    redirect(
-      `${basePath}?error=${encodeURIComponent(
-        "هذا الطالب غير مسجل كحاضر أصلًا.",
-      )}`,
-    );
-  }
-
-  await prisma.activityFormSubmission.updateMany({
-    where: {
-      id: submission.id,
-      status: "APPROVED",
-      checkedInAt: {
-        not: null,
-      },
-    },
-
-    data: {
-      checkedInAt: null,
-      checkedInById: null,
-      attendanceSource: null,
-      attendanceLinkId: null,
-    },
+import { recordStaffSessionAttendance } from "@/lib/attendance-prisma";
+export async function updateRegistrationAttendance(formData: FormData) {
+  const activityId = String(formData.get("activityId") ?? "").trim();
+  const submissionId = String(formData.get("submissionId") ?? "").trim();
+  const sessionId = String(formData.get("sessionId") ?? "").trim() || undefined;
+  const action = String(formData.get("attendanceAction") ?? "");
+  if (!activityId || !submissionId || !allowedAttendanceActions.includes(action as AttendanceAction)) return;
+  const { user } = await requireActivityPermission(PERMISSIONS.ATTENDANCE_MANUAL, activityId);
+  const result = await recordStaffSessionAttendance({
+    activityId, submissionId, sessionId, userId: user.id, source: "STAFF_MANUAL", remove: action === "CHECK_OUT",
   });
-
-  revalidateRegistrationPages(
-    activityId,
-  );
-
-  redirect(
-    `${basePath}?success=${encodeURIComponent(
-      "تم إلغاء تسجيل حضور الطالب.",
-    )}`,
-  );
+  revalidateRegistrationPages(activityId);
+  redirect(`/admin/activities/${activityId}/registrations?${result.status === "SUCCESS" ? "success" : "error"}=${encodeURIComponent(result.message)}`);
 }
 
 /* =========================================================

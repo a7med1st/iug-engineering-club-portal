@@ -24,6 +24,7 @@ export default async function AttendancePage({ params, searchParams }: { params:
   return <main className={styles.page} dir="rtl"><section className={styles.panel}>
     <div className={styles.icon}>{successful ? <CheckCircle2 /> : <ShieldCheck />}</div>
     <h1>{successful ? "تم تسجيل حضورك" : "تأكيد الحضور"}</h1>
+    {"session" in state && state.session && <h2>{state.session.title}</h2>}
     {"activity" in state && state.activity && <><h2>{state.activity.title}</h2><p><CalendarDays size={18} /> {state.activity.startsAt ? new Intl.DateTimeFormat("ar-PS", { dateStyle: "long" }).format(state.activity.startsAt) : "الموعد غير محدد"}</p></>}
     {state.status === "READY" && !successful ? <><strong>{state.submission.studentName}</strong><form action={confirmSelfAttendance}><input type="hidden" name="activityId" value={activityId}/><input type="hidden" name="token" value={token}/><button type="submit">تأكيد حضوري</button></form></> : <p>{successful ? (query.result === "already" ? "حضورك مسجل مسبقًا." : "تم حفظ حضورك بنجاح.") : messages[state.status]}</p>}
     {state.status === "NOT_REGISTERED" && <Link href={`/activities/${activityId}/register?returnTo=${encodeURIComponent(path)}`}>التسجيل في النشاط</Link>}

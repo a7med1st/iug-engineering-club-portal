@@ -29,6 +29,7 @@ import { renderCertificate } from "@/lib/certificate-renderer";
 import { CERTIFICATE_FONTS, type CertificateFontFamily } from "@/lib/certificate-template-settings";
 import { putPrivateBlob, tryDeletePrivateBlobs } from "@/lib/blob-storage";
 import { randomUUID } from "node:crypto";
+import { getAttendanceProgress } from "@/lib/activity-attendance";
 
 type IndividualOverrides = { customName: string; customNameX: number; customNameY: number; customNameFontSize: number; customNameFontFamily: CertificateFontFamily; customNameBold: boolean };
 
@@ -87,6 +88,7 @@ async function ensureEligibleSubmission(
         userId: true,
         studentName: true,
         status: true,
+        sessionAttendances: { select: { sessionId: true } },
         checkedInAt:
           true,
 
@@ -108,6 +110,8 @@ async function ensureEligibleSubmission(
                 id: true,
                 title: true,
                 certificateTemplate: { select: { id: true } },
+                requiredAttendanceCount: true,
+                sessions: { select: { id: true } },
               },
             },
           },
@@ -132,12 +136,9 @@ async function ensureEligibleSubmission(
     );
   }
 
-  if (
-    !submission.checkedInAt
-  ) {
-    certificateAdminError(
-      "لا يمكن إصدار الشهادة قبل تسجيل حضور المشارك.",
-    );
+  const progress = getAttendanceProgress(submission);
+  if (!progress.eligible) {
+    certificateAdminError(`لا يمكن إصدار أو إعادة توليد الشهادة: حضر المشارك ${progress.attendanceCount} جلسة، والمطلوب ${progress.requiredAttendanceCount} جلسة.`);
   }
 
   if (!submission.form.activity.certificateTemplate) {
@@ -349,6 +350,7 @@ export async function updateIndividualCertificate(formData: FormData) {
   });
 
   if (!certificate || certificate.revokedAt) certificateAdminError("الشهادة غير متاحة للتعديل.");
+  await ensureEligibleSubmission(certificate.submissionId);
   if (!customName || customName.length > 160 || !Number.isFinite(customNameX) || !Number.isFinite(customNameY) || customNameX < 0 || customNameY < 0 || !Number.isFinite(customNameFontSize) || customNameFontSize < 1 || customNameFontSize > 512 || !CERTIFICATE_FONTS.some((font) => font === customNameFontFamily)) {
     certificateAdminError("تحقق من الاسم وموقعه داخل الشهادة.");
   }
@@ -381,7 +383,14 @@ export async function regenerateActivityCertificates(formData: FormData) {
       form: { activityId },
       certificate: { is: { revokedAt: null } },
     },
-    select: { id: true, certificate: { select: { id: true } } },
+    select: {
+      id: true,
+      status: true,
+      checkedInAt: true,
+      sessionAttendances: { select: { sessionId: true } },
+      form: { select: { activity: { select: { requiredAttendanceCount: true, sessions: { select: { id: true } } } } } },
+      certificate: { select: { id: true } },
+    },
   });
 
   if (!submissions.length) {
@@ -389,10 +398,13 @@ export async function regenerateActivityCertificates(formData: FormData) {
   }
 
   let failed = 0;
+  let regenerated = 0;
   for (const submission of submissions) {
+    if (!getAttendanceProgress(submission).eligible) continue;
     if (submission.certificate) {
       try {
         await generateCertificateArtifact(submission.id, submission.certificate.id);
+        regenerated += 1;
       } catch (error) {
         failed += 1;
         console.error("Certificate bulk regeneration failed", { submissionId: submission.id, error });
@@ -402,11 +414,11 @@ export async function regenerateActivityCertificates(formData: FormData) {
 
   revalidatePath("/admin/certificates");
   if (failed) {
-    redirect(`/admin/certificates?activity=${encodeURIComponent(activityId)}&error=${encodeURIComponent(`تم تحديث ${submissions.length - failed} شهادة، وتعذر تحديث ${failed}. جرّب إعادة توليد الشهادات المتبقية فرديًا.`)}`);
+    redirect(`/admin/certificates?activity=${encodeURIComponent(activityId)}&error=${encodeURIComponent(`تم تحديث ${regenerated} شهادة، وتعذر تحديث ${failed}. جرّب إعادة توليد الشهادات المتبقية فرديًا.`)}`);
   }
   redirect(
     `/admin/certificates?activity=${encodeURIComponent(activityId)}&success=${encodeURIComponent(
-      `تم تحديث ${submissions.length} شهادة بالخط المحدد.`,
+      `تم تحديث ${regenerated} شهادة بالخط المحدد.`,
     )}`,
   );
 }
@@ -446,10 +458,6 @@ export async function issueActivityCertificates(
         status:
           "APPROVED",
 
-        checkedInAt: {
-          not: null,
-        },
-
         form: {
           activityId,
         },
@@ -458,6 +466,10 @@ export async function issueActivityCertificates(
       select: {
         id: true,
         userId: true,
+
+        status: true,
+        checkedInAt: true,
+        sessionAttendances: { select: { sessionId: true } },
 
         certificate: {
           select: {
@@ -475,6 +487,8 @@ export async function issueActivityCertificates(
             activity: {
               select: {
                 title: true,
+                requiredAttendanceCount: true,
+                sessions: { select: { id: true } },
               },
             },
           },
@@ -497,6 +511,7 @@ export async function issueActivityCertificates(
     const submission
     of submissions
   ) {
+    if (!getAttendanceProgress(submission).eligible) continue;
     if (isIssuedCertificate(submission.certificate)) {
       continue;
     }

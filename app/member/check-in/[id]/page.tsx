@@ -64,6 +64,7 @@ export default async function MemberActivityCheckInPage({
         title: true,
         location: true,
         startsAt: true,
+        sessions: { orderBy: { sortOrder: "asc" }, select: { id: true, title: true } },
 
         registrationForm: {
           select: {
@@ -230,6 +231,7 @@ export default async function MemberActivityCheckInPage({
       </section>
 
       <MemberCheckInScanner
+        sessions={activity.sessions}
         activityId={
           activity.id
         }

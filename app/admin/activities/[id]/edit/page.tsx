@@ -4,6 +4,7 @@ import {
 } from "next/navigation";
 
 import ActivityFormBuilder from "@/components/admin/ActivityFormBuilder";
+import ActivitySessionsEditor from "@/components/admin/ActivitySessionsEditor";
 import ActivitySchedulePicker from "@/components/admin/ActivitySchedulePicker";
 import DepartmentChecklist from "@/components/admin/DepartmentChecklist";
 
@@ -68,6 +69,7 @@ export default async function EditActivityPage({
       },
 
       include: {
+        sessions: { orderBy: { sortOrder: "asc" }, include: { _count: { select: { attendances: true } } } },
         departments: {
           select: {
             departmentId: true,
@@ -425,6 +427,11 @@ export default async function EditActivityPage({
             </label>
           </div>
 
+          <ActivitySessionsEditor initialRequiredAttendanceCount={activity.requiredAttendanceCount} initialSessions={activity.sessions.map(session => {
+            const start = session.startsAt ? activityDateTimeInputValues(session.startsAt) : { date: "", time: "" };
+            const end = session.endsAt ? activityDateTimeInputValues(session.endsAt) : { date: "", time: "" };
+            return { id: session.id, title: session.title, startDate: start.date, startTime: start.time, endDate: end.date, endTime: end.time, attendanceCount: session._count.attendances };
+          })} />
           <DepartmentChecklist
             departments={
               departments

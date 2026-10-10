@@ -4,6 +4,7 @@ import {
   prisma,
 } from "@/lib/prisma";
 import { hasPermission, PERMISSIONS, type PermissionUser } from "@/lib/permissions";
+import { getAttendanceProgress, type AttendanceSubmission } from "@/lib/activity-attendance";
 
 export function canViewCertificate(viewer: Pick<PermissionUser, "id" | "role" | "memberPermissions" | "position">, ownerId: string | null) {
   return ownerId === viewer.id || hasPermission(viewer.role, PERMISSIONS.ADMIN_DASHBOARD, viewer.memberPermissions, viewer.position);
@@ -12,10 +13,10 @@ export function canViewCertificate(viewer: Pick<PermissionUser, "id" | "role" | 
 export function isCertificateValid(certificate: {
   revokedAt: Date | null;
   artifactPathname: string | null;
-  submission: { status: string; checkedInAt: Date | null };
+  submission: AttendanceSubmission;
 }) {
   return !certificate.revokedAt && Boolean(certificate.artifactPathname) &&
-    certificate.submission.status === "APPROVED" && Boolean(certificate.submission.checkedInAt);
+    getAttendanceProgress(certificate.submission).eligible;
 }
 
 export function isIssuedCertificate(certificate: { revokedAt: Date | null; artifactPathname: string | null } | null) {
@@ -78,6 +79,7 @@ export async function getCertificateByCode(
           studentDepartment:
             true,
           status: true,
+          sessionAttendances: { select: { sessionId: true } },
           checkedInAt:
             true,
 
@@ -88,6 +90,8 @@ export async function getCertificateByCode(
                   id: true,
                   title: true,
                   location: true,
+                  requiredAttendanceCount: true,
+                  sessions: { select: { id: true } },
                   startsAt: true,
 
                   departments: {
@@ -159,10 +163,6 @@ export async function getCertificateAdminRows({
         status:
           "APPROVED",
 
-        checkedInAt: {
-          not: null,
-        },
-
         ...(selectedActivity
           ? {
               form: {
@@ -177,6 +177,8 @@ export async function getCertificateAdminRows({
         id: true,
         userId: true,
         studentName: true,
+        status: true,
+        sessionAttendances: { select: { sessionId: true } },
         studentEmail: true,
         studentDepartment:
           true,
@@ -200,6 +202,8 @@ export async function getCertificateAdminRows({
                 id: true,
                 title: true,
                 startsAt: true,
+                requiredAttendanceCount: true,
+                sessions: { select: { id: true } },
               },
             },
           },
@@ -213,7 +217,7 @@ export async function getCertificateAdminRows({
     });
 
   const filtered =
-    submissions.filter(
+    submissions.map((submission) => ({ ...submission, attendanceProgress: getAttendanceProgress(submission) })).filter(
       (submission) => {
         if (
           issued ===
@@ -240,7 +244,7 @@ export async function getCertificateAdminRows({
 
     summary: {
       eligibleCount:
-        submissions.length,
+        submissions.filter((submission) => getAttendanceProgress(submission).eligible).length,
 
       issuedCount:
         submissions.filter(

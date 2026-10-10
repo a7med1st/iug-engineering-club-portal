@@ -118,7 +118,7 @@ export default async function AdminCertificatesPage({
     {
       label: "لم تصدر بعد",
       value: data.summary.notIssuedCount,
-      hint: "مؤهلون بانتظار إصدار الشهادة",
+      hint: "تسجيلات مقبولة دون شهادة صادرة",
       icon: Award,
       tone: "orange",
     },
@@ -229,7 +229,7 @@ values={{nameX:Number(template?.nameX??600),nameY:Number(template?.nameY??425),n
               <Award size={18} />
 
               <span>
-                إصدار شهادات جميع الحاضرين
+                إصدار شهادات جميع المؤهلين
               </span>
             </button>
             </form>
@@ -240,7 +240,7 @@ values={{nameX:Number(template?.nameX??600),nameY:Number(template?.nameY??425),n
       <section className={styles.panel} data-reveal="up">
         <div className={styles.panelHead}>
           <div>
-            <h2>الحاضرون المؤهلون</h2>
+            <h2>حضور المشاركين والشهادات</h2>
 
             <p>
               راجع الشهادات الصادرة، افتحها للتحقق، أو أصدر وألغِ
@@ -262,7 +262,7 @@ values={{nameX:Number(template?.nameX??600),nameY:Number(template?.nameY??425),n
                 <th>المشارك</th>
                 <th>القسم</th>
                 <th>النشاط</th>
-                <th>وقت الحضور</th>
+                <th>الحضور / المطلوب</th>
                 <th>الشهادة</th>
                 <th>الإجراء</th>
               </tr>
@@ -298,7 +298,10 @@ values={{nameX:Number(template?.nameX??600),nameY:Number(template?.nameY??425),n
                       </td>
 
                       <td className={styles.dateCell}>
-                        {formatDate(row.checkedInAt)}
+                        <strong>{row.attendanceProgress.attendanceCount} / {row.attendanceProgress.requiredAttendanceCount}</strong>
+                        <small>{row.attendanceProgress.totalSessions} جلسات</small>
+                        <small>{row.attendanceProgress.eligible ? "مؤهل" : "لم يستوفِ الحضور المطلوب"}</small>
+                        {!row.attendanceProgress.totalSessions && <small>{formatDate(row.checkedInAt)}</small>}
                       </td>
 
                       <td>
@@ -373,7 +376,7 @@ values={{nameX:Number(template?.nameX??600),nameY:Number(template?.nameY??425),n
                             </>
                           )}
 
-                          {!active && (
+                          {!active && row.attendanceProgress.eligible && (
                             <form
                               action={issueCertificate}
                             >

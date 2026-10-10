@@ -417,6 +417,13 @@ p {
     opacity: 1;
 }
 
+.activity-create-fields {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+
 .header-actions {
     display: flex;
     align-items: center;

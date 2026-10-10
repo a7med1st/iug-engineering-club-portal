@@ -8,7 +8,29 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
   const { code } = await params;
   const auth = await getCurrentUser();
   if (!auth) return new Response("Unauthorized", { status: 401 });
-  const certificate = await prisma.certificate.findUnique({ where: { verificationCode: normalizeCertificateCode(code) }, select: { artifactPathname: true, artifactMime: true, revokedAt: true, submission: { select: { userId: true, status: true, checkedInAt: true } } } });
+  const certificate = await prisma.certificate.findUnique({
+    where: { verificationCode: normalizeCertificateCode(code) },
+    select: {
+      artifactPathname: true,
+      artifactMime: true,
+      revokedAt: true,
+      submission: {
+        select: {
+          userId: true,
+          status: true,
+          checkedInAt: true,
+          sessionAttendances: { select: { sessionId: true } },
+          form: {
+            select: {
+              activity: {
+                select: { requiredAttendanceCount: true, sessions: { select: { id: true } } },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
   if (!certificate) return new Response("Not found", { status: 404 });
   if (!canViewCertificate(auth.user, certificate.submission.userId)) return new Response("Forbidden", { status: 403 });
   if (!isCertificateValid(certificate)) return new Response("Not found", { status: 404 });

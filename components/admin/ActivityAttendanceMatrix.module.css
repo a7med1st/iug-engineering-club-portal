@@ -1,0 +1,16 @@
+.matrix { margin-block: 24px; min-width: 0; }
+.matrix h2 { font-size: 20px; }
+.desktop { overflow-x: auto; max-width: 100%; }
+.desktop table { border-collapse: collapse; width: 100%; background: white; }
+.desktop th,.desktop td { border-bottom: 1px solid #dce2e5; padding: 12px; text-align: start; min-width: 100px; overflow-wrap: anywhere; }
+.desktop thead { background: #eef3f0; }
+.present,.absent { width: 36px; height: 36px; border-radius: 6px; display: grid; place-items: center; cursor: pointer; }
+.present { color: #17613c; background: #e6f4eb; border: 1px solid #87b99b; }
+.absent { color: #687177; background: #f5f6f7; border: 1px solid #ccd2d6; }
+.matrix button:disabled { cursor: default; opacity: .65; }
+.mobile { display: none; }
+.mobile article { border: 1px solid #dce2e5; border-radius: 8px; padding: 16px; background: white; }
+.mobile h3 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
+.mobileRow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-block: 8px; border-top: 1px solid #edf0f2; }
+.mobileRow span { overflow-wrap: anywhere; }
+@media(max-width:700px) { .desktop { display: none; } .mobile { display: grid; gap: 12px; } }
