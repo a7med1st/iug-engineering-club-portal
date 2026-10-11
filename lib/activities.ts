@@ -40,7 +40,7 @@ export function isPastActivity(
     sessions?: Array<Pick<Activity, "startsAt" | "endsAt">>;
   },
   referenceTime: Date = new Date(),
-) {
+): boolean {
   if (activity.sessions?.length) {
     return activity.sessions.every((session) =>
       isPastActivity(session, referenceTime),
