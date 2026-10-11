@@ -50,8 +50,23 @@ export function pastActivityWhere(
   return {
     status: { in: ["PUBLISHED", "ARCHIVED"] },
     OR: [
-      { endsAt: { lt: referenceTime } },
-      { endsAt: null, startsAt: { lt: referenceTime } },
+      {
+        sessions: {
+          some: {},
+          every: {
+            OR: [
+              { endsAt: { lt: referenceTime } },
+              { endsAt: null, startsAt: { lt: referenceTime } },
+            ],
+          },
+        },
+      },
+      { sessions: { none: {} }, endsAt: { lt: referenceTime } },
+      {
+        sessions: { none: {} },
+        endsAt: null,
+        startsAt: { lt: referenceTime },
+      },
     ],
   };
 }
@@ -62,9 +77,20 @@ export function currentActivityWhere(
   return {
     status: "PUBLISHED",
     OR: [
-      { startsAt: { gte: referenceTime } },
-      { endsAt: { gte: referenceTime } },
-      { startsAt: null, endsAt: null },
+      {
+        sessions: {
+          some: {
+            OR: [
+              { endsAt: { gte: referenceTime } },
+              { endsAt: null, startsAt: { gte: referenceTime } },
+              { startsAt: null, endsAt: null },
+            ],
+          },
+        },
+      },
+      { sessions: { none: {} }, startsAt: { gte: referenceTime } },
+      { sessions: { none: {} }, endsAt: { gte: referenceTime } },
+      { sessions: { none: {} }, startsAt: null, endsAt: null },
     ],
   };
 }
