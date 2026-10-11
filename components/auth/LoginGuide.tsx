@@ -1,6 +1,7 @@
 "use client";
 
 import { CircleHelp, X } from "lucide-react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -42,8 +43,13 @@ export default function LoginGuide({ authenticated }: { authenticated: boolean }
   const pathname = usePathname();
   const router = useRouter();
   const [step, setStep] = useState<LoginGuideStep | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isMobile = useCallback(
     () => window.matchMedia("(max-width: 1100px)").matches,
@@ -179,9 +185,9 @@ export default function LoginGuide({ authenticated }: { authenticated: boolean }
     };
   }, [targetRect, tooltipBelow]);
 
-  if (authenticated) return null;
+  if (authenticated || !mounted) return null;
 
-  return (
+  return createPortal(
     <>
       <button
         className="login-guide-help"
@@ -234,6 +240,7 @@ export default function LoginGuide({ authenticated }: { authenticated: boolean }
           </div>
         </div>
       )}
-    </>
+    </>,
+    document.body,
   );
 }

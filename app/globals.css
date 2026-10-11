@@ -2694,12 +2694,14 @@ p {
 
     .header-inner {
         min-height: 70px;
-        gap: 11px
+        gap: 11px;
+        justify-content: flex-start
     }
 
     .brand {
         min-width: 0;
         flex: 1 1 auto;
+        max-width: 100%;
         gap: 8px
     }
 
@@ -2734,6 +2736,13 @@ p {
     }
 
     .mobile-navigation {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex: 0 0 auto
+    }
+
+    .header-notification-slot {
         flex: 0 0 auto
     }
 
@@ -2992,12 +3001,16 @@ p {
 }
 
 @media(max-width:420px) {
+    .header-inner {
+        padding-inline: 10px
+    }
+
     .brand-text small {
         display: none
     }
 
     .brand-text strong {
-        max-width: 150px;
+        max-width: clamp(102px, 38vw, 150px);
         overflow: hidden;
         text-overflow: ellipsis
     }
@@ -3036,6 +3049,11 @@ p {
         border-radius: 11px
     }
 
+    .header-inner:has(.header-notification-slot) .brand {
+        flex: 0 1 auto;
+        width: auto
+    }
+
     .mobile-menu-panel {
         width: 100%;
         padding: 16px
@@ -3052,6 +3070,52 @@ p {
     .admin-mobile-drawer,
     .admin-drawer {
         width: 100%
+    }
+}
+
+@media(max-width:360px) {
+    .header-inner {
+        gap: 6px;
+        padding-inline: 8px
+    }
+
+    .brand {
+        gap: 6px
+    }
+
+    .brand-logo-box {
+        width: 46px;
+        height: 44px
+    }
+
+    .brand-logo {
+        width: 52px;
+        height: 52px
+    }
+
+    .brand-text strong {
+        max-width: 112px;
+        font-size: .74rem
+    }
+
+    .mobile-navigation {
+        gap: 5px
+    }
+}
+
+@media(max-width:340px) {
+    .brand-text {
+        display: none
+    }
+
+    .header-inner:has(.header-notification-slot) :where(.header-messages-link,
+        .header-library-link,
+        .theme-toggle,
+        .mobile-menu-toggle) {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px
     }
 }
 
