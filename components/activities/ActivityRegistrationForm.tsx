@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { ArrowUpLeft, MessageCircle } from "lucide-react";
 
 import {
   submitActivityRegistration,
@@ -30,6 +30,7 @@ type Question = {
 
 type Props = {
   activityId: string;
+  activityTitle: string;
   formId: string;
   questions: Question[];
   requiresGuestIdentity: boolean;
@@ -67,6 +68,7 @@ function emptyValues(
 
 export default function ActivityRegistrationForm({
   activityId,
+  activityTitle,
   formId,
   questions,
   requiresGuestIdentity,
@@ -281,21 +283,30 @@ export default function ActivityRegistrationForm({
           aria-live="polite"
         >
           <span>{state.message}</span>
-          {state.success && state.whatsappUrl && (
-            <div className="activity-registration-success-links">
+        </div>
+      )}
+
+      {state.success && state.whatsappUrl && (
+        <section className="activity-registration-whatsapp-card" aria-label="مجموعة النشاط على واتساب">
+          <div className="activity-registration-whatsapp-header">
+            <div className="activity-registration-whatsapp-icon"><MessageCircle size={28} aria-hidden="true" /></div>
+            <div className="activity-registration-whatsapp-heading"><span>واتساب</span><h2>مجموعة النشاط</h2></div>
+          </div>
+          <p className="activity-registration-whatsapp-title">{activityTitle}</p>
+          <div className="activity-registration-success-links">
               <a
                 className="activity-registration-whatsapp-link"
                 href={state.whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <MessageCircle size={18} aria-hidden="true" />
-                فتح رابط واتساب
+                <MessageCircle size={20} aria-hidden="true" />
+                الانضمام إلى المجموعة
+                <ArrowUpLeft size={18} aria-hidden="true" />
               </a>
               {returnTo && <Link href={returnTo}>العودة</Link>}
-            </div>
-          )}
-        </div>
+          </div>
+        </section>
       )}
 
       <button

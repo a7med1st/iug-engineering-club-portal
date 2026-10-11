@@ -252,6 +252,7 @@ export default async function ActivityRegisterPage({
                             ) : (
                                 <ActivityRegistrationForm
                                     activityId={activity.id}
+                                    activityTitle={activity.title}
                                     formId={form.id}
                                     requiresGuestIdentity={requiresGuestIdentity}
                                     departments={departments}

@@ -6413,6 +6413,28 @@ html[data-reload-intro="true"] .intro-gate {
     font-weight: 700;
 }
 
+.activity-registration-whatsapp-card {
+    padding: 24px;
+    border: 1px solid #a8d8bf;
+    border-top: 4px solid #16803d;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #d5f4e3, #f7fcfa 55%, #e6f2fb);
+    box-shadow: 0 8px 24px rgba(22, 80, 55, .08);
+    animation: whatsapp-card-enter 400ms ease both;
+}
+.activity-registration-whatsapp-header { display: flex; align-items: center; gap: 14px; }
+.activity-registration-whatsapp-icon { width: 52px; height: 52px; flex: 0 0 52px; display: grid; place-items: center; border-radius: 8px; color: #14743a; background: #fff; }
+.activity-registration-whatsapp-heading { min-width: 0; }
+.activity-registration-whatsapp-heading span { font-size: 13px; line-height: 1.8; color: #47735b; }
+.activity-registration-whatsapp-heading h2 { margin: 2px 0 0; font-size: 21px; line-height: 1.7; color: #16452c; }
+.activity-registration-whatsapp-title { margin: 18px 0 20px; font-size: 16px; line-height: 1.9; color: #355449; overflow-wrap: anywhere; }
+.activity-registration-whatsapp-card .activity-registration-success-links { margin-top: 0; }
+.activity-registration-whatsapp-card .activity-registration-whatsapp-link { width: 100%; justify-content: center; min-height: 48px; padding: 12px; line-height: 1.8; text-align: center; }
+.activity-registration-whatsapp-link svg { flex-shrink: 0; }
+@keyframes whatsapp-card-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 480px) { .activity-registration-whatsapp-card { padding: 20px 16px; } }
+@media (prefers-reduced-motion: reduce) { .activity-registration-whatsapp-card { animation: none; } }
+
 .activity-registration-whatsapp-link:hover,
 .activity-registration-whatsapp-link:focus-visible {
     background: #116530;

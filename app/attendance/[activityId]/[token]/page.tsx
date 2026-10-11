@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { CalendarDays, CheckCircle2, ShieldCheck } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
@@ -20,13 +21,17 @@ export default async function AttendancePage({ params, searchParams }: { params:
   const state = await loadAttendanceConfirmation({ activityId, token, user: auth ? { id: auth.user.id, role: auth.user.role, name: auth.user.name } : null }, attendanceDeps());
   const path = `/attendance/${activityId}/${token}`;
   if (state.status === "LOGIN_REQUIRED") redirect(`/login?portal=student&returnTo=${encodeURIComponent(path)}`);
-  const successful = query.result === "success" || query.result === "already";
+  const successful = state.status === "ALREADY_RECORDED";
   return <main className={styles.page} dir="rtl"><section className={styles.panel}>
-    <div className={styles.icon}>{successful ? <CheckCircle2 /> : <ShieldCheck />}</div>
-    <h1>{successful ? "تم تسجيل حضورك" : "تأكيد الحضور"}</h1>
-    {"session" in state && state.session && <h2>{state.session.title}</h2>}
-    {"activity" in state && state.activity && <><h2>{state.activity.title}</h2><p><CalendarDays size={18} /> {state.activity.startsAt ? new Intl.DateTimeFormat("ar-PS", { dateStyle: "long" }).format(state.activity.startsAt) : "الموعد غير محدد"}</p></>}
-    {state.status === "READY" && !successful ? <><strong>{state.submission.studentName}</strong><form action={confirmSelfAttendance}><input type="hidden" name="activityId" value={activityId}/><input type="hidden" name="token" value={token}/><button type="submit">تأكيد حضوري</button></form></> : <p>{successful ? (query.result === "already" ? "حضورك مسجل مسبقًا." : "تم حفظ حضورك بنجاح.") : messages[state.status]}</p>}
+    <header className={styles.header}>
+      <div className={styles.icon}>{successful ? <CheckCircle2 /> : <ShieldCheck />}</div>
+      <h1>{successful ? "تم تسجيل حضورك" : "تأكيد الحضور"}</h1>
+      <Image className={styles.clubLogo} src="/images/club-logo.png" alt="شعار النادي الهندسي" width={88} height={88} />
+    </header>
+    {"activity" in state && state.activity && <div className={styles.details}><span className={styles.label}>النشاط</span><p className={styles.activityTitle}>{state.activity.title}</p>
+      {"session" in state && state.session && <div className={styles.session}><span className={styles.label}>الجلسة</span><h2>{state.session.title}</h2></div>}
+      <p className={styles.date}><CalendarDays size={18} /> {state.activity.startsAt ? new Intl.DateTimeFormat("ar-PS", { dateStyle: "long" }).format(state.activity.startsAt) : "الموعد غير محدد"}</p></div>}
+    {state.status === "READY" && !successful ? <><strong className={styles.student}>{state.submission.studentName}</strong><form action={confirmSelfAttendance}><input type="hidden" name="activityId" value={activityId}/><input type="hidden" name="token" value={token}/><button type="submit">تأكيد حضوري</button></form></> : <p className={styles.message} role="status">{successful ? (query.result === "already" ? "حضورك في هذه الجلسة مسجل مسبقًا." : "تم حفظ حضورك في هذه الجلسة بنجاح.") : messages[state.status]}</p>}
     {state.status === "NOT_REGISTERED" && <Link href={`/activities/${activityId}/register?returnTo=${encodeURIComponent(path)}`}>التسجيل في النشاط</Link>}
     <Link className={styles.cancel} href="/student">العودة للوحة الطالب</Link>
   </section></main>;

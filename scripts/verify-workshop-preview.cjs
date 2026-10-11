@@ -1,0 +1,34 @@
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
+const fs = require("node:fs/promises");
+
+(async () => {
+  const browser = await chromium.launch({ channel: "msedge", headless: true, args: ["--disable-gpu", "--disable-software-rasterizer"] });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await page.goto("http://127.0.0.1:3000/login?portal=member");
+  await page.locator('input[type="email"]').fill("preview@example.com");
+  await page.locator('input[type="password"]').fill("WorkshopPreview2026!");
+  await page.getByRole("button", { name: "دخول", exact: true }).click();
+  await page.waitForURL(url => !url.pathname.includes("login"), { timeout: 60000 });
+  await page.goto("http://127.0.0.1:3000/admin/activities/workshop-preview/registrations");
+  await page.getByRole("heading", { name: "حضور الجلسات", exact: true }).waitFor({ timeout: 60000 });
+  await fs.mkdir("artifacts/workshop-preview", { recursive: true });
+  await page.screenshot({ path: "artifacts/workshop-preview/desktop.png", fullPage: true });
+  console.log("Desktop matrix rendered");
+  const toggle = page.locator('button[aria-label*="سارة"][aria-label*="بناء التطبيق"]:visible');
+  const initiallyPresent = await toggle.getAttribute("aria-pressed") === "true";
+  await toggle.click();
+  await page.waitForTimeout(1200);
+  await page.reload();
+  if ((await page.locator('button[aria-label*="سارة"][aria-label*="بناء التطبيق"]:visible').getAttribute("aria-pressed") === "true") === initiallyPresent) throw new Error("Attendance did not persist");
+  await page.locator('button[aria-label*="سارة"][aria-label*="بناء التطبيق"]:visible').click();
+  await page.waitForTimeout(1200);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await page.screenshot({ path: "artifacts/workshop-preview/mobile.png", fullPage: true });
+  if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error("Mobile horizontal overflow");
+  await page.goto("http://127.0.0.1:3000/admin/activities/workshop-preview/edit");
+  await page.getByRole("heading", { name: "جلسات النشاط", exact: true }).waitFor();
+  await page.screenshot({ path: "artifacts/workshop-preview/editor-mobile.png", fullPage: true });
+  console.log("Login, matrix, attendance persistence, mobile layout, and session editor passed");
+  await browser.close();
+})().catch(error => { console.error(error); process.exit(1); });

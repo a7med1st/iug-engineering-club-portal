@@ -99,9 +99,9 @@ export async function loadAttendanceConfirmation(
   if (!link) return { status: "INVALID_LINK" as const };
 
   const stateError = linkError(link, deps.now());
-  if (stateError) return { status: stateError };
+  if (stateError) return { status: stateError, activity: link.activity, session: link.session };
   if (!input.user) return { status: "LOGIN_REQUIRED" as const, activity: link.activity };
-  if (input.user.role !== "STUDENT") return { status: "WRONG_ROLE" as const, activity: link.activity };
+  if (input.user.role !== "STUDENT") return { status: "WRONG_ROLE" as const, activity: link.activity, session: link.session };
 
   const submission = await deps.findSubmission({
     activityId: input.activityId,
