@@ -43,6 +43,7 @@ async function publicActivity(id: string) {
       },
     },
     include: {
+      sessions: { select: { startsAt: true, endsAt: true } },
       departments: {
         include: {
           department: true,

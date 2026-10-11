@@ -93,6 +93,7 @@ export default async function Activities({
   const activities = await prisma.activity.findMany({
     where: { AND: filters },
     include: {
+      sessions: { select: { startsAt: true, endsAt: true } },
       departments: {
         include: { department: true },
       },

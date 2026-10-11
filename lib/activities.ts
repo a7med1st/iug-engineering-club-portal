@@ -17,6 +17,7 @@ export function formatActivityTimestamp(date: Date | null, locale = "ar-PS") {
 }
 
 export type PublicActivity = Activity & {
+  sessions: Array<Pick<Activity, "startsAt" | "endsAt">>;
   departments: Array<ActivityDepartment & { department: Department }>;
 };
 
@@ -35,9 +36,16 @@ export type PastActivityCardData = Pick<
 };
 
 export function isPastActivity(
-  activity: Pick<Activity, "startsAt" | "endsAt">,
+  activity: Pick<Activity, "startsAt" | "endsAt"> & {
+    sessions?: Array<Pick<Activity, "startsAt" | "endsAt">>;
+  },
   referenceTime: Date = new Date(),
 ) {
+  if (activity.sessions?.length) {
+    return activity.sessions.every((session) =>
+      isPastActivity(session, referenceTime),
+    );
+  }
   const activityEnd = activity.endsAt ?? activity.startsAt;
   return activityEnd
     ? activityEnd.getTime() < referenceTime.getTime()
