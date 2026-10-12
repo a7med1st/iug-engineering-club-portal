@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Github, Instagram, Linkedin, Palette, UserRound } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { MEMBER_GROUPS } from "@/lib/member-groups";
+import { MEMBER_GROUPS, membersForGroup } from "@/lib/member-groups";
 import styles from "../members/members.module.css";
 
 export const dynamic = "force-dynamic";
@@ -9,10 +9,11 @@ export const dynamic = "force-dynamic";
 export default async function DelegatesPage() {
   const items = await prisma.clubStructureItem.findMany({
     include: {
+      department: { select: { slug: true, sortOrder: true } },
       user: { select: {
         id: true, name: true, role: true, avatarStoredName: true, avatarUpdatedAt: true,
         profileLinkedIn: true, profileGithub: true, profileInstagram: true,
-        department: { select: { slug: true } },
+        department: { select: { slug: true, sortOrder: true } },
       } },
     },
     orderBy: [{ level: "asc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
@@ -25,7 +26,7 @@ export default async function DelegatesPage() {
           <section key={group.value} className={styles.memberSection} aria-labelledby={`group-${group.value}`}>
             <h2 id={`group-${group.value}`} className={styles.heading}>{group.label}</h2>
             <div className={styles.membersGrid}>
-          {items.filter((item) => item.memberGroup === group.value).map((item) => {
+          {membersForGroup(items, group.value).map((item) => {
             const user = item.user;
             const publicUser = user && (user.role === "MEMBER" || user.role === "ADMIN") ? user : null;
             const name = user?.name ?? item.name;
