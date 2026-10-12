@@ -15,6 +15,7 @@
     "test:login-guide": "node --import tsx scripts/test-login-guide.ts",
     "test:password-security": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --import tsx scripts/test-password-security.ts",
     "test:member-management": "node --env-file=.env scripts/test-member-management.mjs",
+    "test:member-groups": "node --require ./scripts/node-platform-fallback.cjs --import tsx scripts/test-member-groups.ts",
     "test:admin-dashboard-users": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --import tsx scripts/test-admin-dashboard-users.ts",
     "test:registration-export": "node --env-file=.env scripts/test-registration-export.mjs",
     "test:attendance-certificate-schema": "node scripts/test-attendance-certificate-schema.mjs",

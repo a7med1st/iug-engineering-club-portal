@@ -9,6 +9,7 @@ import {
   managedDepartmentIdsForUser,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { MEMBER_GROUPS } from "@/lib/member-groups";
 
 import {
   addStructureMember,
@@ -191,6 +192,13 @@ export default async function StructureAdminPage({
               />
             </label>
 
+            <label>
+              المجموعة
+              <select name="memberGroup" defaultValue="MEMBERS" required>
+                {MEMBER_GROUPS.map((group) => <option key={group.value} value={group.value}>{group.label}</option>)}
+              </select>
+            </label>
+
             <datalist id="structure-titles">
               <option value="رئيس النادي" />
               <option value="نائب رئيس النادي" />
@@ -348,6 +356,13 @@ export default async function StructureAdminPage({
                             required
                             list="structure-titles"
                           />
+                        </label>
+
+                        <label>
+                          المجموعة
+                          <select name="memberGroup" defaultValue={item.memberGroup} required>
+                            {MEMBER_GROUPS.map((group) => <option key={group.value} value={group.value}>{group.label}</option>)}
+                          </select>
                         </label>
 
                         <label>

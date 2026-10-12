@@ -9,6 +9,16 @@ import {
   requirePermission,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { parseMemberGroup } from "@/lib/member-groups";
+
+function memberGroupInput(formData: FormData) {
+  try {
+    const value = formData.get("memberGroup");
+    return value === null ? undefined : parseMemberGroup(value);
+  } catch {
+    fail("اختر مجموعة صحيحة للعضو.");
+  }
+}
 
 function text(formData: FormData, field: string) {
   return String(formData.get(field) ?? "").trim();
@@ -120,6 +130,7 @@ function revalidateStructure(userId?: string) {
   revalidatePath("/admin/structure");
   revalidatePath("/admin/members");
   revalidatePath("/delegates");
+  revalidatePath("/members");
 
   if (userId) {
     revalidatePath(`/members/${userId}`);
@@ -177,6 +188,7 @@ export async function addStructureMember(
 
   const userId = text(formData, "userId");
   const title = text(formData, "title");
+  const memberGroup = memberGroupInput(formData);
   const parentId = optionalId(formData, "parentId");
 
   if (!userId) {
@@ -220,6 +232,7 @@ export async function addStructureMember(
     data: {
       name: targetUser.name,
       title,
+      memberGroup,
       userId: targetUser.id,
       departmentId: targetUser.departmentId,
       parentId,
@@ -243,6 +256,7 @@ export async function updateStructureMember(
   const targetUserId = text(formData, "userId");
   const name = text(formData, "name");
   const title = text(formData, "title");
+  const memberGroup = memberGroupInput(formData);
   const parentId = optionalId(formData, "parentId");
 
   if (!itemId || !targetUserId) {
@@ -324,6 +338,7 @@ export async function updateStructureMember(
       data: {
         name,
         title,
+        memberGroup,
         userId: targetUser.id,
         departmentId: targetUser.departmentId,
         parentId,

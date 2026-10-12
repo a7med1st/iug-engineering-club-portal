@@ -87,7 +87,7 @@ export default function AvatarPreview({
           top: `${sourceRect.top}px`,
           width: `${sourceRect.width}px`,
           height: `${sourceRect.height}px`,
-          borderRadius: "50%",
+          borderRadius: "24px",
           opacity: 1,
         },
         {
@@ -146,7 +146,7 @@ export default function AvatarPreview({
           top: `${sourceRect.top}px`,
           width: `${sourceRect.width}px`,
           height: `${sourceRect.height}px`,
-          borderRadius: "50%",
+          borderRadius: "24px",
           opacity: 1,
         },
       ],

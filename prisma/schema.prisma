@@ -804,11 +804,19 @@ model DepartmentGuide {
 // CLUB STRUCTURE
 // =========================================================
 
+enum MemberGroup {
+  ADMINISTRATIVE
+  PUBLIC_RELATIONS
+  MEMBERS
+  MEDIA
+}
+
 model ClubStructureItem {
   id    String @id @default(cuid())
   name  String
   title String
 
+  memberGroup MemberGroup @default(MEMBERS)
   level     Int @default(1)
   sortOrder Int @default(0)
 

@@ -7,7 +7,7 @@ const links = [
   { href: "/", label: "الرئيسية" },
   { href: "/activities", label: "الأنشطة" },
   { href: "/departments", label: "الأقسام" },
-  { href: "/delegates", label: "المناديب" },
+  { href: "/members", label: "الأعضاء" },
   { href: "/contact", label: "بوابة التواصل" },
   { href: "/about", label: "من نحن" },
 ];

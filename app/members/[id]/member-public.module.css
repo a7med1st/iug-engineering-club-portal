@@ -1,3 +1,57 @@
+.profilePage { width: min(780px, calc(100% - 32px)); margin: 0 auto; padding: 30px 0 52px; }
+.profileShell { display: grid; grid-template-columns: 346px minmax(0, 1fr); direction: ltr; overflow: hidden; border: 1px solid #e6e9ec; border-radius: 28px; background: #fff; box-shadow: 0 20px 32px rgb(0 0 0 / 10%), 0 2px 3px rgb(0 0 0 / 6%); min-height: 570px; }
+.profileSidebar { display: flex; flex-direction: column; align-items: center; padding: 36px 30px; background: #f8f9fa; border-right: 1px solid #f0f1f3; gap: 26px; }
+.profileSidebar .avatarWrap { width: 248px; height: 248px; max-width: 100%; border: 5px solid #fff; border-radius: 24px; margin: 0; box-shadow: 0 22px 42px rgb(0 0 0 / 16%); }
+.committeeBadge { color: #007fb7; background: #eef8fe; padding: 5px 15px; border-radius: 30px; font-size: 14px; font-weight: 700; }
+.profileSocials { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; }
+.profileSocials a { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; color: #0087be; background: #edf6ff; transition: background 200ms ease, transform 200ms ease; }
+.profileSocials a:hover { background: #d8effb; transform: translateY(-3px); }
+.profileContent { padding: 50px; min-width: 0; }
+.profileContent h1 { font-size: 40px; line-height: 1.3; color: #101b2b; margin: 0; overflow-wrap: anywhere; }
+.profileRole { font-size: 22px; font-weight: 700; color: #008bc6; line-height: 1.6; margin: 14px 0 38px; overflow-wrap: anywhere; }
+.biography { color: #40536a; font-size: 20px; line-height: 1.85; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.profileSkills { display: flex; flex-wrap: wrap; list-style: none; gap: 8px; margin: 26px 0 0; padding: 0; }
+.profileSkills li { font-size: 13px; color: #536577; border: 1px solid #e5ebef; border-radius: 6px; padding: 5px 10px; }
+.profileFooter { display: flex; padding-top: 48px; direction: ltr; }
+.returnLink { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; color: #536174; text-decoration: none; font-weight: 700; }
+.returnLink:hover { color: #008bc6; }
+.returnLink:focus-visible, .profileSocials a:focus-visible { outline: 3px solid #008bc6; outline-offset: 4px; }
+:global(html[data-theme="dark"]) .profileShell { background: #202930; border-color: #35434d; }
+:global(html[data-theme="dark"]) .profileSidebar { background: #192228; border-color: #35434d; }
+:global(html[data-theme="dark"]) .profileContent h1 { color: #f0f6fa; }
+:global(html[data-theme="dark"]) .biography { color: #c3d0db; }
+:global(html[data-theme="dark"]) .profileRole { color: #64c8f2; }
+:global(html[data-theme="dark"]) .profileSkills li, :global(html[data-theme="dark"]) .returnLink { color: #bdcad4; border-color: #40515b; }
+@media (max-width: 800px) { .profileShell { grid-template-columns: 260px minmax(0, 1fr); } .profileSidebar { padding: 30px 22px; } .profileSidebar .avatarWrap { width: 210px; height: 210px; } .profileContent { padding: 34px 28px; } .profileContent h1 { font-size: 30px; } .profileRole { font-size: 18px; margin-bottom: 26px; } .biography { font-size: 17px; } }
+@media (max-width: 600px) { .profilePage { width: calc(100% - 28px); padding-top: 24px; } .profileShell { grid-template-columns: 1fr; border-radius: 22px; } .profileSidebar { border-right: 0; border-bottom: 1px solid #edf0f3; padding: 28px 24px; gap: 20px; } .profileContent { padding: 30px 24px; } .profileContent h1 { font-size: 28px; } .profileFooter { padding-top: 24px; } }
+@media (prefers-reduced-motion: reduce) { .profileSocials a { transition: none; } .profileSocials a:hover { transform: none; } }
+
+.profileShell { grid-template-columns: 260px minmax(0, 1fr); min-height: 428px; border-radius: 21px; }
+.profileSidebar { padding: 27px 22px; gap: 20px; }
+.profileSidebar .avatarWrap { width: 186px; height: 186px; border-width: 4px; border-radius: 18px; }
+.committeeBadge { font-size: 12px; padding: 4px 12px; }
+.profileSocials { gap: 9px; }
+.profileSocials a { width: 40px; height: 40px; }
+.profileSocials svg { width: 18px; height: 18px; }
+.profileContent { padding: 38px; }
+.profileContent h1 { font-size: 30px; }
+.profileRole { font-size: 17px; margin: 10px 0 28px; }
+.biography { font-size: 16px; }
+.profileSkills { margin-top: 20px; gap: 6px; }
+.profileSkills li { font-size: 12px; padding: 4px 8px; }
+.profileFooter { padding-top: 36px; }
+.returnLink { font-size: 14px; gap: 9px; }
+@media (max-width: 800px) { .profileContent { padding: 28px; } .profileContent h1 { font-size: 26px; } }
+@media (max-width: 600px) {
+  .profileShell { grid-template-columns: 1fr; }
+  .profileSidebar { padding: 22px; gap: 16px; }
+  .profileSidebar .avatarWrap { width: 158px; height: 158px; }
+  .profileContent { padding: 24px; }
+  .profileContent h1 { font-size: 24px; }
+  .profileRole { font-size: 16px; margin-bottom: 22px; }
+  .profileFooter { padding-top: 24px; }
+}
+
 .page {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
