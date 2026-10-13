@@ -198,8 +198,10 @@
   position: relative;
   z-index: 1;
   display: flex;
+  flex-wrap: wrap;
   width: min(1200px, calc(100% - 66px));
   align-items: center;
+  gap: 10px 16px;
   justify-content: center;
   margin-inline: auto;
   padding: 10px 18px 12px;
@@ -227,6 +229,89 @@
 .developer:hover .developerName {
   color: #85ddff;
   text-shadow: 0 0 16px rgba(57, 194, 255, 0.46);
+}
+
+.developerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.developerLink {
+  --developer-link-color: #55c9ff;
+
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(92, 196, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(20, 75, 111, 0.28);
+  color: #b9eaff;
+  font-family: "Alexandria", sans-serif;
+  font-size: 0.67rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 7px 10px;
+  text-decoration: none;
+  transition:
+    transform 220ms ease,
+    color 220ms ease,
+    border-color 220ms ease,
+    background-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.developerLink[data-platform="email"] {
+  --developer-link-color: #42c9ff;
+}
+
+.developerLink[data-platform="instagram"] {
+  --developer-link-color: #d478f3;
+}
+
+.developerLink[data-platform="whatsapp"] {
+  --developer-link-color: #5edba0;
+}
+
+.developerLink:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--developer-link-color) 64%, transparent);
+  background: rgba(27, 104, 151, 0.46);
+  color: var(--developer-link-color);
+  box-shadow: 0 8px 18px rgba(0, 9, 18, 0.18);
+}
+
+.developerLink:focus-visible {
+  outline: 3px solid rgba(131, 222, 255, 0.58);
+  outline-offset: 3px;
+}
+
+.developerIcon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  fill: currentColor;
+}
+
+.developerIcon rect,
+.developerIcon circle:not(.instagramDot) {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.mailIcon path {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .social {
@@ -435,17 +520,28 @@
     width: calc(100% - 40px);
     padding: 11px 10px 13px;
   }
+
+  .developerLinks {
+    width: 100%;
+  }
+
+  .developerLink {
+    flex: 1 1 96px;
+    max-width: 132px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .socialLink,
+  .developerLink,
   .developer,
   .developerLabel,
   .developerName {
     transition: none;
   }
 
-  .socialLink:hover {
+  .socialLink:hover,
+  .developerLink:hover {
     transform: none;
   }
 }

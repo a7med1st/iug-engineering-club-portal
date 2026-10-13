@@ -31,6 +31,15 @@ function WhatsAppIcon(props: BrandIconProps) {
   );
 }
 
+function MailIcon(props: BrandIconProps) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" {...props}>
+      <path d="M4.5 6.5h15A1.5 1.5 0 0 1 21 8v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16V8a1.5 1.5 0 0 1 1.5-1.5Z" />
+      <path d="m4 8 8 5.7L20 8" />
+    </svg>
+  );
+}
+
 const SOCIAL_LINKS = [
   {
     label: "صفحة فيسبوك",
@@ -52,6 +61,30 @@ const SOCIAL_LINKS = [
     href: "https://chat.whatsapp.com/HROGicrOtDXDh2B5ZPjsqf",
     platform: "whatsapp",
     icon: WhatsAppIcon,
+  },
+] as const;
+
+const DEVELOPER_LINKS = [
+  {
+    label: "Email",
+    ariaLabel: "Email Ahmed M. Al-Shaikh Khalil",
+    href: "mailto:a7med.m.1234@gmail.com",
+    platform: "email",
+    icon: MailIcon,
+  },
+  {
+    label: "WhatsApp",
+    ariaLabel: "Contact Ahmed M. Al-Shaikh Khalil on WhatsApp",
+    href: "https://wa.me/970593412339",
+    platform: "whatsapp",
+    icon: WhatsAppIcon,
+  },
+  {
+    label: "Instagram",
+    ariaLabel: "Ahmed M. Al-Shaikh Khalil on Instagram",
+    href: "https://www.instagram.com/a7med_1st",
+    platform: "instagram",
+    icon: InstagramIcon,
   },
 ] as const;
 
@@ -127,6 +160,31 @@ export default function Footer() {
             <span className={styles.developerLabel}>Designed &amp; Developed by</span>{" "}
             <span className={styles.developerName}>Ahmed M. Al-Shaikh Khalil</span>
           </span>
+          <div className={styles.developerLinks} dir="ltr" aria-label="Ahmed M. Al-Shaikh Khalil contact links">
+            {DEVELOPER_LINKS.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <a
+                  key={item.platform}
+                  className={styles.developerLink}
+                  data-platform={item.platform}
+                  href={item.href}
+                  aria-label={item.ariaLabel}
+                  title={item.label}
+                  target={item.platform === "email" ? undefined : "_blank"}
+                  rel={item.platform === "email" ? undefined : "noopener noreferrer"}
+                >
+                  <Icon
+                    className={`${styles.developerIcon} ${
+                      item.platform === "email" ? styles.mailIcon : ""
+                    }`}
+                  />
+                  <span>{item.label}</span>
+                </a>
+              );
+            })}
+          </div>
         </div>
       </div>
     </footer>
