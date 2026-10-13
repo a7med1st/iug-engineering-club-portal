@@ -156,10 +156,11 @@ export default function Footer() {
         </div>
 
         <div className={styles.creditBar} aria-label="اعتماد التصميم والتطوير">
-          <span className={styles.developer} dir="ltr">
+          <details className={styles.developerContact}>
+          <summary className={styles.developer} dir="ltr">
             <span className={styles.developerLabel}>Designed &amp; Developed by</span>{" "}
             <span className={styles.developerName}>Ahmed M. Al-Shaikh Khalil</span>
-          </span>
+          </summary>
           <div className={styles.developerLinks} dir="ltr" aria-label="Ahmed M. Al-Shaikh Khalil contact links">
             {DEVELOPER_LINKS.map((item) => {
               const Icon = item.icon;
@@ -185,6 +186,7 @@ export default function Footer() {
               );
             })}
           </div>
+          </details>
         </div>
       </div>
     </footer>

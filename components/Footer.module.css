@@ -209,6 +209,28 @@
   text-align: center;
 }
 
+.developerContact {
+  max-width: 100%;
+}
+
+.developer {
+  cursor: pointer;
+  list-style: none;
+}
+
+.developer::-webkit-details-marker {
+  display: none;
+}
+
+.developer:focus-visible {
+  outline: 2px solid #85ddff;
+  outline-offset: 5px;
+}
+
+.developerContact[open] .developerLinks {
+  margin-top: 12px;
+}
+
 .developerLabel,
 .developerName {
   transition: color 240ms ease, text-shadow 240ms ease;
