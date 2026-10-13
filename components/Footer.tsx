@@ -1,5 +1,7 @@
+"use client";
+
 import Image from "next/image";
-import type { SVGProps } from "react";
+import { useRef, type SVGProps } from "react";
 import styles from "./Footer.module.css";
 
 type BrandIconProps = SVGProps<SVGSVGElement>;
@@ -89,6 +91,8 @@ const DEVELOPER_LINKS = [
 ] as const;
 
 export default function Footer() {
+  const contactDialog = useRef<HTMLDialogElement>(null);
+
   return (
     <footer id="site-footer" className={`site-footer ${styles.footer}`}>
       <div className={styles.frame}>
@@ -156,11 +160,18 @@ export default function Footer() {
         </div>
 
         <div className={styles.creditBar} aria-label="اعتماد التصميم والتطوير">
-          <details className={styles.developerContact}>
-          <summary className={styles.developer} dir="ltr">
+          <button type="button" className={styles.developer} dir="ltr" onClick={() => contactDialog.current?.showModal()} aria-haspopup="dialog">
             <span className={styles.developerLabel}>Designed &amp; Developed by</span>{" "}
             <span className={styles.developerName}>Ahmed M. Al-Shaikh Khalil</span>
-          </summary>
+          </button>
+          <dialog ref={contactDialog} className={styles.contactDialog} aria-labelledby="developer-contact-title" onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              const bounds = event.currentTarget.getBoundingClientRect();
+              if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) contactDialog.current?.close();
+            }
+          }}>
+          <button type="button" className={styles.closeDialog} aria-label="Close" onClick={() => contactDialog.current?.close()} autoFocus>&times;</button>
+          <h2 id="developer-contact-title" className={styles.contactTitle} dir="ltr">Ahmed M. Al-Shaikh Khalil</h2>
           <div className={styles.developerLinks} dir="ltr" aria-label="Ahmed M. Al-Shaikh Khalil contact links">
             {DEVELOPER_LINKS.map((item) => {
               const Icon = item.icon;
@@ -186,7 +197,7 @@ export default function Footer() {
               );
             })}
           </div>
-          </details>
+          </dialog>
         </div>
       </div>
     </footer>
