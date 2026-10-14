@@ -1,5 +1,6 @@
 import { Check, Minus } from "lucide-react";
 import { getAttendanceProgress } from "@/lib/activity-attendance";
+import { getSessionAttendanceSummaries } from "@/lib/activity-attendance-matrix";
 import styles from "./ActivityAttendanceMatrix.module.css";
 
 type Session = { id: string; title: string };
@@ -7,6 +8,8 @@ type Submission = { id: string; studentName: string; status: string; checkedInAt
 export default function ActivityAttendanceMatrix({ activityId, sessions, requiredAttendanceCount, submissions, canManage, action }: {
   activityId: string; sessions: Session[]; requiredAttendanceCount: number; submissions: Submission[]; canManage: boolean; action: (form: FormData) => Promise<void>;
 }) {
+  const sessionSummaries = new Map(getSessionAttendanceSummaries(sessions, submissions).map(summary => [summary.sessionId, summary]));
+
   function toggle(submission: Submission, session: Session) {
     const present = submission.sessionAttendances.some(row => row.sessionId === session.id);
     return <form action={action}>
@@ -21,9 +24,14 @@ export default function ActivityAttendanceMatrix({ activityId, sessions, require
     const result = getAttendanceProgress({ ...submission, form: { activity: { sessions, requiredAttendanceCount } } });
     return <span>{result.attendanceCount} / {result.requiredAttendanceCount} · {result.eligible ? "مستحق" : "غير مستحق"}</span>;
   }
+  function sessionHeader(session: Session) {
+    const summary = sessionSummaries.get(session.id) ?? { presentCount: 0, totalCount: 0, rate: 0 };
+    return <span className={styles.sessionHeader}><span>{session.title}</span><small>{summary.presentCount}/{summary.totalCount} · {summary.rate}%</small></span>;
+  }
+
   return <section className={styles.matrix}>
     <h2>حضور الجلسات</h2>
-    <div className={styles.desktop}><table><thead><tr><th scope="col">الطالب</th>{sessions.map(session => <th key={session.id} scope="col">{session.title}</th>)}<th scope="col">الاستحقاق</th></tr></thead><tbody>{submissions.map(submission => <tr key={submission.id}><th scope="row">{submission.studentName}</th>{sessions.map(session => <td key={session.id}>{toggle(submission, session)}</td>)}<td>{progress(submission)}</td></tr>)}</tbody></table></div>
+    <div className={styles.desktop}><table><thead><tr><th scope="col">الطالب</th>{sessions.map(session => <th key={session.id} scope="col">{sessionHeader(session)}</th>)}<th scope="col">الاستحقاق</th></tr></thead><tbody>{submissions.map(submission => <tr key={submission.id}><th scope="row">{submission.studentName}</th>{sessions.map(session => <td key={session.id}>{toggle(submission, session)}</td>)}<td>{progress(submission)}</td></tr>)}</tbody></table></div>
     <div className={styles.mobile}>{submissions.map(submission => <article key={submission.id}><h3>{submission.studentName}</h3><p>{progress(submission)}</p>{sessions.map(session => <div className={styles.mobileRow} key={session.id}><span>{session.title}</span>{toggle(submission, session)}</div>)}</article>)}</div>
     {!submissions.length && <p className="muted">لا توجد تسجيلات مطابقة.</p>}
   </section>;
