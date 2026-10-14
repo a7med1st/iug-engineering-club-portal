@@ -6,6 +6,7 @@ import { getDepartmentDisplayImage } from "@/lib/department-images";
 
 export default async function DepartmentsPage() {
   const departments = await prisma.department.findMany({
+    where: { slug: { not: "information-technology" } },
     orderBy: { sortOrder: "asc" },
   });
 
