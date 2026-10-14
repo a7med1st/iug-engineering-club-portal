@@ -53,3 +53,6 @@ a.identity::after { border-radius: 16px; }
   .memberCard { width: 100%; max-width: 300px; margin-inline: auto; padding: 22px 20px 18px; }
   .portrait { width: 128px; height: 128px; }
 }
+.memberCard .portrait { transition: border-color 220ms ease; }
+.memberCard:hover .portrait, .memberCard:focus-within .portrait { border-color: var(--blue); }
+@media(prefers-reduced-motion:reduce) { .memberCard .portrait { transition: none; } }
