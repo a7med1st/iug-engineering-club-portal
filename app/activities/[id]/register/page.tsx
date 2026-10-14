@@ -204,11 +204,7 @@ export default async function ActivityRegisterPage({
 
                             <div className="activity-registration-card-head">
 
-                                <span>
-                                    {form.requiresAccount
-                                        ? "يتطلب تسجيل الدخول بحساب طالب أو عضو"
-                                        : "التسجيل متاح دون إنشاء حساب"}
-                                </span>
+                                {!form.requiresAccount && <span>التسجيل متاح دون إنشاء حساب</span>}
 
                                 <h2>
                                     {form.title}
