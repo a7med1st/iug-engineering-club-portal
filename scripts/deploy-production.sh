@@ -27,6 +27,37 @@ if [[ ! -f "$shared_dir/.env" ]]; then
   exit 3
 fi
 
+current_release="$(readlink -f "$current_link" 2>/dev/null || true)"
+releases_real="$(realpath "$releases_dir")"
+backup_release=""
+while IFS= read -r entry; do
+  name="${entry#* }"
+  [[ "$name" =~ ^[0-9a-f]{40}$ ]] || continue
+  old_release="$releases_dir/$name"
+  [[ ! -L "$old_release" ]] || continue
+  old_real="$(realpath "$old_release")"
+  [[ "$(dirname "$old_real")" == "$releases_real" ]] || continue
+  [[ "$old_real" != "$current_release" && "$name" != "$commit_sha" ]] || continue
+  # Keep one previous build available for recovery, in addition to current.
+  if [[ -z "$backup_release" && -f "$old_real/.next/BUILD_ID" ]]; then
+    backup_release="$old_real"
+    continue
+  fi
+  # Sources and shared data remain; only reproducible build artifacts are removed.
+  for artifact in node_modules .next; do
+    artifact_path="$old_real/$artifact"
+    if [[ -d "$artifact_path" && ! -L "$artifact_path" && "$(dirname "$(realpath "$artifact_path")")" == "$old_real" ]]; then
+      echo "Removing old build artifacts: $artifact_path"
+      rm -rf -- "$artifact_path"
+    fi
+  done
+done < <(find "$releases_dir" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' | sort -nr)
+
+echo "Disk space before deployment:"
+df -h "$deploy_root"
+echo "Available inodes:"
+df -i "$deploy_root"
+
 if [[ -e "$release_dir" ]]; then
   echo "Release already exists: $commit_sha"
 else
