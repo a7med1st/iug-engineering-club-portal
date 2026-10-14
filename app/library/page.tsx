@@ -17,7 +17,7 @@ const departmentIcons: Record<string, typeof Monitor> = {
 
 export default async function LibraryPage({ searchParams }: { searchParams: Promise<{ level?: string; q?: string; department?: string }> }) {
   const params = await searchParams;
-  const departments = await prisma.department.findMany({ select: { id: true, nameAr: true, slug: true }, orderBy: [{ sortOrder: "asc" }, { nameAr: "asc" }] });
+  const departments = await prisma.department.findMany({ where: { slug: { not: "information-technology" } }, select: { id: true, nameAr: true, slug: true }, orderBy: [{ sortOrder: "asc" }, { nameAr: "asc" }] });
   if (!params.department) return <main className={styles.page}>
     <header className={styles.intro}><BookOpen size={25} aria-hidden="true"/><h1>المكتبة الهندسية</h1><p>اختر التخصص لاستكشاف مساقاته ومواده الدراسية.</p></header>
     <div className={styles.departmentGrid}>{departments.map(item => {
