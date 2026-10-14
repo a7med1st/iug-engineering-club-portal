@@ -1,14 +1,21 @@
-import { Check, Minus } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Check, Minus, Search } from "lucide-react";
 import { getAttendanceProgress } from "@/lib/activity-attendance";
 import { getSessionAttendanceSummaries } from "@/lib/activity-attendance-matrix";
 import styles from "./ActivityAttendanceMatrix.module.css";
 
 type Session = { id: string; title: string };
 type Submission = { id: string; studentName: string; status: string; checkedInAt: Date | null; sessionAttendances: { sessionId: string }[] };
-export default function ActivityAttendanceMatrix({ activityId, sessions, requiredAttendanceCount, submissions, canManage, action }: {
+export default function ActivityAttendanceMatrix({ activityId, sessions, requiredAttendanceCount, submissions: allSubmissions, canManage, action }: {
   activityId: string; sessions: Session[]; requiredAttendanceCount: number; submissions: Submission[]; canManage: boolean; action: (form: FormData) => Promise<void>;
 }) {
-  const sessionSummaries = new Map(getSessionAttendanceSummaries(sessions, submissions).map(summary => [summary.sessionId, summary]));
+  const [query, setQuery] = useState("");
+  const normalize = (value: string) => value.normalize("NFKD").replace(/\p{M}/gu, "").replace(/\u0640/g, "").toLocaleLowerCase().trim();
+  const terms = normalize(query).split(/\s+/).filter(Boolean);
+  const submissions = allSubmissions.filter(submission => terms.every(term => normalize(submission.studentName).includes(term)));
+  const sessionSummaries = new Map(getSessionAttendanceSummaries(sessions, allSubmissions).map(summary => [summary.sessionId, summary]));
 
   function toggle(submission: Submission, session: Session) {
     const present = submission.sessionAttendances.some(row => row.sessionId === session.id);
@@ -30,6 +37,7 @@ export default function ActivityAttendanceMatrix({ activityId, sessions, require
   }
 
   return <section className={styles.matrix}>
+    <label className={styles.search}><Search size={18} aria-hidden="true"/><input type="search" aria-label="البحث باسم الطالب" placeholder="البحث باسم الطالب" value={query} onChange={event => setQuery(event.target.value)}/></label>
     <h2>حضور الجلسات</h2>
     <div className={styles.desktop}><table><thead><tr><th scope="col">الطالب</th>{sessions.map(session => <th key={session.id} scope="col">{sessionHeader(session)}</th>)}<th scope="col">الاستحقاق</th></tr></thead><tbody>{submissions.map(submission => <tr key={submission.id}><th scope="row">{submission.studentName}</th>{sessions.map(session => <td key={session.id}>{toggle(submission, session)}</td>)}<td>{progress(submission)}</td></tr>)}</tbody></table></div>
     <div className={styles.mobile}>{submissions.map(submission => <article key={submission.id}><h3>{submission.studentName}</h3><p>{progress(submission)}</p>{sessions.map(session => <div className={styles.mobileRow} key={session.id}><span>{session.title}</span>{toggle(submission, session)}</div>)}</article>)}</div>

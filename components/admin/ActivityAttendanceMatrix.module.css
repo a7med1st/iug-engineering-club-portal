@@ -1,9 +1,13 @@
 .matrix { margin-block: 24px; min-width: 0; }
 .matrix h2 { font-size: 20px; }
-.desktop { overflow-x: auto; max-width: 100%; }
+.search { display: flex; align-items: center; gap: 8px; width: min(100%, 360px); min-height: 42px; margin-block-end: 12px; padding-inline: 12px; border: 1px solid #ccd2d6; border-radius: 6px; background: white; color: #687177; }
+.search:focus-within { outline: 2px solid #17613c; outline-offset: 2px; }
+.search input { width: 100%; min-width: 0; border: 0; outline: 0; padding-block: 10px; background: transparent; color: #111827; font: inherit; }
+.desktop { overflow: auto; max-width: 100%; max-height: 390px; scrollbar-gutter: stable; }
 .desktop table { border-collapse: collapse; width: 100%; background: white; }
 .desktop th,.desktop td { border-bottom: 1px solid #dce2e5; padding: 12px; text-align: start; min-width: 100px; overflow-wrap: anywhere; }
 .desktop thead { background: #eef3f0; }
+.desktop thead th { position: sticky; top: 0; z-index: 1; background: #eef3f0; box-shadow: 0 1px 0 #dce2e5; }
 .sessionHeader { display: grid; gap: 4px; justify-items: start; }
 .sessionHeader small { color: #17613c; font-size: 13px; font-weight: 700; }
 .present,.absent { width: 36px; height: 36px; border-radius: 6px; display: grid; place-items: center; cursor: pointer; }
@@ -15,4 +19,4 @@
 .mobile h3 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
 .mobileRow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-block: 8px; border-top: 1px solid #edf0f2; }
 .mobileRow span { overflow-wrap: anywhere; }
-@media(max-width:700px) { .desktop { display: none; } .mobile { display: grid; gap: 12px; } }
+@media(max-width:700px) { .desktop { display: none; } .mobile { display: grid; gap: 12px; max-height: 600px; overflow-y: auto; scrollbar-gutter: stable; } }
