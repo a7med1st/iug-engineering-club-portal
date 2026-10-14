@@ -17,6 +17,7 @@ export default async function ContactPage() {
   const [departments, session] =
     await Promise.all([
       prisma.department.findMany({
+        where: { slug: { not: "information-technology" } },
       select: {
         id: true,
         nameAr: true,
