@@ -77,7 +77,16 @@ async function main() {
     assert.equal((await GET(new Request("https://club.test/file"), context)).status, 502);
     storageError = null;
     loggedIn = false;
-    assert.ok([401, 404].includes((await GET(new Request("https://club.test/file"), context)).status));
+    const guestResponse = await GET(new Request("https://club.test/file"), context);
+    if (userRole === "STUDENT") {
+      assert.equal(guestResponse.status, 200, "Guests can read published library files");
+      assert.deepEqual(new Uint8Array(await guestResponse.arrayBuffer()), bytes);
+      visible = false;
+      assert.equal((await GET(new Request("https://club.test/file"), context)).status, 404, "Guests cannot read hidden folders");
+      visible = true;
+    } else {
+      assert.ok([401, 404].includes(guestResponse.status));
+    }
     loggedIn = true;
     if (userRole !== "ADMIN") {
       visible = false;

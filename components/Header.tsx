@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft, BookOpen, Calculator } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import MainNav from "@/components/MainNav";
 import MobileNavigation from "@/components/MobileNavigation";
@@ -40,13 +40,10 @@ export default async function Header() {
             label: "لوحتي",
           }
           : null;
-  const studentLibraryLink =
-    session?.role === "STUDENT"
-      ? {
+  const studentLibraryLink = {
         href: "/library",
         label: "مكتبة التخصص",
-      }
-      : null;
+      };
 
   return (
     <header className="site-header">
@@ -82,9 +79,9 @@ export default async function Header() {
 
         <MainNav />
 
-        {session && (
           <div className="header-notification-slot">
-            <NotificationBell />
+            <Link href="/calculator" className="header-library-link" aria-label="حاسبة المعدل" title="حاسبة المعدل"><Calculator aria-hidden="true"/></Link>
+            {session && <NotificationBell />}
 
             {studentLibraryLink && (
               <Link
@@ -97,13 +94,11 @@ export default async function Header() {
               </Link>
             )}
 
-            {(session.role === "MEMBER" ||
-              session.role === "ADMIN") && (
+            {(session?.role === "MEMBER" ||
+              session?.role === "ADMIN") && (
                 <ChatMessagesHeaderLink />
               )}
           </div>
-        )}
-
         <div className="header-actions desktop-header-actions">
           <ThemeToggle />
           {portal && (
@@ -130,11 +125,7 @@ export default async function Header() {
         </div>
 
         <MobileNavigation
-          links={
-            studentLibraryLink
-              ? [...navigationLinks, studentLibraryLink]
-              : navigationLinks
-          }
+          links={navigationLinks}
           portal={portal}
           authenticated={Boolean(session)}
         />

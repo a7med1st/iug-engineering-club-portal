@@ -155,19 +155,24 @@
 .divider {
   display: flex;
   width: min(178px, 78%);
+  min-height: 10px;
   align-items: center;
   gap: 10px;
   margin: 13px auto 11px;
 }
 
-.divider span {
-  height: 1px;
-  flex: 1;
-  background: linear-gradient(90deg, transparent, rgba(66, 197, 255, 0.65));
+.divider::before,
+.divider::after {
+  content: "";
+  display: block;
+  height: 2px;
+  min-width: 24px;
+  flex: 1 0 24px;
+  background: linear-gradient(90deg, transparent, #42c5ff);
 }
 
-.divider span:last-child {
-  background: linear-gradient(90deg, rgba(66, 197, 255, 0.65), transparent);
+.divider::after {
+  background: linear-gradient(90deg, #42c5ff, transparent);
 }
 
 .divider i {
@@ -269,6 +274,7 @@
 
 .developerLabel,
 .developerName {
+  font-weight: 700;
   transition: color 240ms ease, text-shadow 240ms ease;
 }
 

@@ -1,18 +1,11 @@
-import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PERMISSIONS, hasPermission } from "@/lib/permissions";
 import { isVisibleLibraryFolderPath } from "@/lib/library/tree";
 import { libraryDownloadResponse } from "@/lib/library/file-response";
 
 export async function GET(request: Request, context: { params: Promise<{ fileId: string }> }) {
-  const auth = await getCurrentUser();
-  if (!auth) return new Response(null, { status: 401 });
-  if (!hasPermission(auth.user.role, PERMISSIONS.STUDENT_DASHBOARD, auth.user.memberPermissions, auth.user.position) || !auth.user.departmentId) {
-    return new Response(null, { status: 404 });
-  }
   const { fileId } = await context.params;
   const file = await prisma.libraryFile.findFirst({
-    where: { id: fileId, folder: { course: { departments: { some: { departmentId: auth.user.departmentId } } } } },
+    where: { id: fileId, folder: { course: { departments: { some: {} } } } },
     select: { title: true, originalName: true, storageKey: true, mimeType: true, folderId: true, folder: { select: { courseId: true } } },
   });
   if (!file) return new Response(null, { status: 404 });

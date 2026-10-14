@@ -1,19 +1,20 @@
 import { notFound } from "next/navigation";
-import { PERMISSIONS, requirePermission } from "@/lib/permissions";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isVisibleLibraryFolderPath, libraryFolderBreadcrumb } from "@/lib/library/tree";
 
-export async function getStudentLibraryDepartment() {
-  const { user } = await requirePermission(PERMISSIONS.STUDENT_DASHBOARD);
-  if (!user.departmentId) return null;
+export async function getStudentLibraryDepartment(preferredDepartmentId?: string) {
+  const auth = await getCurrentUser();
+  const departmentId = preferredDepartmentId ?? auth?.user.departmentId;
+  if (!departmentId) return prisma.department.findFirst({ orderBy: [{ sortOrder: "asc" }, { nameAr: "asc" }], select: { id: true, nameAr: true } });
   return prisma.department.findUnique({
-    where: { id: user.departmentId },
+    where: { id: departmentId },
     select: { id: true, nameAr: true },
   });
 }
 
-export async function getStudentLibraryCourse(courseId: string) {
-  const department = await getStudentLibraryDepartment();
+export async function getStudentLibraryCourse(courseId: string, preferredDepartmentId?: string) {
+  const department = preferredDepartmentId ? await getStudentLibraryDepartment(preferredDepartmentId) : await prisma.department.findFirst({ where: { libraryCourseDepartments: { some: { courseId } } }, select: { id: true, nameAr: true } });
   if (!department) notFound();
   const course = await prisma.libraryCourse.findFirst({
     where: { id: courseId, departments: { some: { departmentId: department.id } } },
@@ -25,8 +26,8 @@ export async function getStudentLibraryCourse(courseId: string) {
   return { department, course: { id: course.id, name: course.name, code: course.code, description: course.description, ...placement } };
 }
 
-export async function getStudentLibraryFolder(courseId: string, folderId: string) {
-  const { department, course } = await getStudentLibraryCourse(courseId);
+export async function getStudentLibraryFolder(courseId: string, folderId: string, preferredDepartmentId?: string) {
+  const { department, course } = await getStudentLibraryCourse(courseId, preferredDepartmentId);
   const folder = await prisma.libraryFolder.findFirst({
     where: { id: folderId, courseId: course.id },
     select: { id: true, courseId: true, parentId: true, name: true, sortOrder: true, isVisible: true },

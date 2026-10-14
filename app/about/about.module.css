@@ -1,0 +1,36 @@
+.page { width: min(100% - 48px, 1320px); margin: 0 auto; padding-block: 48px 64px; color: var(--ink); }
+.heading { margin-bottom: 32px; }
+.heading > span { font-size: 12px; font-weight: 600; color: var(--muted); }
+.heading h1 { margin: 12px 0 20px; font-size: 42px; line-height: 1.35; font-weight: 700; }
+.rule { height: 2px; background: var(--line); position: relative; }
+.rule::before { content: ""; position: absolute; inset-inline-start: 0; width: 88px; height: 2px; background: var(--blue); }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: start; }
+.team { margin: 0; min-width: 0; position: sticky; top: 110px; }
+.team img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 8px; }
+.team figcaption { display: flex; justify-content: space-between; gap: 16px; padding-block: 14px; border-bottom: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+.team figcaption { flex-wrap: wrap; }
+.motto { font-weight: 700; }
+.motto span:nth-child(1) { color: #ff9f1c; }
+.motto span:nth-child(2) { color: #78bd3a; }
+.motto span:nth-child(3) { color: #258cff; }
+.motto span:nth-child(4) { color: #43d4ff; }
+.teamNote { margin-top: 28px; padding-inline-start: 20px; border-inline-start: 3px solid var(--blue); }
+.teamNote > span { font-size: 13px; font-weight: 700; color: var(--blue); }
+.teamNote p { font-size: 19px; line-height: 1.8; margin: 8px 0 0; font-weight: 600; }
+.copy { min-width: 0; }
+.introTitle { font-size: 26px; margin: 0 0 32px; line-height: 1.5; text-align: center; }
+.introTitle::after { content: ""; display: block; width: 42px; height: 3px; background: var(--blue); margin: 14px auto 0; }
+.copy p { margin: 0 0 22px; font-size: 14px; line-height: 2.2; color: var(--ink); }
+.fields { margin-top: 56px; padding-top: 36px; border-top: 1px solid var(--line); }
+.fields > h2 { margin: 0 0 32px; text-align: center; font-size: 26px; line-height: 1.5; }
+.fields > h2::after { content: ""; display: block; width: 42px; height: 3px; background: var(--blue); margin: 14px auto 0; }
+.fieldsGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.field { min-width: 0; padding: 10px 24px; text-align: center; }
+.field + .field { border-inline-start: 1px solid var(--line); }
+.field > svg { color: var(--blue); margin-bottom: 16px; }
+.field h3 { margin: 0 0 12px; font-size: 16px; line-height: 1.6; }
+.field p { margin: 0; font-size: 13px; line-height: 2; color: var(--muted); }
+@media (max-width: 900px) { .fieldsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 0; } .field:nth-child(3) { border-inline-start: 0; } }
+@media (max-width: 480px) { .fields { margin-top: 36px; padding-top: 28px; } .fieldsGrid { grid-template-columns: 1fr; gap: 0; } .field { padding: 24px 8px; } .field + .field { border-inline-start: 0; border-top: 1px solid var(--line); } }
+@media (max-width: 900px) { .page { width: min(100% - 36px, 700px); padding-block: 30px 44px; } .layout { grid-template-columns: 1fr; gap: 32px; } .team { position: static; } .heading h1 { font-size: 34px; } .teamNote { margin-top: 20px; } }
+@media (max-width: 480px) { .heading h1 { font-size: 30px; } .heading > span { font-size: 10px; } .copy p { font-size: 13px; line-height: 2.15; } .teamNote p { font-size: 17px; } }

@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import { calculateGrades } from "../lib/grade-calculator";
+assert.equal(calculateGrades([{hours:3,grade:90},{hours:2,grade:80}]).semester,86);
+assert.equal(calculateGrades([{hours:3,grade:90}],{average:80,hours:27}).cumulative,81);
+assert.equal(calculateGrades([{hours:3,grade:90,previousGrade:60}],{average:80,hours:30}).cumulative,83);
+assert.equal(calculateGrades([{hours:3,grade:50,previousGrade:60}],{average:80,hours:30}).cumulative,80);
+assert.equal(calculateGrades([]).semester,null);
+assert.equal(calculateGrades([{hours:3,grade:0}]).semester,0);
+assert.throws(()=>calculateGrades([{hours:3,grade:101}]));
+assert.throws(()=>calculateGrades([{hours:3,grade:80,previousGrade:60}],{average:80,hours:2}));
+console.log("Grade calculator tests passed");

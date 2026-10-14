@@ -148,9 +148,7 @@ export default function Footer() {
                 <span>أفضل.</span>
               </p>
               <div className={styles.divider} aria-hidden="true">
-                <span />
                 <i />
-                <span />
               </div>
             </div>
             <div className={styles.legalBlock}>

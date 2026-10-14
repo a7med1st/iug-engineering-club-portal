@@ -9,6 +9,23 @@
   color-scheme: light;
 }
 
+html[data-theme] .header-library-link {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 6%);
+}
+
+html[data-theme] .header-library-link:hover {
+  background: var(--surface-3);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+html[data-theme] .header-library-link svg {
+  color: inherit;
+}
+
 html[data-theme="dark"] {
   --navy: #071b2e;
   --navy2: #0b2944;
