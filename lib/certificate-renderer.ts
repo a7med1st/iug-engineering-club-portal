@@ -2,9 +2,7 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import { Resvg } from "@resvg/resvg-js";
 import sharp, { type OverlayOptions } from "sharp";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { QRCodeSVG } from "qrcode.react";
+import QRCode from "qrcode";
 import { certificateQrSettings } from "@/lib/certificate-qr";
 import { getPrivateBlob } from "@/lib/blob-storage";
 import { CERTIFICATE_FONTS, certificateTextRuns, escapeSvgText, type CertificateFontFamily, type CertificateTemplateSettings, type TextAlign } from "@/lib/certificate-template-settings";
@@ -87,8 +85,7 @@ export async function composeCertificate(source:Buffer,input:RenderInput & { qrS
   const qr = certificateQrSettings(input.qrSettings, input.width, input.height);
   if (qr.visible) {
     if (!input.verificationUrl) throw new Error("CERTIFICATE_VERIFICATION_URL_MISSING");
-    const svg = renderToStaticMarkup(createElement(QRCodeSVG, { xmlns: "http://www.w3.org/2000/svg", value: input.verificationUrl, size: Math.round(qr.size), level: "M", marginSize: 4 }));
-    const png = new Resvg(svg).render().asPng();
+    const png = await QRCode.toBuffer(input.verificationUrl, { type: "png", width: Math.round(qr.size), errorCorrectionLevel: "M", margin: 4 });
     layers.push({ input: Buffer.from(png), left: Math.round(qr.x), top: Math.round(qr.y) });
   }
   const buffer=await sharp(source).resize(input.width,input.height,{fit:"fill"}).composite(layers).png().toBuffer();
