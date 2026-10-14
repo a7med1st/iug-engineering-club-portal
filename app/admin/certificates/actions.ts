@@ -25,7 +25,8 @@ import {
 import {
   prisma,
 } from "@/lib/prisma";
-import { renderCertificate } from "@/lib/certificate-renderer";
+import { renderCertificate as renderWithQr } from "@/lib/certificate-renderer";
+import { headers } from "next/headers";
 import { CERTIFICATE_FONTS, type CertificateFontFamily } from "@/lib/certificate-template-settings";
 import { putPrivateBlob, tryDeletePrivateBlobs } from "@/lib/blob-storage";
 import { randomUUID } from "node:crypto";
@@ -36,6 +37,12 @@ type IndividualOverrides = { customName: string; customNameX: number; customName
 async function generateCertificateArtifact(submissionId: string, certificateId: string, overrides?: IndividualOverrides) {
   const row = await prisma.activityFormSubmission.findUnique({ where: { id: submissionId }, select: { studentName: true, form: { select: { activity: { select: { title: true, startsAt: true, certificateTemplate: true } } } }, certificate: { select: { artifactPathname: true, customName: true, customNameX: true, customNameY: true, customNameFontSize: true, customNameFontFamily: true, customNameBold: true } } } });
   const template = row?.form.activity.certificateTemplate;
+  const certificate = await prisma.certificate.findUniqueOrThrow({ where: { id: certificateId }, select: { verificationCode: true } });
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  if (!host) throw new Error("CERTIFICATE_HOST_MISSING");
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const renderCertificate = (input: Parameters<typeof renderWithQr>[0]) => renderWithQr({ ...input, qrSettings: template?.qrSettings, verificationUrl: `${protocol}://${host}/certificates/verify/${encodeURIComponent(certificate.verificationCode)}` });
   if (!row || !template) certificateAdminError("يجب إعداد قالب للنشاط قبل إصدار الشهادة.");
 const rendered = await renderCertificate({ sourcePathname: template.sourcePathname, width: template.sourceWidth, height: template.sourceHeight, settings: { nameX:Number(overrides?.customNameX ?? row.certificate?.customNameX ?? template.nameX),nameY:Number(overrides?.customNameY ?? row.certificate?.customNameY ?? template.nameY),nameFontSize:Number(overrides?.customNameFontSize ?? row.certificate?.customNameFontSize ?? template.nameFontSize),nameFontFamily:(overrides?.customNameFontFamily ?? row.certificate?.customNameFontFamily ?? template.nameFontFamily) as CertificateFontFamily,nameEnglishFontFamily:template.nameEnglishFontFamily as "Cairo",nameBold:overrides?.customNameBold ?? row.certificate?.customNameBold ?? template.nameBold,nameColor:template.nameColor,nameAlign:template.nameAlign as "left"|"center"|"right",titleVisible:template.titleVisible,titleX:Number(template.titleX),titleY:Number(template.titleY),titleFontSize:Number(template.titleFontSize),titleFontFamily:template.titleFontFamily as "Cairo",titleEnglishFontFamily:template.titleEnglishFontFamily as "Cairo",titleBold:template.titleBold,titleColor:template.titleColor,titleAlign:template.titleAlign as "left"|"center"|"right",dateVisible:template.dateVisible,dateX:Number(template.dateX),dateY:Number(template.dateY),dateFontSize:Number(template.dateFontSize),dateFontFamily:template.dateFontFamily as "Cairo",dateEnglishFontFamily:template.dateEnglishFontFamily as "Cairo",dateBold:template.dateBold,dateColor:template.dateColor,dateAlign:template.dateAlign as "left"|"center"|"right" }, studentName: overrides?.customName.trim() || row.certificate?.customName?.trim() || row.studentName, activityTitle: row.form.activity.title, activityDate: row.form.activity.startsAt });
   const pathname=`certificates/${certificateId}/${randomUUID()}.png`; await putPrivateBlob(pathname,rendered.buffer,rendered.mime);

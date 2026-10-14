@@ -741,6 +741,7 @@ model CertificateTemplate {
   dateBold               Boolean  @default(false)
   dateColor              String   @default("#111827")
   dateAlign              String   @default("center")
+  qrSettings             Json?
   createdById            String?
   createdBy              User?    @relation("CertificateTemplateCreator", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt              DateTime @default(now())

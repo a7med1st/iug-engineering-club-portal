@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { Resvg } from "@resvg/resvg-js";
-import sharp from "sharp";
+import sharp, { type OverlayOptions } from "sharp";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { QRCodeSVG } from "qrcode.react";
+import { certificateQrSettings } from "@/lib/certificate-qr";
 import { getPrivateBlob } from "@/lib/blob-storage";
 import { CERTIFICATE_FONTS, certificateTextRuns, escapeSvgText, type CertificateFontFamily, type CertificateTemplateSettings, type TextAlign } from "@/lib/certificate-template-settings";
 
@@ -75,17 +79,25 @@ export async function fitCertificateName(input:RenderInput){
   throw new Error(`CERTIFICATE_NAME_NOT_VISIBLE:${lastBounds?"out_of_bounds":"no_pixels"}`);
 }
 
-export async function composeCertificate(source:Buffer,input:RenderInput){
+export async function composeCertificate(source:Buffer,input:RenderInput & { qrSettings?: unknown; verificationUrl?: string }){
   const settings=await fitCertificateName(input);
   const overlay=await buildCertificateOverlay({...input,studentName:input.studentName.replace(/\p{Default_Ignorable_Code_Point}/gu, "").trim(),settings});
   const textLayer = new Resvg(overlay,resvgOptions).render().asPng();
-  const buffer=await sharp(source).resize(input.width,input.height,{fit:"fill"}).composite([{input:Buffer.from(textLayer)}]).png().toBuffer();
+  const layers: OverlayOptions[] = [{ input: Buffer.from(textLayer) }];
+  const qr = certificateQrSettings(input.qrSettings, input.width, input.height);
+  if (qr.visible) {
+    if (!input.verificationUrl) throw new Error("CERTIFICATE_VERIFICATION_URL_MISSING");
+    const svg = renderToStaticMarkup(createElement(QRCodeSVG, { xmlns: "http://www.w3.org/2000/svg", value: input.verificationUrl, size: Math.round(qr.size), level: "M", marginSize: 4 }));
+    const png = new Resvg(svg).render().asPng();
+    layers.push({ input: Buffer.from(png), left: Math.round(qr.x), top: Math.round(qr.y) });
+  }
+  const buffer=await sharp(source).resize(input.width,input.height,{fit:"fill"}).composite(layers).png().toBuffer();
   const metadata=await sharp(buffer).metadata();
   if(metadata.width!==input.width||metadata.height!==input.height||(metadata.pages??1)!==1)throw new Error("CERTIFICATE_DIMENSION_MISMATCH");
   return buffer;
 }
 
-export async function renderCertificate(input:{sourcePathname:string}&RenderInput){
+export async function renderCertificate(input:{sourcePathname:string;qrSettings?:unknown;verificationUrl?:string}&RenderInput){
   const stored=await getPrivateBlob(input.sourcePathname);if(!stored?.stream)throw new Error("TEMPLATE_FILE_MISSING");
   const source=Buffer.from(await new Response(stored.stream).arrayBuffer());
   const buffer=await composeCertificate(source,input);

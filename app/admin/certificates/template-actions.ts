@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { parseTemplateSettings } from "@/lib/certificate-template-settings";
 import { storeCertificateTemplate } from "@/lib/certificate-template-storage";
 import { tryDeletePrivateBlobs } from "@/lib/blob-storage";
+import { parseCertificateQr } from "@/lib/certificate-qr";
 
 export async function saveCertificateTemplate(formData: FormData) {
   const { user } = await requirePermission(PERMISSIONS.ADMIN_DASHBOARD);
@@ -26,6 +27,13 @@ export async function saveCertificateTemplate(formData: FormData) {
     if (uploaded) await tryDeletePrivateBlobs([uploaded.pathname], "invalid-certificate-template-settings");
     redirect(`/admin/certificates?activity=${activityId}&error=${encodeURIComponent(parsed.message)}`);
   }
+  let qrSettings;
+  try { qrSettings = parseCertificateQr(trustedData, source.width, source.height); }
+  catch {
+    if (uploaded) await tryDeletePrivateBlobs([uploaded.pathname], "invalid-certificate-qr");
+    redirect(`/admin/certificates?activity=${activityId}&error=${encodeURIComponent("موضع أو حجم QR خارج حدود الشهادة.")}`);
+  }
+  Object.assign(parsed.value, { qrSettings });
   await prisma.certificateTemplate.upsert({
     where: { activityId },
     create: { activityId, createdById: user.id, sourcePathname: source.pathname, sourceOriginalName: source.originalName, sourceMime: source.mime, sourceSize: source.size, sourceWidth: source.width, sourceHeight: source.height, ...parsed.value },

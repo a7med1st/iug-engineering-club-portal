@@ -14,6 +14,15 @@ async function main(){
   assert.equal(metadata.format,"png");
   assert.deepEqual([metadata.width,metadata.height],[width,height]);
   assert.equal(metadata.pages??1,1);
+  const qrInput={width,height,settings,studentName:"Ali",activityTitle:"",activityDate:null,qrSettings:{visible:true,x:30,y:40,size:160},verificationUrl:"https://example.com/certificates/verify/EC-TEST"};
+  const withQr=await composeCertificate(source,qrInput);
+  const qrRegion=await sharp(withQr).extract({left:30,top:40,width:160,height:160}).stats();
+  assert.equal(qrRegion.channels[0].min,0,"The QR must appear at the configured position");
+  const withoutQr=await composeCertificate(source,{...qrInput,qrSettings:{...qrInput.qrSettings,visible:false}});
+  const base=await composeCertificate(source,{width,height,settings,studentName:"Ali",activityTitle:"",activityDate:null});
+  assert.deepEqual(withoutQr,base,"Hidden QR must not alter the certificate");
+  assert.notDeepEqual(withQr,base,"Visible QR must alter the certificate");
+  await assert.rejects(composeCertificate(source,{...qrInput,verificationUrl:undefined}),/CERTIFICATE_VERIFICATION_URL_MISSING/);
   const compactSettings={...settings,nameX:265.5,nameY:188,nameFontSize:32,titleVisible:false,dateVisible:false};
   const compactInput={width:531,height:376,settings:compactSettings,studentName:"آية عبد الرحمن محمد عبد الكريم أحمد فاطمة بنت عبد العزيز",activityTitle:"",activityDate:null};
   const fitted=await fitCertificateName(compactInput);

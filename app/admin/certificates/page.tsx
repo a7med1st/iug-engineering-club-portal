@@ -154,6 +154,7 @@ export default async function AdminCertificatesPage({
           </div>
           <CertificateTemplateEditor
             activityId={data.selectedActivity.id}
+            qrSettings={template?.qrSettings}
             action={saveCertificateTemplate}
             templateName={template?.sourceOriginalName}
             templateUrl={template ? `/admin/certificates/templates/${data.selectedActivity.id}` : undefined}
