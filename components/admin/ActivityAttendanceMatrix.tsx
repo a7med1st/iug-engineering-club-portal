@@ -16,6 +16,8 @@ export default function ActivityAttendanceMatrix({ activityId, sessions, require
   const terms = normalize(query).split(/\s+/).filter(Boolean);
   const submissions = allSubmissions.filter(submission => terms.every(term => normalize(submission.studentName).includes(term)));
   const sessionSummaries = new Map(getSessionAttendanceSummaries(sessions, allSubmissions).map(summary => [summary.sessionId, summary]));
+  const approvedSubmissions = allSubmissions.filter(submission => submission.status === "APPROVED");
+  const eligibleCount = approvedSubmissions.filter(submission => getAttendanceProgress({ ...submission, form: { activity: { sessions, requiredAttendanceCount } } }).eligible).length;
 
   function toggle(submission: Submission, session: Session) {
     const present = submission.sessionAttendances.some(row => row.sessionId === session.id);
@@ -39,7 +41,7 @@ export default function ActivityAttendanceMatrix({ activityId, sessions, require
   return <section className={styles.matrix}>
     <label className={styles.search}><Search size={18} aria-hidden="true"/><input type="search" aria-label="البحث باسم الطالب" placeholder="البحث باسم الطالب" value={query} onChange={event => setQuery(event.target.value)}/></label>
     <h2>حضور الجلسات</h2>
-    <div className={styles.desktop}><table><thead><tr><th scope="col">الطالب</th>{sessions.map(session => <th key={session.id} scope="col">{sessionHeader(session)}</th>)}<th scope="col">الاستحقاق</th></tr></thead><tbody>{submissions.map(submission => <tr key={submission.id}><th scope="row">{submission.studentName}</th>{sessions.map(session => <td key={session.id}>{toggle(submission, session)}</td>)}<td>{progress(submission)}</td></tr>)}</tbody></table></div>
+    <div className={styles.desktop}><table><thead><tr><th scope="col">الطالب</th>{sessions.map(session => <th key={session.id} scope="col">{sessionHeader(session)}</th>)}<th scope="col"><span className={styles.sessionHeader}><span>الاستحقاق</span><small>{eligibleCount}/{approvedSubmissions.length}</small></span></th></tr></thead><tbody>{submissions.map(submission => <tr key={submission.id}><th scope="row">{submission.studentName}</th>{sessions.map(session => <td key={session.id}>{toggle(submission, session)}</td>)}<td>{progress(submission)}</td></tr>)}</tbody></table></div>
     <div className={styles.mobile}>{submissions.map(submission => <article key={submission.id}><h3>{submission.studentName}</h3><p>{progress(submission)}</p>{sessions.map(session => <div className={styles.mobileRow} key={session.id}><span>{session.title}</span>{toggle(submission, session)}</div>)}</article>)}</div>
     {!submissions.length && <p className="muted">لا توجد تسجيلات مطابقة.</p>}
   </section>;
