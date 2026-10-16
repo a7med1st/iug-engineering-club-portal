@@ -22,7 +22,7 @@ assert.deepEqual(currentActivityWhere(referenceTime), {
 });
 
 assert.deepEqual(pastActivityWhere(referenceTime), {
-  status: { in: ["PUBLISHED", "ARCHIVED"] },
+  status: "PUBLISHED",
   OR: [
     {
       sessions: { some: {}, every: { OR: [{ endsAt: { lt: referenceTime } }, { endsAt: null, startsAt: { lt: referenceTime } }] } },

@@ -56,7 +56,7 @@ export function pastActivityWhere(
   referenceTime: Date = new Date(),
 ): Prisma.ActivityWhereInput {
   return {
-    status: { in: ["PUBLISHED", "ARCHIVED"] },
+    status: "PUBLISHED",
     OR: [
       {
         sessions: {
