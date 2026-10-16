@@ -7,7 +7,7 @@ export default function DeleteActivityForm({ id, title }: { id: string; title: s
     <form
       action={deleteActivity}
       onSubmit={(event) => {
-        if (!window.confirm(`هل تريد حذف النشاط «${title}» نهائيًا؟`)) {
+        if (!window.confirm(`هل تريد نقل النشاط «${title}» إلى المحذوفات؟ يمكنك استرجاعه لاحقًا.`)) {
           event.preventDefault();
         }
       }}

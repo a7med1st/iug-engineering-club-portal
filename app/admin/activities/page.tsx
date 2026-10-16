@@ -84,9 +84,11 @@ export default async function ActivitiesAdminPage({
       : [];
 
   const rawActivities = await prisma.activity.findMany({
-    where:
+    where: {
+      deletedAt: null,
+      AND:
       isAdmin
-        ? undefined
+        ? {}
         : managedDepartmentIds.length
           ? {
             departments: {
@@ -100,6 +102,7 @@ export default async function ActivitiesAdminPage({
           : {
             id: "__NO_ACTIVITY__",
           },
+    },
 
     include: {
       departments: {
@@ -147,6 +150,12 @@ export default async function ActivitiesAdminPage({
       </div>
 
       <AdminFeedback error={feedback.error} success={feedback.success} />
+
+      {canManageActivities && (
+        <Link className="ghost-btn" href="/admin/activities/trash">
+          سلة المحذوفات
+        </Link>
+      )}
 
       <div className="admin-content-grid">
         {canManageActivities && (

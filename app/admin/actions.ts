@@ -6,12 +6,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
+import { moveActivityToTrash, restoreTrashedActivity } from "@/lib/activity-trash";
 import { ActivitySessionsError, parseActivitySessions, updateActivitySessions, validateSessionChanges } from "@/lib/activity-sessions";
 import {
   ACTIVITY_TIME_ZONE,
   activityDateTimeFromInput,
 } from "@/lib/activities";
-import { tryDeleteActivityImages } from "@/lib/activity-image-storage";
 import {
   getEmailValidationMessage,
   validateEmail,
@@ -1560,88 +1560,46 @@ export async function createActivity(
    DELETE ACTIVITY
 ========================================================= */
 
-export async function deleteActivity(
-  formData: FormData,
-) {
-  const { user } =
-    await requirePermission(
-      PERMISSIONS.ACTIVITY_MANAGE,
-    );
-
+export async function deleteActivity(formData: FormData) {
+  const { user } = await requirePermission(PERMISSIONS.ACTIVITY_MANAGE);
   return runAdminAction(
     "/admin/activities",
-
-    "تم حذف النشاط.",
-
+    "تم نقل النشاط إلى المحذوفات. يمكنك استرجاعه من سلة المحذوفات.",
     "تعذر حذف النشاط.",
-
     async () => {
-      const id = requiredText(
-        formData,
-        "id",
-        "معرّف النشاط",
-      );
-
-      const activity =
-        await prisma.activity.findUnique({
-          where: {
-            id,
-          },
-
-          select: {
-            coverImagePathname: true,
-
-            images: {
-              select: {
-                pathname: true,
-              },
-            },
-
-            departments: {
-              select: {
-                departmentId:
-                  true,
-              },
-            },
-          },
-        });
-
-      if (
-        !activity ||
-        !canAccessActivityDepartments(
-          user,
-          activity.departments.map(
-            (item) =>
-              item.departmentId,
-          ),
-        )
-      ) {
-        throw new AdminActionError(
-          "ليس لديك صلاحية لحذف هذا النشاط.",
-        );
-      }
-
-      await prisma.activity.delete({
-        where: {
-          id,
-        },
+      const id = requiredText(formData, "id", "معرّف النشاط");
+      const activity = await prisma.activity.findUnique({
+        where: { id, deletedAt: null },
+        select: { status: true, departments: { select: { departmentId: true } } },
       });
+      if (!activity || !canAccessActivityDepartments(user, activity.departments.map(item => item.departmentId))) {
+        throw new AdminActionError("النشاط غير موجود أو ليس لديك صلاحية لحذفه.");
+      }
+      const result = await moveActivityToTrash(prisma, id, activity.status);
+      if (!result.count) throw new AdminActionError("تغيّرت حالة النشاط. حدّث الصفحة وحاول مجددًا.");
+      revalidatePath("/", "layout");
+    },
+  );
+}
 
-      await tryDeleteActivityImages(
-        [
-          activity.coverImagePathname,
-          ...activity.images.map(({ pathname }) => pathname),
-        ],
-        "delete-activity",
-      );
-
-      revalidatePath("/");
-      revalidatePath(
-        "/admin/activities",
-      );
-      revalidatePath(
-        "/activities",
-      );
+export async function restoreActivity(formData: FormData) {
+  const { user } = await requirePermission(PERMISSIONS.ACTIVITY_MANAGE);
+  return runAdminAction(
+    "/admin/activities/trash",
+    "تم استرجاع النشاط بجميع بياناته وتسجيلاته.",
+    "تعذر استرجاع النشاط.",
+    async () => {
+      const id = requiredText(formData, "id", "معرّف النشاط");
+      const activity = await prisma.activity.findUnique({
+        where: { id, deletedAt: { not: null } },
+        select: { statusBeforeDeletion: true, departments: { select: { departmentId: true } } },
+      });
+      if (!activity || !canAccessActivityDepartments(user, activity.departments.map(item => item.departmentId))) {
+        throw new AdminActionError("النشاط غير موجود في المحذوفات أو ليس لديك صلاحية لاسترجاعه.");
+      }
+      const result = await restoreTrashedActivity(prisma, id, activity.statusBeforeDeletion);
+      if (!result.count) throw new AdminActionError("تم استرجاع النشاط مسبقًا. حدّث الصفحة.");
+      revalidatePath("/", "layout");
     },
   );
 }
@@ -2353,6 +2311,7 @@ export async function updateActivityText(
         await prisma.activity.findUnique({
           where: {
             id: activityId,
+            deletedAt: null,
           },
 
           include: {
@@ -2478,6 +2437,7 @@ export async function updateActivityText(
           await transaction.activity.update({
             where: {
               id: activityId,
+              deletedAt: null,
             },
 
             data: {

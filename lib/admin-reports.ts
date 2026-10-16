@@ -144,6 +144,7 @@ export async function getAdminReportsData({
 
   const activities =
     await prisma.activity.findMany({
+      where: { deletedAt: null },
       select: {
         id: true,
         title: true,

@@ -680,6 +680,7 @@ export async function requireActivityPermission(
     await prisma.activity.findUnique({
       where: {
         id: activityId,
+        deletedAt: null,
       },
 
       select: {

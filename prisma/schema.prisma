@@ -489,6 +489,8 @@ model Activity {
   formUrl String?
 
   status ActivityStatus @default(PUBLISHED)
+  deletedAt DateTime?
+  statusBeforeDeletion ActivityStatus?
 
   departments ActivityDepartment[]
   images      ActivityImage[]
@@ -501,6 +503,7 @@ model Activity {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([deletedAt])
 }
 
 model ActivityImage {

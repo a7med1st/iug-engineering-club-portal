@@ -130,6 +130,7 @@ export async function getCertificateAdminRows({
   const activities =
     await prisma.activity.findMany({
       where: {
+        deletedAt: null,
         registrationForm: {
           isNot: null,
         },
@@ -163,14 +164,10 @@ export async function getCertificateAdminRows({
         status:
           "APPROVED",
 
-        ...(selectedActivity
-          ? {
-              form: {
-                activityId:
-                  selectedActivity.id,
-              },
-            }
-          : {}),
+        form: {
+          activity: { deletedAt: null },
+          ...(activityId ? { activityId: selectedActivity?.id ?? "__NO_ACTIVITY__" } : {}),
+        },
       },
 
       select: {

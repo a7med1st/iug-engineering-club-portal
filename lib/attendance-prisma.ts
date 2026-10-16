@@ -31,17 +31,18 @@ export function attendanceDeps(): AttendanceConfirmationDeps {
   return {
     now: () => new Date(),
     findLink: ({ activityId, tokenHash }) => prisma.activityAttendanceLink.findFirst({
-      where: { activityId, tokenHash, session: { activityId } },
+      where: { activityId, tokenHash, session: { activityId }, activity: { deletedAt: null } },
       include: { session: { select: { id: true, title: true } }, activity: { select: { id: true, title: true, startsAt: true } } },
     }),
     findSubmission: ({ activityId, userId }) => prisma.activityFormSubmission.findFirst({
-      where: { userId, form: { activityId } },
+      where: { userId, form: { activityId, activity: { deletedAt: null } } },
       include: { sessionAttendances: true, form: { include: { activity: { include: { sessions: true } } } } },
     }),
     recordAttendance: input => attendanceTransaction(async tx => {
       if (!input.sessionId || !input.activityId || !input.tokenHash) return { code: "INVALID_LINK" as const };
       const link = await tx.activityAttendanceLink.findFirst({ where: {
         id: input.attendanceLinkId, activityId: input.activityId, tokenHash: input.tokenHash,
+        activity: { deletedAt: null },
         sessionId: input.sessionId, session: { activityId: input.activityId },
       } });
       if (!link) return { code: "INVALID_LINK" as const };

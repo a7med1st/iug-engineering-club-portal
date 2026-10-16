@@ -31,6 +31,7 @@ export default async function ActivityRegisterPage({
         prisma.activity.findUnique({
             where: {
                 id,
+                deletedAt: null,
             },
 
             include: {

@@ -124,6 +124,7 @@ export async function getAdminDashboardData({
       }),
 
       prisma.activity.findMany({
+        where: { deletedAt: null },
         select: {
           id: true,
           title: true,
