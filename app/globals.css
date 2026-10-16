@@ -8038,6 +8038,12 @@ html[data-reload-intro="true"] .intro-gate {
     font-weight: 700
 }
 
+.past-activities-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 28px
+}
+
 .past-activities-all-btn {
     flex: 0 0 auto;
     min-height: 48px;

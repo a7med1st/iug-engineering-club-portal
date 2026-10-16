@@ -275,14 +275,6 @@ export default async function HomePage() {
                   النشاط.
                 </p>
               </div>
-
-              <Link
-                className="primary-btn fancy-primary-btn past-activities-all-btn"
-                href="/activities?view=past"
-              >
-                <span>عرض جميع الأنشطة السابقة</span>
-                <ArrowLeft size={18} />
-              </Link>
             </div>
 
             <div className="past-activities-grid">
@@ -293,6 +285,16 @@ export default async function HomePage() {
                   departmentCount={departmentCount}
                 />
               ))}
+            </div>
+
+            <div className="past-activities-actions">
+              <Link
+                className="primary-btn fancy-primary-btn past-activities-all-btn"
+                href="/activities?view=past"
+              >
+                <span>عرض جميع الأنشطة السابقة</span>
+                <ArrowLeft size={18} />
+              </Link>
             </div>
           </div>
         </section>
