@@ -161,6 +161,14 @@ function requireBlobAuth(options: {
   const hasOidcToken = Boolean(configuredValue("VERCEL_OIDC_TOKEN"));
   const isVercelRuntime = configuredValue("VERCEL") === "1";
 
+  // A copied Vercel environment is not a request-scoped OIDC session locally.
+  if (configuredValue("NODE_ENV") === "development") {
+    for (const variable of options.tokenVariables) {
+      const token = configuredValue(variable);
+      if (token) return { token };
+    }
+  }
+
   if (storeId && (hasOidcToken || isVercelRuntime)) {
     // @vercel/blob resolves the current request-scoped OIDC token itself. Do
     // not pass a read-write token as well because an explicit token wins over

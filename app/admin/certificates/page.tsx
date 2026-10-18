@@ -13,6 +13,7 @@ import {
 
 import AdminFeedback from "@/components/admin/AdminFeedback";
 import CertificatesFilters from "@/components/admin/CertificatesFilters";
+import BilingualCertificateTemplates from "@/components/admin/BilingualCertificateTemplates";
 import CertificateTemplateEditor from "@/components/admin/CertificateTemplateEditor";
 import { prisma } from "@/lib/prisma";
 import { saveCertificateTemplate } from "./template-actions";
@@ -96,6 +97,7 @@ export default async function AdminCertificatesPage({
     });
 
   const template = data.selectedActivity ? await prisma.certificateTemplate.findUnique({ where: { activityId: data.selectedActivity.id } }) : null;
+  const englishTemplate = data.selectedActivity ? await prisma.certificateTemplateEnglish.findUnique({ where: { activityId: data.selectedActivity.id } }) : null;
 
   const success = one(params.success);
   const error = one(params.error);
@@ -150,9 +152,12 @@ export default async function AdminCertificatesPage({
         <section className={styles.templatePanel} data-reveal="up">
           <div className={styles.templateHeading}>
             <div><span>قالب الشهادة</span><h2>{data.selectedActivity.title}</h2></div>
-            {template && <strong>محفوظ</strong>}
+            {(template || englishTemplate) && <strong>{template && englishTemplate ? "القالبان محفوظان" : "قالب واحد محفوظ"}</strong>}
           </div>
-          <CertificateTemplateEditor
+          <BilingualCertificateTemplates
+            activityId={data.selectedActivity.id} action={saveCertificateTemplate}
+            arabicName={template?.sourceOriginalName} englishName={englishTemplate?.sourceOriginalName}
+            arabic={<CertificateTemplateEditor embedded prefix="ar." language="ar"
             activityId={data.selectedActivity.id}
             qrSettings={template?.qrSettings}
             action={saveCertificateTemplate}
@@ -163,6 +168,19 @@ export default async function AdminCertificatesPage({
             activityTitle={data.selectedActivity.title}
             activityDate={data.selectedActivity.startsAt ? new Intl.DateTimeFormat("ar-PS", { dateStyle: "long" }).format(data.selectedActivity.startsAt) : "التاريخ"}
 values={{nameX:Number(template?.nameX??600),nameY:Number(template?.nameY??425),nameFontSize:Number(template?.nameFontSize??48),nameFontFamily:template?.nameFontFamily??"Cairo",nameEnglishFontFamily:template?.nameEnglishFontFamily??"Alexandria",nameBold:template?.nameBold??false,nameColor:template?.nameColor??"#111827",nameAlign:template?.nameAlign??"center",titleVisible:template?.titleVisible??false,titleX:Number(template?.titleX??600),titleY:Number(template?.titleY??550),titleFontSize:Number(template?.titleFontSize??32),titleFontFamily:template?.titleFontFamily??"Cairo",titleEnglishFontFamily:template?.titleEnglishFontFamily??"Alexandria",titleBold:template?.titleBold??false,titleColor:template?.titleColor??"#111827",titleAlign:template?.titleAlign??"center",dateVisible:template?.dateVisible??false,dateX:Number(template?.dateX??600),dateY:Number(template?.dateY??640),dateFontSize:Number(template?.dateFontSize??24),dateFontFamily:template?.dateFontFamily??"Cairo",dateEnglishFontFamily:template?.dateEnglishFontFamily??"Alexandria",dateBold:template?.dateBold??false,dateColor:template?.dateColor??"#111827",dateAlign:template?.dateAlign??"center"}}
+          />}
+            english={<CertificateTemplateEditor embedded prefix="en." language="en"
+            activityId={data.selectedActivity.id}
+            qrSettings={englishTemplate?.qrSettings}
+            action={saveCertificateTemplate}
+            templateName={englishTemplate?.sourceOriginalName}
+            templateUrl={englishTemplate ? `/admin/certificates/templates/${data.selectedActivity.id}?language=en` : undefined}
+            templateWidth={englishTemplate?.sourceWidth ?? 1200}
+            templateHeight={englishTemplate?.sourceHeight ?? 850}
+            activityTitle={data.selectedActivity.title}
+            activityDate={data.selectedActivity.startsAt ? new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(data.selectedActivity.startsAt) : "التاريخ"}
+values={{nameX:Number(englishTemplate?.nameX??600),nameY:Number(englishTemplate?.nameY??425),nameFontSize:Number(englishTemplate?.nameFontSize??48),nameFontFamily:englishTemplate?.nameFontFamily??"Cairo",nameEnglishFontFamily:englishTemplate?.nameEnglishFontFamily??"Alexandria",nameBold:englishTemplate?.nameBold??false,nameColor:englishTemplate?.nameColor??"#111827",nameAlign:englishTemplate?.nameAlign??"center",titleVisible:englishTemplate?.titleVisible??false,titleX:Number(englishTemplate?.titleX??600),titleY:Number(englishTemplate?.titleY??550),titleFontSize:Number(englishTemplate?.titleFontSize??32),titleFontFamily:englishTemplate?.titleFontFamily??"Cairo",titleEnglishFontFamily:englishTemplate?.titleEnglishFontFamily??"Alexandria",titleBold:englishTemplate?.titleBold??false,titleColor:englishTemplate?.titleColor??"#111827",titleAlign:englishTemplate?.titleAlign??"center",dateVisible:englishTemplate?.dateVisible??false,dateX:Number(englishTemplate?.dateX??600),dateY:Number(englishTemplate?.dateY??640),dateFontSize:Number(englishTemplate?.dateFontSize??24),dateFontFamily:englishTemplate?.dateFontFamily??"Cairo",dateEnglishFontFamily:englishTemplate?.dateEnglishFontFamily??"Alexandria",dateBold:englishTemplate?.dateBold??false,dateColor:englishTemplate?.dateColor??"#111827",dateAlign:englishTemplate?.dateAlign??"center"}}
+          />}
           />
         </section>
       )}

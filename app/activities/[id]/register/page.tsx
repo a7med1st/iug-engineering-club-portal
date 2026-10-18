@@ -1,3 +1,4 @@
+import { readQuestionCondition } from "@/lib/registration-conditions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSafeReturnTo, appendReturnTo } from "@/lib/safe-return-to";
@@ -256,6 +257,7 @@ export default async function ActivityRegisterPage({
                                     returnTo={returnTo}
                                     questions={form.questions.map(
                                         (question) => ({
+                                            condition: readQuestionCondition(question.condition),
                                             id: question.id,
                                             label: question.label,
                                             type: question.type,

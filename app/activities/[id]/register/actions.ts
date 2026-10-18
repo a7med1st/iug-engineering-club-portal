@@ -1,5 +1,8 @@
 "use server";
 
+import { visibleQuestionIds } from "@/lib/registration-conditions";
+import { certificateNameError, certificateNameLanguage } from "@/lib/certificate-names";
+
 import {
   Prisma,
   type ActivityFormQuestionType,
@@ -168,6 +171,10 @@ function validateAndGetAnswer(
   if (!value) {
     return null;
   }
+
+  const nameLanguage = certificateNameLanguage(question.label);
+  const nameError = nameLanguage ? certificateNameError(nameLanguage, value) : null;
+  if (nameError) throw new RegistrationValidationError(nameError, question.id);
 
   /*
    * SELECT / RADIO
@@ -438,8 +445,10 @@ export async function submitActivityRegistration(
     /*
      * نتحقق من الإجابات قبل بدء عملية الحفظ.
      */
+    const visibleIds = visibleQuestionIds(form.questions, submittedValues);
     const answers =
       form.questions
+        .filter((question) => visibleIds.has(question.id))
         .map((question) => {
           const value =
             validateAndGetAnswer(

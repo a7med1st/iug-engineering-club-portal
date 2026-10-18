@@ -1,5 +1,7 @@
 "use client";
 
+import { visibleQuestionIds, type QuestionCondition } from "@/lib/registration-conditions";
+import { certificateNameLanguage } from "@/lib/certificate-names";
 import type { ActivityFormQuestionType } from "@prisma/client";
 import {
   useActionState,
@@ -19,6 +21,7 @@ import {
 } from "@/app/activities/[id]/register/actions";
 
 type Question = {
+  condition?: QuestionCondition | null;
   id: string;
   label: string;
   type: ActivityFormQuestionType;
@@ -102,11 +105,15 @@ export default function ActivityRegistrationForm({
     }
   }, [questions, requiresGuestIdentity, returnTo, router, state.success, state.values, state.whatsappUrl]);
 
+  const visibleIds = visibleQuestionIds(questions, values);
+
   function updateAnswer(questionId: string, value: string | string[]) {
-    setValues((current) => ({
-      ...current,
-      [questionId]: value,
-    }));
+    setValues((current) => {
+      const next = { ...current, [questionId]: value };
+      const visible = visibleQuestionIds(questions, next);
+      questions.forEach((question) => { if (!visible.has(question.id)) next[question.id] = question.type === "CHECKBOX" ? [] : ""; });
+      return next;
+    });
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -261,7 +268,7 @@ export default function ActivityRegistrationForm({
         </div>
       )}
 
-      {questions.map((question) => (
+      {questions.filter((question) => visibleIds.has(question.id)).map((question) => (
         <QuestionField
           key={question.id}
           question={question}
@@ -377,6 +384,8 @@ function QuestionField({
 
       {question.type === "SHORT_TEXT" && (
         <input
+          dir={certificateNameLanguage(question.label) === "en" ? "ltr" : undefined}
+          maxLength={certificateNameLanguage(question.label) ? 160 : undefined}
           id={fieldName}
           type="text"
           name={fieldName}

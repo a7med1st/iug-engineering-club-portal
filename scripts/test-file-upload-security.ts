@@ -87,6 +87,8 @@ async function main() {
     });
 
     Object.assign(process.env, { NODE_ENV: "development" });
+    assert.deepEqual(requirePrivateBlobAuth(), { token: "vercel_blob_rw_private-test" });
+    assert.deepEqual(requirePublicBlobAuth(), { token: "vercel_blob_rw_public-test" });
     assert.deepEqual(requirePrivateBlobReadAuth(), {
       token: "vercel_blob_rw_private-test",
     });

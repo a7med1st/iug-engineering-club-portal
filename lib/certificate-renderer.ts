@@ -7,8 +7,8 @@ import { certificateQrSettings } from "@/lib/certificate-qr";
 import { getPrivateBlob } from "@/lib/blob-storage";
 import { CERTIFICATE_FONTS, certificateTextRuns, escapeSvgText, type CertificateFontFamily, type CertificateTemplateSettings, type TextAlign } from "@/lib/certificate-template-settings";
 
-type RenderInput={width:number;height:number;settings:CertificateTemplateSettings;studentName:string;activityTitle:string;activityDate:Date|null};
-const fontFiles:Record<CertificateFontFamily,string>={Cairo:"cairo.ttf",Tajawal:"tajawal.ttf","IBM Plex Sans Arabic":"ibm-plex-sans-arabic.ttf",Amiri:"amiri.ttf",Alexandria:"alexandria.ttf","Thmanyah Sans":"thmanyah-sans.otf",Inter:"inter.ttf"};
+type RenderInput={width:number;height:number;settings:CertificateTemplateSettings;studentName:string;activityTitle:string;activityDate:Date|null;language?:"ar"|"en"};
+const fontFiles:Record<CertificateFontFamily,string>={Cairo:"cairo.ttf",Tajawal:"tajawal.ttf","IBM Plex Sans Arabic":"ibm-plex-sans-arabic.ttf",Amiri:"amiri.ttf",Alexandria:"alexandria.ttf","Thmanyah Sans":"thmanyah-sans.otf",Inter:"inter.ttf","Wister Lilya":"wister-lilya.otf"};
 const certificateFontPaths = Object.values(fontFiles).map((file) =>
   path.join(process.cwd(), "public", "fonts", "certificates", file),
 );
@@ -21,8 +21,8 @@ export function certificateTemplateFingerprint(value:unknown){return createHash(
 
 export async function buildCertificateOverlay(input:RenderInput){
   const{width,height,settings}=input;
-  const text=(value:string,x:number,y:number,size:number,color:string,align:TextAlign,font:CertificateFontFamily,englishFont:CertificateFontFamily,bold:boolean)=>{const effectiveFont=fontFiles[font]?font:"Cairo";const runs=certificateTextRuns(value,effectiveFont,englishFont);return `<text x="${x}" y="${y}" text-anchor="${anchor(align)}" font-family="${svgFontFamily(runs[0]?.font??effectiveFont)}" font-size="${size}px" font-weight="${bold?700:400}" fill="${color}"${bold?` stroke="${color}" stroke-width="${Math.max(.5,size*.025)}" stroke-linejoin="round" paint-order="stroke fill"`:""} direction="rtl" unicode-bidi="plaintext">${runs.length===1?escapeSvgText(value):runs.map(run=>`<tspan font-family="${svgFontFamily(run.font)}">${escapeSvgText(run.text)}</tspan>`).join("")}</text>`;}
-  const date=input.activityDate?new Intl.DateTimeFormat("ar-PS",{dateStyle:"long"}).format(input.activityDate):"";
+  const text=(value:string,x:number,y:number,size:number,color:string,align:TextAlign,font:CertificateFontFamily,englishFont:CertificateFontFamily,bold:boolean)=>{const effectiveFont=fontFiles[font]?font:"Cairo";const runs=certificateTextRuns(value,effectiveFont,englishFont);return `<text x="${x}" y="${y}" text-anchor="${anchor(align)}" font-family="${svgFontFamily(runs[0]?.font??effectiveFont)}" font-size="${size}px" font-weight="${bold?700:400}" fill="${color}"${bold?` stroke="${color}" stroke-width="${Math.max(.5,size*.025)}" stroke-linejoin="round" paint-order="stroke fill"`:""} direction="${input.language === "en" ? "ltr" : "rtl"}" unicode-bidi="plaintext">${runs.length===1?escapeSvgText(value):runs.map(run=>`<tspan font-family="${svgFontFamily(run.font)}">${escapeSvgText(run.text)}</tspan>`).join("")}</text>`;}
+  const date=input.activityDate?new Intl.DateTimeFormat(input.language === "en" ? "en-GB" : "ar-PS",{dateStyle:"long",timeZone:"Asia/Gaza"}).format(input.activityDate):"";
   return`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${text(input.studentName,settings.nameX,settings.nameY,settings.nameFontSize,settings.nameColor,settings.nameAlign,settings.nameFontFamily,settings.nameEnglishFontFamily,settings.nameBold)}${settings.titleVisible?text(input.activityTitle,settings.titleX,settings.titleY,settings.titleFontSize,settings.titleColor,settings.titleAlign,settings.titleFontFamily,settings.titleEnglishFontFamily,settings.titleBold):""}${settings.dateVisible?text(date,settings.dateX,settings.dateY,settings.dateFontSize,settings.dateColor,settings.dateAlign,settings.dateFontFamily,settings.dateEnglishFontFamily,settings.dateBold):""}</svg>`;
 }
 

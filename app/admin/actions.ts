@@ -1,5 +1,6 @@
 "use server";
 
+import { readQuestionCondition, validateQuestionConditions, type QuestionCondition } from "@/lib/registration-conditions";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
@@ -72,6 +73,7 @@ type RegistrationQuestionInput = {
   placeholder: string;
   helpText: string;
   options: string[];
+  condition: QuestionCondition | null;
   sortOrder: number;
 };
 
@@ -216,7 +218,7 @@ function parseRegistrationQuestions(
     );
   }
 
-  return parsed.map(
+  const result = parsed.map(
     (item, index) => {
       if (
         !item ||
@@ -233,6 +235,8 @@ function parseRegistrationQuestions(
           string,
           unknown
         >;
+
+      if (question.condition != null && !readQuestionCondition(question.condition)) throw new AdminActionError("شرط ظهور السؤال غير صالح.");
 
       const id =
         String(
@@ -390,6 +394,7 @@ function parseRegistrationQuestions(
       }
 
       return {
+        condition: question.condition == null ? null : readQuestionCondition(question.condition),
         id,
         label,
         type: typedType,
@@ -406,6 +411,8 @@ function parseRegistrationQuestions(
       };
     },
   );
+  try { validateQuestionConditions(result); } catch (error) { throw new AdminActionError((error as Error).message); }
+  return result;
 }
 
 /* =========================================================
@@ -1433,6 +1440,7 @@ export async function createActivity(
                         (
                           question,
                         ) => ({
+                          condition: question.condition ?? Prisma.DbNull,
                           label:
                             question.label,
 
@@ -2578,6 +2586,7 @@ export async function updateActivityText(
             of registrationQuestions
           ) {
             const questionData = {
+              condition: question.condition ?? Prisma.DbNull,
               label:
                 question.label,
 

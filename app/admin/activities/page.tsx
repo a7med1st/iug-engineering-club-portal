@@ -1,10 +1,7 @@
 import Link from "next/link";
 
-import ActivityFormBuilder from "@/components/admin/ActivityFormBuilder";
 import AdminFeedback from "@/components/admin/AdminFeedback";
 import DeleteActivityForm from "@/components/admin/DeleteActivityForm";
-import DepartmentChecklist from "@/components/admin/DepartmentChecklist";
-import ActivitySchedulePicker from "@/components/admin/ActivitySchedulePicker";
 import { NonceStyle } from "@/components/security/CspNonce";
 
 import {
@@ -21,7 +18,6 @@ import { prisma } from "@/lib/prisma";
 import { formatActivitySchedule } from "@/lib/activities";
 import { registrationWindowStatus } from "@/lib/registration-window";
 
-import CreateActivityForm from "@/components/admin/CreateActivityForm";
 
 export const dynamic = "force-dynamic";
 
@@ -63,25 +59,6 @@ export default async function ActivitiesAdminPage({
     user.memberPermissions,
     user.position,
   );
-
-  const departments = isAdmin
-    ? await prisma.department.findMany({
-      orderBy: {
-        sortOrder: "asc",
-      },
-    })
-    : managedDepartmentIds.length
-      ? await prisma.department.findMany({
-        where: {
-          id: {
-            in: managedDepartmentIds,
-          },
-        },
-        orderBy: {
-          sortOrder: "asc",
-        },
-      })
-      : [];
 
   const rawActivities = await prisma.activity.findMany({
     where: {
@@ -152,134 +129,18 @@ export default async function ActivitiesAdminPage({
       <AdminFeedback error={feedback.error} success={feedback.success} />
 
       {canManageActivities && (
+        <Link className="primary-btn" href="/admin/activities/new">
+          + إضافة نشاط جديد
+        </Link>
+      )}
+
+      {canManageActivities && (
         <Link className="ghost-btn" href="/admin/activities/trash">
           سلة المحذوفات
         </Link>
       )}
 
       <div className="admin-content-grid">
-        {canManageActivities && (
-          <div className="admin-card activity-form-panel">
-            <h2>بيانات النشاط</h2>
-
-            <CreateActivityForm>
-              <label>
-                اسم النشاط
-
-                <input
-                  name="title"
-                  required
-                  placeholder="مثال: ورشة تطوير تطبيقات الويب"
-                />
-              </label>
-
-              <label>
-                نبذة بطاقة النشاط
-
-                <textarea
-                  name="cardDescription"
-                  rows={3}
-                  maxLength={500}
-                  placeholder="نص قصير يظهر تحت اسم النشاط في صفحة الأنشطة"
-                />
-              </label>
-
-              <label>
-                وصف شريط الإعلانات
-
-                <textarea
-                  name="tickerDescription"
-                  rows={2}
-                  maxLength={300}
-                  placeholder="نص قصير ومباشر يتحرك داخل شريط آخر تحديثات النادي"
-                />
-              </label>
-
-              <label>
-                الوصف الكامل للنشاط
-
-                <textarea
-                  name="description"
-                  required
-                  rows={5}
-                  maxLength={10000}
-                  placeholder="اكتب الوصف الكامل الذي يظهر في صفحة التسجيل والتفاصيل"
-                />
-              </label>
-              <ActivitySchedulePicker />
-
-              <div className="form-grid">
-
-                <label>
-                  مكان النشاط
-
-                  <input
-                    name="location"
-                    required
-                    placeholder="مثال: مبنى طيبة - القاعة 201"
-                  />
-                </label>
-
-                <label>
-                  السعة الطلابية
-
-                  <input
-                    type="number"
-                    min="1"
-                    name="capacity"
-                    required
-                    placeholder="مثال: 50"
-                  />
-                </label>
-
-                <label>
-                  السعر (₪)
-
-                  <input
-                    type="number"
-                    name="price"
-                    min="0"
-                    max="1000000"
-                    step="1"
-                    placeholder="اتركه فارغًا إذا كان النشاط مجانيًا"
-                  />
-                </label>
-
-                <label>
-                  حالة النشاط
-
-                  <select name="status" defaultValue="PUBLISHED">
-                    <option value="DRAFT">مسودة</option>
-                    <option value="PUBLISHED">منشور</option>
-                    <option value="ARCHIVED">مؤرشف</option>
-                  </select>
-                </label>
-              </div>
-
-              <DepartmentChecklist
-                departments={departments.map(({ id, nameAr }) => ({
-                  id,
-                  nameAr,
-                }))}
-                allowGeneral={isAdmin}
-              />
-
-              <ActivityFormBuilder />
-
-              <button
-                className="primary-btn"
-                type="submit"
-                disabled={
-                  !isAdmin &&
-                  managedDepartmentIds.length === 0
-                }
-              >
-                حفظ النشاط ونموذج التسجيل
-              </button>
-            </CreateActivityForm>
-          </div>
-        )}
-
         <div className="admin-card admin-list-card activities-panel">
           <div className="activities-panel-decoration" aria-hidden="true" />
 
@@ -439,6 +300,8 @@ export default async function ActivitiesAdminPage({
       </div>
 
       <NonceStyle>{`
+        .activities-admin-page > .admin-content-grid { display: block; margin-top: 24px; }
+        .activities-admin-page > .primary-btn { display: inline-flex; margin: 12px 0 12px 14px; }
         .activities-admin-page .activity-form-panel {
           position: relative;
           isolation: isolate;

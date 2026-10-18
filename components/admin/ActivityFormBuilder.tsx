@@ -1,8 +1,12 @@
 "use client";
 
+import { type QuestionCondition } from "@/lib/registration-conditions";
 import { useEffect, useState } from "react";
 import {
   Check,
+  Eye,
+  ListChecks,
+  Settings2,
   ChevronDown,
   ChevronUp,
   Plus,
@@ -11,6 +15,8 @@ import {
 
 import { useCspNonce } from "@/components/security/CspNonce";
 import ActivitySchedulePicker from "./ActivitySchedulePicker";
+import styles from "./ActivityFormBuilder.module.css";
+import { CERTIFICATE_NAME_QUESTIONS, certificateNameLanguage } from "@/lib/certificate-names";
 
 type QuestionType =
   | "SHORT_TEXT"
@@ -30,6 +36,7 @@ export type ActivityFormBuilderInitialQuestion = {
   placeholder: string | null;
   helpText: string | null;
   options: string[];
+  condition?: QuestionCondition | null;
   answerCount?: number;
 };
 
@@ -42,10 +49,12 @@ type BuilderQuestion = {
   placeholder: string;
   helpText: string;
   options: string[];
+  condition: { parentId: string; value: string } | null;
   answerCount: number;
 };
 
 type ActivityFormBuilderProps = {
+  appearance?: "default" | "wizard";
   initialTitle?: string;
   initialDescription?: string;
   initialIsOpen?: boolean;
@@ -86,6 +95,7 @@ function createQuestion(): BuilderQuestion {
     placeholder: "",
     helpText: "",
     options: [],
+    condition: null,
     answerCount: 0,
   };
 }
@@ -95,6 +105,7 @@ function needsOptions(type: QuestionType) {
 }
 
 export default function ActivityFormBuilder({
+  appearance = "default",
   initialTitle = "نموذج التسجيل",
   initialDescription = "",
   initialIsOpen = true,
@@ -109,20 +120,23 @@ export default function ActivityFormBuilder({
 
   const [questions, setQuestions] = useState<BuilderQuestion[]>(
     () =>
-      initialQuestions.map((question, index) => ({
+      [...initialQuestions.map((question, index) => ({
         id: question.id,
         localId: question.id || `initial-question-${index}`,
         label: question.label,
         type: question.type,
-        required: question.required,
+        required: certificateNameLanguage(question.label) ? true : question.required,
         placeholder: question.placeholder ?? "",
         helpText: question.helpText ?? "",
         options: [...question.options],
+        condition: question.condition ? { parentId: initialQuestions[question.condition.questionIndex]?.id ?? "", value: question.condition.value } : null,
         answerCount: question.answerCount ?? 0,
-      })),
+      })), ...(["ar", "en"] as const).filter(language => !initialQuestions.some(question => certificateNameLanguage(question.label) === language)).map(language => ({ ...createQuestion(), ...CERTIFICATE_NAME_QUESTIONS[language], localId: `certificate-name-${language}`, required: true }))],
   );
 
   const [openTypeMenuId, setOpenTypeMenuId] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const modern = appearance === "wizard";
 
   useEffect(() => {
     const closeOnOutside = (event: PointerEvent) => {
@@ -146,7 +160,11 @@ export default function ActivityFormBuilder({
   }, []);
 
   function addQuestion() {
-    setQuestions((current) => [...current, createQuestion()]);
+    const question = createQuestion();
+    setQuestions((current) => [...current, question]);
+    if (modern) requestAnimationFrame(() => {
+      document.getElementById(`question-label-${question.localId}`)?.focus();
+    });
   }
 
   function removeQuestion(localId: string) {
@@ -256,6 +274,7 @@ export default function ActivityFormBuilder({
         index,
       ) => ({
         ...question,
+        condition: question.condition ? { questionIndex: questions.findIndex((item) => item.localId === question.condition?.parentId), value: question.condition.value.trim() } : null,
         label: question.label.trim(),
         placeholder: question.placeholder.trim(),
         helpText: question.helpText.trim(),
@@ -266,42 +285,15 @@ export default function ActivityFormBuilder({
   );
 
   return (
-    <section className="activity-form-builder">
+    <section className={`activity-form-builder ${modern ? styles.builder : ""}`}>
       <input
         type="hidden"
         name="registrationQuestions"
         value={serializedQuestions}
       />
 
-      <ActivitySchedulePicker
-        kind="registration"
-        initialStartDate={initialOpenDate}
-        initialStartTime={initialOpenTime}
-        initialEndDate={initialCloseDate}
-        initialEndTime={initialCloseTime}
-      />
-
-      <div className="activity-builder-heading">
-        <div>
-          <span className="activity-builder-eyebrow">نموذج التسجيل الداخلي</span>
-          <h2>أسئلة التسجيل</h2>
-          <p>
-            أنشئ نموذج التسجيل الخاص بهذا النشاط وحدد نوع كل سؤال والخيارات
-            المطلوبة.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          className="activity-builder-add"
-          onClick={addQuestion}
-        >
-          <Plus size={18} />
-          إضافة سؤال
-        </button>
-      </div>
-
       <div className="activity-builder-settings">
+        {modern && <div className={styles.sectionHeading}><span className={styles.sectionIcon}><Settings2 size={20} /></span><div><h3>إعدادات النموذج</h3><p>العنوان والتعليمات التي تظهر للطالب قبل التسجيل.</p></div></div>}
         <div className="field">
           <label htmlFor="registrationFormTitle">عنوان النموذج</label>
           <input
@@ -330,7 +322,7 @@ export default function ActivityFormBuilder({
             name="registrationFormIsOpen"
             defaultChecked={initialIsOpen}
           />
-          <span>تفعيل التسجيل ضمن الموعد المحدد</span>
+          <span>تفعيل التسجيل ضمن الموعد المحدد{modern && <small>يُفتح ويُغلق تلقائيًا حسب فترة التسجيل أدناه.</small>}</span>
         </label>
 
         <label className="activity-builder-open-toggle">
@@ -340,15 +332,55 @@ export default function ActivityFormBuilder({
             defaultChecked={initialRequiresAccount}
           />
           <span>
-            هل يجب أن يكون الطالب مسجلًا في الموقع؟ (فعّله لفعاليات QR)
+            {modern ? "تسجيل الدخول مطلوب" : "هل يجب أن يكون الطالب مسجلًا في الموقع؟ (فعّله لفعاليات QR)"}
+            {modern && <small>اربط التسجيل بحساب الطالب لتتبع الحضور والشهادات.</small>}
           </span>
         </label>
       </div>
 
+      <ActivitySchedulePicker
+        kind="registration"
+        initialStartDate={initialOpenDate}
+        initialStartTime={initialOpenTime}
+        initialEndDate={initialCloseDate}
+        initialEndTime={initialCloseTime}
+      />
+
+      <div className="activity-builder-heading">
+        <div>
+          <span className="activity-builder-eyebrow">نموذج التسجيل الداخلي</span>
+          <h2>أسئلة التسجيل {modern && <span className={styles.count}>{questions.length}</span>}</h2>
+          <p>
+            أنشئ نموذج التسجيل الخاص بهذا النشاط وحدد نوع كل سؤال والخيارات
+            المطلوبة.
+          </p>
+        </div>
+
+        {modern && <button type="button" className={styles.previewToggle} aria-expanded={showPreview} onClick={() => setShowPreview(current => !current)}><Eye size={17} />{showPreview ? "إخفاء المعاينة" : "معاينة النموذج"}</button>}
+        <button
+          type="button"
+          className="activity-builder-add"
+          onClick={addQuestion}
+        >
+          <Plus size={18} />
+          إضافة سؤال
+        </button>
+      </div>
+
+      {modern && showPreview && <section className={styles.formPreview} aria-label="معاينة نموذج الطالب">
+        <div className={styles.sectionHeading}><Eye size={19} /><div><h3>هكذا تظهر الأسئلة للطالب</h3><p>معاينة فقط · تُعرض الأسئلة المشروطة مع توضيح شرط ظهورها.</p></div></div>
+        {questions.length === 0 ? <p>أضف أسئلة لعرضها هنا.</p> : questions.map((question, index) => <div className={styles.previewQuestion} key={question.localId}>
+          <strong>{index + 1}. {question.label || "سؤال بدون عنوان"}{question.required && <em> *</em>}</strong>
+          {question.condition && <small className={styles.conditionNote}>يظهر عند الإجابة بـ «{question.condition.value || "إجابة محددة"}» عن «{questions.find(item => item.localId === question.condition?.parentId)?.label || "السؤال المرتبط"}»</small>}
+          {needsOptions(question.type) ? <div className={styles.previewOptions}>{question.options.filter(option => option.trim()).map((option, optionIndex) => <span key={optionIndex}><i />{option}</span>)}</div> : <div className={styles.previewInput}>{question.placeholder || (question.type === "LONG_TEXT" ? "إجابة الطالب..." : "اكتب إجابتك هنا...")}</div>}
+          {question.helpText && <small>{question.helpText}</small>}
+        </div>)}
+      </section>}
+
       {questions.length === 0 ? (
         <div className="activity-builder-empty">
           <div className="activity-builder-empty-icon">
-            <Plus size={24} />
+            <ListChecks size={24} />
           </div>
           <h3>لم تتم إضافة أسئلة بعد</h3>
           <p>اضغط على "إضافة سؤال" لإنشاء أول سؤال في نموذج التسجيل.</p>
@@ -368,6 +400,7 @@ export default function ActivityFormBuilder({
               QUESTION_TYPES.find((item) => item.value === question.type) ??
               QUESTION_TYPES[0];
             const isTypeMenuOpen = openTypeMenuId === question.localId;
+            const nameLanguage = certificateNameLanguage(question.label);
 
             return (
               <article
@@ -406,11 +439,11 @@ export default function ActivityFormBuilder({
                       className="danger"
                       aria-label="حذف السؤال"
                       title={
-                        question.answerCount > 0
+                        nameLanguage ? "سؤال أساسي لاسم الطالب على الشهادة" : question.answerCount > 0
                           ? "لا يمكن حذف سؤال لديه إجابات سابقة"
                           : "حذف السؤال"
                       }
-                      disabled={question.answerCount > 0}
+                      disabled={question.answerCount > 0 || Boolean(nameLanguage)}
                       onClick={() => removeQuestion(question.localId)}
                     >
                       <Trash2 size={17} />
@@ -420,8 +453,11 @@ export default function ActivityFormBuilder({
 
                 <div className="activity-builder-grid">
                   <div className="field activity-builder-label-field">
-                    <label>نص السؤال</label>
+                    <label htmlFor={`question-label-${question.localId}`}>نص السؤال{modern && " *"}</label>
                     <input
+                      id={`question-label-${question.localId}`}
+                      required={modern}
+                      readOnly={Boolean(nameLanguage)}
                       type="text"
                       value={question.label}
                       placeholder="مثال: ما هو رقمك الجامعي؟"
@@ -434,8 +470,9 @@ export default function ActivityFormBuilder({
                   </div>
 
                   <div className="field question-type-field">
-                    <label>نوع السؤال</label>
+                    <label htmlFor={modern ? `question-type-${question.localId}` : undefined}>نوع السؤال</label>
 
+                    {modern ? <><select disabled={Boolean(nameLanguage)} id={`question-type-${question.localId}`} value={question.type} onChange={event => changeQuestionType(question.localId, event.target.value as QuestionType)}>{QUESTION_TYPES.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select><small>{nameLanguage ? "سؤال أساسي لإصدار الشهادة" : selectedType.hint}</small></> :
                     <div
                       className={`question-type-select ${
                         isTypeMenuOpen ? "is-open" : ""
@@ -446,6 +483,7 @@ export default function ActivityFormBuilder({
                         type="button"
                         className="question-type-trigger"
                         aria-haspopup="listbox"
+                        disabled={Boolean(nameLanguage)}
                         aria-expanded={isTypeMenuOpen}
                         onClick={() =>
                           setOpenTypeMenuId((current) =>
@@ -507,14 +545,17 @@ export default function ActivityFormBuilder({
                           </div>
                         </div>
                       )}
-                    </div>
+                    </div>}
                   </div>
                 </div>
 
+                <details className={styles.hints} open={!modern || undefined}>
+                  <summary>نصوص مساعدة <span>اختياري</span></summary>
                 <div className="activity-builder-grid">
                   <div className="field">
-                    <label>Placeholder</label>
+                    <label htmlFor={`question-placeholder-${question.localId}`}>نص داخل الحقل</label>
                     <input
+                      id={`question-placeholder-${question.localId}`}
                       type="text"
                       value={question.placeholder}
                       placeholder="نص إرشادي اختياري داخل الحقل"
@@ -527,8 +568,9 @@ export default function ActivityFormBuilder({
                   </div>
 
                   <div className="field">
-                    <label>ملاحظة توضيحية</label>
+                    <label htmlFor={`question-help-${question.localId}`}>ملاحظة توضيحية</label>
                     <input
+                      id={`question-help-${question.localId}`}
                       type="text"
                       value={question.helpText}
                       placeholder="تعليمات اختيارية تظهر أسفل السؤال"
@@ -540,11 +582,13 @@ export default function ActivityFormBuilder({
                     />
                   </div>
                 </div>
+                </details>
 
                 <label className="activity-builder-required">
                   <input
                     type="checkbox"
                     checked={question.required}
+                    disabled={Boolean(nameLanguage)}
                     onChange={(event) =>
                       updateQuestion(question.localId, {
                         required: event.target.checked,
@@ -606,6 +650,27 @@ export default function ActivityFormBuilder({
                     </div>
                   </div>
                 )}
+                <details className={styles.conditions} open={!modern || question.condition ? true : undefined}>
+                  <summary><Settings2 size={16} />شروط ظهور السؤال</summary>
+                <div className="field">
+                  <label htmlFor={`condition-${question.localId}`}>إظهار السؤال</label>
+                  <select disabled={Boolean(nameLanguage)} id={`condition-${question.localId}`} value={question.condition?.parentId ?? ""}
+                    onChange={(event) => updateQuestion(question.localId, { condition: event.target.value ? { parentId: event.target.value, value: "" } : null })}>
+                    <option value="">دائمًا</option>
+                    {questions.slice(0, index).filter((item) => needsOptions(item.type)).map((item) => <option key={item.localId} value={item.localId}>بشرط الإجابة عن: {item.label || "سؤال بدون عنوان"}</option>)}
+                  </select>
+                  {question.condition && <>
+                    <label htmlFor={`condition-value-${question.localId}`}>الإجابة التي تُظهر هذا السؤال</label>
+                    <select id={`condition-value-${question.localId}`} required value={question.condition.value}
+                      onChange={(event) => updateQuestion(question.localId, { condition: { parentId: question.condition!.parentId, value: event.target.value } })}>
+                      <option value="">اختر الإجابة</option>
+                      {questions.find((item) => item.localId === question.condition?.parentId)?.options.filter((option) => option.trim()).map((option, optionIndex) => <option key={optionIndex} value={option}>{option}</option>)}
+                    </select>
+                    <small>يظهر السؤال فقط عند اختيار هذه الإجابة. ضع السؤال المرتبط به قبله.</small>
+                  </>}
+                </div>
+
+                </details>
               </article>
             );
           })}

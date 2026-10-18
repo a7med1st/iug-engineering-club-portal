@@ -1,3 +1,4 @@
+import { readQuestionCondition } from "@/lib/registration-conditions";
 import Link from "next/link";
 import {
   notFound,
@@ -89,6 +90,7 @@ export default async function EditActivityPage({
                 type: true,
                 required: true,
                 placeholder: true,
+                condition: true,
                 helpText: true,
                 options: true,
 
@@ -199,6 +201,7 @@ export default async function EditActivityPage({
         ?.questions ?? []
     ).map(
       (question) => ({
+        condition: readQuestionCondition(question.condition),
         id: question.id,
         label:
           question.label,

@@ -28,6 +28,7 @@
     "test:student-registration-options": "node --import tsx scripts/test-student-registration-options.ts",
     "test:registration-account-links": "node --require ./scripts/node-platform-fallback.cjs --import tsx scripts/test-registration-account-links.ts",
     "test:certificate-template": "node --require ./scripts/node-platform-fallback.cjs --import tsx scripts/test-certificate-template.ts",
+    "test:bilingual-certificates": "node --import tsx scripts/test-bilingual-certificate-names.ts",
     "test:certificate-rendering": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --import tsx scripts/test-certificate-rendering.ts",
     "test:certificate-validity": "node --import tsx scripts/test-certificate-validity.ts",
     "test:file-security": "node --require ./scripts/node-platform-fallback.cjs --env-file=.env --import tsx scripts/test-file-upload-security.ts",

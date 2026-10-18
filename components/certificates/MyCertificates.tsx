@@ -45,6 +45,7 @@ export default async function MyCertificates({ userId }: { userId: string }) {
 
       select: {
         id: true,
+        englishArtifactPathname: true,
         verificationCode:
           true,
         issuedAt: true,
@@ -169,8 +170,9 @@ export default async function MyCertificates({ userId }: { userId: string }) {
                     className={styles.downloadLink}
                   >
                     <Download size={16} aria-hidden="true" />
-                    تنزيل الشهادة
+                    تنزيل الشهادة العربية
                   </Link>
+                  {certificate.englishArtifactPathname && <Link href={`/certificates/${certificate.verificationCode}/download?language=en`} className={styles.downloadLink}><Download size={16} aria-hidden="true" />تنزيل الشهادة الإنجليزية</Link>}
                 </div>
               </article>
             ),

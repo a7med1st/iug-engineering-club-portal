@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { certificateTextRuns, escapeSvgText, parseTemplateSettings } from "../lib/certificate-template-settings";
-import { buildCertificateOverlay } from "../lib/certificate-renderer";
+import { buildCertificateOverlay, composeCertificate } from "../lib/certificate-renderer";
 import sharp from "sharp";
 async function main() {
 const valid = new FormData();
@@ -44,6 +44,26 @@ for (const fontFamily of ["Alexandria"] as const) {
     const svg = await buildCertificateOverlay({ width: 1200, height: 850, settings: fontParsed.value, studentName: "أحمد Engineering", activityTitle: "ورشة", activityDate: new Date("2026-09-19T00:00:00Z") });
     assert.match(svg, new RegExp(`font-family="${fontFamily}"`));
   }
+}
+const englishSettings = parseTemplateSettings(valid);
+assert.ok(englishSettings.ok);
+if (englishSettings.ok) {
+  const englishSvg = await buildCertificateOverlay({ width: 1200, height: 850, settings: { ...englishSettings.value, dateVisible: true }, studentName: "Ahmad Mohammed", activityTitle: "Engineering Workshop", activityDate: new Date("2026-09-19T00:00:00Z"), language: "en" });
+  assert.match(englishSvg, /direction="ltr"/);
+  assert.match(englishSvg, /September/);
+}
+valid.set("nameEnglishFontFamily", "Wister Lilya");
+const wisterSettings = parseTemplateSettings(valid);
+assert.ok(wisterSettings.ok);
+if (wisterSettings.ok) {
+  const input = { width: 1200, height: 850, settings: { ...wisterSettings.value, nameX: 600, nameY: 425, nameFontSize: 72, nameBold: false, titleVisible: false, dateVisible: false }, studentName: "Ahmad Mohammed", activityTitle: "", activityDate: null, language: "en" as const };
+  const background = await sharp({ create: { width: 1200, height: 850, channels: 3, background: "white" } }).png().toBuffer();
+  const wister = await composeCertificate(background, input);
+  const inter = await composeCertificate(background, { ...input, settings: { ...input.settings, nameEnglishFontFamily: "Inter" } });
+  assert.notDeepEqual(wister, inter, "Wister Lilya must render using the bundled font rather than a fallback");
+  const metadata = await sharp(wister).metadata();
+  assert.deepEqual([metadata.width, metadata.height], [1200, 850]);
+  assert.deepEqual(certificateTextRuns("أحمد Ahmad", "Cairo", "Wister Lilya"), [{ font: "Cairo", text: "أحمد" }, { font: "Wister Lilya", text: " Ahmad" }]);
 }
 console.log("certificate template settings tests passed");
 }
