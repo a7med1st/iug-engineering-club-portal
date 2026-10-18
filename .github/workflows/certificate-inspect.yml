@@ -1,0 +1,25 @@
+name: Inspect certificate issuance
+on:
+  push:
+    branches: [diagnostics/certificate-names-verification-73c88c4]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.IUG_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.IUG_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/iug_deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/iug_deploy ~/.ssh/known_hosts
+      - name: Inspect certificate failure metadata
+        run: |
+          ssh -i ~/.ssh/iug_deploy -o IdentitiesOnly=yes -o BatchMode=yes iugdeploy@130.110.247.136 'bash -s' < scripts/certificate-inspect.sh
