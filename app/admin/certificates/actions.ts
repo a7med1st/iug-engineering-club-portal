@@ -14,7 +14,7 @@ import {
 
 import {
   createVerificationCode,
-  isIssuedCertificate,
+  hasIssuedCertificateLanguages,
 } from "@/lib/certificates";
 
 import {
@@ -27,8 +27,7 @@ import {
 } from "@/lib/prisma";
 import { CertificateGenerationError, generateBilingualCertificateArtifacts, type IndividualOverrides } from "@/lib/bilingual-certificate-artifacts";
 import { headers } from "next/headers";
-import { CERTIFICATE_FONTS, type CertificateFontFamily } from "@/lib/certificate-template-settings";
-import { randomUUID } from "node:crypto";
+import { CERTIFICATE_FONTS, CERTIFICATE_ENGLISH_FONTS, type CertificateFontFamily } from "@/lib/certificate-template-settings";
 import { getAttendanceProgress } from "@/lib/activity-attendance";
 
 async function generateCertificateArtifact(submissionId: string, certificateId: string, overrides?: IndividualOverrides) {
@@ -141,8 +140,8 @@ async function ensureEligibleSubmission(
     certificateAdminError(`لا يمكن إصدار أو إعادة توليد الشهادة: حضر المشارك ${progress.attendanceCount} جلسة، والمطلوب ${progress.requiredAttendanceCount} جلسة.`);
   }
 
-  if (!submission.form.activity.certificateTemplate || !submission.form.activity.certificateTemplateEnglish) {
-    certificateAdminError("احفظ قالب الشهادة العربية وقالب الشهادة الإنجليزية قبل إصدار النسختين.");
+  if (!submission.form.activity.certificateTemplate && !submission.form.activity.certificateTemplateEnglish) {
+    certificateAdminError("احفظ قالب شهادة واحدًا على الأقل قبل الإصدار.");
   }
 
   return submission;
@@ -237,7 +236,7 @@ export async function issueCertificate(
       submissionId,
     );
 
-  if (submission.certificate && isIssuedCertificate(submission.certificate) && submission.certificate?.englishArtifactPathname) {
+  if (submission.certificate && hasIssuedCertificateLanguages(submission.certificate, { ar: Boolean(submission.form.activity.certificateTemplate), en: Boolean(submission.form.activity.certificateTemplateEnglish) })) {
     redirect(
       `/certificates/${submission.certificate.verificationCode}`,
     );
@@ -351,7 +350,7 @@ export async function updateIndividualCertificate(formData: FormData) {
 
   if (!certificate || certificate.revokedAt) certificateAdminError("الشهادة غير متاحة للتعديل.");
   await ensureEligibleSubmission(certificate.submissionId);
-  if (!customName || customName.length > 160 || !Number.isFinite(customNameX) || !Number.isFinite(customNameY) || customNameX < 0 || customNameY < 0 || !Number.isFinite(customNameFontSize) || customNameFontSize < 1 || customNameFontSize > 512 || !CERTIFICATE_FONTS.some((font) => font === customNameFontFamily)) {
+  if (!customName || customName.length > 160 || !Number.isFinite(customNameX) || !Number.isFinite(customNameY) || customNameX < 0 || customNameY < 0 || !Number.isFinite(customNameFontSize) || customNameFontSize < 1 || customNameFontSize > 512 || ![...CERTIFICATE_FONTS, ...CERTIFICATE_ENGLISH_FONTS].some((font) => font === customNameFontFamily)) {
     certificateAdminError("تحقق من الاسم وموقعه داخل الشهادة.");
   }
 
@@ -377,7 +376,7 @@ export async function regenerateActivityCertificates(formData: FormData) {
     select: { id: true },
   });
   const englishTemplate = await prisma.certificateTemplateEnglish.findUnique({ where: { activityId }, select: { id: true } });
-  if (!template || !englishTemplate) certificateAdminError("احفظ قالبَي الشهادة العربية والإنجليزية قبل تحديث النسختين.");
+  if (!template && !englishTemplate) certificateAdminError("احفظ قالب شهادة واحدًا على الأقل قبل التحديث.");
 
   const submissions = await prisma.activityFormSubmission.findMany({
     where: {
@@ -450,8 +449,8 @@ export async function issueActivityCertificates(
     select: { id: true },
   });
   const englishTemplate = await prisma.certificateTemplateEnglish.findUnique({ where: { activityId }, select: { id: true } });
-  if (!activityTemplate || !englishTemplate) {
-    certificateAdminError("احفظ قالبَي الشهادة العربية والإنجليزية قبل إصدار النسختين.");
+  if (!activityTemplate && !englishTemplate) {
+    certificateAdminError("احفظ قالب شهادة واحدًا على الأقل قبل الإصدار.");
   }
 
   const submissions =
@@ -515,7 +514,7 @@ export async function issueActivityCertificates(
     of submissions
   ) {
     if (!getAttendanceProgress(submission).eligible) continue;
-    if (isIssuedCertificate(submission.certificate) && submission.certificate?.englishArtifactPathname) {
+    if (hasIssuedCertificateLanguages(submission.certificate, { ar: Boolean(activityTemplate), en: Boolean(englishTemplate) })) {
       continue;
     }
 

@@ -16,7 +16,7 @@ export default function BilingualCertificateTemplates({ arabic, english, arabicN
     }
   }}>
     <input type="hidden" name="activityId" value={activityId} />
-    <p className={styles.hint}>أرفق قالبًا لكل لغة واضبطه بشكل مستقل. يُحفظ القالبان معًا، ويحصل الطالب على نسختين بنفس رمز التحقق.</p>
+    <p className={styles.hint}>أرفق القالب العربي أو الإنجليزي أو كليهما. تُصدر الشهادة باللغات التي أرفقت قوالبها فقط، وبنفس رمز التحقق.</p>
     <div className={styles.slots}>{(["ar", "en"] as const).map(language => <section key={language} className={active === language ? styles.active : ""}>
       <label tabIndex={0} htmlFor={`template-file-${language}`} onClick={() => setActive(language)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setActive(language); document.getElementById(`template-file-${language}`)?.click(); } }}><ImageUp size={24} /><strong>إرفاق الشهادة باللغة {language === "ar" ? "العربية" : "الإنجليزية"}</strong><small>{names[language] || "PNG أو JPG أو WEBP · حتى 8 MB"}</small><span>{names[language] ? "استبدال الملف" : "اختيار ملف"}</span></label>
       <button type="button" aria-pressed={active === language} onClick={() => setActive(language)}>معاينة وضبط القالب {language === "ar" ? "العربي" : "الإنجليزي"}</button>

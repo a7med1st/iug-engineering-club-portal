@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
-import { certificateNameError, certificateNameLanguage, certificateNamesFromAnswers, CERTIFICATE_NAME_QUESTIONS } from "../lib/certificate-names";
+import { certificateNameError, certificateNameLanguage, certificateNamesFromAnswers, certificateOverrideLanguage, CERTIFICATE_NAME_QUESTIONS } from "../lib/certificate-names";
 import { certificateLanguage, certificateTemplateForm } from "../lib/certificate-language";
 
 assert.equal(certificateLanguage(null), "ar");
 assert.equal(certificateLanguage("en"), "en");
 assert.equal(certificateLanguage("fr"), null);
+assert.equal(certificateOverrideLanguage("Ahmad Mohammed", "ar"), "en");
+assert.equal(certificateOverrideLanguage("أحمد محمد", "en"), "ar");
+assert.equal(certificateOverrideLanguage(null, "en"), "en");
 assert.equal(certificateNameLanguage(" الاسم باللغة الإنجليزية "), "en");
 assert.equal(certificateNameError("ar", "أحمد محمد"), null);
 assert.equal(certificateNameError("en", "Ahmad Mohammed"), null);

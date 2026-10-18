@@ -335,7 +335,7 @@ values={{nameX:Number(englishTemplate?.nameX??600),nameY:Number(englishTemplate?
                               }
                             </span>
                           </div>
-                        ) : row.certificate?.revokedAt && row.certificate.artifactPathname ? (
+                        ) : row.certificate?.revokedAt && (row.certificate.artifactPathname || row.certificate.englishArtifactPathname) ? (
                           <span className={styles.revoked}>
                             ملغاة
                           </span>

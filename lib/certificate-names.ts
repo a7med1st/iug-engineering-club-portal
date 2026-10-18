@@ -23,3 +23,8 @@ export function certificateNamesFromAnswers(answers: { value: unknown; question:
   }
   return names;
 }
+
+export function certificateOverrideLanguage(name: string | null | undefined, fallback: "ar" | "en") {
+  if (!name?.trim()) return fallback;
+  return /[\u0621-\u064a]/.test(name) ? "ar" : "en";
+}

@@ -33,7 +33,7 @@ export default async function MyCertificates({ userId }: { userId: string }) {
         revokedAt:
           null,
 
-        artifactPathname: { not: null },
+        OR: [{ artifactPathname: { not: null } }, { englishArtifactPathname: { not: null } }],
 
         submission: {
           userId:
@@ -46,6 +46,7 @@ export default async function MyCertificates({ userId }: { userId: string }) {
       select: {
         id: true,
         englishArtifactPathname: true,
+        artifactPathname: true,
         verificationCode:
           true,
         issuedAt: true,
@@ -165,13 +166,13 @@ export default async function MyCertificates({ userId }: { userId: string }) {
                     <Eye size={16} aria-hidden="true" />
                     عرض الشهادة
                   </Link>
-                  <Link
-                    href={`/certificates/${certificate.verificationCode}/download`}
+                  {certificate.artifactPathname && <Link
+                    href={`/certificates/${certificate.verificationCode}/download?language=ar`}
                     className={styles.downloadLink}
                   >
                     <Download size={16} aria-hidden="true" />
                     تنزيل الشهادة العربية
-                  </Link>
+                  </Link>}
                   {certificate.englishArtifactPathname && <Link href={`/certificates/${certificate.verificationCode}/download?language=en`} className={styles.downloadLink}><Download size={16} aria-hidden="true" />تنزيل الشهادة الإنجليزية</Link>}
                 </div>
               </article>

@@ -13,14 +13,19 @@ export function canViewCertificate(viewer: Pick<PermissionUser, "id" | "role" | 
 export function isCertificateValid(certificate: {
   revokedAt: Date | null;
   artifactPathname: string | null;
+  englishArtifactPathname?: string | null;
   submission: AttendanceSubmission;
 }) {
-  return !certificate.revokedAt && Boolean(certificate.artifactPathname) &&
+  return !certificate.revokedAt && Boolean(certificate.artifactPathname || certificate.englishArtifactPathname) &&
     getAttendanceProgress(certificate.submission).eligible;
 }
 
-export function isIssuedCertificate(certificate: { revokedAt: Date | null; artifactPathname: string | null } | null) {
-  return Boolean(certificate && !certificate.revokedAt && certificate.artifactPathname);
+export function isIssuedCertificate(certificate: { revokedAt: Date | null; artifactPathname: string | null; englishArtifactPathname?: string | null } | null) {
+  return Boolean(certificate && !certificate.revokedAt && (certificate.artifactPathname || certificate.englishArtifactPathname));
+}
+
+export function hasIssuedCertificateLanguages(certificate: { revokedAt: Date | null; artifactPathname: string | null; englishArtifactPathname?: string | null } | null, templates: { ar: boolean; en: boolean }) {
+  return isIssuedCertificate(certificate) && (!templates.ar || Boolean(certificate?.artifactPathname)) && (!templates.en || Boolean(certificate?.englishArtifactPathname));
 }
 
 export function normalizeCertificateCode(
@@ -189,6 +194,7 @@ export async function getCertificateAdminRows({
             issuedAt: true,
             revokedAt: true,
             artifactPathname: true,
+            englishArtifactPathname: true,
           },
         },
 

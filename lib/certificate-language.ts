@@ -5,6 +5,11 @@ export function certificateLanguage(value: string | null): CertificateLanguage |
   return value === "en" ? "en" : null;
 }
 
+export function certificateDownloadLanguage(value: string | null, certificate: { artifactPathname: string | null; englishArtifactPathname?: string | null }): CertificateLanguage | null {
+  if (value) return certificateLanguage(value);
+  return certificate.artifactPathname ? "ar" : certificate.englishArtifactPathname ? "en" : null;
+}
+
 export function certificateTemplateForm(data: FormData, language: CertificateLanguage) {
   const result = new FormData();
   result.set("activityId", String(data.get("activityId") ?? ""));

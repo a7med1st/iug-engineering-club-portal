@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { canViewCertificate, isCertificateValid, isIssuedCertificate } from "../lib/certificates";
+import { canViewCertificate, isCertificateValid, isIssuedCertificate, hasIssuedCertificateLanguages } from "../lib/certificates";
+import { certificateDownloadLanguage } from "../lib/certificate-language";
 
 const valid = {
   revokedAt: null,
@@ -24,6 +25,19 @@ assert.equal(isCertificateValid({ ...valid, artifactPathname: null }), false);
 assert.equal(isCertificateValid({ ...valid, submission: { ...valid.submission, status: "REJECTED" } }), false);
 assert.equal(isCertificateValid({ ...valid, submission: { ...valid.submission, checkedInAt: null } }), false);
 assert.equal(isIssuedCertificate(valid), true);
+const englishOnly = { ...valid, artifactPathname: null, englishArtifactPathname: "certificates/test-en.png" };
+assert.equal(isCertificateValid(englishOnly), true);
+assert.equal(isIssuedCertificate(englishOnly), true);
+assert.equal(isCertificateValid({ ...englishOnly, revokedAt: new Date() }), false);
+assert.equal(isCertificateValid({ ...englishOnly, submission: { ...valid.submission, status: "REJECTED" } }), false);
+assert.equal(certificateDownloadLanguage(null, englishOnly), "en");
+assert.equal(certificateDownloadLanguage(null, valid), "ar");
+assert.equal(certificateDownloadLanguage("ar", englishOnly), "ar");
+assert.equal(hasIssuedCertificateLanguages(englishOnly, { ar: false, en: true }), true);
+assert.equal(hasIssuedCertificateLanguages(englishOnly, { ar: true, en: true }), false);
+assert.equal(hasIssuedCertificateLanguages(valid, { ar: true, en: false }), true);
+assert.equal(hasIssuedCertificateLanguages(valid, { ar: true, en: true }), false);
+assert.equal(hasIssuedCertificateLanguages({ ...valid, englishArtifactPathname: "en.png" }, { ar: true, en: true }), true);
 assert.equal(isIssuedCertificate(null), false);
 assert.equal(isIssuedCertificate({ revokedAt: null, artifactPathname: null }), false);
 assert.equal(isIssuedCertificate({ revokedAt: new Date(), artifactPathname: "certificates/test.png" }), false);

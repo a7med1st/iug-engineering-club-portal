@@ -49,5 +49,5 @@ export async function saveCertificateTemplate(formData: FormData) {
   if (failure) redirect(`/admin/certificates?activity=${encodeURIComponent(activityId)}&error=${encodeURIComponent(failure)}`);
   await tryDeletePrivateBlobs(replacedPaths, "certificate-template-replacement");
   revalidatePath("/admin/certificates");
-  redirect(`/admin/certificates?activity=${encodeURIComponent(activityId)}&success=${encodeURIComponent("تم حفظ قوالب الشهادة. جهّز القالبين قبل إصدار النسختين.")}`);
+  redirect(`/admin/certificates?activity=${encodeURIComponent(activityId)}&success=${encodeURIComponent("تم حفظ قوالب الشهادة. يمكنك إصدار النسخ المتاحة.")}`);
 }

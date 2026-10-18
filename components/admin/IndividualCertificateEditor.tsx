@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { Save } from "lucide-react";
-import { CERTIFICATE_FONTS } from "@/lib/certificate-template-settings";
+import { CERTIFICATE_FONTS, CERTIFICATE_ENGLISH_FONTS } from "@/lib/certificate-template-settings";
 import styles from "./CertificateTemplateEditor.module.css";
 import layout from "./IndividualCertificateEditor.module.css";
 
-export default function IndividualCertificateEditor({ certificateId, name, x, y, width, height, fontSize, bold, fontFamily, color, align, templateUrl, action }: {
+export default function IndividualCertificateEditor({ certificateId, name, x, y, width, height, fontSize, bold, fontFamily, color, align, templateUrl, action, language = "ar" }: {
+  language?: "ar" | "en";
   certificateId: string; name: string; x: number; y: number; width: number; height: number;
   fontSize: number; bold: boolean; fontFamily: string; color: string; align: string; templateUrl: string;
   action: (data: FormData) => void;
@@ -54,7 +55,7 @@ export default function IndividualCertificateEditor({ certificateId, name, x, y,
           <label><span>الموضع الأفقي</span><div className={layout.numberField}><input type="number" min="0" max={width} value={value.x} onChange={(event) => setValue((current) => ({ ...current, x: Number(event.target.value) }))} /><small>px</small></div></label>
           <label><span>الموضع العمودي</span><div className={layout.numberField}><input type="number" min="0" max={height} value={value.y} onChange={(event) => setValue((current) => ({ ...current, y: Number(event.target.value) }))} /><small>px</small></div></label>
           <label><span>حجم الخط</span><div className={layout.numberField}><input name="customNameFontSize" type="number" min="1" max="512" step="0.01" value={value.fontSize} onChange={(event) => setValue((current) => ({ ...current, fontSize: Math.max(1, Math.min(512, Number(event.target.value) || 1)) }))} /><small>px</small></div></label>
-          <label><span>نوع الخط</span><select className={layout.fontSelect} name="customNameFontFamily" value={value.fontFamily} onChange={(event) => setValue((current) => ({ ...current, fontFamily: event.target.value }))}>{CERTIFICATE_FONTS.map((font) => <option key={font} value={font}>{font}</option>)}</select></label>
+          <label><span>نوع الخط</span><select className={layout.fontSelect} name="customNameFontFamily" value={value.fontFamily} onChange={(event) => setValue((current) => ({ ...current, fontFamily: event.target.value }))}>{(language === "en" ? CERTIFICATE_ENGLISH_FONTS : CERTIFICATE_FONTS).map((font) => <option key={font} value={font}>{font}</option>)}</select></label>
           <label className={layout.boldField}><input name="customNameBold" type="checkbox" checked={value.bold} onChange={(event) => setValue((current) => ({ ...current, bold: event.target.checked }))} /><span className={layout.boldIcon}>B</span><span>خط غامق</span></label>
         </div>
       </fieldset>
