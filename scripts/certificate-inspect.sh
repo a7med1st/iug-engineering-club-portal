@@ -18,7 +18,18 @@ const {parseTemplateSettings}=require('./lib/certificate-template-settings.ts');
 const {renderCertificate}=require('./lib/certificate-renderer.ts');
 const db=new PrismaClient();
 try{
- const activity=await db.activity.findUniqueOrThrow({where:{id:'cmuylvgqt00278lfl61nnjpvw'},include:{certificateTemplate:true,certificateTemplateEnglish:true,sessions:{select:{id:true}},registrationForm:{include:{submissions:{include:{answers:{include:{question:{select:{label:true}}}},sessionAttendances:{select:{sessionId:true}}}}}}});
+ const activity=await db.activity.findUniqueOrThrow({
+   where:{id:'cmuylvgqt00278lfl61nnjpvw'},
+   include:{
+     certificateTemplate:true,
+     certificateTemplateEnglish:true,
+     sessions:{select:{id:true}},
+     registrationForm:{include:{submissions:{include:{
+       answers:{include:{question:{select:{label:true}}}},
+       sessionAttendances:{select:{sessionId:true}}
+     }}}}
+   }
+ });
  const eligible=activity.registrationForm.submissions.filter(row=>getAttendanceProgress({...row,form:{activity}}).eligible);
  const resolved=eligible.map(row=>({row,names:certificateNamesFromAnswers(row.answers,row.studentName)}));
  const valid=resolved.filter(item=>!certificateNameError('en',item.names.en));
