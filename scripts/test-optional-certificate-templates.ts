@@ -21,7 +21,7 @@ async function main() {
   const fixtures: string[] = [];
   try {
     for (const mode of ["ar", "en", "both"] as const) {
-      const activity = await prisma.activity.create({ data: { title: `Optional certificate test ${randomUUID()}`, description: "Isolated certificate fixture", location: "Test", capacity: 1, registrationForm: { create: { title: "Test", opensAt: new Date(), closesAt: new Date(Date.now() + 86400000), questions: { create: (["ar", "en"] as const).map((language, sortOrder) => ({ label: CERTIFICATE_NAME_QUESTIONS[language].label, type: "SHORT_TEXT", required: true, sortOrder })) } } } }, include: { registrationForm: { include: { questions: true } } } });
+      const activity = await prisma.activity.create({ data: { title: `Optional certificate test ${randomUUID()}`, description: "Isolated certificate fixture", location: "Test", capacity: 1, registrationForm: { create: { title: "Test", opensAt: new Date(), closesAt: new Date(Date.now() + 86400000), questions: { create: (["ar", "en"] as const).map((language, sortOrder) => ({ label: mode === "en" ? (language === "en" ? "اسم الطالب ثلاثي باللغة الإنجليزية" : "اسم الطالب ثلاثي باللغة العربية") : CERTIFICATE_NAME_QUESTIONS[language].label, type: "SHORT_TEXT", required: true, sortOrder })) } } } }, include: { registrationForm: { include: { questions: true } } } });
       fixtures.push(activity.id);
       for (const language of ["ar", "en"] as const) {
         if (mode !== "both" && mode !== language) continue;

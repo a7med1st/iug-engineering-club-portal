@@ -399,6 +399,7 @@ export async function regenerateActivityCertificates(formData: FormData) {
 
   let failed = 0;
   let regenerated = 0;
+  const failureReasons = new Set<string>();
   for (const submission of submissions) {
     if (!getAttendanceProgress(submission).eligible) continue;
     if (submission.certificate) {
@@ -407,6 +408,7 @@ export async function regenerateActivityCertificates(formData: FormData) {
         regenerated += 1;
       } catch (error) {
         failed += 1;
+        failureReasons.add(regenerationFailureMessage(error));
         console.error("Certificate bulk regeneration failed", { submissionId: submission.id, error });
       }
     }
@@ -414,7 +416,7 @@ export async function regenerateActivityCertificates(formData: FormData) {
 
   revalidatePath("/admin/certificates");
   if (failed) {
-    redirect(`/admin/certificates?activity=${encodeURIComponent(activityId)}&error=${encodeURIComponent(`تم تحديث ${regenerated} شهادة، وتعذر تحديث ${failed}. جرّب إعادة توليد الشهادات المتبقية فرديًا.`)}`);
+    redirect(`/admin/certificates?activity=${encodeURIComponent(activityId)}&error=${encodeURIComponent(`تم تحديث ${regenerated} شهادة، وتعذر تحديث ${failed}. ${[...failureReasons].slice(0, 3).join(" ")}`)}`);
   }
   redirect(
     `/admin/certificates?activity=${encodeURIComponent(activityId)}&success=${encodeURIComponent(
@@ -508,6 +510,7 @@ export async function issueActivityCertificates(
 
   let created = 0;
   let failed = 0;
+  const failureReasons = new Set<string>();
 
   for (
     const submission
@@ -542,6 +545,7 @@ export async function issueActivityCertificates(
       await prisma.certificate.update({ where: { id: certificate.id }, data: { revokedAt: null, issuedAt: new Date() } });
     } catch (error) {
       failed += 1;
+      failureReasons.add(regenerationFailureMessage(error));
       console.error("Certificate bulk issuance failed", { submissionId: submission.id, error });
       continue;
     }
@@ -565,7 +569,7 @@ export async function issueActivityCertificates(
   );
 
   if (failed) {
-    redirect(`/admin/certificates?activity=${encodeURIComponent(activityId)}&error=${encodeURIComponent(`تم إصدار ${created} شهادة، وتعذر إصدار ${failed}. حاول إصدار الشهادات المتبقية مجددًا.`)}`);
+    redirect(`/admin/certificates?activity=${encodeURIComponent(activityId)}&error=${encodeURIComponent(`تم إصدار ${created} شهادة، وتعذر إصدار ${failed}. ${[...failureReasons].slice(0, 3).join(" ")}`)}`);
   }
 
   redirect(
