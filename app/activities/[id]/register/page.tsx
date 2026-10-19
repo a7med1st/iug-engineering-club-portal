@@ -36,6 +36,7 @@ export default async function ActivityRegisterPage({
             },
 
             include: {
+                sessions: { orderBy: { sortOrder: "asc" }, select: { startsAt: true, endsAt: true } },
                 departments: {
                     include: {
                         department: true,
@@ -108,6 +109,9 @@ export default async function ActivityRegisterPage({
         activity.capacity > 0 &&
         occupiedSeats >= activity.capacity;
 
+    const statusLabel = !form ? "نموذج التسجيل غير متوفر" : registrationStatus === "DISABLED" ? "التسجيل مغلق" : registrationStatus === "NOT_STARTED" ? "التسجيل لم يبدأ بعد" : registrationStatus === "ENDED" ? "انتهت فترة التسجيل" : isCapacityFull ? "اكتمل العدد" : "التسجيل متاح";
+    const firstSession = activity.sessions.find(session => session.startsAt);
+
     return (
         <main className="activity-registration-page">
 
@@ -130,11 +134,12 @@ export default async function ActivityRegisterPage({
                     </p>
 
                     <div className="activity-registration-meta">
+                        <div><span>حالة التسجيل</span><strong>{statusLabel}</strong></div>
 
                         <div>
                             <span>المكان</span>
                             <strong>
-                                {activity.location}
+                                {activity.location || "سيُعلن عن المكان لاحقًا"}
                             </strong>
                         </div>
 
@@ -142,8 +147,8 @@ export default async function ActivityRegisterPage({
                             <span>التاريخ والوقت</span>
                             <strong>
                                 {formatActivitySchedule(
-                                    activity.startsAt,
-                                    activity.endsAt,
+                                    firstSession?.startsAt ?? activity.startsAt,
+                                    firstSession ? firstSession.endsAt : activity.endsAt,
                                 )}
                             </strong>
                         </div>
@@ -251,6 +256,7 @@ export default async function ActivityRegisterPage({
                                 <ActivityRegistrationForm
                                     activityId={activity.id}
                                     activityTitle={activity.title}
+                                    hasSchedule={Boolean(firstSession || activity.startsAt)}
                                     formId={form.id}
                                     requiresGuestIdentity={requiresGuestIdentity}
                                     departments={departments}

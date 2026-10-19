@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./theme.css";
+import "./ui-refinements.css";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";

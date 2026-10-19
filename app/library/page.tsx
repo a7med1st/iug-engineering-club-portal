@@ -85,6 +85,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
       <Search size={19} aria-hidden="true" />
       <input type="search" name="q" defaultValue={query} placeholder="ابحث عن مساق أو ملف..." aria-label="ابحث في مكتبة التخصص" maxLength={100} />
       <button type="submit">بحث</button>
+      {query && <Link className={styles.clearSearch} href={`/library?department=${encodeURIComponent(department.id)}&level=${level}`}>مسح البحث</Link>}
     </form>
 
     <nav className={styles.levels} aria-label="المستويات الدراسية">

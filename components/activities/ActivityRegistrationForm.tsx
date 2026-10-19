@@ -10,7 +10,6 @@ import {
   useState,
   useTransition,
 } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowUpLeft, MessageCircle } from "lucide-react";
 
@@ -34,6 +33,7 @@ type Question = {
 type Props = {
   activityId: string;
   activityTitle: string;
+  hasSchedule?: boolean;
   formId: string;
   questions: Question[];
   requiresGuestIdentity: boolean;
@@ -72,13 +72,13 @@ function emptyValues(
 export default function ActivityRegistrationForm({
   activityId,
   activityTitle,
+  hasSchedule = false,
   formId,
   questions,
   requiresGuestIdentity,
   departments,
   returnTo,
 }: Props) {
-  const router = useRouter();
   const [state, formAction] = useActionState(
     submitActivityRegistration,
     initialState,
@@ -93,7 +93,6 @@ export default function ActivityRegistrationForm({
     if (state.success) {
       setValues(emptyValues(questions, requiresGuestIdentity));
       formRef.current?.reset();
-      if (returnTo && !state.whatsappUrl) router.replace(returnTo);
       return;
     }
 
@@ -103,7 +102,7 @@ export default function ActivityRegistrationForm({
         ...state.values,
       }));
     }
-  }, [questions, requiresGuestIdentity, returnTo, router, state.success, state.values, state.whatsappUrl]);
+  }, [questions, requiresGuestIdentity, state.success, state.values]);
 
   const visibleIds = visibleQuestionIds(questions, values);
 
@@ -293,6 +292,15 @@ export default function ActivityRegistrationForm({
         </div>
       )}
 
+      {state.success && <section className="registration-confirmation" aria-label="تفاصيل تأكيد التسجيل">
+        <h2>تم استلام تسجيلك</h2>
+        <p>{activityTitle}</p>
+        <p>تابع تفاصيل النشاط لمعرفة أي تحديثات على الموعد أو المكان.</p>
+        <div className="activity-registration-success-links">
+          {hasSchedule && <a className="primary-btn" href={`/activities/${activityId}/calendar`} download>إضافة الموعد للتقويم</a>}
+          {returnTo && <Link className="ghost-btn" href={returnTo}>العودة</Link>}
+        </div>
+      </section>}
       {state.success && state.whatsappUrl && (
         <section className="activity-registration-whatsapp-card" aria-label="مجموعة النشاط على واتساب">
           <div className="activity-registration-whatsapp-header">

@@ -23,6 +23,26 @@
 :global(html[data-theme="dark"]) .searchForm button,:global(html[data-theme="dark"]) .primaryLink{background:#0966b2;color:#fff}
 :global(html[data-theme="light"]) .searchForm button,:global(html[data-theme="light"]) .primaryLink{background:#116cb4;color:#fff}
 .page { background: transparent; }
+.page { --library-radius: var(--ui-radius, 14px); }
+.courseCard,.folderCard,.resourceRow,.departmentCard,.levelTab,.searchForm { border-radius: var(--library-radius); }
+.empty { padding: 26px 22px; border: 1px dashed var(--library-line); border-radius: var(--library-radius); background: var(--library-card); line-height: 1.9; }
+.empty p { margin: 0; }
+.clearSearch { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 6px; color: var(--library-accent); font-size: .8rem; text-decoration: underline; }
+.searchForm { flex-wrap: wrap; }
+.searchForm input[type=search] { min-height: 44px; font-size: 1rem; }
+.searchForm button,.fileActions a,.submissionFooter button,.primaryLink { min-height: 44px; }
+@media(max-width:600px) {
+  .page { padding-inline: 16px; }
+  .intro { row-gap: 8px; }
+  .intro p { grid-column: 1 / -1; font-size: .88rem; line-height: 1.9; }
+  .levels { scroll-snap-type: x proximity; scroll-padding-inline: 2px; }
+  .levelTab { flex-basis: 132px; scroll-snap-align: start; }
+  .cardFoot { flex-wrap: wrap; row-gap: 8px; font-size: .84rem; }
+  .fileActions { padding-inline-start: 0; flex-wrap: wrap; }
+  .fileActions a { flex: 1; }
+  .back,.breadcrumb a,.pagination a { min-height: 44px; display: inline-flex; align-items: center; }
+  .searchForm .clearSearch { flex-basis: 100%; border-top: 1px solid var(--library-line); }
+}
 .departmentGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-block: 28px; }
 .departmentCard { --department-color: #1688ff; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; padding: 22px; border: 1px solid var(--library-line); border-top: 3px solid var(--department-color); border-radius: 8px; background: var(--library-card); color: var(--library-text); text-decoration: none; transition: border-color .18s, transform .18s, box-shadow .18s; }
 .departmentCard:nth-child(4n + 2) { --department-color: #18b7ab; }
@@ -40,3 +60,8 @@
 @media(prefers-reduced-motion: reduce) { .departmentCard, .departmentExplore svg { transition: none; } .departmentCard:hover, .departmentCard:hover .departmentExplore svg { transform: none; } }
 @media(max-width: 900px) { .departmentGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media(max-width: 540px) { .departmentGrid { grid-template-columns: 1fr; gap: 14px; } .departmentCard { padding: 22px; } }
+.departmentCard { border-radius: var(--library-radius); }
+@media(max-width:600px) {
+  .submissionForm input,.submissionForm textarea { font-size: 1rem; }
+  .departmentCard .departmentExplore { font-size: .82rem; }
+}

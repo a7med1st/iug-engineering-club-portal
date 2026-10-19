@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { BookOpen, CalendarDays, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import ThemeToggle from "@/components/theme/ThemeToggle";
@@ -130,6 +130,14 @@ export default function MobileNavigation({
               </button>
             </div>
 
+            <nav className="mobile-menu-shortcuts" aria-label="وصول سريع">
+              <Link href="/library" onClick={() => closeMenu()} aria-current={isActive("/library") ? "page" : undefined}>
+                <BookOpen size={22} aria-hidden="true" /> المكتبة
+              </Link>
+              <Link href="/activities" onClick={() => closeMenu()} aria-current={isActive("/activities") ? "page" : undefined}>
+                <CalendarDays size={22} aria-hidden="true" /> الأنشطة
+              </Link>
+            </nav>
             <nav className="mobile-menu-links" aria-label="التنقل الرئيسي للجوال">
               {links.map((link) => (
                 <Link

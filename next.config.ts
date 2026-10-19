@@ -21,12 +21,18 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Keep fewer inactive routes in memory on development machines.
+  onDemandEntries: {
+    maxInactiveAge: 30_000,
+    pagesBufferLength: 1,
+  },
   serverExternalPackages: ["@resvg/resvg-js"],
   outputFileTracingIncludes: {
     "/admin/certificates": ["./public/fonts/certificates/*.ttf"],
   },
 
   experimental: {
+    webpackMemoryOptimizations: true,
     middlewareClientMaxBodySize: "128mb",
     serverActions: {
       // الصورة الشخصية حتى 5MB + الغلاف حتى 8MB في نفس الفورم،
