@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Building2, CalendarDays, CheckCircle2, Clock3, FileText, ImageIcon, Images, MapPin, Pencil } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, Clock3, FileText, ImageIcon, Images, MapPin, Pencil } from "lucide-react";
 import { activityScheduleDetails } from "@/lib/activities";
 import ActivityGallery from "./ActivityGallery";
 import styles from "./PastActivityStory.module.css";
@@ -16,12 +16,11 @@ type Props = {
     endsAt: Date | null;
     images: { id: string; url: string }[];
   };
-  departmentLabel: string;
   departmentNames: string[];
   canEdit: boolean;
 };
 
-export default function PastActivityStory({ activity, departmentLabel, departmentNames, canEdit }: Props) {
+export default function PastActivityStory({ activity, departmentNames, canEdit }: Props) {
   const { date, startTime, endTime } = activityScheduleDetails(activity.startsAt, activity.endsAt);
   const timeRange = startTime && (
     <span className={styles.timeRange} dir="rtl">
@@ -31,7 +30,6 @@ export default function PastActivityStory({ activity, departmentLabel, departmen
     </span>
   );
   const summary = activity.postEventSummary?.trim();
-  const hasDocumentation = Boolean(summary || activity.images.length);
   const story = summary || activity.description;
   const intro = story.split(/\n\s*\n/)[0].trim();
   const excerpt = intro.length > 175
@@ -50,10 +48,6 @@ export default function PastActivityStory({ activity, departmentLabel, departmen
           </nav>
           <div className={styles.heroGrid}>
             <div className={styles.heroText}>
-              <div className={styles.badges}>
-                <span className={styles.completed}><CheckCircle2 size={15} aria-hidden="true" />{hasDocumentation ? "نشاط موثّق" : "تم التنفيذ"}</span>
-                <span className={styles.department}>{departmentLabel}</span>
-              </div>
               <h1>{activity.title}</h1>
               <p className={styles.intro}>{excerpt}</p>
               <div className={styles.heroMeta}>
@@ -77,7 +71,6 @@ export default function PastActivityStory({ activity, departmentLabel, departmen
       <div className={`${styles.container} ${styles.content}`}>
         <div className={styles.storyGrid}>
           <section id="activity-story" className={styles.story} aria-labelledby="activity-story-title">
-            <span className={styles.eyebrow}><FileText size={17} aria-hidden="true" />ما بعد التنفيذ</span>
             <h2 id="activity-story-title">{summary ? "عن التجربة" : "عن النشاط"}</h2>
             <div className={styles.storyText}>{story}</div>
           </section>

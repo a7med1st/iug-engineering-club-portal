@@ -160,7 +160,7 @@ export default async function ActivityDetailsPage({
       : [...activity.departments]
           .sort((first, second) => first.department.sortOrder - second.department.sortOrder)
           .map(({ department }) => department.nameAr);
-    return <PastActivityStory activity={activity} departmentLabel={departmentLabel} departmentNames={departmentNames} canEdit={Boolean(canEditActivity)} />;
+    return <PastActivityStory activity={activity} departmentNames={departmentNames} canEdit={Boolean(canEditActivity)} />;
   }
 
   return (

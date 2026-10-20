@@ -6,10 +6,6 @@
 .breadcrumb a:hover { color: white; text-decoration: underline; }
 .heroGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(28px, 5vw, 64px); align-items: center; }
 .heroText { min-width: 0; }
-.badges { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
-.completed, .department { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; font-size: .7rem; line-height: 1.7; overflow-wrap: anywhere; }
-.completed { color: #9df0bd; background: #1b8a4f36; border: 1px solid #66d99a30; }
-.department { color: #d3eaff; background: #1688ff30; border: 1px solid #1688ff36; }
 .heroText h1 { color: white; font-size: clamp(1.8rem, 3.3vw, 2.9rem); line-height: 1.55; margin: 0 0 16px; overflow-wrap: anywhere; }
 .intro { color: #c2d5e8; line-height: 2; font-size: .94rem; margin: 0 0 22px; overflow-wrap: anywhere; }
 .heroMeta { display: flex; flex-wrap: wrap; gap: 12px 24px; font-size: .75rem; line-height: 1.9; color: #e0ecf7; }
@@ -28,7 +24,6 @@
 .storyGrid { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 .story, .details, .gallery { min-width: 0; border: 1px solid #dae7f4; border-radius: 20px; background: white; box-shadow: 0 10px 35px #08233f06; }
 .story { padding: clamp(22px, 3vw, 34px); scroll-margin-top: 100px; }
-.eyebrow { display: flex; align-items: center; gap: 8px; font-size: .73rem; color: #0879ea; }
 .story h2 { margin: 10px 0 18px; font-size: clamp(1.35rem, 2.5vw, 1.9rem); color: #102139; }
 .storyText { font-size: .95rem; line-height: 2.25; color: #4d6076; white-space: pre-wrap; overflow-wrap: anywhere; }
 .details { padding: 24px; }
