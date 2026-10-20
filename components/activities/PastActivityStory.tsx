@@ -22,7 +22,14 @@ type Props = {
 };
 
 export default function PastActivityStory({ activity, departmentLabel, departmentNames, canEdit }: Props) {
-  const { date, time } = activityScheduleDetails(activity.startsAt, activity.endsAt);
+  const { date, startTime, endTime } = activityScheduleDetails(activity.startsAt, activity.endsAt);
+  const timeRange = startTime && (
+    <span className={styles.timeRange} dir="rtl">
+      {endTime && <span>من</span>}
+      <bdi dir="rtl">{startTime}</bdi>
+      {endTime && <><span>إلى</span><bdi dir="rtl">{endTime}</bdi></>}
+    </span>
+  );
   const summary = activity.postEventSummary?.trim();
   const hasDocumentation = Boolean(summary || activity.images.length);
   const story = summary || activity.description;
@@ -51,7 +58,7 @@ export default function PastActivityStory({ activity, departmentLabel, departmen
               <p className={styles.intro}>{excerpt}</p>
               <div className={styles.heroMeta}>
                 <span><CalendarDays size={17} aria-hidden="true" /><bdi dir="ltr">{date}</bdi></span>
-                {time && <span><Clock3 size={17} aria-hidden="true" /><bdi dir="ltr">{time}</bdi></span>}
+                {timeRange && <span><Clock3 size={17} aria-hidden="true" />{timeRange}</span>}
                 {activity.location && <span><MapPin size={17} aria-hidden="true" />{activity.location}</span>}
               </div>
               <div className={styles.heroActions}>
@@ -78,7 +85,7 @@ export default function PastActivityStory({ activity, departmentLabel, departmen
             <h2 id="activity-details-title">تفاصيل النشاط</h2>
             <dl>
               <div><CalendarDays aria-hidden="true" /><dt>التاريخ</dt><dd><bdi dir="ltr">{date}</bdi></dd></div>
-              {time && <div><Clock3 aria-hidden="true" /><dt>الوقت</dt><dd><bdi dir="ltr">{time}</bdi></dd></div>}
+              {timeRange && <div><Clock3 aria-hidden="true" /><dt>الوقت</dt><dd>{timeRange}</dd></div>}
               {activity.location && <div><MapPin aria-hidden="true" /><dt>المكان</dt><dd>{activity.location}</dd></div>}
               <div><Building2 aria-hidden="true" /><dt>القسم المنظّم</dt><dd><ul className={styles.departmentList}>{departmentNames.map((name, index) => <li key={`${index}-${name}`}>{name}</li>)}</ul></dd></div>
             </dl>

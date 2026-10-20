@@ -136,7 +136,7 @@ export function activityScheduleDetails(
   timeZone = ACTIVITY_TIME_ZONE,
 ) {
   const first = startsAt ?? endsAt;
-  if (!first) return { date: "يُحدد الموعد لاحقاً", time: null };
+  if (!first) return { date: "يُحدد الموعد لاحقاً", time: null, startTime: null, endTime: null };
 
   const dateFormatter = new Intl.DateTimeFormat("en-GB", {
     day: "2-digit", month: "2-digit", year: "numeric", timeZone,
@@ -151,6 +151,8 @@ export function activityScheduleDetails(
 
   return {
     date: startDate === endDate ? startDate : `${startDate} – ${endDate}`,
+    startTime,
+    endTime: startDate === endDate && startTime === endTime ? null : endTime,
     time: startDate === endDate && startTime === endTime
       ? startTime
       : `${startTime} – ${endTime}`,

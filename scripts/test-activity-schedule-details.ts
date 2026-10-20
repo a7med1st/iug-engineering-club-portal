@@ -7,6 +7,9 @@ const sameDay = activityScheduleDetails(start, end);
 assert.equal(sameDay.date, "17/10/2026");
 assert.match(sameDay.time!, /11:00.*2:00/);
 assert.ok(!sameDay.time!.includes("2026"));
+assert.equal(sameDay.startTime, "11:00 ص");
+assert.equal(sameDay.endTime, "2:00 م");
+assert.equal(activityScheduleDetails(start, start).endTime, null);
 
 const overnight = activityScheduleDetails(new Date("2026-10-17T20:00:00Z"), new Date("2026-10-17T22:00:00Z"));
 assert.equal(overnight.date, "17/10/2026 – 18/10/2026");

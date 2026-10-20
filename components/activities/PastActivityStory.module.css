@@ -39,6 +39,8 @@
 .details dd { min-width: 0; font-size: .8rem; font-weight: 600; line-height: 1.9; margin: 0; overflow-wrap: anywhere; }
 .details svg { width: 19px; height: 19px; margin-top: 3px; color: #1688ff; }
 .departmentList { display: grid; gap: 7px; list-style: none; padding: 0; margin: 0; }
+.timeRange { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 5px; direction: rtl; }
+.timeRange bdi { white-space: nowrap; }
 .gallery { padding: 24px; scroll-margin-top: 100px; }
 .galleryHeading { display: flex; justify-content: space-between; align-items: start; gap: 15px; margin-bottom: 20px; }
 .galleryHeading h2 { display: flex; align-items: center; gap: 9px; margin: 0; color: #102139; font-size: 1.1rem; }
