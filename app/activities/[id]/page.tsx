@@ -12,6 +12,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import ActivityGallery from "@/components/activities/ActivityGallery";
+import PastActivityStory from "@/components/activities/PastActivityStory";
 import {
   activityDepartmentLabel,
   formatActivitySchedule,
@@ -152,6 +153,10 @@ export default async function ActivityDetailsPage({
     past
       ? "/activities?view=past"
       : "/activities";
+
+  if (past) {
+    return <PastActivityStory activity={activity} date={date} departmentLabel={departmentLabel} canEdit={Boolean(canEditActivity)} />;
+  }
 
   return (
     <article

@@ -61,7 +61,7 @@ export default function PastActivityCard({
             <span className="past-activity-department">
               {activityDepartmentLabel(activity, departmentCount)}
             </span>
-            <span className="past-activity-badge">تم التنفيذ</span>
+            <span className="past-activity-badge">{activity.postEventSummary?.trim() ? "نشاط موثّق" : "تم التنفيذ"}</span>
           </div>
 
           <h3>{activity.title}</h3>
@@ -79,7 +79,7 @@ export default function PastActivityCard({
           </div>
 
           <span className="past-activity-details-cta">
-            عرض التفاصيل
+            {activity.postEventSummary?.trim() ? "اقرأ التوثيق" : "عرض التفاصيل"}
             <ArrowUpLeft aria-hidden="true" />
           </span>
         </div>
