@@ -130,6 +130,33 @@ export function formatActivitySchedule(
     : start;
 }
 
+export function activityScheduleDetails(
+  startsAt: Date | null,
+  endsAt: Date | null,
+  timeZone = ACTIVITY_TIME_ZONE,
+) {
+  const first = startsAt ?? endsAt;
+  if (!first) return { date: "يُحدد الموعد لاحقاً", time: null };
+
+  const dateFormatter = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit", month: "2-digit", year: "numeric", timeZone,
+  });
+  const timeFormatter = new Intl.DateTimeFormat("ar-PS-u-nu-latn", {
+    hour: "numeric", minute: "2-digit", hour12: true, timeZone,
+  });
+  const startDate = dateFormatter.format(first);
+  const endDate = endsAt ? dateFormatter.format(endsAt) : startDate;
+  const startTime = timeFormatter.format(first);
+  const endTime = endsAt ? timeFormatter.format(endsAt) : startTime;
+
+  return {
+    date: startDate === endDate ? startDate : `${startDate} – ${endDate}`,
+    time: startDate === endDate && startTime === endTime
+      ? startTime
+      : `${startTime} – ${endTime}`,
+  };
+}
+
 export function activityYear(
   startsAt: Date,
   timeZone = ACTIVITY_TIME_ZONE,

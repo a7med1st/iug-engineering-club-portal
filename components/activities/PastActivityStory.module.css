@@ -48,7 +48,7 @@
 .back a { display: inline-flex; align-items: center; gap: 9px; color: #0879ea; font-size: .83rem; text-decoration: none; padding: 10px; }
 .back a:hover { text-decoration: underline; }
 .page a:focus-visible { outline: 3px solid #35b7ff; outline-offset: 5px; }
-@media (max-width: 900px) { .heroGrid { grid-template-columns: minmax(0, 1fr); gap: 26px; } .cover { max-width: 720px; width: 100%; } .storyGrid { grid-template-columns: minmax(0, 1fr); } .details dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; } }
+@media (max-width: 900px) { .heroGrid { grid-template-columns: minmax(0, 1fr); gap: 26px; } .cover { max-width: 720px; width: 100%; } .storyGrid { grid-template-columns: minmax(0, 1fr); } .details dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; } }
 @media (max-width: 560px) { .container { width: calc(100% - 28px); } .hero { padding-block: 20px 28px; } .heroText h1 { font-size: 1.8rem; } .heroMeta { flex-direction: column; } .heroActions { gap: 10px; } .primaryAction, .secondaryAction { flex: 1; padding-inline: 12px; } .manageLink { flex-basis: 100%; } .cover { border-radius: 16px; } .content { gap: 20px; padding-block: 22px 30px; } .storyGrid { gap: 20px; } .details dl { grid-template-columns: minmax(0, 1fr); gap: 0; } .story, .details, .gallery { border-radius: 17px; padding: 20px; } .galleryHeading { flex-wrap: wrap; } .storyText { font-size: .91rem; } }
 :global(html[data-theme="dark"]) .page { background: var(--paper, #071a2c); color: var(--ink, #e6f1fa); }
 :global(html[data-theme="dark"]) .story, :global(html[data-theme="dark"]) .details, :global(html[data-theme="dark"]) .gallery { background: var(--surface, #0c263c); border-color: var(--line, #25445e); }

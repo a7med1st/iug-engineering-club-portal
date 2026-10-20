@@ -155,7 +155,7 @@ export default async function ActivityDetailsPage({
       : "/activities";
 
   if (past) {
-    return <PastActivityStory activity={activity} date={date} departmentLabel={departmentLabel} canEdit={Boolean(canEditActivity)} />;
+    return <PastActivityStory activity={activity} departmentLabel={departmentLabel} canEdit={Boolean(canEditActivity)} />;
   }
 
   return (

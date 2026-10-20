@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft, Building2, CalendarDays, CheckCircle2, FileText, ImageIcon, Images, MapPin, Pencil } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, CheckCircle2, Clock3, FileText, ImageIcon, Images, MapPin, Pencil } from "lucide-react";
+import { activityScheduleDetails } from "@/lib/activities";
 import ActivityGallery from "./ActivityGallery";
 import styles from "./PastActivityStory.module.css";
 
@@ -11,14 +12,16 @@ type Props = {
     postEventSummary: string | null;
     coverImageUrl: string | null;
     location: string | null;
+    startsAt: Date | null;
+    endsAt: Date | null;
     images: { id: string; url: string }[];
   };
-  date: string;
   departmentLabel: string;
   canEdit: boolean;
 };
 
-export default function PastActivityStory({ activity, date, departmentLabel, canEdit }: Props) {
+export default function PastActivityStory({ activity, departmentLabel, canEdit }: Props) {
+  const { date, time } = activityScheduleDetails(activity.startsAt, activity.endsAt);
   const summary = activity.postEventSummary?.trim();
   const hasDocumentation = Boolean(summary || activity.images.length);
   const story = summary || activity.description;
@@ -46,7 +49,8 @@ export default function PastActivityStory({ activity, date, departmentLabel, can
               <h1>{activity.title}</h1>
               <p className={styles.intro}>{excerpt}</p>
               <div className={styles.heroMeta}>
-                <span><CalendarDays size={17} aria-hidden="true" />{date}</span>
+                <span><CalendarDays size={17} aria-hidden="true" /><bdi dir="ltr">{date}</bdi></span>
+                {time && <span><Clock3 size={17} aria-hidden="true" /><bdi dir="ltr">{time}</bdi></span>}
                 {activity.location && <span><MapPin size={17} aria-hidden="true" />{activity.location}</span>}
               </div>
               <div className={styles.heroActions}>
@@ -72,7 +76,8 @@ export default function PastActivityStory({ activity, date, departmentLabel, can
           <aside className={styles.details} aria-labelledby="activity-details-title">
             <h2 id="activity-details-title">تفاصيل النشاط</h2>
             <dl>
-              <div><CalendarDays aria-hidden="true" /><dt>التاريخ</dt><dd>{date}</dd></div>
+              <div><CalendarDays aria-hidden="true" /><dt>التاريخ</dt><dd><bdi dir="ltr">{date}</bdi></dd></div>
+              {time && <div><Clock3 aria-hidden="true" /><dt>الوقت</dt><dd><bdi dir="ltr">{time}</bdi></dd></div>}
               {activity.location && <div><MapPin aria-hidden="true" /><dt>المكان</dt><dd>{activity.location}</dd></div>}
               <div><Building2 aria-hidden="true" /><dt>القسم المنظّم</dt><dd>{departmentLabel}</dd></div>
             </dl>
