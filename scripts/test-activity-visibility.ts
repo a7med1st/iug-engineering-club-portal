@@ -6,30 +6,43 @@ const finished = { startsAt: new Date("2026-10-10T09:00:00Z"), endsAt: new Date(
 const upcoming = { startsAt: new Date("2026-10-12T09:00:00Z"), endsAt: null };
 assert.equal(isPastActivity({ ...finished, sessions: [finished, upcoming, { startsAt: null, endsAt: null }] }, referenceTime), false);
 assert.equal(isPastActivity({ ...finished, sessions: [finished, finished] }, referenceTime), true);
-assert.equal(isPastActivity({ ...finished, sessions: [{ startsAt: null, endsAt: null }] }, referenceTime), false);
-assert.equal(isPastActivity({ ...finished, sessions: [{ startsAt: referenceTime, endsAt: null }] }, referenceTime), false);
+assert.equal(isPastActivity({ ...finished, sessions: [{ startsAt: referenceTime, endsAt: null }] }, referenceTime), true);
 assert.equal(isPastActivity({ ...finished, sessions: [] }, referenceTime), true);
 assert.equal(isPastActivity(upcoming, referenceTime), false);
 
-assert.deepEqual(currentActivityWhere(referenceTime), {
-  status: "PUBLISHED",
-  OR: [
-    { sessions: { some: { OR: [{ endsAt: { gte: referenceTime } }, { endsAt: null, startsAt: { gte: referenceTime } }, { startsAt: null, endsAt: null }] } } },
-    { sessions: { none: {} }, startsAt: { gte: referenceTime } },
-    { sessions: { none: {} }, endsAt: { gte: referenceTime } },
-    { sessions: { none: {} }, startsAt: null, endsAt: null },
-  ],
-});
+assert.equal(isPastActivity({ ...finished, sessions: [{ startsAt: null, endsAt: null }] }, referenceTime), true);
+assert.equal(isPastActivity({ ...finished, sessions: [finished, { startsAt: null, endsAt: null }] }, referenceTime), true);
+assert.equal(isPastActivity({ ...upcoming, sessions: [{ startsAt: null, endsAt: null }] }, referenceTime), false);
+assert.equal(isPastActivity({ startsAt: null, endsAt: null, sessions: [{ startsAt: null, endsAt: null }] }, referenceTime), false);
+assert.equal(isPastActivity({ startsAt: referenceTime, endsAt: referenceTime }, referenceTime), true);
+assert.equal(currentActivityWhere(referenceTime).status, "PUBLISHED");
+assert.equal(pastActivityWhere(referenceTime).status, "PUBLISHED");
+console.log("Activity visibility respects session schedules, inherited dates, and exact end times");
 
-assert.deepEqual(pastActivityWhere(referenceTime), {
-  status: "PUBLISHED",
-  OR: [
-    {
-      sessions: { some: {}, every: { OR: [{ endsAt: { lt: referenceTime } }, { endsAt: null, startsAt: { lt: referenceTime } }] } },
-    },
-    { sessions: { none: {} }, endsAt: { lt: referenceTime } },
-    { sessions: { none: {} }, endsAt: null, startsAt: { lt: referenceTime } },
-  ],
-});
-
-console.log("Activity visibility filters respect multi-session schedules");
+// Exercise both query filters against a matrix of nullable schedules.
+function matches(row: any, where: any): boolean {
+  return Object.entries(where).every(([key, value]: [string, any]) => {
+    if (key === "OR") return value.some((clause: any) => matches(row, clause));
+    if (key === "sessions") return Object.entries(value).every(([op, clause]) =>
+      op === "some" ? row.sessions.some((session: any) => matches(session, clause)) :
+      op === "every" ? row.sessions.every((session: any) => matches(session, clause)) :
+      !row.sessions.some((session: any) => matches(session, clause)));
+    if (value === null || typeof value !== "object") return row[key] === value;
+    if (row[key] === null) return false;
+    return Object.entries(value).every(([op, date]: [string, any]) =>
+      op === "lte" ? row[key] <= date : row[key] > date);
+  });
+}
+const schedules = [finished, upcoming, { startsAt: null, endsAt: null },
+  { startsAt: referenceTime, endsAt: null },
+  { startsAt: finished.startsAt, endsAt: upcoming.startsAt },
+  { startsAt: null, endsAt: finished.endsAt }];
+for (const schedule of schedules) {
+  for (const sessions of [[], ...schedules.map((session) => [session]), ...schedules.map((session) => [finished, session])]) {
+    const activity = { ...schedule, sessions, status: "PUBLISHED" };
+    const past = isPastActivity(activity, referenceTime);
+    assert.equal(matches(activity, pastActivityWhere(referenceTime)), past);
+    assert.equal(matches(activity, currentActivityWhere(referenceTime)), !past);
+  }
+}
+console.log("Current and past database filters agree across 78 schedule combinations");

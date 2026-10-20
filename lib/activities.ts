@@ -26,6 +26,7 @@ export type PastActivityCardData = Pick<
   | "id"
   | "title"
   | "description"
+  | "postEventSummary"
   | "location"
   | "startsAt"
   | "coverImageUrl"
@@ -43,37 +44,42 @@ export function isPastActivity(
 ): boolean {
   if (activity.sessions?.length) {
     return activity.sessions.every((session) =>
-      isPastActivity(session, referenceTime),
+      isPastActivity(
+        session.startsAt || session.endsAt ? session : { startsAt: activity.startsAt, endsAt: activity.endsAt },
+        referenceTime,
+      ),
     );
   }
   const activityEnd = activity.endsAt ?? activity.startsAt;
   return activityEnd
-    ? activityEnd.getTime() < referenceTime.getTime()
+    ? activityEnd.getTime() <= referenceTime.getTime()
     : false;
+}
+
+// Sessions without their own schedule inherit the activity schedule.
+function endedScheduleWhere(referenceTime: Date) {
+  return {
+    OR: [
+      { endsAt: { lte: referenceTime } },
+      { endsAt: null, startsAt: { lte: referenceTime } },
+    ],
+  };
 }
 
 export function pastActivityWhere(
   referenceTime: Date = new Date(),
 ): Prisma.ActivityWhereInput {
+  const ended = endedScheduleWhere(referenceTime);
+  const unscheduled = { startsAt: null, endsAt: null };
   return {
     status: "PUBLISHED",
     OR: [
+      // Every session has finished using its own schedule.
+      { sessions: { some: {}, every: ended } },
+      // Undated sessions use the activity's end instead of blocking it forever.
       {
-        sessions: {
-          some: {},
-          every: {
-            OR: [
-              { endsAt: { lt: referenceTime } },
-              { endsAt: null, startsAt: { lt: referenceTime } },
-            ],
-          },
-        },
-      },
-      { sessions: { none: {} }, endsAt: { lt: referenceTime } },
-      {
-        sessions: { none: {} },
-        endsAt: null,
-        startsAt: { lt: referenceTime },
+        ...ended,
+        sessions: { every: { OR: [ended, unscheduled] } },
       },
     ],
   };
@@ -82,23 +88,24 @@ export function pastActivityWhere(
 export function currentActivityWhere(
   referenceTime: Date = new Date(),
 ): Prisma.ActivityWhereInput {
+  const current = {
+    OR: [
+      { endsAt: { gt: referenceTime } },
+      { endsAt: null, startsAt: { gt: referenceTime } },
+      { startsAt: null, endsAt: null },
+    ],
+  };
   return {
     status: "PUBLISHED",
     OR: [
       {
-        sessions: {
-          some: {
-            OR: [
-              { endsAt: { gte: referenceTime } },
-              { endsAt: null, startsAt: { gte: referenceTime } },
-              { startsAt: null, endsAt: null },
-            ],
-          },
-        },
+        sessions: { some: { OR: [
+          { endsAt: { gt: referenceTime } },
+          { endsAt: null, startsAt: { gt: referenceTime } },
+        ] } },
       },
-      { sessions: { none: {} }, startsAt: { gte: referenceTime } },
-      { sessions: { none: {} }, endsAt: { gte: referenceTime } },
-      { sessions: { none: {} }, startsAt: null, endsAt: null },
+      { ...current, sessions: { none: {} } },
+      { ...current, sessions: { some: { startsAt: null, endsAt: null } } },
     ],
   };
 }

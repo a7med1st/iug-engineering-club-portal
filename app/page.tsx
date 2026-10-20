@@ -40,6 +40,7 @@ export default async function HomePage() {
           id: true,
           title: true,
           description: true,
+          postEventSummary: true,
           location: true,
           startsAt: true,
           coverImageUrl: true,

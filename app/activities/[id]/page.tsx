@@ -133,6 +133,9 @@ export default async function ActivityDetailsPage({
   const past =
     isPastActivity(activity);
 
+  const documentation = activity.postEventSummary?.trim();
+  const description = documentation || activity.description;
+
   const date =
     formatActivitySchedule(
       activity.startsAt,
@@ -206,9 +209,7 @@ export default async function ActivityDetailsPage({
             </h1>
 
             <p>
-              {
-                activity.description
-              }
+              {past ? description : activity.description}
             </p>
 
             {canEditActivity && (
@@ -244,17 +245,14 @@ export default async function ActivityDetailsPage({
             }
           >
             <h2>
-              {past
-                ? "عن الفعالية"
-                : "تفاصيل النشاط"}
+              {documentation
+                ? "توثيق النشاط"
+                : past ? "عن الفعالية" : "تفاصيل النشاط"}
             </h2>
           </div>
 
           <p>
-            {past
-              ? activity.postEventSummary ||
-                activity.description
-              : activity.description}
+            {description}
           </p>
         </section>
 

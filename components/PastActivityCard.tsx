@@ -65,7 +65,7 @@ export default function PastActivityCard({
           </div>
 
           <h3>{activity.title}</h3>
-          <p>{activity.description}</p>
+          <p>{activity.postEventSummary?.trim() || activity.description}</p>
 
           <div className="past-activity-meta">
             <span>
