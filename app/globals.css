@@ -4579,7 +4579,7 @@ p {
 .past-activity-cover {
     display: block;
     width: 100%;
-    height: 138px;
+    height: auto;
     object-fit: contain;
     transition: transform .35s ease, filter .35s ease
 }
@@ -4615,7 +4615,7 @@ p {
 
 @media (max-width: 430px) {
     .past-activity-cover {
-        height: 124px
+        height: auto
     }
 }
 
@@ -8072,6 +8072,8 @@ html[data-reload-intro="true"] .intro-gate {
 }
 
 .past-activity-card {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     overflow: hidden;
     border: 1px solid #cfe3f7;
@@ -8092,6 +8094,12 @@ html[data-reload-intro="true"] .intro-gate {
         linear-gradient(135deg, rgba(255, 255, 255, .11), transparent 45%),
         radial-gradient(circle at 18% 18%, rgba(53, 212, 255, .38), transparent 25%),
         linear-gradient(135deg, #08233f, #0f72dc 65%, #1688ff)
+}
+
+.past-activity-visual.has-cover {
+    display: block;
+    min-height: 0;
+    flex: 0 0 auto
 }
 
 .past-activity-visual::before,
@@ -8149,7 +8157,8 @@ html[data-reload-intro="true"] .intro-gate {
 .past-activity-body {
     display: flex;
     min-width: 0;
-    height: calc(100% - 138px);
+    flex: 1;
+    height: auto;
     padding: 19px;
     flex-direction: column
 }
@@ -8617,7 +8626,7 @@ html[data-reload-intro="true"] .intro-gate {
     }
 
     .past-activity-body {
-        height: calc(100% - 124px)
+        height: auto
     }
 }
 
