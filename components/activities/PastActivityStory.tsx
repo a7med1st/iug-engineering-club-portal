@@ -17,10 +17,11 @@ type Props = {
     images: { id: string; url: string }[];
   };
   departmentLabel: string;
+  departmentNames: string[];
   canEdit: boolean;
 };
 
-export default function PastActivityStory({ activity, departmentLabel, canEdit }: Props) {
+export default function PastActivityStory({ activity, departmentLabel, departmentNames, canEdit }: Props) {
   const { date, time } = activityScheduleDetails(activity.startsAt, activity.endsAt);
   const summary = activity.postEventSummary?.trim();
   const hasDocumentation = Boolean(summary || activity.images.length);
@@ -79,7 +80,7 @@ export default function PastActivityStory({ activity, departmentLabel, canEdit }
               <div><CalendarDays aria-hidden="true" /><dt>التاريخ</dt><dd><bdi dir="ltr">{date}</bdi></dd></div>
               {time && <div><Clock3 aria-hidden="true" /><dt>الوقت</dt><dd><bdi dir="ltr">{time}</bdi></dd></div>}
               {activity.location && <div><MapPin aria-hidden="true" /><dt>المكان</dt><dd>{activity.location}</dd></div>}
-              <div><Building2 aria-hidden="true" /><dt>القسم المنظّم</dt><dd>{departmentLabel}</dd></div>
+              <div><Building2 aria-hidden="true" /><dt>القسم المنظّم</dt><dd><ul className={styles.departmentList}>{departmentNames.map((name, index) => <li key={`${index}-${name}`}>{name}</li>)}</ul></dd></div>
             </dl>
           </aside>
         </div>

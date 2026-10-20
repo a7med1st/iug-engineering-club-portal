@@ -155,7 +155,12 @@ export default async function ActivityDetailsPage({
       : "/activities";
 
   if (past) {
-    return <PastActivityStory activity={activity} departmentLabel={departmentLabel} canEdit={Boolean(canEditActivity)} />;
+    const departmentNames = activity.departments.length === 0 || (departmentCount > 0 && activity.departments.length === departmentCount)
+      ? [departmentLabel]
+      : [...activity.departments]
+          .sort((first, second) => first.department.sortOrder - second.department.sortOrder)
+          .map(({ department }) => department.nameAr);
+    return <PastActivityStory activity={activity} departmentLabel={departmentLabel} departmentNames={departmentNames} canEdit={Boolean(canEditActivity)} />;
   }
 
   return (
