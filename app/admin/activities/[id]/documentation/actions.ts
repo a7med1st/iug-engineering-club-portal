@@ -92,6 +92,23 @@ export async function savePostEventSummary(formData: FormData) {
   );
 }
 
+export async function saveDocumentationSummary(activityId: string, summary: string) {
+  await requireActivityPermission(PERMISSIONS.ACTIVITY_MANAGE, activityId);
+  if (typeof summary !== "string" || summary.trim().length > 10_000) {
+    return { error: "الحد الأقصى للتوثيق ١٠٬٠٠٠ حرف." };
+  }
+  try {
+    await prisma.activity.update({
+      where: { id: activityId },
+      data: { postEventSummary: summary.trim() || null },
+    });
+    revalidateActivityPages(activityId);
+    return { success: true };
+  } catch {
+    return { error: "تعذّر حفظ التوثيق. حاول مرة أخرى، النص ما زال محفوظاً هنا." };
+  }
+}
+
 export async function uploadActivityCover(formData: FormData) {
   const activityId = requiredValue(formData, "activityId");
   const { user } = await requireActivityPermission(PERMISSIONS.ACTIVITY_MANAGE, activityId);
@@ -212,26 +229,28 @@ export async function uploadActivityGalleryImage(formData: FormData) {
 
   return runDocumentationAction(
     activityId,
-    "تمت إضافة الصورة إلى معرض الفعالية.",
-    "تعذر إضافة الصورة إلى المعرض.",
+    "تمت إضافة الصور إلى معرض الفعالية.",
+    "تعذر إضافة الصور إلى المعرض.",
     async () => {
-      const file = formData.get("image");
+      const files = formData.getAll("image");
 
-      if (!(file instanceof File)) {
-        throw new ActivityDocumentationError("اختر صورة صالحة للمعرض.");
+      if (!files.length || files.length > 3 || files.some((file) => !(file instanceof File) || file.size === 0 || file.size > 4 * 1024 * 1024)) {
+        throw new ActivityDocumentationError("اختر من صورة إلى ٣ صور للمعرض، بحد أقصى ٤ ميجابايت للصورة.");
       }
 
       try {
-        await enforceActivityUploadLimit(user.id, file.size);
+        await enforceActivityUploadLimit(user.id, files.reduce((total, file) => total + (file as File).size, 0));
       } catch (error) {
         if (error instanceof UploadRateLimitError) {
           throw new ActivityDocumentationError(uploadRateLimitMessage(error));
         }
         throw error;
       }
-      const uploaded = await uploadActivityImage(file, activityId, "gallery");
-
+      const uploaded: Awaited<ReturnType<typeof uploadActivityImage>>[] = [];
       try {
+        for (const file of files) {
+          uploaded.push(await uploadActivityImage(file as File, activityId, "gallery"));
+        }
         await prisma.$transaction(async (tx) => {
           await tx.$queryRaw`
             SELECT pg_advisory_xact_lock(hashtextextended(${activityId}, 0))::text AS "lock"
@@ -245,22 +264,22 @@ export async function uploadActivityGalleryImage(formData: FormData) {
             tx.activityImage.count({ where: { activityId } }),
           ]);
 
-          if (imageCount >= 30) {
+          if (imageCount + uploaded.length > 30) {
             throw new ActivityDocumentationError(
               "وصل معرض الفعالية إلى الحد الأقصى وهو 30 صورة.",
             );
           }
 
-          await tx.activityImage.create({
-            data: {
+          await tx.activityImage.createMany({
+            data: uploaded.map((image, index) => ({
               activityId,
-              ...uploaded,
-              sortOrder: (lastImage._max.sortOrder ?? -1) + 1,
-            },
+              ...image,
+              sortOrder: (lastImage._max.sortOrder ?? -1) + index + 1,
+            })),
           });
         });
       } catch (error) {
-        await tryDeleteActivityImages([uploaded.pathname], "gallery-db-failure");
+        await tryDeleteActivityImages(uploaded.map((image) => image.pathname), "gallery-db-failure");
         throw error;
       }
 
