@@ -18,7 +18,7 @@
 .secondaryAction:hover { background: #ffffff18; color: white; }
 .manageLink { display: inline-flex; align-items: center; gap: 6px; color: #bedfff; font-size: .7rem; padding: 8px 0; }
 .cover { min-width: 0; overflow: hidden; border: 1px solid #70b9ff88; border-radius: 22px; background: #0b3154; box-shadow: 0 18px 45px #0003; }
-.cover > img { display: block; width: 100%; aspect-ratio: 16 / 10; max-height: 420px; object-fit: cover; }
+.cover > img { display: block; width: 100%; height: auto; max-height: 520px; object-fit: contain; }
 .coverFallback { display: grid; aspect-ratio: 16 / 10; place-content: center; justify-items: center; gap: 16px; color: #c9e6ff; background: radial-gradient(at 30% 20%, #1688ff70, transparent 70%); }
 .content { display: grid; gap: 26px; padding-block: 30px 46px; }
 .storyGrid { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
