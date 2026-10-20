@@ -6,6 +6,7 @@ import {
   ArrowUpLeft,
 } from "lucide-react";
 import Link from "next/link";
+import ActivityDepartmentChips from "./ActivityDepartmentChips";
 
 import {
   ACTIVITY_TIME_ZONE,
@@ -20,6 +21,12 @@ export default function PastActivityCard({
   activity: PastActivityCardData;
   departmentCount: number;
 }) {
+  const isGeneral = activity.departments.length === 0 || (departmentCount > 0 && activity.departments.length === departmentCount);
+  const departmentNames = isGeneral
+    ? [activityDepartmentLabel(activity, departmentCount)]
+    : [...activity.departments]
+        .sort((first, second) => first.department.sortOrder - second.department.sortOrder)
+        .map(({ department }) => department.nameAr);
   const date = activity.startsAt
     ? new Intl.DateTimeFormat("ar-PS", {
       dateStyle: "long",
@@ -29,10 +36,8 @@ export default function PastActivityCard({
     : "الموعد غير محدد";
 
   return (
-    <Link
+    <div
       className="past-activity-card-link"
-      href={`/activities/${activity.id}`}
-      aria-label={`عرض تفاصيل ${activity.title}`}
     >
       <article className="past-activity-card">
         <div
@@ -58,9 +63,7 @@ export default function PastActivityCard({
 
         <div className="past-activity-body">
           <div className="past-activity-card-head">
-            <span className="past-activity-department">
-              {activityDepartmentLabel(activity, departmentCount)}
-            </span>
+            <ActivityDepartmentChips names={departmentNames} />
             <span className="past-activity-badge">{activity.postEventSummary?.trim() ? "نشاط موثّق" : "تم التنفيذ"}</span>
           </div>
 
@@ -78,12 +81,12 @@ export default function PastActivityCard({
             </span>
           </div>
 
-          <span className="past-activity-details-cta">
+          <Link className="past-activity-details-cta" href={`/activities/${activity.id}`} aria-label={`عرض تفاصيل ${activity.title}`}>
             {activity.postEventSummary?.trim() ? "اقرأ التوثيق" : "عرض التفاصيل"}
             <ArrowUpLeft aria-hidden="true" />
-          </span>
+          </Link>
         </div>
       </article>
-    </Link>
+    </div>
   );
 }

@@ -4541,6 +4541,7 @@ p {
 }
 
 .past-activity-card-link {
+    position: relative;
     display: block;
     min-width: 0;
     height: 100%;
@@ -4551,6 +4552,19 @@ p {
 .past-activity-card-link:focus-visible {
     outline: 3px solid rgba(22, 136, 255, .42);
     outline-offset: 4px
+}
+
+.past-activity-card-link:focus-within {
+    outline: 3px solid rgba(22, 136, 255, .42);
+    outline-offset: 4px
+}
+
+.past-activity-card-link .past-activity-details-cta::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    z-index: 1
 }
 
 .past-activity-card-link .past-activity-card {
@@ -8142,6 +8156,7 @@ html[data-reload-intro="true"] .intro-gate {
 
 .past-activity-card-head {
     display: flex;
+    flex-wrap: wrap;
     min-width: 0;
     align-items: flex-start;
     justify-content: space-between;
@@ -8167,6 +8182,35 @@ html[data-reload-intro="true"] .intro-gate {
     background: #eaf6ff;
     overflow-wrap: anywhere
 }
+
+.past-activity-departments {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex: 1 1 180px;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+    cursor: default
+}
+
+.past-activity-departments .past-activity-department {
+    max-width: 100%;
+    border-radius: 10px;
+    line-height: 1.8
+}
+
+.past-activity-extra-departments { display: contents }
+.past-activity-extra-departments[hidden] { display: none }
+
+.past-activity-department-toggle {
+    gap: 5px;
+    border: 1px solid #b9d9f3;
+    cursor: pointer
+}
+
+.past-activity-department-toggle:hover { filter: brightness(.96) }
+.past-activity-department-toggle:focus-visible { outline: 3px solid #1688ff; outline-offset: 3px }
 
 .past-activity-badge {
     flex: 0 0 auto;
