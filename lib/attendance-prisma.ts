@@ -31,7 +31,7 @@ export function attendanceDeps(): AttendanceConfirmationDeps {
   return {
     now: () => new Date(),
     findLink: ({ activityId, tokenHash }) => prisma.activityAttendanceLink.findFirst({
-      where: { activityId, tokenHash, session: { activityId }, activity: { deletedAt: null } },
+      where: { activityId, tokenHash, session: { activityId }, activity: { deletedAt: null, attendanceEnabled: true } },
       include: { session: { select: { id: true, title: true } }, activity: { select: { id: true, title: true, startsAt: true } } },
     }),
     findSubmission: ({ activityId, userId }) => prisma.activityFormSubmission.findFirst({
@@ -42,7 +42,7 @@ export function attendanceDeps(): AttendanceConfirmationDeps {
       if (!input.sessionId || !input.activityId || !input.tokenHash) return { code: "INVALID_LINK" as const };
       const link = await tx.activityAttendanceLink.findFirst({ where: {
         id: input.attendanceLinkId, activityId: input.activityId, tokenHash: input.tokenHash,
-        activity: { deletedAt: null },
+        activity: { deletedAt: null, attendanceEnabled: true },
         sessionId: input.sessionId, session: { activityId: input.activityId },
       } });
       if (!link) return { code: "INVALID_LINK" as const };
@@ -82,6 +82,7 @@ export async function recordStaffSessionAttendance(input: {
     });
     if (!submission) return { status: "INVALID_QR" as const, message: "التسجيل غير موجود." };
     if (submission.form.activityId !== input.activityId) return { status: "WRONG_ACTIVITY" as const, message: "الرمز تابع لنشاط آخر." };
+    if (!submission.form.activity.attendanceEnabled) return { status: "ERROR" as const, message: "هذا النشاط مخصص للتسجيل فقط ولا يتطلب حضورًا." };
     if (input.publishedOnly && submission.form.activity.status !== "PUBLISHED") return { status: "ERROR" as const, message: "النشاط غير متاح لتسجيل الحضور." };
     if (submission.status !== "APPROVED") return { status: "NOT_APPROVED" as const, message: "يمكن تسجيل الحضور للطلاب المقبولين فقط." };
     const sessions = submission.form.activity.sessions;

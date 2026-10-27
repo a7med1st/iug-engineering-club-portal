@@ -110,6 +110,7 @@ async function ensureEligibleSubmission(
                 certificateTemplate: { select: { id: true } },
                 certificateTemplateEnglish: { select: { id: true } },
                 requiredAttendanceCount: true,
+                attendanceEnabled: true,
                 sessions: { select: { id: true } },
               },
             },
@@ -388,7 +389,7 @@ export async function regenerateActivityCertificates(formData: FormData) {
       status: true,
       checkedInAt: true,
       sessionAttendances: { select: { sessionId: true } },
-      form: { select: { activity: { select: { requiredAttendanceCount: true, sessions: { select: { id: true } } } } } },
+      form: { select: { activity: { select: { attendanceEnabled: true, requiredAttendanceCount: true, sessions: { select: { id: true } } } } } },
       certificate: { select: { id: true } },
     },
   });
@@ -492,6 +493,7 @@ export async function issueActivityCertificates(
               select: {
                 title: true,
                 requiredAttendanceCount: true,
+                attendanceEnabled: true,
                 sessions: { select: { id: true } },
               },
             },

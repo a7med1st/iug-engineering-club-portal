@@ -190,8 +190,11 @@ export default async function ActivityRegistrationsPage({
         filters.attendance?.trim() ??
         "ALL";
 
+    const activitySettings = await prisma.activity.findUnique({ where: { id }, select: { attendanceEnabled: true } });
+    if (!activitySettings) notFound();
+    const attendanceEnabled = activitySettings.attendanceEnabled;
     const attendance =
-        allowedAttendanceFilters.includes(
+        attendanceEnabled && allowedAttendanceFilters.includes(
             requestedAttendance as
             (typeof allowedAttendanceFilters)[number],
         )
@@ -524,24 +527,24 @@ export default async function ActivityRegistrationsPage({
 
                         <span>
                             <CalendarDays size={16} aria-hidden="true" />
-                            {activity.startsAt
+                            {attendanceEnabled && activity.startsAt
                                 ? new Intl.DateTimeFormat("ar-PS", {
                                     dateStyle: "medium",
                                     timeStyle: "short",
                                     timeZone: ACTIVITY_TIME_ZONE,
                                 }).format(activity.startsAt)
-                                : "الموعد غير محدد"}
+                                : attendanceEnabled ? "الموعد غير محدد" : "تسجيل فقط"}
                         </span>
 
-                        <span>
+                        {activity.location && <span>
                             <MapPin size={16} aria-hidden="true" />
                             {activity.location}
-                        </span>
+                        </span>}
                     </div>
                 </div>
             </header>
 
-            {canManualAttendance && activity.sessions.map(session => (
+            {attendanceEnabled && canManualAttendance && activity.sessions.map(session => (
                 <AttendanceLinkPanel
                     key={session.id}
                     activityId={activity.id}
@@ -555,7 +558,7 @@ export default async function ActivityRegistrationsPage({
                     } : null}
                 />
             ))}
-            <ActivityAttendanceMatrix activityId={activity.id} sessions={activity.sessions} requiredAttendanceCount={activity.requiredAttendanceCount} submissions={form.submissions} canManage={canManualAttendance && activity.status !== "ARCHIVED"} action={updateRegistrationAttendance} />
+            {attendanceEnabled && <ActivityAttendanceMatrix activityId={activity.id} sessions={activity.sessions} requiredAttendanceCount={activity.requiredAttendanceCount} submissions={form.submissions} canManage={canManualAttendance && activity.status !== "ARCHIVED"} action={updateRegistrationAttendance} />}
 
             <section className={attendanceStyles.actionToolbar}>
                 <div className={attendanceStyles.toolbarHeading}>
@@ -574,7 +577,7 @@ export default async function ActivityRegistrationsPage({
                         attendanceStyles.headerActions
                     }
                 >
-                    {!isArchived &&
+                    {attendanceEnabled && !isArchived &&
                         (canAdminScanner ||
                             canMemberScanner) && (
                             <Link
@@ -711,7 +714,7 @@ export default async function ActivityRegistrationsPage({
                         attendanceStyles.activityMetaRow
                     }
                 >
-                    {activity.startsAt ? (
+                    {attendanceEnabled && (activity.startsAt ? (
                         <>
                             <div>
                                 <CalendarDays size={18} />
@@ -745,9 +748,9 @@ export default async function ActivityRegistrationsPage({
                                 غير محدد
                             </span>
                         </div>
-                    )}
+                    ))}
 
-                    {activity.endsAt && (
+                    {attendanceEnabled && activity.endsAt && (
                         <>
                             <div>
                                 <CalendarDays size={18} />
@@ -826,7 +829,7 @@ export default async function ActivityRegistrationsPage({
                         </div>
                     </article>
 
-                    <article className={`${attendanceStyles.overviewStat} ${attendanceStyles.overviewStatPresent}`}>
+                    {attendanceEnabled && <><article className={`${attendanceStyles.overviewStat} ${attendanceStyles.overviewStatPresent}`}>
                         <span className={attendanceStyles.overviewStatIcon} aria-hidden="true">
                             <CheckCircle2 size={20} />
                         </span>
@@ -844,10 +847,10 @@ export default async function ActivityRegistrationsPage({
                             <span>لم يحضروا</span>
                             <strong>{absentApprovedCount}</strong>
                         </div>
-                    </article>
+                    </article></>}
                 </div>
 
-                <div
+                {attendanceEnabled && <div
                     className={
                         attendanceStyles.attendanceRateBlock
                     }
@@ -884,7 +887,7 @@ export default async function ActivityRegistrationsPage({
                             }}
                         />
                     </div>
-                </div>
+                </div>}
 
                 {isArchived && (
                     <div
@@ -1183,7 +1186,7 @@ export default async function ActivityRegistrationsPage({
                 </div>
 
 
-                <div className={`activity-registration-stat ${attendanceStyles.attendanceStatPresent}`}>
+                {attendanceEnabled && <><div className={`activity-registration-stat ${attendanceStyles.attendanceStatPresent}`}>
                     <span className={attendanceStyles.statusStatIcon} aria-hidden="true">
                         <CheckCircle2 size={19} />
                     </span>
@@ -1216,7 +1219,7 @@ export default async function ActivityRegistrationsPage({
                     <small>
                         من الطلاب المقبولين
                     </small>
-                </div>
+                </div></>}
 
 
                 <div className={`activity-registration-stat ${attendanceStyles.statusStatRejected}`}>
@@ -1307,7 +1310,7 @@ export default async function ActivityRegistrationsPage({
                     </div>
 
 
-                    <div className={attendanceStyles.filterField}>
+                    {attendanceEnabled && <div className={attendanceStyles.filterField}>
                         <span>الحضور</span>
                         <RegistrationFilterSelect
                             name="attendance"
@@ -1319,7 +1322,7 @@ export default async function ActivityRegistrationsPage({
                                 { value: "ABSENT", label: "لم يحضر", tone: "neutral" },
                             ]}
                         />
-                    </div>
+                    </div>}
 
 
                     <button
@@ -1463,7 +1466,7 @@ export default async function ActivityRegistrationsPage({
                                                 }
                                             </span>
 
-                                            {submission.status === "APPROVED" && activity.sessions.length > 0 && (
+                                            {attendanceEnabled && submission.status === "APPROVED" && activity.sessions.length > 0 && (
                                                 <span className={attendanceStyles.attendanceBadge}>
                                                     {(() => {
                                                         const progress = getAttendanceProgress({ ...submission, form: { activity } });
@@ -1471,7 +1474,7 @@ export default async function ActivityRegistrationsPage({
                                                     })()}
                                                 </span>
                                             )}
-                                            {submission.status === "APPROVED" && activity.sessions.length === 0 && (
+                                            {attendanceEnabled && submission.status === "APPROVED" && activity.sessions.length === 0 && (
                                                 <div className={attendanceStyles.attendanceStateWrap}>
                                                     <span
                                                         className={`${attendanceStyles.attendanceBadge} ${
@@ -1566,7 +1569,7 @@ export default async function ActivityRegistrationsPage({
                                     )}
                                     <div className="activity-registration-review-actions">
 
-                                        {canManualAttendance && activity.sessions.length === 0 &&
+                                        {attendanceEnabled && canManualAttendance && activity.sessions.length === 0 &&
                                             !isArchived &&
                                             submission.status === "APPROVED" && (
                                             <form

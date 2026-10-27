@@ -67,15 +67,15 @@ export default function ActivityCard({
         </div>
 
         <div className="activity-meta">
-          <span>
+          {activity.attendanceEnabled ? <span>
             <CalendarDays size={18} />
             {date}
-          </span>
+          </span> : <span>تسجيل فقط</span>}
 
-          <span>
+          {activity.location && <span>
             <MapPin size={18} />
             {activity.location}
-          </span>
+          </span>}
 
           {activity.price !== null &&
             activity.price > 0 && (

@@ -33,6 +33,7 @@ export default async function MemberCheckInActivitiesPage() {
   const rawActivities = await prisma.activity.findMany({
     where: {
       status: "PUBLISHED",
+      attendanceEnabled: true,
       registrationForm: {
         isNot: null,
       },

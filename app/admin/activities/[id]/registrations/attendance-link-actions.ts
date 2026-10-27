@@ -18,6 +18,8 @@ async function mutateLink(formData: FormData, rotate: boolean): Promise<Attendan
     if (error) return { ok: false, message: error };
   }
   const result = await attendanceTransaction(async tx => {
+    const activity = await tx.activity.findUnique({ where: { id: activityId }, select: { attendanceEnabled: true } });
+    if (!activity?.attendanceEnabled) return { ok: false, message: "هذا النشاط مخصص للتسجيل فقط ولا يتطلب حضورًا." };
     const sessions = await tx.activitySession.findMany({ where: { activityId }, select: { id: true } });
     const sessionId = requestedSession || (sessions.length === 1 ? sessions[0].id : "");
     if (!sessions.some(session => session.id === sessionId)) return { ok: false, message: "اختر جلسة صالحة لهذا النشاط." };

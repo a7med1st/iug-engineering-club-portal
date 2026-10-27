@@ -96,6 +96,7 @@ export async function getCertificateByCode(
                   title: true,
                   location: true,
                   requiredAttendanceCount: true,
+                  attendanceEnabled: true,
                   sessions: { select: { id: true } },
                   startsAt: true,
 
@@ -136,6 +137,7 @@ export async function getCertificateAdminRows({
     await prisma.activity.findMany({
       where: {
         deletedAt: null,
+        attendanceEnabled: true,
         registrationForm: {
           isNot: null,
         },
@@ -170,7 +172,7 @@ export async function getCertificateAdminRows({
           "APPROVED",
 
         form: {
-          activity: { deletedAt: null },
+          activity: { deletedAt: null, attendanceEnabled: true },
           ...(activityId ? { activityId: selectedActivity?.id ?? "__NO_ACTIVITY__" } : {}),
         },
       },
@@ -206,6 +208,7 @@ export async function getCertificateAdminRows({
                 title: true,
                 startsAt: true,
                 requiredAttendanceCount: true,
+                attendanceEnabled: true,
                 sessions: { select: { id: true } },
               },
             },

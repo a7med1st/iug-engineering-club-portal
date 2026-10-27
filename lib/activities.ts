@@ -38,10 +38,12 @@ export type PastActivityCardData = Pick<
 
 export function isPastActivity(
   activity: Pick<Activity, "startsAt" | "endsAt"> & {
+    attendanceEnabled?: boolean;
     sessions?: Array<Pick<Activity, "startsAt" | "endsAt">>;
   },
   referenceTime: Date = new Date(),
 ): boolean {
+  if (activity.attendanceEnabled === false) return false;
   if (activity.sessions?.length) {
     return activity.sessions.every((session) =>
       isPastActivity(
@@ -73,6 +75,7 @@ export function pastActivityWhere(
   const unscheduled = { startsAt: null, endsAt: null };
   return {
     status: "PUBLISHED",
+    attendanceEnabled: true,
     OR: [
       // Every session has finished using its own schedule.
       { sessions: { some: {}, every: ended } },
@@ -98,6 +101,7 @@ export function currentActivityWhere(
   return {
     status: "PUBLISHED",
     OR: [
+      { attendanceEnabled: false },
       {
         sessions: { some: { OR: [
           { endsAt: { gt: referenceTime } },

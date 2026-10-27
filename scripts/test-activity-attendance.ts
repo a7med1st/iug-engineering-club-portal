@@ -20,6 +20,10 @@ assert.equal(getAttendanceProgress({ ...qualified, form: { activity: { ...worksh
 assert.equal(getAttendanceProgress({ ...legacy, form: { activity: { sessions: [], requiredAttendanceCount: 2 } } }).eligible, false);
 assert.equal(getAttendanceProgress({ ...qualified, form: { activity: { sessions: workshop.form.activity.sessions } } }).requiredAttendanceCount, 1);
 const before = structuredClone(workshop);
+assert.deepEqual(getAttendanceProgress({ ...qualified, form: { activity: { ...qualified.form.activity, attendanceEnabled: false } } }), {
+  attendanceCount: 0, totalSessions: 0, requiredAttendanceCount: 0, eligible: false,
+}, "registration-only activities must not count retained attendance or qualify for attendance certificates");
+assert.equal(getAttendanceProgress({ ...legacy, form: { activity: { attendanceEnabled: false } } }).eligible, false);
 getAttendanceProgress(workshop);
 assert.deepEqual(workshop, before, "progress calculation must not mutate its input");
 console.log("activity attendance tests passed");

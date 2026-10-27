@@ -131,6 +131,7 @@ export async function getAdminDashboardData({
           location: true,
           startsAt: true,
           capacity: true,
+          attendanceEnabled: true,
           status: true,
 
           departments: {
@@ -290,6 +291,7 @@ export async function getAdminDashboardData({
             ...submission,
 
             activity: {
+              attendanceEnabled: activity.attendanceEnabled,
               id:
                 activity.id,
               title:
@@ -388,7 +390,7 @@ export async function getAdminDashboardData({
   const attendanceEligible =
     periodSubmissions.filter(
       (submission) =>
-        submission.status ===
+        submission.activity.attendanceEnabled && submission.status ===
           "APPROVED" &&
         Boolean(submission.activity.startsAt) &&
         submission.activity
@@ -498,7 +500,7 @@ export async function getAdminDashboardData({
           const attended =
             activitySubmissions.filter(
               (submission) =>
-                submission.status ===
+                activity.attendanceEnabled && submission.status ===
                   "APPROVED" &&
                 Boolean(
                   submission.checkedInAt,
@@ -592,7 +594,7 @@ export async function getAdminDashboardData({
         const attended =
           departmentSubmissions.filter(
             (submission) =>
-              submission.status ===
+              submission.activity.attendanceEnabled && submission.status ===
                 "APPROVED" &&
               Boolean(
                 submission.checkedInAt,

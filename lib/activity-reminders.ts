@@ -68,6 +68,7 @@ export async function sendActivityReminders(
 
         form: {
           activity: {
+            attendanceEnabled: true,
             status:
               "PUBLISHED",
 

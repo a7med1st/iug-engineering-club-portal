@@ -80,6 +80,10 @@ export async function GET(
   { params }: RouteContext,
 ) {
   const { id } = await params;
+  await requireActivityPermission(PERMISSIONS.REGISTRATION_EXPORT, id);
+  const settings = await prisma.activity.findUnique({ where: { id }, select: { attendanceEnabled: true } });
+  if (!settings) return new Response("النشاط غير موجود.", { status: 404 });
+  const attendanceEnabled = settings.attendanceEnabled;
 
   const searchParams = new URL(request.url).searchParams;
   const query = (searchParams.get("q") ?? "")
@@ -90,7 +94,7 @@ export async function GET(
     ? requestedStatus
     : "ALL";
   const requestedAttendance = searchParams.get("attendance") ?? "ALL";
-  const attendance = allowedAttendanceFilters.has(requestedAttendance)
+  const attendance = attendanceEnabled && allowedAttendanceFilters.has(requestedAttendance)
     ? requestedAttendance
     : "ALL";
 
@@ -136,11 +140,6 @@ export async function GET(
         }
       : {}),
   };
-
-  await requireActivityPermission(
-    PERMISSIONS.REGISTRATION_EXPORT,
-    id,
-  );
 
   const activity =
     await prisma.activity.findUnique({
@@ -246,7 +245,7 @@ export async function GET(
       key: "registrationStatus",
       width: 18,
     },
-    {
+    ...(attendanceEnabled ? [{
       header: "حالة الحضور",
       key: "attendanceStatus",
       width: 18,
@@ -255,7 +254,7 @@ export async function GET(
       header: "وقت الحضور",
       key: "checkedInAt",
       width: 24,
-    },
+    }] : []),
     {
       header: "وقت التسجيل",
       key: "submittedAt",
@@ -277,7 +276,7 @@ export async function GET(
         );
 
       const attendanceStatus =
-        submission.status ===
+        attendanceEnabled && submission.status ===
         "APPROVED"
           ? submission.checkedInAt
             ? "حضر"
@@ -368,14 +367,14 @@ export async function GET(
       };
       registrationStatusCell.font = { bold: true };
 
-      const attendanceCell = row.getCell(6);
-      if (attendanceStatus === "حضر") {
+      const attendanceCell = attendanceEnabled ? row.getCell("attendanceStatus") : null;
+      if (attendanceCell && attendanceStatus === "حضر") {
         attendanceCell.fill = {
           type: "pattern",
           pattern: "solid",
           fgColor: { argb: "FFDDF6E8" },
         };
-      } else if (attendanceStatus === "لم يحضر") {
+      } else if (attendanceCell && attendanceStatus === "لم يحضر") {
         attendanceCell.fill = {
           type: "pattern",
           pattern: "solid",

@@ -478,6 +478,7 @@ model Activity {
   price                   Int?
   postEventSummary        String?
   requiredAttendanceCount Int       @default(1)
+  attendanceEnabled       Boolean   @default(true)
 
   coverImageUrl          String?
   coverImagePathname     String?

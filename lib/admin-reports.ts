@@ -152,6 +152,7 @@ export async function getAdminReportsData({
         location: true,
         startsAt: true,
         capacity: true,
+        attendanceEnabled: true,
         status: true,
 
         departments: {
@@ -312,7 +313,7 @@ export async function getAdminReportsData({
         const attended =
           submissions.filter(
             (submission) =>
-              submission.status ===
+              activity.attendanceEnabled && submission.status ===
                 "APPROVED" &&
               Boolean(
                 submission.checkedInAt,
@@ -322,7 +323,7 @@ export async function getAdminReportsData({
         const absent =
           submissions.filter(
             (submission) =>
-              submission.status ===
+              activity.attendanceEnabled && submission.status ===
                 "APPROVED" &&
               !submission.checkedInAt &&
               Boolean(activity.startsAt) &&
@@ -337,6 +338,7 @@ export async function getAdminReportsData({
           ).length;
 
         return {
+          attendanceEnabled: activity.attendanceEnabled,
           id:
             activity.id,
 
@@ -395,6 +397,7 @@ export async function getAdminReportsData({
       (activity) =>
         activity.submissions.map(
           (submission) => ({
+            attendanceEnabled: activity.attendanceEnabled,
             id:
               submission.id,
 

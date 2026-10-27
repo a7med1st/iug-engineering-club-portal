@@ -39,10 +39,14 @@ const schedules = [finished, upcoming, { startsAt: null, endsAt: null },
   { startsAt: null, endsAt: finished.endsAt }];
 for (const schedule of schedules) {
   for (const sessions of [[], ...schedules.map((session) => [session]), ...schedules.map((session) => [finished, session])]) {
-    const activity = { ...schedule, sessions, status: "PUBLISHED" };
+    const activity = { ...schedule, sessions, status: "PUBLISHED", attendanceEnabled: true };
     const past = isPastActivity(activity, referenceTime);
     assert.equal(matches(activity, pastActivityWhere(referenceTime)), past);
     assert.equal(matches(activity, currentActivityWhere(referenceTime)), !past);
+    const registrationOnly = { ...activity, attendanceEnabled: false };
+    assert.equal(isPastActivity(registrationOnly, referenceTime), false);
+    assert.equal(matches(registrationOnly, pastActivityWhere(referenceTime)), false);
+    assert.equal(matches(registrationOnly, currentActivityWhere(referenceTime)), true);
   }
 }
 console.log("Current and past database filters agree across 78 schedule combinations");

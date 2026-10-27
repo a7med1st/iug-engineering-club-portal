@@ -284,19 +284,19 @@ export default async function PrintReportsPage({
 
                         <td>
                           <span className={styles.numberPill}>
-                            {activity.attended}
+                      {activity.attendanceEnabled ? activity.attended : "غير مطبق"}
                           </span>
                         </td>
 
                         <td>
                           <span className={styles.numberPill}>
-                            {activity.absent}
+                      {activity.attendanceEnabled ? activity.absent : "غير مطبق"}
                           </span>
                         </td>
 
                         <td>
                           <strong className={styles.rate}>
-                            {activity.attendanceRate}%
+                      {activity.attendanceEnabled ? `${activity.attendanceRate}%` : "غير مطبق"}
                           </strong>
                         </td>
                       </tr>

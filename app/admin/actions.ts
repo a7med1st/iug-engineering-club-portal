@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
+import { MAX_ACTIVITY_REGISTRATION_QUESTIONS } from "@/lib/activity-registration-limits";
 import { moveActivityToTrash, restoreTrashedActivity } from "@/lib/activity-trash";
 import { ActivitySessionsError, parseActivitySessions, updateActivitySessions, validateSessionChanges } from "@/lib/activity-sessions";
 import {
@@ -212,9 +213,9 @@ function parseRegistrationQuestions(
     );
   }
 
-  if (parsed.length > 50) {
+  if (parsed.length > MAX_ACTIVITY_REGISTRATION_QUESTIONS) {
     throw new AdminActionError(
-      "لا يمكن إضافة أكثر من 50 سؤالًا للنشاط.",
+      `لا يمكن إضافة أكثر من ${MAX_ACTIVITY_REGISTRATION_QUESTIONS} سؤالًا للنشاط.`,
     );
   }
 
@@ -981,11 +982,12 @@ export async function createActivity(
           ) ?? "",
         ).trim() || null;
 
-      const location = requiredText(
+      const attendanceEnabled = formData.get("attendanceEnabled") !== "false";
+      const location = attendanceEnabled ? requiredText(
         formData,
         "location",
         "مكان النشاط",
-      );
+      ) : String(formData.get("location") ?? "").trim();
 
       const startDate = String(formData.get("startDate") ?? "").trim();
       const startTime = String(formData.get("startTime") ?? "").trim();
@@ -1356,10 +1358,11 @@ export async function createActivity(
          CREATE EVERYTHING
       ============================================= */
 
-      const sessionsConfiguration = parseActivitySessions(formData);
+      const sessionsConfiguration = attendanceEnabled ? parseActivitySessions(formData) : { sessions: [], requiredAttendanceCount: 1, confirmedDeletedSessionIds: [] };
       validateSessionChanges(sessionsConfiguration, []);
       const activity = await prisma.activity.create({
         data: {
+          attendanceEnabled,
           requiredAttendanceCount: sessionsConfiguration.requiredAttendanceCount,
           sessions: { create: sessionsConfiguration.sessions.map(({ id, ...session }) => session) },
           title,
@@ -1528,7 +1531,7 @@ export async function createActivity(
                   `نشاط جديد: ${title}`,
 
                 body:
-                  `${activityDate} · ${location}`,
+                  attendanceEnabled ? `${activityDate} · ${location}` : "التسجيل متاح الآن.",
 
                 href:
                   `/activities/${activity.id}/register`,
@@ -1882,7 +1885,9 @@ export async function updateActivityText(
           ) ?? "",
         ).trim() || null;
 
-      const location =
+      const attendanceEnabledInput = formData.get("attendanceEnabled");
+      const attendanceEnabled = attendanceEnabledInput === null ? undefined : attendanceEnabledInput !== "false";
+      const location = attendanceEnabled === false ? String(formData.get("location") ?? "").trim() :
         requiredText(
           formData,
           "location",
@@ -2439,7 +2444,7 @@ export async function updateActivityText(
 
       await prisma.$transaction(
         async (transaction) => {
-          if (formData.has("activitySessions")) {
+          if (attendanceEnabled !== false && formData.has("activitySessions")) {
             await updateActivitySessions(transaction, activityId, parseActivitySessions(formData));
           }
           await transaction.activity.update({
@@ -2449,6 +2454,7 @@ export async function updateActivityText(
             },
 
             data: {
+              attendanceEnabled,
               title,
               description,
               cardDescription,
@@ -2700,7 +2706,7 @@ export async function updateActivityText(
                         `نشاط جديد: ${title}`,
 
                       body:
-                        `${activityDate} · ${location}`,
+                        attendanceEnabled === false ? "التسجيل متاح الآن." : `${activityDate} · ${location}`,
 
                       href:
                         `/activities/${activityId}/register`,

@@ -273,7 +273,7 @@ export default async function ActivityDetailsPage({
           aria-label="معلومات النشاط"
           data-reveal-group="scale"
         >
-          <div
+          {activity.attendanceEnabled && <div
             className={
               styles.infoCard
             }
@@ -289,9 +289,9 @@ export default async function ActivityDetailsPage({
             <strong>
               {date}
             </strong>
-          </div>
+          </div>}
 
-          <div
+          {activity.location && <div
             className={
               styles.infoCard
             }
@@ -309,7 +309,7 @@ export default async function ActivityDetailsPage({
                 activity.location
               }
             </strong>
-          </div>
+          </div>}
 
           <div
             className={

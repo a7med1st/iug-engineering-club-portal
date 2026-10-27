@@ -59,6 +59,7 @@ export default async function ActivityCheckInPage({
 
       select: {
         id: true,
+        attendanceEnabled: true,
         title: true,
         location: true,
         startsAt: true,
@@ -74,6 +75,7 @@ export default async function ActivityCheckInPage({
 
   if (
     !activity ||
+    !activity.attendanceEnabled ||
     !activity.registrationForm
   ) {
     notFound();

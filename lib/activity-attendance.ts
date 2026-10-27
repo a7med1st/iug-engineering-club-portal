@@ -2,7 +2,7 @@ export type AttendanceSubmission = {
   status: string;
   checkedInAt: Date | null;
   sessionAttendances?: { sessionId: string }[];
-  form?: { activity: { sessions?: { id: string }[]; requiredAttendanceCount?: number } };
+  form?: { activity: { attendanceEnabled?: boolean; sessions?: { id: string }[]; requiredAttendanceCount?: number } };
 };
 
 export type AttendanceProgress = {
@@ -15,6 +15,9 @@ export type AttendanceProgress = {
 /** Only activity-owned, distinct sessions count; legacy attendance applies to zero-session activities. */
 export function getAttendanceProgress(submission: AttendanceSubmission): AttendanceProgress {
   const activity = submission.form?.activity;
+  if (activity?.attendanceEnabled === false) {
+    return { attendanceCount: 0, totalSessions: 0, requiredAttendanceCount: 0, eligible: false };
+  }
   const sessionIds = new Set(activity?.sessions?.map((session) => session.id) ?? []);
   const requiredAttendanceCount = Math.max(1, activity?.requiredAttendanceCount ?? 1);
   const attendanceCount = sessionIds.size

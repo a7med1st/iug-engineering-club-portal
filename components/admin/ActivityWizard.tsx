@@ -10,12 +10,18 @@ import ActivitySessionsEditor from "./ActivitySessionsEditor";
 import ActivityFormBuilder from "./ActivityFormBuilder";
 import DepartmentChecklist from "./DepartmentChecklist";
 import styles from "./ActivityWizard.module.css";
+import { ActivityAttendanceProvider, ActivityAttendanceMode, ActivityAttendanceFields, ActivityLocationField, useActivityAttendance } from "./ActivityAttendanceSettings";
 
 const steps = ["بيانات النشاط", "الموعد والأقسام", "نموذج التسجيل", "المراجعة والنشر"];
 type Preview = { title: string; description: string; location: string; capacity: string; price: string; date: string; departments: string; questions: number; registration: string };
 const emptyPreview: Preview = { title: "", description: "", location: "", capacity: "", price: "", date: "", departments: "", questions: 0, registration: "" };
 
 export default function ActivityWizard({ departments, allowGeneral }: { departments: { id: string; nameAr: string }[]; allowGeneral: boolean }) {
+  return <ActivityAttendanceProvider><ActivityWizardForm departments={departments} allowGeneral={allowGeneral} /></ActivityAttendanceProvider>;
+}
+
+function ActivityWizardForm({ departments, allowGeneral }: { departments: { id: string; nameAr: string }[]; allowGeneral: boolean }) {
+  const { enabled: attendanceEnabled } = useActivityAttendance();
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -48,7 +54,7 @@ export default function ActivityWizard({ departments, allowGeneral }: { departme
     for (const panel of panels) {
       const index = Number(panel.dataset.step);
       if (section !== undefined && index !== section) continue;
-      const invalid = Array.from(panel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input,select,textarea")).find(input => !input.validity.valid);
+      const invalid = Array.from(panel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input,select,textarea")).find(input => input.willValidate && !input.validity.valid);
       if (invalid) {
         goTo(index);
         requestAnimationFrame(() => { invalid.focus(); invalid.reportValidity(); });
@@ -100,17 +106,18 @@ export default function ActivityWizard({ departments, allowGeneral }: { departme
           <main className={styles.card}>
             <div className={styles.cardHeading}><span className={styles.eyebrow}>الخطوة {step + 1} من 4</span><h2 ref={heading} tabIndex={-1}>{steps[step]}</h2><p>{["ابدأ بالمعلومات التي سيشاهدها الطلاب.", "حدد جلسات النشاط والأقسام المستهدفة.", "اضبط فترة التسجيل وأضف الأسئلة المطلوبة.", "راجع التفاصيل وحدد حالة النشاط قبل الحفظ."][step]}</p></div>
             <section data-step="0" hidden={step !== 0} className={styles.panel}>
+              <ActivityAttendanceMode />
               <label>اسم النشاط <em>*</em><input name="title" required maxLength={200} placeholder="مثال: ورشة أساسيات الذكاء الاصطناعي" /></label>
               <label>وصف مختصر للبطاقة<textarea name="cardDescription" rows={3} maxLength={500} placeholder="ما الذي سيستفيده الطالب من النشاط؟" /><small>نبذة قصيرة تظهر في بطاقة النشاط · حتى 500 حرف</small></label>
               <label>الوصف الكامل <em>*</em><textarea name="description" required rows={6} maxLength={10000} placeholder="عرّف بالنشاط ومحاوره والفئة المستهدفة..." /></label>
               <details className={styles.optional}><summary>وصف شريط الإعلانات <span>اختياري</span></summary><label>النص المختصر<textarea name="tickerDescription" maxLength={300} rows={2} placeholder="نص قصير يظهر في شريط آخر تحديثات النادي" /></label></details>
-              <div className={styles.grid}><label>مكان النشاط <em>*</em><input name="location" required placeholder="مثال: مبنى طيبة — القاعة 201" /></label><label>السعة الطلابية <em>*</em><input name="capacity" type="number" min={1} required placeholder="مثال: 50" /></label></div>
+              <div className={styles.grid}><ActivityLocationField /><label>{attendanceEnabled ? "السعة الطلابية" : "الحد الأقصى للتسجيلات"} <em>*</em><input name="capacity" type="number" min={1} max={100000} required placeholder="مثال: 100" /></label></div>
               <div className={styles.payment}><span>رسوم المشاركة</span><div role="group" aria-label="رسوم المشاركة"><button type="button" aria-pressed={!paid} onClick={() => { setPaid(false); requestAnimationFrame(refreshPreview); }}>مجاني</button><button type="button" aria-pressed={paid} onClick={() => setPaid(true)}>مدفوع</button></div>{paid ? <label>السعر (₪)<input name="price" type="number" required min={1} max={1000000} step={1} placeholder="السعر بالشيكل" /></label> : <input type="hidden" name="price" value="" />}</div>
             </section>
-            <section data-step="1" hidden={step !== 1} className={styles.panel}><ActivitySchedulePicker /><ActivitySessionsEditor /><DepartmentChecklist departments={departments} allowGeneral={allowGeneral} /></section>
+            <section data-step="1" hidden={step !== 1} className={styles.panel}><ActivityAttendanceFields><ActivitySchedulePicker /><ActivitySessionsEditor /></ActivityAttendanceFields><DepartmentChecklist departments={departments} allowGeneral={allowGeneral} /></section>
             <section data-step="2" hidden={step !== 2} className={styles.panel}><ActivityFormBuilder appearance="wizard" /></section>
             <section data-step="3" hidden={step !== 3} className={styles.panel}>
-              <div className={styles.review}><h3>{preview.title || "نشاط جديد"}</h3><p>{preview.description}</p><dl><dt>المكان</dt><dd>{preview.location || "—"}</dd><dt>المقاعد</dt><dd>{preview.capacity || "—"}</dd><dt>الموعد</dt><dd>{preview.date || "يُحدد لاحقًا"}</dd><dt>رسوم المشاركة</dt><dd>{preview.price ? `${preview.price} ₪` : "مجاني"}</dd><dt>الأقسام</dt><dd>{preview.departments || "جميع الأقسام المتاحة"}</dd><dt>فترة التسجيل</dt><dd>{preview.registration || "لم تُحدد"}</dd><dt>أسئلة التسجيل</dt><dd>{preview.questions} سؤال</dd></dl><button type="button" className={styles.back} onClick={() => goTo(2)}>مراجعة نموذج التسجيل <ArrowLeft size={16} /></button></div>
+              <div className={styles.review}><h3>{preview.title || "نشاط جديد"}</h3><p>{preview.description}</p><dl><dt>نظام النشاط</dt><dd>{attendanceEnabled ? "فعالية بحضور وغياب" : "تسجيل فقط"}</dd><dt>المكان</dt><dd>{preview.location || "—"}</dd><dt>{attendanceEnabled ? "المقاعد" : "الحد الأقصى للتسجيلات"}</dt><dd>{preview.capacity || "—"}</dd>{attendanceEnabled && <><dt>الموعد</dt><dd>{preview.date || "يُحدد لاحقًا"}</dd></>}<dt>رسوم المشاركة</dt><dd>{preview.price ? `${preview.price} ₪` : "مجاني"}</dd><dt>الأقسام</dt><dd>{preview.departments || "جميع الأقسام المتاحة"}</dd><dt>فترة التسجيل</dt><dd>{preview.registration || "لم تُحدد"}</dd><dt>أسئلة التسجيل</dt><dd>{preview.questions} سؤال</dd></dl><button type="button" className={styles.back} onClick={() => goTo(2)}>مراجعة نموذج التسجيل <ArrowLeft size={16} /></button></div>
               <label>حالة النشاط<select name="status" defaultValue="PUBLISHED"><option value="PUBLISHED">منشور — يظهر للطلاب</option><option value="DRAFT">مسودة — لا يظهر للطلاب</option><option value="ARCHIVED">مؤرشف</option></select></label><p className={styles.note}><Info size={18} /> راجع المواعيد والأسئلة. حفظ المسودة يتطلب استكمال بيانات النشاط وفترة التسجيل.</p>
             </section>
           </main>

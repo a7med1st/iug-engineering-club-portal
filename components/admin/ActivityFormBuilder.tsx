@@ -17,6 +17,8 @@ import { useCspNonce } from "@/components/security/CspNonce";
 import ActivitySchedulePicker from "./ActivitySchedulePicker";
 import styles from "./ActivityFormBuilder.module.css";
 import { CERTIFICATE_NAME_QUESTIONS, certificateNameLanguage } from "@/lib/certificate-names";
+import { MAX_ACTIVITY_REGISTRATION_QUESTIONS } from "@/lib/activity-registration-limits";
+import { useActivityAttendance } from "./ActivityAttendanceSettings";
 
 type QuestionType =
   | "SHORT_TEXT"
@@ -117,6 +119,7 @@ export default function ActivityFormBuilder({
   initialQuestions = [],
 }: ActivityFormBuilderProps) {
   const nonce = useCspNonce();
+  const { enabled: attendanceEnabled } = useActivityAttendance();
 
   const [questions, setQuestions] = useState<BuilderQuestion[]>(
     () =>
@@ -131,12 +134,20 @@ export default function ActivityFormBuilder({
         options: [...question.options],
         condition: question.condition ? { parentId: initialQuestions[question.condition.questionIndex]?.id ?? "", value: question.condition.value } : null,
         answerCount: question.answerCount ?? 0,
-      })), ...(["ar", "en"] as const).filter(language => !initialQuestions.some(question => certificateNameLanguage(question.label) === language)).map(language => ({ ...createQuestion(), ...CERTIFICATE_NAME_QUESTIONS[language], localId: `certificate-name-${language}`, required: true }))],
+      })), ...(["ar", "en"] as const).filter(language => attendanceEnabled && !initialQuestions.some(question => certificateNameLanguage(question.label) === language)).slice(0, Math.max(0, MAX_ACTIVITY_REGISTRATION_QUESTIONS - initialQuestions.length)).map(language => ({ ...createQuestion(), ...CERTIFICATE_NAME_QUESTIONS[language], localId: `certificate-name-${language}`, required: true }))],
   );
 
   const [openTypeMenuId, setOpenTypeMenuId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const modern = appearance === "wizard";
+
+  useEffect(() => {
+    setQuestions(current => {
+      if (!attendanceEnabled) return current.filter(question => !question.localId.startsWith("certificate-name-") || Boolean(question.id) || !certificateNameLanguage(question.label));
+      const missing = (["ar", "en"] as const).filter(language => !current.some(question => certificateNameLanguage(question.label) === language));
+      return [...current, ...missing.slice(0, Math.max(0, MAX_ACTIVITY_REGISTRATION_QUESTIONS - current.length)).map(language => ({ ...createQuestion(), ...CERTIFICATE_NAME_QUESTIONS[language], localId: `certificate-name-${language}`, required: true }))];
+    });
+  }, [attendanceEnabled]);
 
   useEffect(() => {
     const closeOnOutside = (event: PointerEvent) => {
@@ -161,7 +172,7 @@ export default function ActivityFormBuilder({
 
   function addQuestion() {
     const question = createQuestion();
-    setQuestions((current) => [...current, question]);
+    setQuestions((current) => current.length < MAX_ACTIVITY_REGISTRATION_QUESTIONS ? [...current, question] : current);
     if (modern) requestAnimationFrame(() => {
       document.getElementById(`question-label-${question.localId}`)?.focus();
     });
@@ -333,7 +344,7 @@ export default function ActivityFormBuilder({
           />
           <span>
             {modern ? "تسجيل الدخول مطلوب" : "هل يجب أن يكون الطالب مسجلًا في الموقع؟ (فعّله لفعاليات QR)"}
-            {modern && <small>اربط التسجيل بحساب الطالب لتتبع الحضور والشهادات.</small>}
+            {modern && <small>{attendanceEnabled ? "اربط التسجيل بحساب الطالب لتتبع الحضور والشهادات." : "اربط طلب التسجيل بحساب الطالب."}</small>}
           </span>
         </label>
       </div>
@@ -349,7 +360,7 @@ export default function ActivityFormBuilder({
       <div className="activity-builder-heading">
         <div>
           <span className="activity-builder-eyebrow">نموذج التسجيل الداخلي</span>
-          <h2>أسئلة التسجيل {modern && <span className={styles.count}>{questions.length}</span>}</h2>
+          <h2>أسئلة التسجيل <span className={modern ? styles.count : undefined}>{questions.length} / {MAX_ACTIVITY_REGISTRATION_QUESTIONS}</span></h2>
           <p>
             أنشئ نموذج التسجيل الخاص بهذا النشاط وحدد نوع كل سؤال والخيارات
             المطلوبة.
@@ -361,6 +372,7 @@ export default function ActivityFormBuilder({
           type="button"
           className="activity-builder-add"
           onClick={addQuestion}
+          disabled={questions.length >= MAX_ACTIVITY_REGISTRATION_QUESTIONS}
         >
           <Plus size={18} />
           إضافة سؤال
@@ -400,7 +412,7 @@ export default function ActivityFormBuilder({
               QUESTION_TYPES.find((item) => item.value === question.type) ??
               QUESTION_TYPES[0];
             const isTypeMenuOpen = openTypeMenuId === question.localId;
-            const nameLanguage = certificateNameLanguage(question.label);
+            const nameLanguage = attendanceEnabled ? certificateNameLanguage(question.label) : null;
 
             return (
               <article
@@ -682,6 +694,7 @@ export default function ActivityFormBuilder({
           type="button"
           className="activity-builder-add-bottom"
           onClick={addQuestion}
+          disabled={questions.length >= MAX_ACTIVITY_REGISTRATION_QUESTIONS}
         >
           <Plus size={17} />
           إضافة سؤال آخر

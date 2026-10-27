@@ -57,6 +57,7 @@ export default async function MemberActivityCheckInPage({
       where: {
         id,
         status: "PUBLISHED",
+        attendanceEnabled: true,
       },
 
       select: {

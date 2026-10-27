@@ -7,6 +7,7 @@ import {
 import ActivityFormBuilder from "@/components/admin/ActivityFormBuilder";
 import ActivitySessionsEditor from "@/components/admin/ActivitySessionsEditor";
 import ActivitySchedulePicker from "@/components/admin/ActivitySchedulePicker";
+import { ActivityAttendanceProvider, ActivityAttendanceMode, ActivityAttendanceFields, ActivityLocationField } from "@/components/admin/ActivityAttendanceSettings";
 import DepartmentChecklist from "@/components/admin/DepartmentChecklist";
 
 import {
@@ -281,7 +282,7 @@ export default async function EditActivityPage({
       )}
 
       <div className="admin-card activity-form-panel">
-        <form
+        <ActivityAttendanceProvider initialEnabled={activity.attendanceEnabled}><form
           action={updateActivityText}
           className="stack-form"
         >
@@ -291,6 +292,7 @@ export default async function EditActivityPage({
             value={activity.id}
           />
 
+          <ActivityAttendanceMode />
           <label>
             اسم النشاط
 
@@ -346,7 +348,7 @@ export default async function EditActivityPage({
           </label>
 
 
-          <ActivitySchedulePicker
+          <ActivityAttendanceFields><ActivitySchedulePicker
             initialStartDate={
               start.date
             }
@@ -359,21 +361,10 @@ export default async function EditActivityPage({
             initialEndTime={
               end.time
             }
-          />
+          /></ActivityAttendanceFields>
 
           <div className="form-grid">
-            <label>
-              مكان النشاط
-
-              <input
-                name="location"
-                defaultValue={
-                  activity.location
-                }
-                required
-                maxLength={250}
-              />
-            </label>
+            <ActivityLocationField initialLocation={activity.location} />
 
             <label>
               السعة الطلابية
@@ -430,11 +421,11 @@ export default async function EditActivityPage({
             </label>
           </div>
 
-          <ActivitySessionsEditor initialRequiredAttendanceCount={activity.requiredAttendanceCount} initialSessions={activity.sessions.map(session => {
+          <ActivityAttendanceFields><ActivitySessionsEditor initialRequiredAttendanceCount={activity.requiredAttendanceCount} initialSessions={activity.sessions.map(session => {
             const start = session.startsAt ? activityDateTimeInputValues(session.startsAt) : { date: "", time: "" };
             const end = session.endsAt ? activityDateTimeInputValues(session.endsAt) : { date: "", time: "" };
             return { id: session.id, title: session.title, startDate: start.date, startTime: start.time, endDate: end.date, endTime: end.time, attendanceCount: session._count.attendances };
-          })} />
+          })} /></ActivityAttendanceFields>
           <DepartmentChecklist
             departments={
               departments
@@ -513,7 +504,7 @@ export default async function EditActivityPage({
           >
             حفظ جميع التعديلات
           </button>
-        </form>
+        </form></ActivityAttendanceProvider>
       </div>
     </section>
   );

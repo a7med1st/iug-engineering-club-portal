@@ -165,6 +165,7 @@ export default async function StudentDashboardPage({
                     location: true,
                     startsAt: true,
                     capacity: true,
+                    attendanceEnabled: true,
                     status: true,
                   },
                 },
@@ -709,13 +710,13 @@ export default async function StudentDashboardPage({
                             }
                           >
                             <span>
-                              موعد النشاط
+                              {activity.attendanceEnabled ? "موعد النشاط" : "نظام النشاط"}
                             </span>
 
                             <strong>
-                              {formatDate(
+                              {activity.attendanceEnabled ? formatDate(
                                 activity.startsAt,
-                              )}
+                              ) : "تسجيل فقط"}
                             </strong>
                           </div>
                         </div>
@@ -727,7 +728,7 @@ export default async function StudentDashboardPage({
                             styles.registrationMetaGrid
                           }
                         >
-                          <div>
+                          {activity.location && <div>
                             <span>
                               المكان
                             </span>
@@ -737,7 +738,7 @@ export default async function StudentDashboardPage({
                                 activity.location
                               }
                             </strong>
-                          </div>
+                          </div>}
 
                           <div>
                             <span>
@@ -906,7 +907,7 @@ export default async function StudentDashboardPage({
                             فتح صفحة النشاط
                           </Link>
 
-                          {submission.status ===
+                          {activity.attendanceEnabled && submission.status ===
                             "APPROVED" && (
                               <StudentAcceptanceCard
                                 studentName={user.name}

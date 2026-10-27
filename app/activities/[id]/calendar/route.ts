@@ -4,7 +4,7 @@ import { activityCalendar } from "@/lib/activity-calendar";
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const activity = await prisma.activity.findFirst({
-    where: { id, status: "PUBLISHED", deletedAt: null },
+    where: { id, status: "PUBLISHED", deletedAt: null, attendanceEnabled: true },
     select: { id: true, title: true, location: true, startsAt: true, endsAt: true, sessions: { orderBy: { sortOrder: "asc" }, select: { title: true, startsAt: true, endsAt: true } } },
   });
   if (!activity) return new Response("Not found", { status: 404 });

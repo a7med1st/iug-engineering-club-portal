@@ -380,13 +380,13 @@ export async function GET(
         activity.rejected,
 
       attended:
-        activity.attended,
+        activity.attendanceEnabled ? activity.attended : "غير مطبق",
 
       absent:
-        activity.absent,
+        activity.attendanceEnabled ? activity.absent : "غير مطبق",
 
       attendanceRate:
-        `${activity.attendanceRate}%`,
+        activity.attendanceEnabled ? `${activity.attendanceRate}%` : "غير مطبق",
     });
   }
 
@@ -486,7 +486,7 @@ export async function GET(
         ),
 
       attendance:
-        row.status !==
+        !row.attendanceEnabled ? "غير مطبق" : row.status !==
         "APPROVED"
           ? "—"
           : row.checkedInAt
@@ -499,7 +499,7 @@ export async function GET(
         ),
 
       checkedInAt:
-        dateText(
+        !row.attendanceEnabled ? "" : dateText(
           row.checkedInAt,
         ),
     });
