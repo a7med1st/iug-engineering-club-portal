@@ -12,10 +12,11 @@ async function main() {
   assert.ok(Math.abs(clock.clock.getTime() - Date.now()) < 30000, "Database and application clocks differ");
   console.log(`Registration clock verification: database zone ${clock.timezone}, database and application clocks agree.`);
   const submission = await prisma.activityFormSubmission.findFirst({
+    where: { form: { activity: { deletedAt: null } } },
     orderBy: { submittedAt: "desc" },
     select: { submittedAt: true, form: { select: { activityId: true } } },
   });
-  if (!submission) { console.log("No registration timestamps to verify."); return; }
+  if (!submission) { console.log("No registration timestamps for non-deleted activities to verify."); return; }
   const admin = await prisma.user.findFirst({ where: { role: "ADMIN" }, select: { id: true, name: true, email: true, sessionVersion: true } });
   assert.ok(admin && process.env.SESSION_SECRET, "HTTP verification requires an admin and session configuration");
   const token = await new SignJWT({ name: admin.name, email: admin.email, role: "ADMIN", sessionVersion: admin.sessionVersion })
@@ -26,10 +27,10 @@ async function main() {
   const url = `http://127.0.0.1:3000/admin/activities/${submission.form.activityId}/registrations`;
   const expected = formatActivityTimestamp(submission.submittedAt);
   const page = await fetch(url, options);
-  assert.equal(page.status, 200);
+  assert.equal(page.status, 200, `Registration page returned HTTP ${page.status}; expected HTTP 200.`);
   assert.ok((await page.text()).includes(expected), "Registration page does not show Palestinian local time");
   const exported = await fetch(`${url}/export`, options);
-  assert.equal(exported.status, 200);
+  assert.equal(exported.status, 200, `Registration export returned HTTP ${exported.status}; expected HTTP 200.`);
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(await exported.arrayBuffer());
   let found = false;
@@ -38,6 +39,7 @@ async function main() {
   console.log("Registration timestamp verification passed: live registration page and Excel export agree in Palestinian time.");
 }
 main().finally(() => prisma.$disconnect()).catch((error) => {
-  console.error(`Registration timestamp verification failed: ${error instanceof Error ? error.name : "UnknownError"}`);
+  const reason = error instanceof assert.AssertionError ? error.message : error instanceof Error ? error.name : "UnknownError";
+  console.error(`Registration timestamp verification failed: ${reason}`);
   process.exitCode = 1;
 });
