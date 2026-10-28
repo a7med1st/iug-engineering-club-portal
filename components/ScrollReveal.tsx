@@ -42,7 +42,6 @@ const SHARED_TARGETS: ReadonlyArray<{
   { selector: ".contact-admin-section", variant: "up" },
   { selector: ".contact-admin-empty", variant: "up" },
   { selector: ".activity-registration-hero > *", variant: "up" },
-  { selector: ".activity-registration-card", variant: "scale" },
   { selector: ".activity-registration-state", variant: "up" },
 ];
 
@@ -146,7 +145,8 @@ export default function ScrollReveal() {
               observer?.unobserve(element);
             });
           },
-          { threshold: 0.12, rootMargin: "0px 0px -60px 0px" },
+          // Long forms/sections may never fit a percentage of their height in view.
+          { threshold: 0, rootMargin: "0px 0px -60px 0px" },
         );
 
     function register(element: HTMLElement) {

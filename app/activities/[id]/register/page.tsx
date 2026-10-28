@@ -159,7 +159,7 @@ export default async function ActivityRegisterPage({
             </section>
 
 
-            <section className="activity-registration-content">
+            <section className="activity-registration-content" data-no-reveal>
                 <div className="activity-registration-shell">
 
                     {!form ? (
