@@ -900,6 +900,7 @@ export default async function StudentDashboardPage({
                         >
                           <Link
                             href={`/activities/${activity.id}/register`}
+                            prefetch={false}
                             className={
                               styles.secondaryButton
                             }

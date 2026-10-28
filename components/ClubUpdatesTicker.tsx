@@ -57,6 +57,7 @@ export default function ClubUpdatesTicker({
                 <Link
                   className={styles.updateLink}
                   href={activeUpdate.href}
+                  prefetch={false}
                   title={activeUpdate.title}
                 >
                   {activeUpdate.title}
