@@ -8,7 +8,7 @@ import { MAX_ACTIVITY_REGISTRATION_QUESTIONS } from "../lib/activity-registratio
 import { readQuestionCondition, validateQuestionConditions } from "../lib/registration-conditions";
 
 const source = ts.createSourceFile("actions.ts", readFileSync(new URL("../app/admin/actions.ts", import.meta.url), "utf8"), ts.ScriptTarget.Latest, true);
-const functions = new Set(["requiredText", "parseRegistrationQuestions", "createActivity", "updateActivityText"]);
+const functions = new Set(["requiredText", "parseRegistrationQuestions", "createActivity", "updateActivityText", "saveActivityEdits", "runActivityEditAction"]);
 const variables = new Set(["activityStatuses", "activityQuestionTypes"]);
 const declarations = source.statements.filter(statement =>
   (ts.isFunctionDeclaration(statement) && statement.name && functions.has(statement.name.text)) ||
@@ -45,7 +45,7 @@ const context = {
   updateActivitySessions: async () => { sessionUpdates++; },
 };
 vm.runInNewContext(code, context);
-const actions = context.exports as { createActivity: (form: FormData) => Promise<{ success: boolean; message: string }>; updateActivityText: (form: FormData) => Promise<void> };
+const actions = context.exports as { createActivity: (form: FormData) => Promise<{ success: boolean; message: string }>; updateActivityText: (form: FormData) => Promise<void>; saveActivityEdits: (form: FormData) => Promise<{ success: boolean; message: string }> };
 function form() {
   const data = new FormData();
   for (const [key, value] of Object.entries({ title: "Media committee", description: "Committee applications", capacity: "500", departmentIds: "all", status: "PUBLISHED", registrationOpenDate: "2026-10-01", registrationOpenTime: "09:00", registrationCloseDate: "2026-11-01", registrationCloseTime: "09:00", registrationFormIsOpen: "on" })) data.set(key, value);
@@ -86,6 +86,14 @@ async function main() {
   await actions.updateActivityText(edit);
   assert.equal(updates[1].attendanceEnabled, true);
   assert.equal(sessionUpdates, 1, "attendance mode can be restored");
+  const beforeInvalidSave = updates.length;
+  edit.set("capacity", "0");
+  const rejectedEdit = await actions.saveActivityEdits(edit);
+  assert.equal(rejectedEdit.success, false, "the editor returns validation errors without redirecting");
+  assert.equal(updates.length, beforeInvalidSave, "invalid edits must not write activity data");
+  edit.set("capacity", "500");
+  const savedEdit = await actions.saveActivityEdits(edit);
+  assert.equal(savedEdit.success, true, savedEdit.message);
 
   const attendanceSource = ts.createSourceFile("attendance-prisma.ts", readFileSync(new URL("../lib/attendance-prisma.ts", import.meta.url), "utf8"), ts.ScriptTarget.Latest, true);
   const record = attendanceSource.statements.find(statement => ts.isFunctionDeclaration(statement) && statement.name?.text === "recordStaffSessionAttendance");

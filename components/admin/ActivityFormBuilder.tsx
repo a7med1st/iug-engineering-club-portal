@@ -11,6 +11,10 @@ import {
   ChevronUp,
   Plus,
   Trash2,
+  Copy,
+  Search,
+  ChevronsDownUp,
+  ChevronsUpDown,
 } from "lucide-react";
 
 import { useCspNonce } from "@/components/security/CspNonce";
@@ -56,7 +60,8 @@ type BuilderQuestion = {
 };
 
 type ActivityFormBuilderProps = {
-  appearance?: "default" | "wizard";
+  appearance?: "default" | "wizard" | "editor";
+  settingsHidden?: boolean;
   initialTitle?: string;
   initialDescription?: string;
   initialIsOpen?: boolean;
@@ -108,6 +113,7 @@ function needsOptions(type: QuestionType) {
 
 export default function ActivityFormBuilder({
   appearance = "default",
+  settingsHidden = false,
   initialTitle = "نموذج التسجيل",
   initialDescription = "",
   initialIsOpen = true,
@@ -139,7 +145,21 @@ export default function ActivityFormBuilder({
 
   const [openTypeMenuId, setOpenTypeMenuId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const modern = appearance === "wizard";
+  const editor = appearance === "editor";
+  const modern = appearance !== "default";
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    if (!editor) return;
+    const reveal = (event: Event) => {
+      const id = (event as CustomEvent<string>).detail;
+      setSearch("");
+      setExpanded(current => new Set(current).add(id));
+    };
+    document.addEventListener("activity-question-reveal", reveal);
+    return () => document.removeEventListener("activity-question-reveal", reveal);
+  }, [editor]);
 
   useEffect(() => {
     setQuestions(current => {
@@ -171,11 +191,23 @@ export default function ActivityFormBuilder({
   }, []);
 
   function addQuestion() {
+    if (questions.length >= MAX_ACTIVITY_REGISTRATION_QUESTIONS) return;
     const question = createQuestion();
     setQuestions((current) => current.length < MAX_ACTIVITY_REGISTRATION_QUESTIONS ? [...current, question] : current);
+    setSearch("");
+    setExpanded(current => new Set(current).add(question.localId));
     if (modern) requestAnimationFrame(() => {
       document.getElementById(`question-label-${question.localId}`)?.focus();
     });
+  }
+
+  function duplicateQuestion(question: BuilderQuestion, index: number) {
+    if (questions.length >= MAX_ACTIVITY_REGISTRATION_QUESTIONS) return;
+    const copy = { ...question, id: null, localId: crypto.randomUUID(), label: `${question.label} (نسخة)`, answerCount: 0, options: [...question.options] };
+    setQuestions(current => [...current.slice(0, index + 1), copy, ...current.slice(index + 1)]);
+    setSearch("");
+    setExpanded(current => new Set(current).add(copy.localId));
+    requestAnimationFrame(() => document.getElementById(`question-label-${copy.localId}`)?.focus());
   }
 
   function removeQuestion(localId: string) {
@@ -296,14 +328,14 @@ export default function ActivityFormBuilder({
   );
 
   return (
-    <section className={`activity-form-builder ${modern ? styles.builder : ""}`}>
+    <section className={`activity-form-builder ${modern ? styles.builder : ""} ${editor ? styles.editor : ""}`}>
       <input
         type="hidden"
         name="registrationQuestions"
         value={serializedQuestions}
       />
 
-      <div className="activity-builder-settings">
+      {!settingsHidden && <div className="activity-builder-settings">
         {modern && <div className={styles.sectionHeading}><span className={styles.sectionIcon}><Settings2 size={20} /></span><div><h3>إعدادات النموذج</h3><p>العنوان والتعليمات التي تظهر للطالب قبل التسجيل.</p></div></div>}
         <div className="field">
           <label htmlFor="registrationFormTitle">عنوان النموذج</label>
@@ -347,27 +379,27 @@ export default function ActivityFormBuilder({
             {modern && <small>{attendanceEnabled ? "اربط التسجيل بحساب الطالب لتتبع الحضور والشهادات." : "اربط طلب التسجيل بحساب الطالب."}</small>}
           </span>
         </label>
-      </div>
+      </div>}
 
-      <ActivitySchedulePicker
+      {!settingsHidden && <ActivitySchedulePicker
         kind="registration"
         initialStartDate={initialOpenDate}
         initialStartTime={initialOpenTime}
         initialEndDate={initialCloseDate}
         initialEndTime={initialCloseTime}
-      />
+      />}
 
       <div className="activity-builder-heading">
         <div>
           <span className="activity-builder-eyebrow">نموذج التسجيل الداخلي</span>
-          <h2>أسئلة التسجيل <span className={modern ? styles.count : undefined}>{questions.length} / {MAX_ACTIVITY_REGISTRATION_QUESTIONS}</span></h2>
-          <p>
+          <h2>أسئلة التسجيل <span dir="ltr" className={modern ? styles.count : undefined}>{questions.length} / {MAX_ACTIVITY_REGISTRATION_QUESTIONS}</span></h2>
+          {!editor && <p>
             أنشئ نموذج التسجيل الخاص بهذا النشاط وحدد نوع كل سؤال والخيارات
             المطلوبة.
-          </p>
+          </p>}
         </div>
 
-        {modern && <button type="button" className={styles.previewToggle} aria-expanded={showPreview} onClick={() => setShowPreview(current => !current)}><Eye size={17} />{showPreview ? "إخفاء المعاينة" : "معاينة النموذج"}</button>}
+        {modern && !editor && <button type="button" className={styles.previewToggle} aria-expanded={showPreview} onClick={() => setShowPreview(current => !current)}><Eye size={17} />{showPreview ? "إخفاء المعاينة" : "معاينة النموذج"}</button>}
         <button
           type="button"
           className="activity-builder-add"
@@ -378,6 +410,14 @@ export default function ActivityFormBuilder({
           إضافة سؤال
         </button>
       </div>
+
+      {editor && questions.length > 0 && <div className={styles.questionToolbar}>
+        <label className={styles.questionSearch}><Search size={17} /><span className={styles.srOnly}>البحث في الأسئلة</span><input type="search" value={search} placeholder="ابحث بعنوان السؤال أو رقمه" onChange={event => setSearch(event.target.value)} /></label>
+        <div className={styles.foldActions}>
+          <button type="button" onClick={() => setExpanded(new Set(questions.map(question => question.localId)))}><ChevronsUpDown size={16} />فتح الكل</button>
+          <button type="button" onClick={() => setExpanded(new Set())}><ChevronsDownUp size={16} />طي الكل</button>
+        </div>
+      </div>}
 
       {modern && showPreview && <section className={styles.formPreview} aria-label="معاينة نموذج الطالب">
         <div className={styles.sectionHeading}><Eye size={19} /><div><h3>هكذا تظهر الأسئلة للطالب</h3><p>معاينة فقط · تُعرض الأسئلة المشروطة مع توضيح شرط ظهورها.</p></div></div>
@@ -413,12 +453,23 @@ export default function ActivityFormBuilder({
               QUESTION_TYPES[0];
             const isTypeMenuOpen = openTypeMenuId === question.localId;
             const nameLanguage = attendanceEnabled ? certificateNameLanguage(question.label) : null;
+            const matches = !search.trim() || question.label.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()) || String(index + 1) === search.trim();
+            const isExpanded = !editor || expanded.has(question.localId);
 
             return (
               <article
-                className="activity-builder-question"
+                className={`activity-builder-question ${editor ? styles.editorQuestion : ""}`}
                 key={question.localId}
+                hidden={editor && !matches}
+                data-question-id={question.localId}
               >
+                {editor && <div className={styles.questionSummary}>
+                  <button type="button" className={styles.questionToggle} aria-expanded={isExpanded} aria-controls={`question-body-${question.localId}`} onClick={() => setExpanded(current => { const next = new Set(current); if (next.has(question.localId)) next.delete(question.localId); else next.add(question.localId); return next; })}>
+                    <span className={styles.questionIndex}>{index + 1}</span><span className={styles.questionCopy}><strong>{question.label || "سؤال بدون عنوان"}</strong><span>{selectedType.label}{question.required && " · إجباري"}{question.condition && " · مشروط"}{question.answerCount > 0 && ` · ${question.answerCount} إجابة`}</span></span><ChevronDown className={isExpanded ? styles.rotated : ""} size={18} />
+                  </button>
+                  <button type="button" className={styles.duplicate} title="تكرار السؤال" aria-label={`تكرار السؤال ${index + 1}`} disabled={questions.length >= MAX_ACTIVITY_REGISTRATION_QUESTIONS || Boolean(nameLanguage)} onClick={() => duplicateQuestion(question, index)}><Copy size={17} /></button>
+                </div>}
+                <div id={`question-body-${question.localId}`} className={styles.questionBody} hidden={!isExpanded}>
                 <div className="activity-builder-question-top">
                   <div className="activity-builder-question-number" aria-label={`السؤال ${index + 1}`}>
                     <span className="activity-builder-question-number-label">السؤال</span>
@@ -683,11 +734,14 @@ export default function ActivityFormBuilder({
                 </div>
 
                 </details>
+                </div>
               </article>
             );
           })}
         </div>
       )}
+
+      {editor && search.trim() && !questions.some((question, index) => question.label.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()) || String(index + 1) === search.trim()) && <p className={styles.noResults}>لا توجد أسئلة مطابقة للبحث.</p>}
 
       {questions.length > 0 && (
         <button

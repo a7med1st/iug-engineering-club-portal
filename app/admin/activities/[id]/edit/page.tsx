@@ -1,511 +1,95 @@
+import { notFound } from "next/navigation";
+import ActivityEditor from "@/components/admin/ActivityEditor";
+import { activityDateTimeInputValues } from "@/lib/activities";
 import { readQuestionCondition } from "@/lib/registration-conditions";
-import Link from "next/link";
-import {
-  notFound,
-} from "next/navigation";
-
-import ActivityFormBuilder from "@/components/admin/ActivityFormBuilder";
-import ActivitySessionsEditor from "@/components/admin/ActivitySessionsEditor";
-import ActivitySchedulePicker from "@/components/admin/ActivitySchedulePicker";
-import { ActivityAttendanceProvider, ActivityAttendanceMode, ActivityAttendanceFields, ActivityLocationField } from "@/components/admin/ActivityAttendanceSettings";
-import DepartmentChecklist from "@/components/admin/DepartmentChecklist";
-
-import {
-  activityDateTimeInputValues,
-} from "@/lib/activities";
-import {
-  PERMISSIONS,
-  isClubLeadership,
-  requireActivityPermission,
-  managedDepartmentIdsForUser,
-} from "@/lib/permissions";
+import { PERMISSIONS, isClubLeadership, requireActivityPermission, managedDepartmentIdsForUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
-import {
-  updateActivityText,
-} from "../../../actions";
+export const dynamic = "force-dynamic";
 
-export const dynamic =
-  "force-dynamic";
-
-export default async function EditActivityPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{
-    id: string;
-  }>;
-
-  searchParams: Promise<{
-    error?: string;
-    success?: string;
-  }>;
+export default async function EditActivityPage({ params, searchParams }: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
-  const { id } =
-    await params;
-
-  const { user } =
-    await requireActivityPermission(
-      PERMISSIONS.ACTIVITY_MANAGE,
-      id,
-    );
-
-  const isAdmin =
-    user.role === "ADMIN" ||
-    isClubLeadership(
-      user.position,
-    );
-
-  const managedDepartmentIds =
-    managedDepartmentIdsForUser(
-      user,
-    );
-
-  const [
-    activity,
-    departments,
-  ] = await Promise.all([
+  const { id } = await params;
+  const { user } = await requireActivityPermission(PERMISSIONS.ACTIVITY_MANAGE, id);
+  const isAdmin = user.role === "ADMIN" || isClubLeadership(user.position);
+  const managedDepartmentIds = managedDepartmentIdsForUser(user);
+  const [activity, departments, feedback] = await Promise.all([
     prisma.activity.findUnique({
-      where: {
-        id,
-      },
-
+      where: { id, deletedAt: null },
       include: {
         sessions: { orderBy: { sortOrder: "asc" }, include: { _count: { select: { attendances: true } } } },
-        departments: {
-          select: {
-            departmentId: true,
-          },
-        },
-
+        departments: { select: { departmentId: true } },
         registrationForm: {
           include: {
             questions: {
-              orderBy: {
-                sortOrder: "asc",
-              },
-
-              select: {
-                id: true,
-                label: true,
-                type: true,
-                required: true,
-                placeholder: true,
-                condition: true,
-                helpText: true,
-                options: true,
-
-                _count: {
-                  select: {
-                    answers: true,
-                  },
-                },
-              },
+              orderBy: { sortOrder: "asc" },
+              select: { id: true, label: true, type: true, required: true, placeholder: true, condition: true, helpText: true, options: true, _count: { select: { answers: true } } },
             },
           },
         },
       },
     }),
-
-    isAdmin
+    isAdmin || managedDepartmentIds.length
       ? prisma.department.findMany({
-        select: {
-          id: true,
-          nameAr: true,
-        },
-
-        orderBy: {
-          sortOrder: "asc",
-        },
+        where: isAdmin ? undefined : { id: { in: managedDepartmentIds } },
+        select: { id: true, nameAr: true }, orderBy: { sortOrder: "asc" },
       })
-      : managedDepartmentIds.length
-        ? prisma.department.findMany({
-          where: {
-            id: {
-              in: managedDepartmentIds,
-            },
-          },
-          select: {
-            id: true,
-            nameAr: true,
-          },
-          orderBy: {
-            sortOrder: "asc",
-          },
-        })
-        : Promise.resolve([]),
+      : Promise.resolve([]),
+    searchParams,
   ]);
 
-  if (!activity) {
-    notFound();
-  }
+  if (!activity) notFound();
+  const dateInput = (value: Date | null) => value ? activityDateTimeInputValues(value) : { date: "", time: "" };
+  const registration = activity.registrationForm;
+  const initialDepartmentIds = activity.departments.length
+    ? activity.departments.map(item => item.departmentId)
+    : departments.map(department => department.id);
 
-  const feedback =
-    await searchParams;
-
-  const start =
-    activity.startsAt
-      ? activityDateTimeInputValues(
-        activity.startsAt,
-      )
-      : {
-        date: "",
-        time: "",
-      };
-
-  const end =
-    activity.endsAt
-      ? activityDateTimeInputValues(
-        activity.endsAt,
-      )
-      : {
-        date: "",
-        time: "",
-      };
-
-  const registrationOpen =
-    activity.registrationForm
-      ? activityDateTimeInputValues(
-        activity.registrationForm.opensAt,
-      )
-      : { date: "", time: "" };
-
-  const registrationClose =
-    activity.registrationForm
-      ? activityDateTimeInputValues(
-        activity.registrationForm.closesAt,
-      )
-      : { date: "", time: "" };
-
-  const allDepartmentIds =
-    departments.map(
-      (department) =>
-        department.id,
-    );
-
-  /*
-   * General activities have zero ActivityDepartment rows.
-   * In the checklist that means "all departments".
-   */
-  const initialDepartmentIds =
-    activity.departments.length ===
-      0
-      ? allDepartmentIds
-      : activity.departments.map(
-        (item) =>
-          item.departmentId,
-      );
-
-  const initialQuestions =
-    (
-      activity.registrationForm
-        ?.questions ?? []
-    ).map(
-      (question) => ({
-        condition: readQuestionCondition(question.condition),
-        id: question.id,
-        label:
-          question.label,
-        type:
-          question.type,
-        required:
-          question.required,
-        placeholder:
-          question.placeholder,
-        helpText:
-          question.helpText,
-
-        options:
-          Array.isArray(
-            question.options,
-          )
-            ? question.options.filter(
-              (
-                option,
-              ): option is string =>
-                typeof option ===
-                "string",
-            )
-            : [],
-
-        answerCount:
-          question._count.answers,
+  return <ActivityEditor
+    activity={{
+      id: activity.id,
+      title: activity.title,
+      description: activity.description,
+      cardDescription: activity.cardDescription,
+      tickerDescription: activity.tickerDescription,
+      location: activity.location,
+      capacity: activity.capacity,
+      price: activity.price,
+      status: activity.status,
+      attendanceEnabled: activity.attendanceEnabled,
+      coverImageUrl: activity.coverImageUrl,
+      postEventSummary: activity.postEventSummary,
+      updatedAt: activity.updatedAt.toISOString(),
+      start: dateInput(activity.startsAt),
+      end: dateInput(activity.endsAt),
+      requiredAttendanceCount: activity.requiredAttendanceCount,
+      sessions: activity.sessions.map(session => {
+        const start = dateInput(session.startsAt), end = dateInput(session.endsAt);
+        return { id: session.id, title: session.title, startDate: start.date, startTime: start.time, endDate: end.date, endTime: end.time, attendanceCount: session._count.attendances };
       }),
-    );
-
-  return (
-    <section className="admin-page activities-admin-page">
-      <div className="admin-page-head">
-        <div>
-          <h1>
-            تعديل النشاط
-          </h1>
-
-          <p className="muted">
-            يمكنك تعديل بيانات النشاط، الموعد، الأقسام، حالة النشر ونموذج التسجيل من مكان واحد.
-          </p>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            flexWrap: "wrap",
-          }}
-        >
-          <Link
-            href="/admin/activities"
-            className="ghost-btn"
-          >
-            العودة للأنشطة
-          </Link>
-
-          <Link
-            href={`/activities/${activity.id}`}
-            className="ghost-btn"
-          >
-            عرض النشاط
-          </Link>
-        </div>
-      </div>
-
-      {feedback.error && (
-        <div className="feedback-error">
-          {feedback.error}
-        </div>
-      )}
-
-      {feedback.success && (
-        <div className="feedback-success">
-          {feedback.success}
-        </div>
-      )}
-
-      <div className="admin-card activity-form-panel">
-        <ActivityAttendanceProvider initialEnabled={activity.attendanceEnabled}><form
-          action={updateActivityText}
-          className="stack-form"
-        >
-          <input
-            type="hidden"
-            name="activityId"
-            value={activity.id}
-          />
-
-          <ActivityAttendanceMode />
-          <label>
-            اسم النشاط
-
-            <input
-              type="text"
-              name="title"
-              defaultValue={
-                activity.title
-              }
-              required
-              maxLength={160}
-            />
-          </label>
-          <label>
-            نبذة بطاقة النشاط
-
-            <textarea
-              name="cardDescription"
-              rows={3}
-              maxLength={500}
-              defaultValue={
-                activity.cardDescription ?? ""
-              }
-              placeholder="نص قصير يظهر في بطاقة النشاط"
-            />
-          </label>
-          <label>
-            وصف شريط الإعلانات
-
-            <textarea
-              name="tickerDescription"
-              rows={2}
-              maxLength={300}
-              defaultValue={
-                activity.tickerDescription ?? ""
-              }
-              placeholder="نص قصير ومباشر يتحرك داخل شريط آخر تحديثات النادي"
-            />
-          </label>
-          <label>
-            وصف النشاط
-
-            <textarea
-              name="description"
-
-              defaultValue={
-                activity.description
-              }
-              required
-              rows={8}
-              maxLength={10000}
-            />
-          </label>
-
-
-          <ActivityAttendanceFields><ActivitySchedulePicker
-            initialStartDate={
-              start.date
-            }
-            initialStartTime={
-              start.time
-            }
-            initialEndDate={
-              end.date
-            }
-            initialEndTime={
-              end.time
-            }
-          /></ActivityAttendanceFields>
-
-          <div className="form-grid">
-            <ActivityLocationField initialLocation={activity.location} />
-
-            <label>
-              السعة الطلابية
-
-              <input
-                type="number"
-                min="1"
-                max="100000"
-                name="capacity"
-                defaultValue={
-                  activity.capacity
-                }
-                required
-              />
-            </label>
-
-            <label>
-              السعر (₪)
-
-              <input
-                type="number"
-                name="price"
-                min="0"
-                max="1000000"
-                step="1"
-                defaultValue={
-                  activity.price ?? ""
-                }
-                placeholder="اتركه فارغًا إذا كان النشاط مجانيًا"
-              />
-            </label>
-
-            <label>
-              حالة النشاط
-
-              <select
-                name="status"
-                defaultValue={
-                  activity.status
-                }
-              >
-                <option value="DRAFT">
-                  مسودة
-                </option>
-
-                <option value="PUBLISHED">
-                  منشور
-                </option>
-
-                <option value="ARCHIVED">
-                  مؤرشف
-                </option>
-              </select>
-            </label>
-          </div>
-
-          <ActivityAttendanceFields><ActivitySessionsEditor initialRequiredAttendanceCount={activity.requiredAttendanceCount} initialSessions={activity.sessions.map(session => {
-            const start = session.startsAt ? activityDateTimeInputValues(session.startsAt) : { date: "", time: "" };
-            const end = session.endsAt ? activityDateTimeInputValues(session.endsAt) : { date: "", time: "" };
-            return { id: session.id, title: session.title, startDate: start.date, startTime: start.time, endDate: end.date, endTime: end.time, attendanceCount: session._count.attendances };
-          })} /></ActivityAttendanceFields>
-          <DepartmentChecklist
-            departments={
-              departments
-            }
-            initialSelectedIds={
-              initialDepartmentIds
-            }
-            allowGeneral={
-              isAdmin
-            }
-          />
-
-          <ActivityFormBuilder
-            initialTitle={
-              activity.registrationForm
-                ?.title ??
-              "نموذج التسجيل"
-            }
-            initialDescription={
-              activity.registrationForm
-                ?.description ??
-              ""
-            }
-            initialIsOpen={
-              activity.registrationForm
-                ?.isOpen ??
-              true
-            }
-            initialRequiresAccount={
-              activity.registrationForm
-                ?.requiresAccount ??
-              true
-            }
-            initialOpenDate={registrationOpen.date}
-            initialOpenTime={registrationOpen.time}
-            initialCloseDate={registrationClose.date}
-            initialCloseTime={registrationClose.time}
-            initialQuestions={
-              initialQuestions
-            }
-          />
-
-          {initialQuestions.some(
-            (question) =>
-              question.answerCount >
-              0,
-          ) && (
-              <p className="muted">
-                ملاحظة: يمكن تعديل الأسئلة التي تحتوي على إجابات سابقة، لكن لا يمكن حذفها حفاظًا على تسجيلات الطلاب.
-              </p>
-            )}
-
-          <label>
-            ملخص الفعالية بعد انتهائها
-
-            <textarea
-              name="postEventSummary"
-              defaultValue={
-                activity.postEventSummary ??
-                ""
-              }
-              rows={8}
-              maxLength={10000}
-              placeholder="يظهر هذا النص في قسم «عن الفعالية» بعد انتهاء النشاط."
-            />
-          </label>
-
-          <button
-            type="submit"
-            className="primary-btn"
-            disabled={
-              !isAdmin &&
-              managedDepartmentIds.length ===
-              0
-            }
-          >
-            حفظ جميع التعديلات
-          </button>
-        </form></ActivityAttendanceProvider>
-      </div>
-    </section>
-  );
+      registration: {
+        title: registration?.title ?? "نموذج التسجيل",
+        description: registration?.description ?? "",
+        isOpen: registration?.isOpen ?? true,
+        requiresAccount: registration?.requiresAccount ?? true,
+        open: dateInput(registration?.opensAt ?? null),
+        close: dateInput(registration?.closesAt ?? null),
+        questions: (registration?.questions ?? []).map(question => ({
+          id: question.id, label: question.label, type: question.type, required: question.required,
+          placeholder: question.placeholder, helpText: question.helpText,
+          condition: readQuestionCondition(question.condition),
+          options: Array.isArray(question.options) ? question.options.filter((option): option is string => typeof option === "string") : [],
+          answerCount: question._count.answers,
+        })),
+      },
+    }}
+    departments={departments}
+    initialDepartmentIds={initialDepartmentIds}
+    allowGeneral={isAdmin}
+    canSave={isAdmin || managedDepartmentIds.length > 0}
+    initialError={feedback.error}
+    initialSuccess={feedback.success}
+  />;
 }

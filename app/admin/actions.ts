@@ -1832,6 +1832,33 @@ export async function addStructureItem(
 export async function updateActivityText(
   formData: FormData,
 ) {
+  const activityId = requiredText(formData, "activityId", "معرّف النشاط");
+  return runAdminAction(
+    `/admin/activities/${activityId}/edit`,
+    "تم تحديث النشاط ونموذج التسجيل بنجاح.",
+    "تعذر تحديث النشاط. تحقق من البيانات وحاول مجددًا.",
+    async () => {
+      const result = await saveActivityEdits(formData);
+      if (!result.success) throw new AdminActionError(result.message);
+    },
+  );
+}
+
+async function runActivityEditAction(action: () => Promise<void>) {
+  try {
+    await action();
+    return { success: true, message: "تم حفظ تعديلات النشاط بنجاح." };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof AdminActionError || error instanceof ActivitySessionsError
+        ? error.message
+        : "تعذر حفظ التعديلات. تحقق من البيانات وحاول مجددًا.",
+    };
+  }
+}
+
+export async function saveActivityEdits(formData: FormData) {
   const activityId =
     requiredText(
       formData,
@@ -1845,13 +1872,7 @@ export async function updateActivityText(
       activityId,
     );
 
-  return runAdminAction(
-    `/admin/activities/${activityId}/edit`,
-
-    "تم تحديث النشاط ونموذج التسجيل بنجاح.",
-
-    "تعذر تحديث النشاط. تحقق من البيانات وحاول مجددًا.",
-
+  return runActivityEditAction(
     async () => {
       /* =============================================
          ACTIVITY DATA
