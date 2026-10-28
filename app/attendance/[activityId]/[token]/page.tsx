@@ -32,7 +32,7 @@ export default async function AttendancePage({ params, searchParams }: { params:
       {"session" in state && state.session && <div className={styles.session}><span className={styles.label}>الجلسة</span><h2>{state.session.title}</h2></div>}
       <p className={styles.date}><CalendarDays size={18} /> {state.activity.startsAt ? new Intl.DateTimeFormat("ar-PS", { dateStyle: "long" }).format(state.activity.startsAt) : "الموعد غير محدد"}</p></div>}
     {state.status === "READY" && !successful ? <><strong className={styles.student}>{state.submission.studentName}</strong><form action={confirmSelfAttendance}><input type="hidden" name="activityId" value={activityId}/><input type="hidden" name="token" value={token}/><button type="submit">تأكيد حضوري</button></form></> : <p className={styles.message} role="status">{successful ? (query.result === "already" ? "حضورك في هذه الجلسة مسجل مسبقًا." : "تم حفظ حضورك في هذه الجلسة بنجاح.") : messages[state.status]}</p>}
-    {state.status === "NOT_REGISTERED" && <Link href={`/activities/${activityId}/register?returnTo=${encodeURIComponent(path)}`}>التسجيل في النشاط</Link>}
+    {state.status === "NOT_REGISTERED" && <Link href={`/activities/${activityId}/register?returnTo=${encodeURIComponent(path)}`} prefetch={false}>التسجيل في النشاط</Link>}
     <Link className={styles.cancel} href="/student">العودة للوحة الطالب</Link>
   </section></main>;
 }

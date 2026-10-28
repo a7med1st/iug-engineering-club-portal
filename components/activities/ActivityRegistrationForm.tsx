@@ -90,6 +90,11 @@ export default function ActivityRegistrationForm({
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
+    setValues(emptyValues(questions, requiresGuestIdentity));
+    formRef.current?.reset();
+  }, [formId, questions, requiresGuestIdentity]);
+
+  useEffect(() => {
     if (state.success) {
       setValues(emptyValues(questions, requiresGuestIdentity));
       formRef.current?.reset();

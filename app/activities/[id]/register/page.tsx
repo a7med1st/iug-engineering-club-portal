@@ -254,6 +254,7 @@ export default async function ActivityRegisterPage({
                                 </div>
                             ) : (
                                 <ActivityRegistrationForm
+                                    key={`${activity.id}-${form.id}`}
                                     activityId={activity.id}
                                     activityTitle={activity.title}
                                     hasSchedule={activity.attendanceEnabled && Boolean(firstSession || activity.startsAt)}
